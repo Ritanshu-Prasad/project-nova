@@ -1,0 +1,509 @@
+/* ── Intro UI: gate, eyelids, System windows, pre-flight, launch control, warp ──────────
+   Unlayered on purpose (beats Tailwind's layered utilities), so this file only holds what
+   utilities cannot express: keyframes, multi-layer backgrounds and kind/state variables.
+   Every class is prefixed `intro-`. Motion is switched off under [data-rm="true"]. */
+
+/* ── Gate ─────────────────────────────────────────────────────────────── */
+
+.intro-gate-vignette {
+  background:
+    radial-gradient(ellipse 72% 64% at 50% 47%, transparent 52%, rgb(125 211 252 / 0.045) 78%, rgb(186 230 253 / 0.11) 100%),
+    radial-gradient(ellipse 90% 55% at 50% 118%, rgb(14 116 144 / 0.16), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% -12%, rgb(30 58 138 / 0.18), transparent 70%);
+}
+
+.intro-frost {
+  -webkit-mask-image: radial-gradient(ellipse 74% 68% at 50% 47%, transparent 50%, #000 100%);
+  mask-image: radial-gradient(ellipse 74% 68% at 50% 47%, transparent 50%, #000 100%);
+  background-size: 640px 640px;
+  animation: intro-breathe 7s ease-in-out infinite;
+}
+
+@keyframes intro-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.95; }
+}
+
+/* Breath condensing on the pod glass. */
+.intro-breath {
+  background: radial-gradient(ellipse 46% 34% at 50% 104%, rgb(186 230 253 / 0.11), transparent 72%);
+  animation: intro-breath 5.4s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+@keyframes intro-breath {
+  0%, 100% { opacity: 0; transform: scale(0.94); }
+  32% { opacity: 1; transform: scale(1); }
+  70% { opacity: 0.25; }
+}
+
+/* Slow vertical scanner sweeping the pod. */
+.intro-scan {
+  background: linear-gradient(180deg, transparent, rgb(103 232 249 / 0.05) 45%, rgb(165 243 252 / 0.12) 50%, transparent 52%);
+  animation: intro-scan 6.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes intro-scan {
+  0% { transform: translateY(-60%); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateY(60%); opacity: 0; }
+}
+
+.intro-ecg-grid {
+  background-image:
+    linear-gradient(rgb(103 232 249 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(103 232 249 / 0.07) 1px, transparent 1px),
+    linear-gradient(rgb(103 232 249 / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(103 232 249 / 0.03) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+  background-position: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.intro-ecg-dot {
+  background: radial-gradient(circle, #fff 0 22%, rgb(165 243 252 / 0.95) 34%, rgb(34 211 238 / 0.35) 58%, transparent 72%);
+}
+
+.intro-blink {
+  animation: intro-blink 1.1s steps(1) infinite;
+}
+
+@keyframes intro-blink {
+  50% { opacity: 0.15; }
+}
+
+/* Wake button */
+.intro-wake-core {
+  background:
+    radial-gradient(circle at 50% 38%, rgb(34 211 238 / 0.2), transparent 62%),
+    radial-gradient(circle, rgb(8 26 40 / 0.92), rgb(2 8 16 / 0.96));
+  box-shadow:
+    0 0 0 1.5px rgb(165 243 252 / 0.85),
+    0 0 26px rgb(34 211 238 / 0.42),
+    0 0 70px rgb(34 211 238 / 0.16),
+    inset 0 0 26px rgb(34 211 238 / 0.26);
+  transition: box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.intro-wake:hover .intro-wake-core,
+.intro-wake:focus-visible .intro-wake-core {
+  background:
+    radial-gradient(circle at 50% 38%, rgb(103 232 249 / 0.42), transparent 66%),
+    radial-gradient(circle, rgb(10 40 58 / 0.94), rgb(3 12 22 / 0.96));
+  box-shadow:
+    0 0 0 2px rgb(236 254 255 / 0.95),
+    0 0 34px rgb(103 232 249 / 0.7),
+    0 0 110px rgb(34 211 238 / 0.3),
+    inset 0 0 34px rgb(103 232 249 / 0.4);
+}
+
+.intro-wake[aria-disabled="true"] .intro-wake-core {
+  box-shadow:
+    0 0 0 1px rgb(103 232 249 / 0.3),
+    0 0 18px rgb(34 211 238 / 0.12),
+    inset 0 0 18px rgb(34 211 238 / 0.1);
+}
+
+.intro-spin { animation: intro-spin 26s linear infinite; }
+.intro-spin-rev { animation: intro-spin 40s linear infinite reverse; }
+
+@keyframes intro-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Calibration shimmer: a bright arc chasing round the ring. */
+.intro-shimmer {
+  background: conic-gradient(from 0deg, transparent 0 62%, rgb(103 232 249 / 0.15) 72%, rgb(236 254 255 / 0.95) 96%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px), #000 calc(100% - 0.5px), transparent 100%);
+  mask-image: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px), #000 calc(100% - 0.5px), transparent 100%);
+  animation: intro-spin 1.15s linear infinite;
+}
+
+.intro-shimmer-text {
+  background: linear-gradient(90deg, rgb(103 232 249 / 0.45) 0 35%, #ecfeff 50%, rgb(103 232 249 / 0.45) 65% 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: intro-text-shimmer 1.6s linear infinite;
+}
+
+@keyframes intro-text-shimmer {
+  from { background-position: 110% 0; }
+  to { background-position: -110% 0; }
+}
+
+/* Tiny equaliser shown while sound is on. */
+.intro-eq > i {
+  display: block;
+  width: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  animation: intro-eq 0.9s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+.intro-eq > i:nth-child(2) { animation-delay: -0.3s; animation-duration: 0.7s; }
+.intro-eq > i:nth-child(3) { animation-delay: -0.55s; animation-duration: 1.1s; }
+
+@keyframes intro-eq {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+/* ── Eyelids ──────────────────────────────────────────────────────────── */
+
+/* Each lid's free edge is an arch: an elliptical, feathered bite out of a black sheet. */
+.intro-lid-top {
+  background: linear-gradient(180deg, #000 55%, #070102 88%, #120304 100%);
+  -webkit-mask-image: radial-gradient(ellipse 46vw 32vh at 50% 100%, transparent 50%, #000 100%);
+  mask-image: radial-gradient(ellipse 46vw 32vh at 50% 100%, transparent 50%, #000 100%);
+}
+
+.intro-lid-bottom {
+  background: linear-gradient(0deg, #000 55%, #070102 88%, #120304 100%);
+  -webkit-mask-image: radial-gradient(ellipse 46vw 32vh at 50% 0%, transparent 50%, #000 100%);
+  mask-image: radial-gradient(ellipse 46vw 32vh at 50% 0%, transparent 50%, #000 100%);
+}
+
+.intro-emergency-vignette {
+  background:
+    radial-gradient(ellipse 80% 75% at 50% 50%, transparent 42%, rgb(127 29 29 / 0.38) 78%, rgb(69 10 10 / 0.72) 100%);
+}
+
+/* ── System window ────────────────────────────────────────────────────── */
+
+.intro-sw {
+  --sw-frame: rgb(96 165 250 / 0.82);
+  --sw-glow: rgb(59 130 246 / 0.42);
+  --sw-inner: rgb(59 130 246 / 0.16);
+  --sw-accent: #93c5fd;
+  --sw-bright: #dbeafe;
+  --sw-line: rgb(147 197 253 / 0.35);
+  border-color: var(--sw-frame);
+  box-shadow:
+    0 0 0 1px rgb(2 6 23 / 0.55),
+    0 0 26px var(--sw-glow),
+    0 18px 50px -18px rgb(0 0 0 / 0.85),
+    inset 0 0 22px var(--sw-inner);
+}
+
+.intro-sw[data-kind="quest"] {
+  --sw-accent: #7dd3fc;
+  --sw-bright: #e0f2fe;
+}
+
+.intro-sw[data-kind="warning"] {
+  --sw-frame: rgb(251 191 36 / 0.85);
+  --sw-glow: rgb(239 68 68 / 0.36);
+  --sw-inner: rgb(245 158 11 / 0.13);
+  --sw-accent: #fbbf24;
+  --sw-bright: #fef3c7;
+  --sw-line: rgb(251 191 36 / 0.32);
+  background: linear-gradient(180deg, rgb(44 18 8 / 0.9), rgb(22 8 6 / 0.93));
+}
+
+.intro-sw[data-kind="levelup"] {
+  --sw-frame: rgb(253 224 71 / 0.8);
+  --sw-glow: rgb(96 165 250 / 0.45);
+  --sw-inner: rgb(250 204 21 / 0.12);
+  --sw-accent: #fde047;
+  --sw-bright: #fef9c3;
+  --sw-line: rgb(253 224 71 / 0.32);
+}
+
+.intro-sw-corners {
+  --hc: var(--sw-bright);
+  --hl: 12px;
+  --hw: 2px;
+}
+
+.intro-sw-title {
+  color: var(--sw-bright);
+  text-shadow: 0 0 14px var(--sw-glow), 0 0 2px var(--sw-accent);
+}
+
+.intro-sw-frame-box {
+  border: 1px solid var(--sw-line);
+  background: linear-gradient(180deg, rgb(59 130 246 / 0.08), transparent);
+}
+
+.intro-sw-divider {
+  background: linear-gradient(90deg, transparent, var(--sw-frame) 18%, var(--sw-frame) 82%, transparent);
+  opacity: 0.55;
+}
+
+.intro-sw-beam {
+  background: linear-gradient(90deg, transparent, var(--sw-bright) 12%, #fff 50%, var(--sw-bright) 88%, transparent);
+  box-shadow: 0 0 18px 3px var(--sw-glow), 0 0 6px var(--sw-accent);
+}
+
+.intro-sw-accent { color: var(--sw-accent); }
+.intro-sw-em {
+  color: var(--sw-bright);
+  text-shadow: 0 0 12px var(--sw-glow);
+}
+
+.intro-badge {
+  border: 1.5px solid var(--sw-accent);
+  color: var(--sw-bright);
+  box-shadow: 0 0 12px var(--sw-glow), inset 0 0 8px var(--sw-inner);
+}
+
+/* One diagonal light sweep after the window unfolds. */
+.intro-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 30%, rgb(219 234 254 / 0.14) 48%, rgb(219 234 254 / 0.04) 56%, transparent 66%);
+  transform: translateX(-130%);
+  animation: intro-sheen 1.15s cubic-bezier(0.3, 0.6, 0.3, 1) 0.5s 1 both;
+}
+
+@keyframes intro-sheen {
+  to { transform: translateX(130%); }
+}
+
+.intro-ttl {
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--sw-frame), var(--sw-bright));
+  animation-name: intro-ttl;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes intro-ttl {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* ── Pre-flight checklist ─────────────────────────────────────────────── */
+
+.intro-row {
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+}
+
+.intro-row[data-state="next"] {
+  background: linear-gradient(90deg, rgb(34 211 238 / 0.14), rgb(34 211 238 / 0.03));
+  box-shadow: inset 0 0 0 1px rgb(103 232 249 / 0.5);
+  animation: intro-next 1.6s ease-in-out infinite;
+}
+
+.intro-row[data-state="next"]:hover,
+.intro-row[data-state="next"]:focus-visible {
+  background: linear-gradient(90deg, rgb(34 211 238 / 0.26), rgb(34 211 238 / 0.06));
+  box-shadow: inset 0 0 0 1px rgb(165 243 252 / 0.9), 0 0 22px rgb(34 211 238 / 0.3);
+}
+
+@keyframes intro-next {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgb(103 232 249 / 0.4), 0 0 0 rgb(34 211 238 / 0); }
+  50% { box-shadow: inset 0 0 0 1px rgb(165 243 252 / 0.95), 0 0 20px rgb(34 211 238 / 0.32); }
+}
+
+.intro-row[data-state="done"] {
+  background: linear-gradient(90deg, rgb(52 211 153 / 0.1), transparent 70%);
+  box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.22);
+}
+
+.intro-row[data-state="locked"] {
+  opacity: 0.5;
+}
+
+.intro-row[data-state="locked"]:hover {
+  opacity: 0.72;
+}
+
+.intro-engage > svg {
+  animation: intro-nudge 1.1s ease-in-out infinite;
+}
+
+@keyframes intro-nudge {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
+.intro-seg {
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.intro-seg[data-on="true"] {
+  background: #34d399;
+  box-shadow: 0 0 10px rgb(52 211 153 / 0.7);
+}
+
+.intro-chip-dot {
+  box-shadow: 0 0 0 3px rgb(52 211 153 / 0.18), 0 0 12px rgb(52 211 153 / 0.9);
+  animation: intro-blink 1.6s ease-in-out infinite;
+}
+
+/* ── Launch control ───────────────────────────────────────────────────── */
+
+.intro-hold-core {
+  background:
+    radial-gradient(circle at 50% 40%, rgb(34 211 238 / 0.22), transparent 64%),
+    radial-gradient(circle, rgb(6 22 36 / 0.9), rgb(2 8 16 / 0.94));
+  box-shadow: inset 0 0 22px rgb(34 211 238 / 0.28), 0 0 0 1px rgb(103 232 249 / 0.35);
+  transition: transform 0.18s ease, box-shadow 0.2s ease;
+}
+
+.intro-hold:hover .intro-hold-core {
+  box-shadow: inset 0 0 30px rgb(103 232 249 / 0.42), 0 0 0 1px rgb(165 243 252 / 0.8), 0 0 30px rgb(34 211 238 / 0.35);
+}
+
+.intro-hold[data-holding="true"] .intro-hold-core {
+  transform: scale(0.94);
+  box-shadow: inset 0 0 40px rgb(165 243 252 / 0.6), 0 0 0 1.5px rgb(236 254 255 / 0.95), 0 0 44px rgb(103 232 249 / 0.55);
+}
+
+.intro-hold .intro-hold-pct { display: none; }
+.intro-hold[data-charging="true"] .intro-hold-pct { display: block; }
+.intro-hold[data-charging="true"] .intro-hold-icon { display: none; }
+
+.intro-sonar {
+  border: 1.5px solid rgb(103 232 249 / 0.55);
+  animation: intro-sonar 2.2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+}
+
+.intro-sonar.intro-sonar-2 { animation-delay: 1.1s; }
+
+@keyframes intro-sonar {
+  0% { transform: scale(0.92); opacity: 0.85; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
+.intro-hold[data-holding="true"] .intro-sonar { animation: none; opacity: 0; }
+
+.intro-chevrons > svg { animation: intro-rise 1.4s ease-in-out infinite; }
+
+@keyframes intro-rise {
+  0%, 100% { transform: translateY(2px); opacity: 0.75; }
+  50% { transform: translateY(-3px); opacity: 1; }
+}
+
+.intro-edge-glow {
+  box-shadow:
+    inset 0 0 180px 50px rgb(34 211 238 / 0.42),
+    inset 0 0 60px 8px rgb(207 250 254 / 0.38);
+  background: radial-gradient(ellipse 70% 65% at 50% 52%, transparent 55%, rgb(34 211 238 / 0.12) 100%);
+}
+
+.intro-countdown {
+  color: #f0fdff;
+  text-shadow:
+    -4px 0 0 rgb(255 42 109 / 0.55),
+    4px 0 0 rgb(34 211 238 / 0.65),
+    0 0 40px rgb(103 232 249 / 0.85),
+    0 0 120px rgb(34 211 238 / 0.5);
+}
+
+.intro-shock {
+  border: 2px solid rgb(165 243 252 / 0.75);
+  box-shadow: 0 0 30px rgb(34 211 238 / 0.5), inset 0 0 30px rgb(34 211 238 / 0.35);
+}
+
+/* ── Warp ─────────────────────────────────────────────────────────────── */
+
+.intro-flash {
+  background: radial-gradient(ellipse 75% 70% at 50% 50%, #f5feff 0%, #d4fbff 38%, #8deeff 78%, #4fd6f0 100%);
+}
+
+.intro-glitch {
+  position: relative;
+  color: #f0fdff;
+  text-shadow: 0 0 22px rgb(103 232 249 / 0.85), 0 0 2px #fff;
+}
+
+.intro-glitch > .intro-g {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  text-shadow: none;
+}
+
+.intro-glitch > .intro-g-r {
+  color: #ff2a6d;
+  animation: intro-glitch-a 2.3s steps(1, end) infinite;
+}
+
+.intro-glitch > .intro-g-c {
+  color: #22d3ee;
+  animation: intro-glitch-b 1.9s steps(1, end) infinite;
+}
+
+@keyframes intro-glitch-a {
+  0% { clip-path: inset(0 0 0 0); transform: translate(-3px, 0); }
+  6% { clip-path: inset(14% 0 58% 0); transform: translate(-11px, 0); }
+  8% { clip-path: inset(62% 0 9% 0); transform: translate(7px, 0); }
+  10% { clip-path: inset(0 0 0 0); transform: translate(-3px, 0); }
+  41% { clip-path: inset(38% 0 40% 0); transform: translate(-16px, 0); }
+  43% { clip-path: inset(0 0 0 0); transform: translate(-2px, 0); }
+  71% { clip-path: inset(70% 0 4% 0); transform: translate(9px, 0); }
+  73% { clip-path: inset(0 0 0 0); transform: translate(-3px, 0); }
+}
+
+@keyframes intro-glitch-b {
+  0% { clip-path: inset(0 0 0 0); transform: translate(3px, 0); }
+  12% { clip-path: inset(48% 0 30% 0); transform: translate(12px, 0); }
+  14% { clip-path: inset(0 0 0 0); transform: translate(3px, 0); }
+  52% { clip-path: inset(8% 0 72% 0); transform: translate(-8px, 0); }
+  54% { clip-path: inset(80% 0 2% 0); transform: translate(14px, 0); }
+  56% { clip-path: inset(0 0 0 0); transform: translate(2px, 0); }
+  86% { clip-path: inset(30% 0 52% 0); transform: translate(-10px, 0); }
+  88% { clip-path: inset(0 0 0 0); transform: translate(3px, 0); }
+}
+
+.intro-warp-bar {
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgb(34 211 238 / 0.2), #a5f3fc, #ffffff);
+  box-shadow: 0 0 12px rgb(103 232 249 / 0.8);
+}
+
+/* ── Skip control ─────────────────────────────────────────────────────── */
+
+.intro-kbd {
+  border: 1px solid rgb(103 232 249 / 0.35);
+  border-bottom-width: 2px;
+  background: rgb(34 211 238 / 0.07);
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+
+[data-rm="true"] .intro-frost,
+[data-rm="true"] .intro-breath,
+[data-rm="true"] .intro-scan,
+[data-rm="true"] .intro-spin,
+[data-rm="true"] .intro-spin-rev,
+[data-rm="true"] .intro-sonar,
+[data-rm="true"] .intro-chevrons > svg,
+[data-rm="true"] .intro-engage > svg,
+[data-rm="true"] .intro-row[data-state="next"],
+[data-rm="true"] .intro-glitch > .intro-g,
+[data-rm="true"] .intro-sheen::after,
+[data-rm="true"] .intro-eq > i {
+  animation: none;
+}
+
+[data-rm="true"] .intro-glitch > .intro-g,
+[data-rm="true"] .intro-sheen::after,
+[data-rm="true"] .intro-scan,
+[data-rm="true"] .intro-breath {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-frost,
+  .intro-breath,
+  .intro-scan,
+  .intro-spin,
+  .intro-spin-rev,
+  .intro-sonar,
+  .intro-chevrons > svg,
+  .intro-engage > svg,
+  .intro-glitch > .intro-g,
+  .intro-sheen::after,
+  .intro-eq > i {
+    animation: none;
+  }
+}
