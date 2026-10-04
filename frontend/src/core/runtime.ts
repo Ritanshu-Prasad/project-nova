@@ -79,6 +79,18 @@ const initial = () => ({
   /** Compass heading in degrees for the HUD tape. */
   heading: 0,
 
+  // ── Walking to the lounge (see core/journey.ts) ───────────────────────
+  /** Pilot standing up out of the seat. */
+  stand: 0,
+  /** Turning around to face the rear bulkhead door. */
+  turn: 0,
+  /** Bulkhead door: 0 = sealed, ~0.15 = unlocked, 1 = fully open. */
+  door: 0,
+  /** Walk from the cockpit through the corridor into the lounge. */
+  walk: 0,
+  /** Hologram energy burst (course generation); decays automatically. */
+  holo: 0,
+
   /** Mirrors the store flag so per-frame code can branch without a store read. */
   reducedMotion: false,
 });

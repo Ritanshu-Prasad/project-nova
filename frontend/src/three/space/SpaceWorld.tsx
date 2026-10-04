@@ -15,6 +15,7 @@ import {
   type InstancedMesh,
 } from 'three';
 import { rt } from '../../core/runtime';
+import { useDeck } from '../../core/journey';
 import { useNova } from '../../core/store';
 import { NOISE_GLSL } from '../shaders/noise';
 import { ASTEROIDS, HERO_DIR, MOONS, PLANET, RINGS, SUN_COLOR, SUN_DIR, SUN_POSITION } from './layout';
@@ -78,10 +79,9 @@ varying vec3 vPosW;
 void main() {
   vec3 n = normalize(vNormalW);
   vec3 v = normalize(cameraPosition - vPosW);
-  float f = pow(max(0.0, 1.0 + dot(n, v) * 1.05), 0.0) ;
   float rim = pow(clamp(1.0 - abs(dot(n, v)), 0.0, 1.0), 5.0);
   float lit = smoothstep(-0.4, 0.5, dot(n, uSun));
-  gl_FragColor = vec4(vec3(0.3, 0.6, 1.0) * rim * lit * (0.8 + 0.6 * uArrive) * f, 1.0);
+  gl_FragColor = vec4(vec3(0.3, 0.6, 1.0) * rim * lit * (0.8 + 0.6 * uArrive), 1.0);
 }`;
 
 const RING_VERT = /* glsl */ `
@@ -130,6 +130,8 @@ const dummy = new Object3D();
 /** The new world — planet, rings, sun, moons and an asteroid scatter — composed around the parked ship. */
 export default function SpaceWorld() {
   const world = useNova((s) => s.world);
+  // Sunlight would flood the interior once the pilot is inside the ship.
+  const indoors = useDeck((s) => s.deck === 'lounge');
   const planet = useRef<Group>(null);
   const rocks = useRef<InstancedMesh>(null);
 
@@ -194,8 +196,8 @@ export default function SpaceWorld() {
 
   return (
     <group visible={world === 'newworld'} userData={{ world: 'newworld' }}>
-      <directionalLight color={SUN_COLOR} intensity={2.6} position={[SUN_DIR[0] * 10, SUN_DIR[1] * 10, SUN_DIR[2] * 10]} />
-      <hemisphereLight args={['#6d5aa8', '#0b2530', 0.35]} />
+      <directionalLight color={SUN_COLOR} intensity={indoors ? 0 : 2.6} position={[SUN_DIR[0] * 10, SUN_DIR[1] * 10, SUN_DIR[2] * 10]} />
+      <hemisphereLight args={['#6d5aa8', '#0b2530', indoors ? 0 : 0.35]} />
 
       <group position={PLANET.position as [number, number, number]} quaternion={axisQuat}>
         <group ref={planet}>

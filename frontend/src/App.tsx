@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect } from 'react';
 import * as director from './core/director';
 import { useGlobalInput } from './core/input';
+import * as journey from './core/journey';
+import { useDeck } from './core/journey';
 import { rt } from './core/runtime';
 import { PHASES, useNova, type Phase } from './core/store';
 import Fallback from './three/Fallback';
@@ -16,6 +18,8 @@ import SkipIntro from './ui/intro/SkipIntro';
 import LandingHero from './ui/landing/LandingHero';
 import LoginPopup from './ui/landing/LoginPopup';
 import PillarPanel from './ui/landing/PillarPanel';
+import UserSetupPopup from './ui/landing/UserSetupPopup';
+import CurriculumSetup from './ui/app/CurriculumSetup';
 
 /** The WebGL scene loads in its own chunk so the gate paints instantly. */
 const Experience = lazy(() => import('./three/Experience'));
@@ -26,8 +30,20 @@ const Experience = lazy(() => import('./three/Experience'));
  * Every overlay decides its own visibility from the store phase.
  */
 export default function App() {
+  const isLoggedIn = useNova((s) => s.isLoggedIn);
+  const deck = useDeck((s) => s.deck);
   useGlobalInput();
-  useEffect(() => director.startDirector(), []);
+
+  useEffect(() => {
+    const stop = director.startDirector();
+    // Returning pilot: skip the cinematic — straight to the cockpit with the course forge open.
+    if (useNova.getState().isLoggedIn) {
+      director.debugJump('landed');
+      useNova.getState().setCurriculumOpen(true);
+    }
+    return stop;
+  }, []);
+  
   useDevHooks();
   useAutoWake();
   const webglFailed = useNova((s) => s.webglFailed);
@@ -43,10 +59,19 @@ export default function App() {
           </Suspense>
         </ErrorBoundary>
       )}
-      <LandingHero />
-      <Hud />
-      <PillarPanel />
-      <LoginPopup />
+      {deck === 'cockpit' && <Hud />}
+
+      {/* Landing UI elements should NOT render once the user is logged in and in the app */}
+      {!isLoggedIn && (
+        <>
+          <LandingHero />
+          <PillarPanel />
+          <LoginPopup />
+        </>
+      )}
+
+      <UserSetupPopup />
+      <CurriculumSetup />
       <IntroUI />
       <TopBar />
       <Eyelids />
@@ -77,7 +102,7 @@ function useAutoWake() {
 function useDevHooks() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director };
+    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey };
     const jump = new URLSearchParams(location.search).get('jump') as Phase | null;
     if (jump && PHASES.includes(jump)) director.debugJump(jump);
   }, []);

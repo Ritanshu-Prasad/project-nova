@@ -6,6 +6,7 @@ import { Z } from '../core/layers';
 import { useNova } from '../core/store';
 import LaunchBay from './bay/LaunchBay';
 import Cockpit from './cockpit/Cockpit';
+import Lounge from './lounge/Lounge';
 import PostFX from './PostFX';
 import ShipRig from './ShipRig';
 import Sky from './space/Sky';
@@ -23,6 +24,7 @@ function Boot() {
         hidden.push(o);
       }
     });
+    if (import.meta.env.DEV) (window as unknown as { __three: unknown }).__three = { gl, scene, camera };
     gl.compile(scene, camera);
     for (const o of hidden) o.visible = false;
     let frames = 0;
@@ -45,13 +47,13 @@ function Boot() {
 /** The WebGL scene: sky, both worlds, the ship (cockpit + warp) and post-processing. */
 export default function Experience() {
   const [dpr, setDpr] = useState(1.5);
-  const [lite, setLite] = useState(false);
   return (
     <div className="fixed inset-0" style={{ zIndex: Z.canvas, touchAction: 'none' }}>
-      <Canvas dpr={dpr} gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}>
+      <Canvas dpr={dpr} gl={{ antialias: false, powerPreference: 'high-performance', stencil: false, preserveDrawingBuffer: import.meta.env.DEV }}>
         <PerformanceMonitor
-          onDecline={() => (dpr > 1 ? setDpr(1) : setLite(true))}
-          onIncline={() => (lite ? setLite(false) : setDpr(1.5))}
+          // Only resolution adapts: re-creating the effect composer mid-session can blank the canvas.
+          onDecline={() => setDpr(1)}
+          onIncline={() => setDpr(1.5)}
         />
         <color attach="background" args={['#02040a']} />
         <Environment resolution={128} frames={1}>
@@ -64,9 +66,10 @@ export default function Experience() {
         <SpaceWorld />
         <ShipRig>
           <Cockpit />
+          <Lounge />
           <Warp />
         </ShipRig>
-        <PostFX lite={lite} />
+        <PostFX />
         <Boot />
       </Canvas>
     </div>
