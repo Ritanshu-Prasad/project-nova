@@ -2,6 +2,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, BookOpen, Check, ChevronRight, Cpu, Loader2, Play, Target, Zap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { audio } from '../../core/audio';
+import { findCourse, useCourse } from '../../core/course';
+import { useHub } from '../../core/hub';
 import { goToLounge, holoBurst, useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
 import { useNova } from '../../core/store';
@@ -34,6 +36,7 @@ export default function CurriculumSetup() {
 
   const forge = (final: string) => {
     useNova.getState().setActiveObjective(final);
+    useCourse.getState().start(final);
     setStage('forge');
     setStep(0);
     audio.play('hudBoot');
@@ -51,9 +54,10 @@ export default function CurriculumSetup() {
     later(() => {
       useNova.getState().setCurriculumOpen(false);
       const project = () => {
-        useNova.getState().setFeedOpen(true);
+        useHub.getState().go('hub');
         holoBurst(1);
-        useNova.getState().notify({ kind: 'system', title: 'NETWORK SYNC', lines: ['RAG pipeline active.', 'Projecting your curriculum on the holo-table.'] });
+        const c = findCourse(useCourse.getState().courseId);
+        useNova.getState().notify({ kind: 'system', title: 'Course ready', lines: [`${c.title} — ${c.subtopics.length} planets to explore.`, 'Pick a station below to begin.'] });
       };
       goToLounge(project);
       later(() => {
@@ -65,7 +69,6 @@ export default function CurriculumSetup() {
 
   const backToFeed = () => {
     useNova.getState().setCurriculumOpen(false);
-    useNova.getState().setFeedOpen(true);
   };
 
   return (
@@ -94,7 +97,7 @@ export default function CurriculumSetup() {
             <motion.section
               role="dialog"
               aria-labelledby="forge-title"
-              className="holo scanlines pointer-events-auto relative overflow-hidden rounded-md p-6 sm:p-9"
+              className="holo pointer-events-auto relative overflow-hidden p-6 sm:p-9"
               style={{ borderColor: `${themeColor}66`, boxShadow: `0 0 70px -10px ${themeColor}55, inset 0 0 40px ${themeColor}14` }}
               initial={{ scaleY: 0.01, opacity: 0 }}
               animate={{ scaleY: 1, opacity: 1 }}
@@ -112,14 +115,12 @@ export default function CurriculumSetup() {
               <AnimatePresence mode="wait">
                 {stage === 'edit' ? (
                   <motion.div key="edit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ delay: 0.55 }}>
-                    <div className="hud-label" style={{ color: themeColor }}>
-                      [ System ] · Course forge
-                    </div>
+                    <div className="chip-label">New course</div>
                     <h2 id="forge-title" className="glow-cyan mt-3 font-display text-2xl font-bold tracking-wide text-white sm:text-3xl">
-                      Define your learning objective
+                      What do you want to learn?
                     </h2>
                     <p className="mt-2 max-w-lg text-sm leading-relaxed text-cyan-50/70">
-                      Describe what you want to master. The System builds a course at your level and projects it in the crew lounge.
+                      Describe your goal in your own words. NOVA builds a course of bite-sized planets at your level.
                     </p>
 
                     <div className="group relative mt-6">
@@ -163,7 +164,7 @@ export default function CurriculumSetup() {
                       )}
                       {inLounge && (
                         <HudButton size="lg" className="flex-1" icon={<ArrowLeft size={15} />} onClick={backToFeed}>
-                          Back to feed
+                          Back to lounge
                         </HudButton>
                       )}
                     </div>
@@ -211,7 +212,7 @@ export default function CurriculumSetup() {
                     <AnimatePresence>
                       {stage === 'ready' && (
                         <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-6 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-emerald-300">
-                          <ChevronRight size={14} /> {inLounge ? 'Projecting to the holo-table…' : 'Proceeding to the Cosmic Lounge…'}
+                          <ChevronRight size={14} /> {inLounge ? 'Adding it to your lounge…' : 'Heading to the Cosmic Lounge…'}
                         </motion.p>
                       )}
                     </AnimatePresence>

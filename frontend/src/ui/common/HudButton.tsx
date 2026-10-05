@@ -13,15 +13,15 @@ export type HudButtonProps = ComponentPropsWithRef<'button'> & {
 };
 
 const BASE =
-  'relative inline-flex items-center justify-center gap-2.5 rounded-[2px] font-display font-semibold uppercase ' +
-  'tracking-[0.18em] select-none whitespace-nowrap cursor-pointer transition-[color,background-color,box-shadow,transform] duration-200 ' +
+  'relative inline-flex items-center justify-center gap-2.5 rounded-xl font-display font-semibold uppercase ' +
+  'tracking-[0.12em] select-none whitespace-nowrap cursor-pointer transition-[color,background-color,box-shadow,transform] duration-200 ' +
   'active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-cyan-300 text-slate-950 hover:bg-white hover:shadow-[0_0_44px_rgba(103,232,249,0.6)]',
+  primary: 'bg-[var(--user)] text-[var(--user-ink)] hover:brightness-110 hover:shadow-[0_0_44px_rgb(var(--user-rgb)/0.6)]',
   ghost:
-    'hud-corners bg-cyan-400/[0.06] text-cyan-50 ring-1 ring-inset ring-cyan-300/25 backdrop-blur-md ' +
-    'hover:bg-cyan-400/15 hover:ring-cyan-200/60 hover:text-white hover:shadow-[0_0_30px_rgba(34,211,238,0.25)]',
+    'bg-white/[0.06] text-white/90 ring-1 ring-inset ring-[rgb(var(--user-rgb)/0.3)] backdrop-blur-md ' +
+    'hover:bg-white/[0.1] hover:ring-[var(--user)] hover:text-white hover:shadow-[0_0_30px_rgb(var(--user-rgb)/0.25)]',
   system:
     'hud-corners bg-blue-500/10 text-blue-50 ring-1 ring-inset ring-blue-400/50 backdrop-blur-md [--hc:rgb(147_197_253/0.9)] ' +
     'hover:bg-blue-500/25 hover:shadow-[0_0_28px_rgba(96,165,250,0.45)]',

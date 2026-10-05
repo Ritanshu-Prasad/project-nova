@@ -20,6 +20,10 @@ import LoginPopup from './ui/landing/LoginPopup';
 import PillarPanel from './ui/landing/PillarPanel';
 import UserSetupPopup from './ui/landing/UserSetupPopup';
 import CurriculumSetup from './ui/app/CurriculumSetup';
+import Hub from './ui/lounge/Hub';
+import { applyTheme } from './core/theme';
+import { useCourse } from './core/course';
+import { useHub, useProfile } from './core/hub';
 
 /** The WebGL scene loads in its own chunk so the gate paints instantly. */
 const Experience = lazy(() => import('./three/Experience'));
@@ -46,6 +50,7 @@ export default function App() {
   
   useDevHooks();
   useAutoWake();
+  useTheme();
   const webglFailed = useNova((s) => s.webglFailed);
 
   return (
@@ -70,6 +75,7 @@ export default function App() {
         </>
       )}
 
+      <Hub />
       <UserSetupPopup />
       <CurriculumSetup />
       <IntroUI />
@@ -81,6 +87,16 @@ export default function App() {
       <Cursor />
     </div>
   );
+}
+
+/** The pilot's colour drives the accent everywhere (CSS variables, see core/theme.ts). */
+function useTheme() {
+  useEffect(() => {
+    applyTheme(useNova.getState().themeColor);
+    return useNova.subscribe((s, prev) => {
+      if (s.themeColor !== prev.themeColor) applyTheme(s.themeColor);
+    });
+  }, []);
 }
 
 /** No start button: the pilot wakes as soon as the scene is ready (or after a short safety timeout). */
@@ -102,7 +118,7 @@ function useAutoWake() {
 function useDevHooks() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey };
+    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile };
     const jump = new URLSearchParams(location.search).get('jump') as Phase | null;
     if (jump && PHASES.includes(jump)) director.debugJump(jump);
   }, []);

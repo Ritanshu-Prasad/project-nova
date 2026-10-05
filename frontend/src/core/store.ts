@@ -135,7 +135,6 @@ export const useNova = create<NovaState>()((set, get) => ({
   cleared: false,
   soundOn: readFlag(LS_SOUND, true),
   reducedMotion: prefersReducedMotion(),
-  introSeen: readFlag(LS_INTRO, false),
   sceneReady: false,
   webglFailed: false,
   activePillar: null,
@@ -146,7 +145,11 @@ export const useNova = create<NovaState>()((set, get) => ({
   curriculumOpen: false,
   feedOpen: false,
   isTransitioning: false,
-  isLoggedIn: readFlag('nova.isLoggedIn', false),
+  
+  // DEV MODE OVERRIDE: Always start from the beginning on refresh
+  isLoggedIn: false, // readFlag('nova.isLoggedIn', false),
+  introSeen: false, // readFlag(LS_INTRO, false),
+  
   themeColor: localStorage.getItem('nova.themeColor') || '#06b6d4',
   activeObjective: localStorage.getItem('nova.activeObjective') || null,
 

@@ -18,6 +18,7 @@ import { pulse, setHolding, toggleSystem } from '../../core/director';
 import { damp } from '../../core/math';
 import { rt } from '../../core/runtime';
 import { SYSTEM_ORDER, useNova, type SystemKey } from '../../core/store';
+import { accentHex } from '../../core/theme';
 import { ARCH_LEFT } from './layout';
 import { createScreen, drawScreen, loadScreenFonts, type Screen } from './screens';
 
@@ -51,6 +52,8 @@ const trim = new MeshStandardMaterial({ color: '#000000', emissive: new Color('#
 
 const RED = new Color('#ff2a2a');
 const CYAN = new Color('#22d3ee');
+/** Trim colour once powered: cyan, or the pilot's own colour once they have a profile. */
+let trimHex = '#22d3ee';
 
 export default function Cockpit() {
   useEffect(() => {
@@ -59,6 +62,12 @@ export default function Cockpit() {
 
   useFrame(() => {
     // Emergency red → powered cyan on every light strip.
+    const nova = useNova.getState();
+    const want = nova.isLoggedIn ? accentHex(nova.themeColor) : '#22d3ee';
+    if (want !== trimHex) {
+      trimHex = want;
+      CYAN.set(want);
+    }
     trim.emissive.copy(RED).lerp(CYAN, Math.min(1, rt.power));
     trim.emissiveIntensity = 0.6 + 2.4 * Math.max(rt.power, rt.emergency * (0.55 + 0.45 * Math.sin(rt.time * 2.4)));
   });

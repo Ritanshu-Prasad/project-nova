@@ -3,7 +3,9 @@ import { User, X, Check, Upload, PenTool } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { audio } from '../../core/audio';
 import { Z } from '../../core/layers';
+import { useProfile } from '../../core/hub';
 import { useNova } from '../../core/store';
+import { applyTheme } from '../../core/theme';
 import { HudButton } from '../common/HudButton';
 
 export default function UserSetupPopup() {
@@ -18,7 +20,10 @@ export default function UserSetupPopup() {
     audio.play('chime');
   }, [open]);
 
-  const close = () => useNova.getState().setUserSetupOpen(false);
+  const close = () => {
+    applyTheme(useNova.getState().themeColor); // undo the live preview
+    useNova.getState().setUserSetupOpen(false);
+  };
   
   const completeSetup = () => {
     if (username.trim().length < 3) {
@@ -31,6 +36,7 @@ export default function UserSetupPopup() {
     // Close this window and mark as logged in
     close();
     useNova.getState().setThemeColor(themeColor);
+    useProfile.getState().setCallsign(username.trim());
     useNova.getState().setLoggedIn(true);
     
     setTimeout(() => {
@@ -54,7 +60,7 @@ export default function UserSetupPopup() {
         >
           <motion.div
             role="dialog"
-            className="sys-window scanlines relative w-full max-w-[480px] p-7 sm:p-8"
+            className="sys-window relative w-full max-w-[480px] p-7 sm:p-8"
             initial={{ scaleY: 0.02, scaleX: 0.4, opacity: 0 }}
             animate={{ scaleY: 1, scaleX: 1, opacity: 1 }}
             exit={{ scaleY: 0.02, opacity: 0 }}
@@ -64,12 +70,12 @@ export default function UserSetupPopup() {
               <X size={16} />
             </button>
             
-            <div className="hud-label !text-emerald-400">[ System ] · Identity Calibration</div>
+            <div className="chip-label">Step 2 of 2 · Your profile</div>
             <h2 className="glow-sys mt-3 font-display text-2xl font-bold tracking-wide text-white sm:text-3xl">
-              Construct Profile
+              Create your pilot profile
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-blue-100/75">
-              The grid has gone dark. Establish your visual identifier, UI theme, and callsign to proceed.
+              Pick an avatar, a colour that feels like you — it shows up all over the ship — and a callsign.
             </p>
 
             <div className="mt-8 flex gap-8">
@@ -118,13 +124,16 @@ export default function UserSetupPopup() {
 
               {/* Theme Color Picker */}
               <div className="pl-6 border-l border-blue-500/20">
-                <div className="hud-label mb-3">UI Theme Color</div>
+                <div className="hud-label mb-3">Your colour</div>
                 <div className="relative flex flex-col items-center justify-center">
                   <div className="relative w-16 h-16">
                     <input
                       type="color"
                       value={themeColor}
-                      onChange={(e) => setThemeColor(e.target.value)}
+                      onChange={(e) => {
+                        setThemeColor(e.target.value);
+                        applyTheme(e.target.value); // live preview
+                      }}
                       className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                     />
                     <div 

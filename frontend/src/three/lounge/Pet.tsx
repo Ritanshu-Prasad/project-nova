@@ -2,6 +2,7 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { MeshStandardMaterial, type Group, type Mesh } from 'three';
 import { audio } from '../../core/audio';
+import { petSignal } from '../../core/hub';
 import { holoBurst } from '../../core/journey';
 import { damp } from '../../core/math';
 import { rt } from '../../core/runtime';
@@ -23,7 +24,7 @@ export default function Pet() {
   const ears = useRef<(Mesh | null)[]>([]);
   const eyes = useRef<(Group | null)[]>([]);
   const antenna = useRef<MeshStandardMaterial>(null);
-  const st = useRef({ spin: 0, hover: false, blinkAt: 2, pokes: 0 });
+  const st = useRef({ spin: 0, hover: false, blinkAt: 2, pokes: 0, cheers: petSignal.cheers });
 
   const m = useMemo(
     () => ({
@@ -44,6 +45,11 @@ export default function Pet() {
     const dt = Math.min(dtRaw, 0.05);
     const t = rt.time;
     const s = st.current;
+    // Celebrate correct answers / cleared planets.
+    if (petSignal.cheers !== s.cheers) {
+      s.cheers = petSignal.cheers;
+      s.spin = 1;
+    }
     if (root.current) {
       root.current.position.set(
         PET_HOME[0] + Math.sin(t * 0.31) * 0.28,

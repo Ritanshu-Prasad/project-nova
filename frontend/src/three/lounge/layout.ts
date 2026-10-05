@@ -124,3 +124,30 @@ export function softDot(): CanvasTexture {
   g.fillRect(0, 0, 128, 128);
   return new CanvasTexture(c);
 }
+
+export interface Pose {
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  pitch: number;
+}
+
+function poseFrom(eye: [number, number, number], look: [number, number, number]): Pose {
+  const dx = look[0] - eye[0];
+  const dy = look[1] - eye[1];
+  const dz = look[2] - eye[2];
+  return { x: eye[0], y: eye[1], z: eye[2], yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)) };
+}
+
+/**
+ * Where the camera walks for each lounge station (ship-local). Side panels sit on the right of the screen,
+ * so each station frames its focal object on the left; the routes stay clear of the hologram.
+ */
+export const STATIONS = {
+  hub: poseFrom([0, STAND_EYE, ARRIVE_Z], [0, STAND_EYE - Math.tan(0.06) * 5, ARRIVE_Z + 5]),
+  lesson: poseFrom([0.4, 0.3, 7.7], [-1.0, 0.3, 10.6]),
+  quiz: poseFrom([2.2, 0.05, 13.6], [-1.4, -0.5, 16.0]),
+  journey: poseFrom([1.6, 0.35, 11.0], [4.4, 0.6, 14.4]),
+  profile: poseFrom([-1.0, 0.35, 9.4], [-3.2, 0.4, 11.0]),
+} satisfies Record<string, Pose>;

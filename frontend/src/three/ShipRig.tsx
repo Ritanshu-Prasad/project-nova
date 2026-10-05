@@ -5,9 +5,10 @@ import type { Group, PerspectiveCamera as Cam } from 'three';
 import { clamp, damp, lerp, wobble } from '../core/math';
 import { rt } from '../core/runtime';
 import { ARRIVAL, CAMERA } from '../core/scene';
+import { useHub } from '../core/hub';
 import { useDeck } from '../core/journey';
 import { useNova, type Phase } from '../core/store';
-import { ARRIVE_Z, STAND_EYE } from './lounge/layout';
+import { ARRIVE_Z, STAND_EYE, STATIONS } from './lounge/layout';
 
 /** Head-look limits per phase: [yaw, pitch up, pitch down] in radians. */
 const LOOK: Record<Phase, readonly [number, number, number]> = {
@@ -27,7 +28,8 @@ export default function ShipRig({ children }: { children?: ReactNode }) {
   const ship = useRef<Group>(null);
   const head = useRef<Group>(null);
   const cam = useRef<Cam>(null);
-  const s = useRef({ yaw: 0, pitch: 0, lean: 0 });
+  const s = useRef({ yaw: 0, pitch: 0, lean: 0, zoom: 0 });
+  const pose = useRef({ x: 0, y: 0, z: 0, yaw: 0, pitch: 0 });
 
   useFrame((state, dtRaw) => {
     const dt = Math.min(dtRaw, 0.1);
@@ -49,7 +51,10 @@ export default function ShipRig({ children }: { children?: ReactNode }) {
 
     // Out of the seat: no look while walking, only a gentle sway in the lounge (keeps the holo panels clickable).
     const deck = useDeck.getState().deck;
-    const [yawMax, up, down] = deck === 'transit' ? [0, 0, 0] : deck === 'lounge' ? [0.1, 0.05, 0.06] : LOOK[st.phase];
+    // At a lounge station the view is frozen (no parallax) so the panel and the 3D focus stay put.
+    const station = useHub.getState().station;
+    const [yawMax, up, down] =
+      deck === 'transit' ? [0, 0, 0] : deck === 'lounge' ? (station === 'hub' ? [0.1, 0.05, 0.06] : [0, 0, 0]) : LOOK[st.phase];
     const k = rm ? 0.5 : 1;
     v.yaw = damp(v.yaw, -rt.lookX * yawMax * k, 4, dt);
     v.pitch = damp(v.pitch, -rt.lookY * (rt.lookY < 0 ? up : down) * k, 4, dt);
@@ -66,10 +71,28 @@ export default function ShipRig({ children }: { children?: ReactNode }) {
     const roll = rt.slump * 0.12 + wobble(t * 0.35, 5) * 0.07 * dizzy + wobble(hf * 0.8, 3) * 0.015 * sh;
     // Stand up, step back, turn around and walk through the bulkhead door into the lounge.
     const walking = rt.walk > 0 && rt.walk < 1 ? Math.abs(Math.sin(rt.walk * Math.PI * 7)) * 0.03 : 0;
-    head.current.position.set(sx, sy + STAND_EYE * rt.stand + walking, v.lean + 0.15 * rt.stand * (1 - rt.walk) + ARRIVE_Z * rt.walk);
-    head.current.rotation.set(pitch - 0.06 * rt.walk, yaw + Math.PI * rt.turn, roll, 'YXZ');
+    const p = pose.current;
+    if (deck === 'lounge' && rt.walk >= 1) {
+      // Walk over to the chosen station.
+      const target = STATIONS[station];
+      const k = 1 - Math.exp(-2.2 * dt);
+      p.x += (target.x - p.x) * k;
+      p.y += (target.y - p.y) * k;
+      p.z += (target.z - p.z) * k;
+      p.yaw += Math.atan2(Math.sin(target.yaw - p.yaw), Math.cos(target.yaw - p.yaw)) * k;
+      p.pitch += (target.pitch - p.pitch) * k;
+    } else {
+      p.x = 0;
+      p.y = STAND_EYE * rt.stand + walking;
+      p.z = 0.15 * rt.stand * (1 - rt.walk) + ARRIVE_Z * rt.walk;
+      p.yaw = Math.PI * rt.turn;
+      p.pitch = -0.06 * rt.walk;
+    }
+    v.zoom = damp(v.zoom, deck === 'lounge' && station !== 'hub' ? -6 : 0, 2.5, dt);
+    head.current.position.set(sx + p.x, sy + p.y, v.lean + p.z);
+    head.current.rotation.set(pitch + p.pitch, yaw + p.yaw, roll, 'YXZ');
 
-    const fov = baseFov(state.size.width / Math.max(1, state.size.height)) + (rm ? 0 : rt.fovKick);
+    const fov = baseFov(state.size.width / Math.max(1, state.size.height)) + (rm ? 0 : rt.fovKick) + v.zoom;
     if (Math.abs(cam.current.fov - fov) > 0.01) {
       cam.current.fov = fov;
       cam.current.updateProjectionMatrix();

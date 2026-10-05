@@ -25,6 +25,13 @@
 }
 
 @layer base {
+  /* The pilot's colour (see core/theme.ts); cyan until a profile sets it. */
+  :root {
+    --user: #22d3ee;
+    --user-rgb: 34 211 238;
+    --user-ink: #071018;
+  }
+
   html,
   body,
   #root {
@@ -94,8 +101,9 @@
   /* Holographic glass panel projected on the canopy. */
   .holo {
     position: relative;
-    background: linear-gradient(180deg, rgb(10 30 48 / 0.72), rgb(4 12 24 / 0.8));
-    border: 1px solid rgb(103 232 249 / 0.22);
+    border-radius: 18px;
+    background: linear-gradient(160deg, rgb(22 28 46 / 0.9), rgb(10 13 24 / 0.92));
+    border: 1px solid rgb(var(--user-rgb) / 0.3);
     box-shadow:
       0 0 0 1px rgb(2 6 23 / 0.6),
       0 20px 60px -20px rgb(0 0 0 / 0.8),
@@ -105,18 +113,32 @@
     -webkit-backdrop-filter: blur(14px) saturate(1.2);
   }
 
-  /* The "System" notification window (bright blue frame, dark navy glass). */
-  .sys-window {
+  /* Friendly glass card used by notices, pop-ups and the lounge UI, tinted with the pilot's colour. */
+  .sys-window,
+  .card {
     position: relative;
-    color: #eaf2ff;
-    background: linear-gradient(180deg, rgb(10 22 52 / 0.88), rgb(5 12 32 / 0.92));
-    border: 1px solid rgb(96 165 250 / 0.75);
+    color: #eef4ff;
+    border-radius: 18px;
+    background: linear-gradient(160deg, rgb(24 30 50 / 0.94), rgb(11 14 26 / 0.94));
+    border: 1px solid rgb(var(--user-rgb) / 0.32);
     box-shadow:
-      0 0 0 1px rgb(30 64 175 / 0.35),
-      0 0 28px rgb(59 130 246 / 0.45),
-      inset 0 0 24px rgb(59 130 246 / 0.18);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+      0 24px 60px -24px rgb(0 0 0 / 0.75),
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 0 44px -20px rgb(var(--user-rgb) / 0.65);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  }
+
+  /* Small friendly section label in the pilot's colour. */
+  .chip-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(var(--user-rgb) / 0.95);
   }
 
   /* Corner ticks drawn with background images, so bg-* colour utilities still apply.

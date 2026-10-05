@@ -13,13 +13,14 @@ import {
   type Mesh,
   type PointLight,
 } from 'three';
+import { useHub } from '../../core/hub';
 import { useDeck } from '../../core/journey';
+import { accentHex } from '../../core/theme';
 import { damp } from '../../core/math';
 import { rt } from '../../core/runtime';
 import { useNova } from '../../core/store';
 import { NOISE_GLSL } from '../shaders/noise';
 import Door from './Door';
-import HoloFeed from './HoloFeed';
 import { FLOOR_Y, HOLO_CENTER, LOUNGE, TABLE, plateTexture, signTexture, softDot } from './layout';
 import Pet from './Pet';
 
@@ -49,7 +50,6 @@ export default function Lounge() {
       <Drifters />
       <Pet />
       <LoungeLights />
-      {deck === 'lounge' && <HoloFeed />}
     </group>
   );
 }
@@ -78,6 +78,11 @@ function Room() {
     [res],
   );
   useEffect(() => () => Object.values(mats).forEach((m) => m.dispose()), [mats]);
+  // The pilot's colour lights the floor ring and neon tubes.
+  const theme = accentHex(useNova((s) => s.themeColor));
+  useEffect(() => {
+    mats.cyan.emissive.set(theme);
+  }, [mats, theme]);
 
   return (
     <group>
@@ -195,7 +200,7 @@ function Room() {
         {[-1.05, 0, 1.05].map((x, i) => (
           <mesh key={x} position={[x, 1.05, -0.05]} rotation={[-0.35, Math.PI, 0]}>
             <planeGeometry args={[0.85, 0.42]} />
-            <meshStandardMaterial color="#000" emissive={i === 1 ? '#f59e0b' : '#22d3ee'} emissiveIntensity={0.9} />
+            <meshStandardMaterial color="#000" emissive={i === 1 ? '#f59e0b' : theme} emissiveIntensity={0.45} />
           </mesh>
         ))}
       </group>
@@ -214,6 +219,7 @@ function Room() {
 }
 
 function HoloTable() {
+  const theme = accentHex(useNova((s) => s.themeColor));
   const brass = useMemo(() => new MeshStandardMaterial({ color: '#b8894f', metalness: 0.9, roughness: 0.28 }), []);
   useEffect(() => () => brass.dispose(), [brass]);
   // Railing posts on the octagon vertices, leaving a gap on the camera side.
@@ -228,7 +234,7 @@ function HoloTable() {
       </mesh>
       <mesh position={[CX, FLOOR_Y + 0.45, CZ]} rotation={[0, Math.PI / 8, 0]}>
         <cylinderGeometry args={[1.39, 1.39, 0.035, 8, 1, true]} />
-        <meshStandardMaterial color="#000" emissive="#22d3ee" emissiveIntensity={2.4} toneMapped={false} side={DoubleSide} />
+        <meshStandardMaterial color="#000" emissive={theme} emissiveIntensity={2.4} toneMapped={false} side={DoubleSide} />
       </mesh>
       <group position={[CX, TABLE.top + 0.004, CZ]} rotation={[-Math.PI / 2, 0, 0]}>
         <mesh>
@@ -242,7 +248,7 @@ function HoloTable() {
         {[0.78, 0.38].map((r) => (
           <mesh key={r} position={[0, 0, 0.002]}>
             <ringGeometry args={[r, r + 0.035, 48]} />
-            <meshStandardMaterial color="#000" emissive="#67e8f9" emissiveIntensity={2.6} toneMapped={false} />
+            <meshStandardMaterial color="#000" emissive={theme} emissiveIntensity={2.6} toneMapped={false} />
           </mesh>
         ))}
       </group>
@@ -309,7 +315,9 @@ void main() {
 }`;
 
 function Hologram() {
-  const feedOpen = useNova((s) => s.feedOpen);
+  // Walking up to the holo-table makes the globe swell a little.
+  const focus = useHub((s) => s.station === 'lesson');
+  const theme = accentHex(useNova((s) => s.themeColor));
   const group = useRef<Group>(null);
   const globe = useRef<Group>(null);
   const rings = useRef<Group>(null);
@@ -332,6 +340,9 @@ function Hologram() {
   );
   const dot = useMemo(() => softDot(), []);
   useEffect(() => () => (shell.dispose(), dot.dispose()), [shell, dot]);
+  useEffect(() => {
+    shell.uniforms.uColor.value.set(theme).multiplyScalar(1.6);
+  }, [shell, theme]);
 
   const beamH = HOLO_CENTER[1] - TABLE.top;
 
@@ -353,12 +364,12 @@ function Hologram() {
     if (nodes.current) nodes.current.rotation.y = t.current * 0.5;
     if (group.current) {
       // When the feed opens, the globe floats up and shrinks to make room for the panels.
-      const y = feedOpen ? HOLO_CENTER[1] + 0.95 : HOLO_CENTER[1];
+      const y = HOLO_CENTER[1];
       group.current.position.y = damp(group.current.position.y, y + Math.sin(rt.time * 1.1) * 0.03, 2.5, dt);
-      const sc = damp(group.current.scale.x, feedOpen ? 0.5 : 1, 2.5, dt);
+      const sc = damp(group.current.scale.x, focus ? 1.12 : 1, 2.5, dt);
       group.current.scale.setScalar(sc);
     }
-    if (beam.current) (beam.current.material as MeshStandardMaterial).opacity = (feedOpen ? 0.05 : 0.09) + boost * 0.12;
+    if (beam.current) (beam.current.material as MeshStandardMaterial).opacity = (focus ? 0.13 : 0.09) + boost * 0.12;
   });
 
   return (

@@ -53,7 +53,7 @@ export default function LoginPopup() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="login-title"
-            className="sys-window scanlines relative w-full max-w-[420px] p-7 sm:p-8"
+            className="sys-window relative w-full max-w-[420px] p-7 sm:p-8"
             initial={{ scaleY: 0.02, scaleX: 0.4, opacity: 0 }}
             animate={{ scaleY: 1, scaleX: 1, opacity: 1 }}
             exit={{ scaleY: 0.02, opacity: 0 }}
@@ -63,12 +63,12 @@ export default function LoginPopup() {
             <button type="button" onClick={close} aria-label="Close" className="absolute right-3 top-3 cursor-pointer p-1 text-blue-200/60 hover:text-white">
               <X size={16} />
             </button>
-            <div className="hud-label !text-blue-300">[ System ] · Player detected</div>
+            <div className="chip-label">Step 1 of 2 · Sign in</div>
             <h2 id="login-title" className="glow-sys mt-3 font-display text-2xl font-bold tracking-wide text-white sm:text-3xl">
-              Initialize identity
+              Welcome aboard, pilot
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-blue-100/75">
-              Link your account to save your rank. Your placement scan begins the moment you sign in.
+              Sign in to save your rank, streaks and progress. Your first course starts right after.
             </p>
             <div className="mt-5 grid grid-cols-3 gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-blue-100/70">
               {['LV 1', 'Unranked', 'MMR —'].map((s) => (
