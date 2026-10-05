@@ -61,6 +61,8 @@ interface NovaState {
   curriculumOpen: boolean;
   /** The main "PvE" learning board / feed view. */
   feedOpen: boolean;
+  /** NOVA Comms (AI study helper) window. */
+  commsOpen: boolean;
   /** True when the blast doors are animating a transition between screens. */
   isTransitioning: boolean;
   /** Persisted: whether the user has completed setup and is logged in. */
@@ -89,6 +91,7 @@ interface NovaState {
   setUserSetupOpen: (open: boolean) => void;
   setCurriculumOpen: (open: boolean) => void;
   setFeedOpen: (open: boolean) => void;
+  setCommsOpen: (open: boolean) => void;
   setIsTransitioning: (transitioning: boolean) => void;
   notify: (notice: NoticeInput) => number;
   dismiss: (id: number) => void;
@@ -145,8 +148,13 @@ export const useNova = create<NovaState>()((set, get) => ({
   userSetupOpen: false,
   curriculumOpen: false,
   feedOpen: false,
+  commsOpen: false,
   isTransitioning: false,
-  isLoggedIn: readFlag('nova.isLoggedIn', false),
+  
+  // DEV MODE OVERRIDE: Always start from the beginning on refresh
+  isLoggedIn: false, // readFlag('nova.isLoggedIn', false),
+  introSeen: false, // readFlag(LS_INTRO, false),
+  
   themeColor: localStorage.getItem('nova.themeColor') || '#06b6d4',
   activeObjective: localStorage.getItem('nova.activeObjective') || null,
 
@@ -184,6 +192,7 @@ export const useNova = create<NovaState>()((set, get) => ({
   setUserSetupOpen: (userSetupOpen) => set({ userSetupOpen }),
   setCurriculumOpen: (curriculumOpen) => set({ curriculumOpen }),
   setFeedOpen: (feedOpen) => set({ feedOpen }),
+  setCommsOpen: (commsOpen) => set({ commsOpen }),
   setIsTransitioning: (isTransitioning) => set({ isTransitioning }),
   notify: ({ kind, title, lines = [], ttl }) => {
     const id = ++noticeId;

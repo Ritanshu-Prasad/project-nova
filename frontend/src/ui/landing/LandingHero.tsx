@@ -1,5 +1,5 @@
 import { motion, type Variants } from 'framer-motion';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Terminal } from 'lucide-react';
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { HERO } from '../../core/content';
 import { pulse, replayIntro } from '../../core/director';
@@ -198,20 +198,32 @@ function Hero() {
               at={STAGE.ctas}
               stage={stage}
               rm={rm}
-              className="mt-[clamp(16px,3vh,28px)] flex w-full max-w-[380px] flex-col items-stretch gap-2.5 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-4"
+              className="mt-[clamp(16px,3vh,28px)] flex w-full max-w-[460px] flex-col items-stretch gap-2.5 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-3"
             >
               <span className="relative flex">
                 <span aria-hidden="true" className="ld-cta-ring" />
                 <HudButton
                   variant="primary"
                   size="lg"
-                  icon={<GoogleBadge />}
-                  onClick={signIn}
-                  className="ld-cta pointer-events-auto w-full pl-2.5 max-sm:h-12 max-sm:text-[13px]"
+                  icon={<Terminal className="size-4 text-sky-950" />}
+                  onClick={() => {
+                    pulse();
+                    useNova.getState().setCommsOpen(true);
+                  }}
+                  className="ld-cta pointer-events-auto w-full px-5 max-sm:h-12 max-sm:text-[13px]"
                 >
-                  {HERO.ctaPrimary}
+                  START TALKING
                 </HudButton>
               </span>
+              <HudButton
+                variant="ghost"
+                size="lg"
+                icon={<GoogleBadge />}
+                onClick={signIn}
+                className="pointer-events-auto max-sm:h-12 max-sm:text-[13px]"
+              >
+                {HERO.ctaPrimary}
+              </HudButton>
               <HudButton
                 variant="ghost"
                 size="lg"
