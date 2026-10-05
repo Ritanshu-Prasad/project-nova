@@ -16,6 +16,7 @@ import SkipIntro from './ui/intro/SkipIntro';
 import LandingHero from './ui/landing/LandingHero';
 import LoginPopup from './ui/landing/LoginPopup';
 import PillarPanel from './ui/landing/PillarPanel';
+import CommsPanel from './ui/comms/CommsPanel';
 
 /** The WebGL scene loads in its own chunk so the gate paints instantly. */
 const Experience = lazy(() => import('./three/Experience'));
@@ -47,6 +48,7 @@ export default function App() {
       <Hud />
       <PillarPanel />
       <LoginPopup />
+      <CommsPanel />
       <IntroUI />
       <TopBar />
       <Eyelids />

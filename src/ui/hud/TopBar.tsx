@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { LogIn, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { LogIn, RotateCcw, Terminal, Volume2, VolumeX } from 'lucide-react';
 import { audio } from '../../core/audio';
 import { BRAND, HERO } from '../../core/content';
 import { replayIntro } from '../../core/director';
@@ -76,6 +76,15 @@ export default function TopBar() {
                 className="pointer-events-auto max-sm:w-9 max-sm:gap-0 max-sm:px-0"
               >
                 <span className="max-sm:sr-only">{HERO.ctaSecondary}</span>
+              </HudButton>
+              <HudButton
+                variant="primary"
+                size="sm"
+                onClick={() => useNova.getState().setCommsOpen(true)}
+                icon={<Terminal className="h-3.5 w-3.5 text-sky-950" strokeWidth={2} aria-hidden="true" />}
+                className="pointer-events-auto max-sm:gap-0 max-sm:px-3 text-sky-950 font-bold"
+              >
+                TALK TO NOVA
               </HudButton>
               <HudButton
                 variant="system"

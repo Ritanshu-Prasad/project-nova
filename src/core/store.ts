@@ -55,6 +55,8 @@ interface NovaState {
   notices: Notice[];
   /** The "Initialize identity" login window. */
   loginOpen: boolean;
+  /** NOVA Comms (AI study helper) window. */
+  commsOpen: boolean;
 
   setPhase: (phase: Phase) => void;
   setWorld: (world: World) => void;
@@ -69,6 +71,7 @@ interface NovaState {
   setActivePillar: (index: number | null) => void;
   setHoverPillar: (index: number | null) => void;
   setLoginOpen: (open: boolean) => void;
+  setCommsOpen: (open: boolean) => void;
   notify: (notice: NoticeInput) => number;
   dismiss: (id: number) => void;
   /** Puts the ship back in the hangar with every system offline (used by "replay launch"). */
@@ -121,6 +124,7 @@ export const useNova = create<NovaState>()((set, get) => ({
   hoverPillar: null,
   notices: [],
   loginOpen: false,
+  commsOpen: false,
 
   setPhase: (phase) => set({ phase }),
   setWorld: (world) => set({ world }),
@@ -141,6 +145,7 @@ export const useNova = create<NovaState>()((set, get) => ({
   setActivePillar: (activePillar) => set({ activePillar }),
   setHoverPillar: (hoverPillar) => set({ hoverPillar }),
   setLoginOpen: (loginOpen) => set({ loginOpen }),
+  setCommsOpen: (commsOpen) => set({ commsOpen }),
   notify: ({ kind, title, lines = [], ttl }) => {
     const id = ++noticeId;
     const fallbackTtl = kind === 'toast' ? 3.5 : 5.5;

@@ -2,7 +2,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import { audio } from '../../core/audio';
-import { HERO } from '../../core/content';
 import { Z } from '../../core/layers';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
@@ -32,8 +31,12 @@ export default function LoginPopup() {
 
   const close = () => useNova.getState().setLoginOpen(false);
   const signIn = () => {
-    useNova.getState().notify({ kind: 'toast', title: HERO.signInPending.title, lines: [...HERO.signInPending.lines] });
     close();
+    useNova.getState().setCommsOpen(true);
+  };
+  const launchCadet = () => {
+    close();
+    useNova.getState().setCommsOpen(true);
   };
 
   return (
@@ -75,9 +78,12 @@ export default function LoginPopup() {
               ))}
             </div>
             <HudButton variant="primary" size="lg" className="mt-6 w-full" icon={<GoogleG className="h-5 w-5" />} onClick={signIn} autoFocus>
-              Continue with Google
+              Continue with Google & Enter
             </HudButton>
-            <button type="button" onClick={close} className="mt-3 w-full cursor-pointer py-2 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-blue-200/55 hover:text-white">
+            <HudButton variant="ghost" size="md" className="mt-2.5 w-full !text-sky-300 border-sky-500/30" onClick={launchCadet}>
+              Launch AI Terminal as Cadet
+            </HudButton>
+            <button type="button" onClick={close} className="mt-3 w-full cursor-pointer py-1 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-blue-200/55 hover:text-white">
               Look around first
             </button>
           </motion.div>
