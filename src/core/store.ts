@@ -55,8 +55,25 @@ interface NovaState {
   notices: Notice[];
   /** The "Initialize identity" login window. */
   loginOpen: boolean;
+<<<<<<< HEAD:src/core/store.ts
   /** NOVA Comms (AI study helper) window. */
   commsOpen: boolean;
+=======
+  /** The "User Setup" window for username and avatar. */
+  userSetupOpen: boolean;
+  /** The "Curriculum Setup" view where the user defines what they want to study. */
+  curriculumOpen: boolean;
+  /** The main "PvE" learning board / feed view. */
+  feedOpen: boolean;
+  /** True when the blast doors are animating a transition between screens. */
+  isTransitioning: boolean;
+  /** Persisted: whether the user has completed setup and is logged in. */
+  isLoggedIn: boolean;
+  /** Persisted: The user's chosen UI theme color. */
+  themeColor: string;
+  /** Persisted: The user's currently active learning objective (for continuing). */
+  activeObjective: string | null;
+>>>>>>> cf73e2d3e8bd0a7792ac888869d12c8adad48494:frontend/src/core/store.ts
 
   setPhase: (phase: Phase) => void;
   setWorld: (world: World) => void;
@@ -71,7 +88,17 @@ interface NovaState {
   setActivePillar: (index: number | null) => void;
   setHoverPillar: (index: number | null) => void;
   setLoginOpen: (open: boolean) => void;
+<<<<<<< HEAD:src/core/store.ts
   setCommsOpen: (open: boolean) => void;
+=======
+  setLoggedIn: (loggedIn: boolean) => void;
+  setThemeColor: (color: string) => void;
+  setActiveObjective: (objective: string) => void;
+  setUserSetupOpen: (open: boolean) => void;
+  setCurriculumOpen: (open: boolean) => void;
+  setFeedOpen: (open: boolean) => void;
+  setIsTransitioning: (transitioning: boolean) => void;
+>>>>>>> cf73e2d3e8bd0a7792ac888869d12c8adad48494:frontend/src/core/store.ts
   notify: (notice: NoticeInput) => number;
   dismiss: (id: number) => void;
   /** Puts the ship back in the hangar with every system offline (used by "replay launch"). */
@@ -124,7 +151,17 @@ export const useNova = create<NovaState>()((set, get) => ({
   hoverPillar: null,
   notices: [],
   loginOpen: false,
+<<<<<<< HEAD:src/core/store.ts
   commsOpen: false,
+=======
+  userSetupOpen: false,
+  curriculumOpen: false,
+  feedOpen: false,
+  isTransitioning: false,
+  isLoggedIn: readFlag('nova.isLoggedIn', false),
+  themeColor: localStorage.getItem('nova.themeColor') || '#06b6d4',
+  activeObjective: localStorage.getItem('nova.activeObjective') || null,
+>>>>>>> cf73e2d3e8bd0a7792ac888869d12c8adad48494:frontend/src/core/store.ts
 
   setPhase: (phase) => set({ phase }),
   setWorld: (world) => set({ world }),
@@ -140,12 +177,31 @@ export const useNova = create<NovaState>()((set, get) => ({
     writeFlag(LS_INTRO, introSeen);
     set({ introSeen });
   },
+  setLoggedIn: (isLoggedIn) => {
+    writeFlag('nova.isLoggedIn', isLoggedIn);
+    set({ isLoggedIn });
+  },
+  setThemeColor: (themeColor) => {
+    localStorage.setItem('nova.themeColor', themeColor);
+    set({ themeColor });
+  },
+  setActiveObjective: (activeObjective) => {
+    localStorage.setItem('nova.activeObjective', activeObjective);
+    set({ activeObjective });
+  },
   setSceneReady: (sceneReady) => set({ sceneReady }),
   setWebglFailed: (webglFailed) => set({ webglFailed }),
   setActivePillar: (activePillar) => set({ activePillar }),
   setHoverPillar: (hoverPillar) => set({ hoverPillar }),
   setLoginOpen: (loginOpen) => set({ loginOpen }),
+<<<<<<< HEAD:src/core/store.ts
   setCommsOpen: (commsOpen) => set({ commsOpen }),
+=======
+  setUserSetupOpen: (userSetupOpen) => set({ userSetupOpen }),
+  setCurriculumOpen: (curriculumOpen) => set({ curriculumOpen }),
+  setFeedOpen: (feedOpen) => set({ feedOpen }),
+  setIsTransitioning: (isTransitioning) => set({ isTransitioning }),
+>>>>>>> cf73e2d3e8bd0a7792ac888869d12c8adad48494:frontend/src/core/store.ts
   notify: ({ kind, title, lines = [], ttl }) => {
     const id = ++noticeId;
     const fallbackTtl = kind === 'toast' ? 3.5 : 5.5;

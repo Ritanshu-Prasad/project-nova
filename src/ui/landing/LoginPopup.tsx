@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import { audio } from '../../core/audio';
 import { Z } from '../../core/layers';
+import { useDeck } from '../../core/journey';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
 import GoogleG from './GoogleG';
@@ -16,7 +17,7 @@ export default function LoginPopup() {
   const open = useNova((s) => s.loginOpen);
 
   useEffect(() => {
-    if (phase !== 'landed') return;
+    if (phase !== 'landed' || useDeck.getState().deck !== 'cockpit') return;
     const id = setTimeout(() => useNova.getState().setLoginOpen(true), AUTO_OPEN * 1000);
     return () => clearTimeout(id);
   }, [phase]);
@@ -31,12 +32,18 @@ export default function LoginPopup() {
 
   const close = () => useNova.getState().setLoginOpen(false);
   const signIn = () => {
+<<<<<<< HEAD:src/ui/landing/LoginPopup.tsx
     close();
     useNova.getState().setCommsOpen(true);
   };
   const launchCadet = () => {
     close();
     useNova.getState().setCommsOpen(true);
+=======
+    // Instantly bypass Google auth for local testing
+    close();
+    useNova.getState().setUserSetupOpen(true);
+>>>>>>> cf73e2d3e8bd0a7792ac888869d12c8adad48494:frontend/src/ui/landing/LoginPopup.tsx
   };
 
   return (

@@ -2,6 +2,7 @@ import { audio } from './audio';
 import { ARRIVAL_NOTICE, PREFLIGHT } from './content';
 import { clamp, damp, easeOutCubic, kf, lerp, smoothstep, type Keyframes } from './math';
 import { resetRuntime, rt } from './runtime';
+import { resetJourney, tickJourney } from './journey';
 import { BAY } from './scene';
 import { SYSTEM_ORDER, useNova, type Phase, type SystemKey } from './store';
 
@@ -159,6 +160,7 @@ export function skipIntro(): void {
 
 /** Back to the hangar, eyes shut, systems offline — then wake up again. */
 export function replayIntro(): void {
+  resetJourney();
   resetTimelineState();
   resetRuntime();
   store().resetShip();
@@ -392,6 +394,7 @@ export function startDirector(): () => void {
     const dt = Math.min(0.1, Math.max(0, (ms - last) / 1000));
     last = ms;
     tick(dt);
+    tickJourney(dt);
     audio.update(dt);
     raf = requestAnimationFrame(loop);
   };

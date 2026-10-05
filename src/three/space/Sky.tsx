@@ -25,7 +25,8 @@ void main() {
   // Old world: cold, sparse.
   vec3 oldCol = vec3(0.01, 0.02, 0.04) + vec3(0.0, 0.05, 0.07) * smoothstep(0.1, 0.8, m) * 0.6;
   // New world: violet/magenta/teal clouds and a galactic band.
-  float band = exp(-pow(dot(d, normalize(vec3(0.35, 0.8, 0.45))) * 3.2, 2.0));
+  float bd = dot(d, normalize(vec3(0.35, 0.8, 0.45))) * 3.2;
+  float band = exp(-bd * bd);
   vec3 newCol = vec3(0.012, 0.01, 0.03);
   newCol += vec3(0.32, 0.08, 0.42) * smoothstep(0.0, 0.9, n) * 0.55;
   newCol += vec3(0.05, 0.28, 0.33) * smoothstep(0.2, 0.9, m) * 0.45;

@@ -32,7 +32,8 @@ export default function TopBar() {
   const soundOn = useNova((s) => s.soundOn);
   const reduced = useNova((s) => s.reducedMotion);
   const visible = phaseIndex(phase) >= PREFLIGHT;
-  const landed = phase === 'landed';
+  const loggedIn = useNova((s) => s.isLoggedIn);
+  const landed = phase === 'landed' && !loggedIn;
 
   return (
     <header
