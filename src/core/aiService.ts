@@ -1,3 +1,9 @@
+import {
+  enforceEvaluationBounds,
+  optimizeConversationHistory,
+  prepareSecurePrompt,
+  verifyAndCleanAIResponse,
+} from '../security';
 import { useGamification } from './gamification';
 
 export type AIProvider = 'nebius' | 'gemini' | 'openai' | 'offline';
@@ -77,26 +83,47 @@ export async function sendChatMessage(
   settings: AISettings
 ): Promise<{ text: string; mmrDelta?: number; xpDelta?: number }> {
   const mmr = useGamification.getState().mmr;
-  const contextPrompt = `${SYSTEM_PROMPT}\n\n[CURRENT PILOT STATUS: MMR = ${mmr}, Rank = ${useGamification.getState().callsign}]`;
+  const rank = useGamification.getState().callsign;
+  const baseDirectives = `${SYSTEM_PROMPT}\n\n[CURRENT PILOT STATUS: MMR = ${mmr}, Rank = ${rank}]`;
+
+  // 1. Security Pre-flight: Length enforcement, heuristic injection scanner, canary injection, structural delimiter wrapping
+  const { systemPrompt, userPrompt, sanitization, truncated } = prepareSecurePrompt(
+    userText,
+    baseDirectives
+  );
+
+  let shieldNotice = '';
+  if (sanitization.threatLevel === 'high') {
+    shieldNotice = `[DEFENSE SHIELD ENGAGED: Malicious prompt injection pattern neutralized: ${sanitization.detectedPatterns.join(', ')}]\n\n`;
+  } else if (truncated) {
+    shieldNotice = `[TELEMETRY ALERT: Transmission truncated to 1600 characters to prevent buffer overflow.]\n\n`;
+  }
+
+  // 2. Token Optimization: Sliding history window pruning, whitespace compression, mission recap
+  const { optimizedHistory, missionContextSummary } = optimizeConversationHistory(history);
+  const effectiveSystemPrompt = missionContextSummary
+    ? `${systemPrompt}\n\n${missionContextSummary}`
+    : systemPrompt;
 
   // If using Nebius or OpenAI compatible API
   if (settings.provider === 'nebius' || settings.provider === 'openai') {
     const key = settings.apiKey.trim();
     if (!key) {
-      return getSimulatedResponse(userText, mmr);
+      const sim = getSimulatedResponse(userText, mmr);
+      return {
+        ...sim,
+        text: `${shieldNotice}${sim.text}`,
+      };
     }
 
     const endpoint = `${settings.baseUrl.replace(/\/+$/, '')}/chat/completions`;
     const messages = [
-      { role: 'system', content: contextPrompt },
-      ...history
-        .filter((m) => m.sender === 'user' || m.sender === 'ai')
-        .slice(-8)
-        .map((m) => ({
-          role: m.sender === 'user' ? 'user' : 'assistant',
-          content: m.content,
-        })),
-      { role: 'user', content: userText },
+      { role: 'system', content: effectiveSystemPrompt },
+      ...optimizedHistory.map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.content,
+      })),
+      { role: 'user', content: userPrompt },
     ];
 
     try {
@@ -121,28 +148,37 @@ export async function sendChatMessage(
         const sim = getSimulatedResponse(userText, mmr);
         return {
           ...sim,
-          text: `[Uplink Notice: API returned ${res.status}. Falling back to internal Neural Core.]\n\n${sim.text}`,
+          text: `${shieldNotice}[Uplink Notice: API returned ${res.status}. Falling back to internal Neural Core.]\n\n${sim.text}`,
         };
       }
 
       const data = await res.json();
       const rawText = data.choices?.[0]?.message?.content || 'No telemetry received.';
-      return parseAIResponse(rawText);
+      const parsed = parseAIResponse(rawText);
+      return {
+        ...parsed,
+        text: `${shieldNotice}${parsed.text}`,
+      };
     } catch (err) {
       console.warn('Network call failed, using internal core:', err);
       const sim = getSimulatedResponse(userText, mmr);
       return {
         ...sim,
-        text: `[Uplink Notice: Direct connection interrupted. Using ship neural cache.]\n\n${sim.text}`,
+        text: `${shieldNotice}[Uplink Notice: Direct connection interrupted. Using ship neural cache.]\n\n${sim.text}`,
       };
     }
   }
+
 
   // If using Google Gemini API
   if (settings.provider === 'gemini') {
     const key = settings.apiKey.trim();
     if (!key) {
-      return getSimulatedResponse(userText, mmr);
+      const sim = getSimulatedResponse(userText, mmr);
+      return {
+        ...sim,
+        text: `${shieldNotice}${sim.text}`,
+      };
     }
 
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
@@ -150,7 +186,7 @@ export async function sendChatMessage(
       const contents = [
         {
           role: 'user',
-          parts: [{ text: `${contextPrompt}\n\nPilot message: ${userText}` }],
+          parts: [{ text: `${effectiveSystemPrompt}\n\n${userPrompt}` }],
         },
       ];
 
@@ -164,46 +200,68 @@ export async function sendChatMessage(
         const sim = getSimulatedResponse(userText, mmr);
         return {
           ...sim,
-          text: `[Gemini Uplink Notice: Status ${res.status}. Switched to internal Neural Core.]\n\n${sim.text}`,
+          text: `${shieldNotice}[Gemini Uplink Notice: Status ${res.status}. Switched to internal Neural Core.]\n\n${sim.text}`,
         };
       }
 
       const data = await res.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No telemetry received.';
-      return parseAIResponse(rawText);
+      const parsed = parseAIResponse(rawText);
+      return {
+        ...parsed,
+        text: `${shieldNotice}${parsed.text}`,
+      };
     } catch (err) {
       console.warn('Gemini request failed:', err);
-      return getSimulatedResponse(userText, mmr);
+      const sim = getSimulatedResponse(userText, mmr);
+      return {
+        ...sim,
+        text: `${shieldNotice}${sim.text}`,
+      };
     }
   }
 
   // Offline / Demo mode
-  return getSimulatedResponse(userText, mmr);
+  const sim = getSimulatedResponse(userText, mmr);
+  return {
+    ...sim,
+    text: `${shieldNotice}${sim.text}`,
+  };
 }
 
 function parseAIResponse(raw: string): { text: string; mmrDelta?: number; xpDelta?: number } {
-  let mmrDelta: number | undefined;
-  let xpDelta: number | undefined;
+  // 1. Post-generation inspection for canary token or prompt exfiltration leaks
+  const { text: verifiedText, isSecure } = verifyAndCleanAIResponse(raw);
 
-  const mmrMatch = raw.match(/\[MMR:\s*([+-]?\d+)\]/i);
+  let rawMmr: number | undefined;
+  let rawXp: number | undefined;
+
+  const mmrMatch = verifiedText.match(/\[MMR:\s*([+-]?\d+)\]/i);
   if (mmrMatch) {
-    mmrDelta = parseInt(mmrMatch[1], 10);
+    rawMmr = parseInt(mmrMatch[1], 10);
   }
 
-  const xpMatch = raw.match(/\[XP:\s*([+-]?\d+)\]/i);
+  const xpMatch = verifiedText.match(/\[XP:\s*([+-]?\d+)\]/i);
   if (xpMatch) {
-    xpDelta = parseInt(xpMatch[1], 10);
+    rawXp = parseInt(xpMatch[1], 10);
   }
 
-  // Strip trailing metadata stamps so the dialogue reads cleanly
-  const cleaned = raw.replace(/\[MMR:\s*[+-]?\d+\]\s*/gi, '').replace(/\[XP:\s*[+-]?\d+\]\s*/gi, '').trim();
+  // 2. Strip trailing metadata stamps so the dialogue reads cleanly
+  const cleaned = verifiedText
+    .replace(/\[MMR:\s*[+-]?\d+\]\s*/gi, '')
+    .replace(/\[XP:\s*[+-]?\d+\]\s*/gi, '')
+    .trim();
+
+  // 3. Mathematical guardrail clamping to defeat score manipulation injection exploits
+  const evaluation = enforceEvaluationBounds(rawMmr, rawXp);
 
   return {
-    text: cleaned,
-    mmrDelta: mmrDelta !== undefined ? mmrDelta : 15,
-    xpDelta: xpDelta !== undefined ? xpDelta : 30,
+    text: isSecure ? cleaned : verifiedText,
+    mmrDelta: evaluation.mmrDelta,
+    xpDelta: evaluation.xpDelta,
   };
 }
+
 
 function getSimulatedResponse(userText: string, mmr: number): { text: string; mmrDelta: number; xpDelta: number } {
   const query = userText.toLowerCase();
