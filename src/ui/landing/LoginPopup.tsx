@@ -32,18 +32,13 @@ export default function LoginPopup() {
 
   const close = () => useNova.getState().setLoginOpen(false);
   const signIn = () => {
-<<<<<<< HEAD:src/ui/landing/LoginPopup.tsx
+    // Instantly bypass Google auth for local testing
     close();
-    useNova.getState().setCommsOpen(true);
+    useNova.getState().setUserSetupOpen(true);
   };
   const launchCadet = () => {
     close();
     useNova.getState().setCommsOpen(true);
-=======
-    // Instantly bypass Google auth for local testing
-    close();
-    useNova.getState().setUserSetupOpen(true);
->>>>>>> cf73e2d3e8bd0a7792ac888869d12c8adad48494:frontend/src/ui/landing/LoginPopup.tsx
   };
 
   return (

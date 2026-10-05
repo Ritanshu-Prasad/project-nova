@@ -18,12 +18,9 @@ import SkipIntro from './ui/intro/SkipIntro';
 import LandingHero from './ui/landing/LandingHero';
 import LoginPopup from './ui/landing/LoginPopup';
 import PillarPanel from './ui/landing/PillarPanel';
-<<<<<<< HEAD:src/App.tsx
-import CommsPanel from './ui/comms/CommsPanel';
-=======
 import UserSetupPopup from './ui/landing/UserSetupPopup';
 import CurriculumSetup from './ui/app/CurriculumSetup';
->>>>>>> cf73e2d3e8bd0a7792ac888869d12c8adad48494:frontend/src/App.tsx
+import CommsPanel from './ui/comms/CommsPanel';
 
 /** The WebGL scene loads in its own chunk so the gate paints instantly. */
 const Experience = lazy(() => import('./three/Experience'));
@@ -63,13 +60,6 @@ export default function App() {
           </Suspense>
         </ErrorBoundary>
       )}
-<<<<<<< HEAD:src/App.tsx
-      <LandingHero />
-      <Hud />
-      <PillarPanel />
-      <LoginPopup />
-      <CommsPanel />
-=======
       {deck === 'cockpit' && <Hud />}
 
       {/* Landing UI elements should NOT render once the user is logged in and in the app */}
@@ -83,7 +73,7 @@ export default function App() {
 
       <UserSetupPopup />
       <CurriculumSetup />
->>>>>>> cf73e2d3e8bd0a7792ac888869d12c8adad48494:frontend/src/App.tsx
+      <CommsPanel />
       <IntroUI />
       <TopBar />
       <Eyelids />
