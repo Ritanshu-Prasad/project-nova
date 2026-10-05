@@ -1,25 +1,33 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { flatTopics, type Course, type PlacedTopic, type Question } from './courseSchema';
+import { flatTopics, type Course, type Module, type PlacedTopic, type Question } from './courseSchema';
 
 /**
- * The pilot's course library and progress (persisted). Each course is a sequence of topics ("planets");
- * a topic unlocks when the one before it is cleared, and clearing a topic's quiz moves the rocket on.
- * MMR follows an Elo-style update per answer; XP drives the level.
+ * The pilot's course library and progress (persisted).
+ *
+ * A course is walked as an outline: each module's topics in order, then that module's quiz.
+ * Completing a topic moves the rocket to the next planet; passing a module quiz unlocks the next module.
+ * MMR follows an Elo-style update per answer (pop quizzes pay a bonus); XP drives the level.
  */
 
 export interface TopicProgress {
-  read: boolean;
-  /** First-attempt result per question (null = not answered yet). */
-  answers: (boolean | null)[];
+  /** Lesson completed (the rocket has passed this planet). */
   cleared: boolean;
   notes: string;
+}
+
+export interface ModuleProgress {
+  passed: boolean;
+  /** Best score as a fraction 0..1. */
+  best: number;
+  attempts: number;
 }
 
 export interface LibraryEntry {
   course: Course;
   progress: Record<string, TopicProgress>;
-  /** Topic the pilot is studying. */
+  modules: Record<string, ModuleProgress>;
+  /** Outline item being studied: a topic id or `quiz:<moduleId>`. */
   current: string;
   updatedAt: number;
 }
@@ -37,6 +45,63 @@ export interface Stats {
   dayQuizzes: number;
 }
 
+export type OutlineItem =
+  | { kind: 'topic'; id: string; topic: PlacedTopic; moduleIndex: number }
+  | { kind: 'quiz'; id: string; module: Module; moduleIndex: number; questions: Question[] };
+
+export const PASS_MARK = 0.6;
+export const DAILY_GOAL = 3;
+const MODULE_QUIZ_MAX = 8;
+const KEY = 'nova.library.v2';
+/** New pilots start at the bottom of the ladder (Probe III) — see core/rank.ts. */
+const START_MMR = 1000;
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** The module's end-of-module quiz (authored, or assembled from its topics' question banks). */
+export function moduleQuestions(m: Module): Question[] {
+  const qs = m.quiz && m.quiz.length ? m.quiz : m.topics.flatMap((t) => t.quiz);
+  return qs.slice(0, MODULE_QUIZ_MAX);
+}
+
+export function outlineOf(course: Course): OutlineItem[] {
+  const topics = flatTopics(course);
+  const out: OutlineItem[] = [];
+  course.modules.forEach((m, mi) => {
+    for (const t of topics.filter((x) => x.moduleIndex === mi)) out.push({ kind: 'topic', id: t.id, topic: t, moduleIndex: mi });
+    const questions = moduleQuestions(m);
+    if (questions.length) out.push({ kind: 'quiz', id: `quiz:${m.id}`, module: m, moduleIndex: mi, questions });
+  });
+  return out;
+}
+
+export const isDone = (e: LibraryEntry, item: OutlineItem) =>
+  item.kind === 'topic' ? !!e.progress[item.id]?.cleared : !!e.modules?.[item.module.id]?.passed;
+
+/** Index of the first outline item not yet done — everything up to it is unlocked. */
+export function frontier(e: LibraryEntry, outline = outlineOf(e.course)): number {
+  const i = outline.findIndex((it) => !isDone(e, it));
+  return i < 0 ? outline.length : i;
+}
+
+/** Index of the first topic not yet completed (the rocket's planet; equals the topic count when done). */
+export function firstUncleared(e: LibraryEntry): number {
+  const topics = flatTopics(e.course);
+  const i = topics.findIndex((t) => !e.progress[t.id]?.cleared);
+  return i < 0 ? topics.length : i;
+}
+
+export function isUnlocked(e: LibraryEntry, itemId: string, outline = outlineOf(e.course)): boolean {
+  const i = outline.findIndex((it) => it.id === itemId);
+  return i >= 0 && i <= frontier(e, outline);
+}
+
+/** Questions for a surprise pop quiz: drawn from topics the pilot has completed. */
+export function popPool(e: LibraryEntry): Question[] {
+  return flatTopics(e.course)
+    .filter((t) => e.progress[t.id]?.cleared)
+    .flatMap((t) => t.quiz);
+}
+
 interface CourseState {
   activeId: string | null;
   library: Record<string, LibraryEntry>;
@@ -45,27 +110,26 @@ interface CourseState {
   addCourse: (course: Course) => void;
   setActive: (id: string) => void;
   removeCourse: (id: string) => void;
-  openTopic: (topicId: string) => void;
-  markRead: (topicId: string) => void;
+  /** Opens an outline item if it is unlocked. */
+  open: (itemId: string) => boolean;
   setNotes: (topicId: string, notes: string) => void;
-  answer: (topicId: string, q: number, correct: boolean, opts?: { difficulty?: number; hint?: boolean }) => number;
-  finishQuiz: (topicId: string) => { passed: boolean; advanced: boolean; nextId: string | null };
-  resetQuiz: (topicId: string) => void;
+  /** Completes a topic; returns the next outline item id (topic or module quiz). */
+  completeTopic: (topicId: string) => string | null;
+  /** Scores one answer; returns the MMR change. */
+  answer: (correct: boolean, opts?: { difficulty?: number; hint?: boolean; multiplier?: number; position?: number }) => number;
+  finishModuleQuiz: (moduleId: string, correct: number, total: number) => { passed: boolean; nextId: string | null };
+  finishPopQuiz: (correct: number, total: number) => void;
 }
-
-export const DAILY_GOAL = 3;
-const KEY = 'nova.library.v2';
-const START_MMR = 1200;
-const today = () => new Date().toISOString().slice(0, 10);
-
-const blankProgress = (q: Question[]): TopicProgress => ({ read: false, answers: q.map(() => null), cleared: false, notes: '' });
 
 type Saved = Pick<CourseState, 'activeId' | 'library' | 'stats'>;
 
 function load(): Saved | null {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Saved) : null;
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as Saved;
+    for (const e of Object.values(saved.library)) e.modules ??= {};
+    return saved;
   } catch {
     return null;
   }
@@ -77,22 +141,19 @@ const initial: Saved = load() ?? {
   stats: { mmr: START_MMR, mmrHistory: [START_MMR], xp: 0, streak: 0, bestStreak: 0, correct: 0, answered: 0, day: today(), dayQuizzes: 0 },
 };
 
-/** Elo expectation against a question; difficulty and position in the course raise its rating. */
-const questionRating = (index: number, difficulty = 1) => 1100 + index * 45 + difficulty * 70;
+/** Elo rating of a question: harder and later questions are worth more. */
+const questionRating = (position = 0, difficulty = 1) => 1100 + position * 40 + difficulty * 70;
 
 export const useCourse = create<CourseState>()((set, get) => {
-  const patchEntry = (id: string, fn: (e: LibraryEntry) => LibraryEntry) => {
-    const e = get().library[id];
-    if (e) set({ library: { ...get().library, [id]: { ...fn(e), updatedAt: Date.now() } } });
-  };
-  const patchTopic = (topicId: string, fn: (p: TopicProgress) => TopicProgress) => {
+  const patchActive = (fn: (e: LibraryEntry) => LibraryEntry) => {
     const id = get().activeId;
-    if (!id) return;
-    patchEntry(id, (e) => {
-      const t = flatTopics(e.course).find((x) => x.id === topicId);
-      const prev = e.progress[topicId] ?? blankProgress(t?.quiz ?? []);
-      return { ...e, progress: { ...e.progress, [topicId]: fn(prev) } };
-    });
+    const e = id ? get().library[id] : undefined;
+    if (id && e) set({ library: { ...get().library, [id]: { ...fn(e), updatedAt: Date.now() } } });
+  };
+  const bumpDay = (xp: number) => {
+    const s = get().stats;
+    const day = today();
+    set({ stats: { ...s, xp: s.xp + xp, day, dayQuizzes: (s.day === day ? s.dayQuizzes : 0) + 1 } });
   };
 
   return {
@@ -100,11 +161,13 @@ export const useCourse = create<CourseState>()((set, get) => {
 
     addCourse: (course) => {
       const topics = flatTopics(course);
-      const progress = Object.fromEntries(topics.map((t) => [t.id, blankProgress(t.quiz)]));
-      set({ activeId: course.id, library: { ...get().library, [course.id]: { course, progress, current: topics[0]?.id ?? '', updatedAt: Date.now() } } });
+      const progress = Object.fromEntries(topics.map((t) => [t.id, { cleared: false, notes: '' }]));
+      set({ activeId: course.id, library: { ...get().library, [course.id]: { course, progress, modules: {}, current: topics[0]?.id ?? '', updatedAt: Date.now() } } });
     },
 
-    setActive: (id) => get().library[id] && set({ activeId: id }),
+    setActive: (id) => {
+      if (get().library[id]) set({ activeId: id });
+    },
 
     removeCourse: (id) => {
       const { [id]: _removed, ...rest } = get().library;
@@ -113,66 +176,66 @@ export const useCourse = create<CourseState>()((set, get) => {
       set({ library: rest, activeId: nextActive });
     },
 
-    openTopic: (topicId) => {
+    open: (itemId) => {
       const id = get().activeId;
-      if (!id) return;
-      const e = get().library[id];
-      const topics = flatTopics(e.course);
-      const i = topics.findIndex((t) => t.id === topicId);
-      if (i < 0 || i > firstUncleared(e)) return; // locked
-      patchEntry(id, (x) => ({ ...x, current: topicId }));
+      const e = id ? get().library[id] : undefined;
+      if (!e || !isUnlocked(e, itemId)) return false;
+      patchActive((x) => ({ ...x, current: itemId }));
+      return true;
     },
 
-    markRead: (topicId) => patchTopic(topicId, (p) => (p.read ? p : { ...p, read: true })),
+    setNotes: (topicId, notes) => patchActive((e) => ({ ...e, progress: { ...e.progress, [topicId]: { ...(e.progress[topicId] ?? { cleared: false }), notes } } })),
 
-    setNotes: (topicId, notes) => patchTopic(topicId, (p) => ({ ...p, notes })),
-
-    answer: (topicId, q, correct, opts = {}) => {
-      const s = get().stats;
+    completeTopic: (topicId) => {
       const id = get().activeId;
-      const index = id ? flatTopics(get().library[id].course).findIndex((t) => t.id === topicId) : 0;
-      const expected = 1 / (1 + Math.pow(10, (questionRating(index, opts.difficulty) - s.mmr) / 400));
-      let delta = Math.round(32 * ((correct ? 1 : 0) - expected) * (correct && opts.hint ? 0.5 : 1));
+      const e = id ? get().library[id] : undefined;
+      if (!e) return null;
+      const first = !e.progress[topicId]?.cleared;
+      patchActive((x) => ({ ...x, progress: { ...x.progress, [topicId]: { ...(x.progress[topicId] ?? { notes: '' }), cleared: true } } }));
+      if (first) set({ stats: { ...get().stats, xp: get().stats.xp + 30 } });
+      const outline = outlineOf(e.course);
+      const i = outline.findIndex((it) => it.id === topicId);
+      return outline[i + 1]?.id ?? null;
+    },
+
+    answer: (correct, opts = {}) => {
+      const s = get().stats;
+      const expected = 1 / (1 + Math.pow(10, (questionRating(opts.position, opts.difficulty) - s.mmr) / 400));
+      let delta = 32 * ((correct ? 1 : 0) - expected) * (correct && opts.hint ? 0.5 : 1);
       delta = correct ? Math.max(opts.hint ? 3 : 6, delta) : Math.min(-4, delta);
-      patchTopic(topicId, (p) => {
-        const answers = [...p.answers];
-        if (answers[q] === null || answers[q] === undefined) answers[q] = correct;
-        return { ...p, answers };
-      });
+      if (correct) delta *= opts.multiplier ?? 1;
+      const d = Math.round(delta);
       const streak = correct ? s.streak + 1 : 0;
       set({
         stats: {
           ...s,
-          mmr: s.mmr + delta,
-          mmrHistory: [...s.mmrHistory, s.mmr + delta].slice(-60),
-          xp: s.xp + (correct ? (opts.hint ? 25 : 40) : 10),
+          mmr: s.mmr + d,
+          mmrHistory: [...s.mmrHistory, s.mmr + d].slice(-60),
+          xp: s.xp + (correct ? (opts.hint ? 20 : 30) : 5),
           streak,
           bestStreak: Math.max(s.bestStreak, streak),
           correct: s.correct + (correct ? 1 : 0),
           answered: s.answered + 1,
         },
       });
-      return delta;
+      return d;
     },
 
-    finishQuiz: (topicId) => {
+    finishModuleQuiz: (moduleId, correct, total) => {
       const id = get().activeId;
-      if (!id) return { passed: false, advanced: false, nextId: null };
-      const e = get().library[id];
-      const topics = flatTopics(e.course);
-      const i = topics.findIndex((t) => t.id === topicId);
-      const p = e.progress[topicId];
-      const passed = !topics[i]?.quiz.length || (p?.answers ?? []).some(Boolean);
-      const advanced = passed && !p?.cleared;
-      const s = get().stats;
-      const day = today();
-      set({ stats: { ...s, xp: s.xp + (advanced ? 60 : 0), day, dayQuizzes: (s.day === day ? s.dayQuizzes : 0) + 1 } });
-      // The current topic stays put (the results screen is still showing); "Next lesson" moves on.
-      if (passed) patchTopic(topicId, (x) => ({ ...x, cleared: true, read: true }));
-      return { passed, advanced, nextId: topics[i + 1]?.id ?? null };
+      const e = id ? get().library[id] : undefined;
+      if (!e) return { passed: false, nextId: null };
+      const score = total ? correct / total : 1;
+      const prev = e.modules[moduleId] ?? { passed: false, best: 0, attempts: 0 };
+      const passed = score >= PASS_MARK;
+      patchActive((x) => ({ ...x, modules: { ...x.modules, [moduleId]: { passed: prev.passed || passed, best: Math.max(prev.best, score), attempts: prev.attempts + 1 } } }));
+      bumpDay(passed && !prev.passed ? 80 : 0);
+      const outline = outlineOf(e.course);
+      const i = outline.findIndex((it) => it.id === `quiz:${moduleId}`);
+      return { passed, nextId: outline[i + 1]?.id ?? null };
     },
 
-    resetQuiz: (topicId) => patchTopic(topicId, (p) => ({ ...p, answers: p.answers.map(() => null) })),
+    finishPopQuiz: (correct) => bumpDay(correct * 15),
   };
 });
 
@@ -185,35 +248,33 @@ useCourse.subscribe((s) => {
   }
 });
 
-/** Index of the first topic not yet cleared (= the rocket's planet; equals the topic count when done). */
-export function firstUncleared(e: LibraryEntry): number {
-  const topics = flatTopics(e.course);
-  const i = topics.findIndex((t) => !e.progress[t.id]?.cleared);
-  return i < 0 ? topics.length : i;
-}
-
 export interface ActiveCourse {
   entry: LibraryEntry;
   course: Course;
   topics: PlacedTopic[];
-  current: PlacedTopic;
+  outline: OutlineItem[];
+  /** Outline item being studied. */
+  item: OutlineItem;
+  /** First item not yet done (what "Continue" opens). */
+  next: OutlineItem | null;
+  /** Topics completed in order (rocket position). */
   cleared: number;
 }
 
-/** Derives the active course view (call inside components via useActiveCourse). */
-export function activeOf(s: Pick<CourseState, 'activeId' | 'library'>): ActiveCourse | null {
-  const entry = s.activeId ? s.library[s.activeId] : undefined;
-  if (!entry) return null;
+/** Derives the active course view (components use useActiveCourse). */
+export function activeOf(entry: LibraryEntry): ActiveCourse | null {
   const topics = flatTopics(entry.course);
   if (!topics.length) return null;
-  const current = topics.find((t) => t.id === entry.current) ?? topics[0];
-  return { entry, course: entry.course, topics, current, cleared: firstUncleared(entry) };
+  const outline = outlineOf(entry.course);
+  const f = frontier(entry, outline);
+  const item = outline.find((it) => it.id === entry.current) ?? outline[Math.min(f, outline.length - 1)];
+  return { entry, course: entry.course, topics, outline, item, next: outline[f] ?? null, cleared: firstUncleared(entry) };
 }
 
-/** The active course, derived and memoised (selects the stable library entry, never a fresh object). */
+/** The active course, memoised (selects the stable library entry, never a fresh object). */
 export function useActiveCourse(): ActiveCourse | null {
   const entry = useCourse((s) => (s.activeId ? s.library[s.activeId] : undefined));
-  return useMemo(() => (entry ? activeOf({ activeId: entry.course.id, library: { [entry.course.id]: entry } }) : null), [entry]);
+  return useMemo(() => (entry ? activeOf(entry) : null), [entry]);
 }
 
 export const levelOf = (xp: number) => 1 + Math.floor(xp / 150);

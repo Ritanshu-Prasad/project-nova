@@ -1,43 +1,63 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, ChevronDown, Clock, FileUp, Flame, Lock, Map, Play, Plus, Sparkles, Target, UserRound, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronDown, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
-import { DAILY_GOAL, levelOf, levelProgress, useActiveCourse, useCourse, type ActiveCourse } from '../../core/course';
-import { openForge, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
+import { activeOf, DAILY_GOAL, levelOf, levelProgress, popPool, useActiveCourse, useCourse, type ActiveCourse, type OutlineItem } from '../../core/course';
+import { cheerPet, openForge, relaunch, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
+import { rankOf } from '../../core/rank';
 import { useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
-import { JourneySection, ProfileSection } from './sections';
+import { POP, PopQuiz, SurpriseOffer } from './PopQuiz';
+import RankEmblem from './RankEmblem';
+import { ProfileSection, SkillJourneySection } from './sections';
 import StudyMode from './study/StudyMode';
 
 type DockKey = Station | 'new';
 
-/** Go to a station; Lesson/Quiz always start at the rocket's planet. */
+/** Go to a station; Lesson resumes at the first unfinished item. */
 const choose = (key: DockKey) => {
   audio.play('click');
   if (key === 'new') return openForge();
-  if (key === 'lesson' || key === 'quiz') {
-    const s = useCourse.getState();
-    const e = s.activeId ? s.library[s.activeId] : null;
-    if (!e) return openForge();
+  const s = useCourse.getState();
+  const e = s.activeId ? s.library[s.activeId] : null;
+  if ((key === 'lesson' || key === 'quiz') && !e) return openForge();
+  if (key === 'lesson' && e) {
+    const next = activeOf(e)?.next;
+    if (next) s.open(next.id);
   }
   useHub.getState().go(key);
 };
 
-/** The lounge as a friendly widget menu; Lesson/Quiz open a full-window study mode. */
+/** Earliest surprise pop quiz after the last one (ms). */
+const SURPRISE_GAP = 4 * 60_000;
+let lastSurprise = 0;
+
+/** The lounge as a friendly widget menu; Lesson opens full-window study, Quiz the timed pop quiz. */
 export default function Hub() {
   const inLounge = useDeck((s) => s.deck === 'lounge');
   const forgeOpen = useNova((s) => s.curriculumOpen);
   const station = useHub((s) => s.station);
+  const surprise = useHub((s) => s.surprise);
   const active = useActiveCourse();
   const visible = inLounge && !forgeOpen;
+  const canPop = !!active && popPool(active.entry).length > 0;
 
   useEffect(() => {
     if (!visible) return;
+    let typed = '';
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      if (/^[a-z]$/i.test(e.key)) {
+        typed = (typed + e.key.toLowerCase()).slice(-6);
+        if (typed === 'launch') {
+          typed = '';
+          audio.play('pulse');
+          return relaunch();
+        }
+      }
       const st = useHub.getState().station;
       if (e.key === 'Escape' && st !== 'hub') useHub.getState().go('hub');
       if (st === 'hub') {
@@ -50,15 +70,45 @@ export default function Hub() {
     return () => window.removeEventListener('keydown', onKey);
   }, [visible]);
 
+  useEffect(
+    () =>
+      useCourse.subscribe((s, prev) => {
+        if (s.stats.mmr === prev.stats.mmr) return;
+        const a = rankOf(prev.stats.mmr);
+        const b = rankOf(s.stats.mmr);
+        if (b.step <= a.step) return;
+        cheerPet();
+        if (b.index > a.index) useNova.getState().notify({ kind: 'levelup', title: `Rank up — ${b.tier.name}!`, lines: [`You now fly a ${b.tier.name} (${b.tier.metal} tier).`, b.tier.blurb], ttl: 5 });
+        else useNova.getState().notify({ kind: 'toast', title: `Promoted to ${b.label}`, ttl: 3 });
+      }),
+    [],
+  );
+
+  // While the pilot idles in the lounge, a timed pop quiz may be offered by surprise.
+  useEffect(() => {
+    if (!visible || station !== 'hub' || !canPop) return;
+    const wait = Math.max(45_000 + Math.random() * 45_000, lastSurprise + SURPRISE_GAP - Date.now());
+    const id = window.setTimeout(() => {
+      lastSurprise = Date.now();
+      useHub.getState().setSurprise(true);
+    }, wait);
+    return () => {
+      window.clearTimeout(id);
+      useHub.getState().setSurprise(false);
+    };
+  }, [visible, station, canPop]);
+
   return (
     <>
       <div className="pointer-events-none fixed inset-0" style={{ zIndex: Z.landing }}>
         <AnimatePresence>
           {visible && station === 'hub' && (active ? <Overview key="overview" active={active} /> : <EmptyState key="empty" />)}
           {visible && (station === 'journey' || station === 'profile') && <SectionPanel key={station} station={station} />}
+          {visible && active && station === 'quiz' && <PopQuiz key="pop" />}
+          {visible && station === 'hub' && surprise && canPop && <SurpriseOffer key="surprise" />}
         </AnimatePresence>
       </div>
-      <AnimatePresence>{visible && active && (station === 'lesson' || station === 'quiz') && <StudyMode key="study" mode={station} />}</AnimatePresence>
+      <AnimatePresence>{visible && active && station === 'lesson' && <StudyMode key="study" />}</AnimatePresence>
     </>
   );
 }
@@ -84,28 +134,66 @@ function Ring({ value, size = 64, children }: { value: number; size?: number; ch
 
 const SOURCE_LABEL = { template: 'NOVA course', starter: 'Starter plan', documents: 'From your PDFs', ai: 'AI-generated' } as const;
 
+const itemLabel = (it: OutlineItem) => (it.kind === 'quiz' ? `Module ${it.moduleIndex + 1} quiz` : it.topic.title);
+
 function Overview({ active }: { active: ActiveCourse }) {
   const callsign = useProfile((s) => s.callsign) || 'Pilot';
   const library = useCourse((s) => s.library);
   const stats = useCourse((s) => s.stats);
-  const { topics, cleared, course } = active;
+  const { topics, cleared, course, outline, next } = active;
   const n = topics.length;
-  const done = cleared >= n;
-  const next = topics[Math.min(cleared, n - 1)];
-  const upNext = topics.slice(cleared + 1, cleared + 3);
+  const pct = Math.round((cleared / n) * 100);
+  const ni = next ? outline.indexOf(next) : outline.length;
+  const upNext = outline.slice(ni + 1, ni + 3);
   const todayCount = stats.day === new Date().toISOString().slice(0, 10) ? stats.dayQuizzes : 0;
+  const popReady = popPool(active.entry).length > 0;
+  const nextModule = next ? course.modules[next.moduleIndex] : null;
+  const rank = rankOf(stats.mmr);
 
-  const resume = (mode: 'lesson' | 'quiz') => {
-    useCourse.getState().openTopic(next.id);
-    choose(mode);
-  };
-
-  const dock: { key: DockKey; icon: LucideIcon; title: string; sub: string }[] = [
-    { key: 'lesson', icon: BookOpen, title: 'Lesson', sub: done ? 'Review any topic' : next.title },
-    { key: 'quiz', icon: Target, title: 'Quiz', sub: done ? 'All planets cleared' : `${next.quiz.length} questions · earn MMR` },
-    { key: 'journey', icon: Map, title: 'Journey map', sub: `${cleared} of ${n} planets cleared` },
-    { key: 'profile', icon: UserRound, title: 'Profile', sub: `LV ${levelOf(stats.xp)} · ${stats.mmr.toLocaleString('en-IN')} MMR` },
-    { key: 'new', icon: Plus, title: 'New course', sub: 'Goal or PDFs' },
+  const dock: DockItem[] = [
+    { key: 'new', hotkey: 5, tier: 3, icon: Plus, title: 'New course', sub: 'Goal or PDFs' },
+    { key: 'quiz', hotkey: 2, tier: 2, icon: Zap, title: 'Pop quiz', sub: popReady ? `${POP.count} questions · ${POP.seconds} s each` : 'After your first lesson', badge: `×${POP.multiplier}` },
+    {
+      key: 'lesson',
+      hotkey: 1,
+      tier: 1,
+      icon: BookOpen,
+      title: 'Lesson',
+      sub: next ? itemLabel(next) : 'Review any topic',
+      extra: (
+        <span className="block w-full">
+          {next && nextModule && (
+            <span className="mb-2 hidden truncate text-sm text-white/55 lg:block">
+              Module {next.moduleIndex + 1} · {nextModule.title}
+            </span>
+          )}
+          <span className="flex items-center gap-2 text-xs text-white/55">
+            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+              <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--user)' }} />
+            </span>
+            {pct}%
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: 'journey',
+      hotkey: 3,
+      tier: 2,
+      icon: TrendingUp,
+      badgeNode: <RankEmblem rank={rank} size={48} />,
+      title: 'Skill journey',
+      sub: `${rank.label} · ${stats.mmr.toLocaleString('en-IN')} MMR`,
+      extra: (
+        <span className="flex items-center gap-2 text-xs text-white/55">
+          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+            <span className="block h-full rounded-full" style={{ width: `${rank.progress * 100}%`, background: rank.tier.color }} />
+          </span>
+          {rank.nextLabel ? `${rank.toNext} to ${rank.nextLabel}` : 'Top rank'}
+        </span>
+      ),
+    },
+    { key: 'profile', hotkey: 4, tier: 3, icon: UserRound, title: 'Profile', sub: `LV ${levelOf(stats.xp)} · ${callsign}` },
   ];
 
   return (
@@ -147,33 +235,32 @@ function Overview({ active }: { active: ActiveCourse }) {
         </div>
 
         <div className="mt-4 rounded-2xl bg-white/[0.04] p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-white/45">{done ? 'Course complete' : `Next · planet ${next.index + 1} of ${n}`}</div>
-          <div className="mt-1 font-display text-[17px] font-semibold text-white">{done ? 'Every planet cleared — great flying!' : next.title}</div>
-          {!done && (
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-white/45">{!next ? 'Course complete' : next.kind === 'quiz' ? 'Checkpoint' : `Next · planet ${next.topic.index + 1} of ${n}`}</div>
+          <div className="mt-1 font-display text-[17px] font-semibold text-white">{next ? itemLabel(next) : 'Every planet cleared — great flying!'}</div>
+          {next && (
             <div className="mt-1 flex items-center gap-3 text-xs text-white/50">
-              <span>{next.moduleTitle}</span>
-              <span className="flex items-center gap-1">
-                <Clock size={11} /> {next.lesson.minutes} min
-              </span>
+              <span className="truncate">{nextModule?.title}</span>
+              {next.kind === 'topic' ? (
+                <span className="flex shrink-0 items-center gap-1">
+                  <Clock size={11} /> {next.topic.lesson.minutes} min
+                </span>
+              ) : (
+                <span className="shrink-0">{next.questions.length} questions</span>
+              )}
             </div>
           )}
           <div className="mt-3 flex gap-2">
-            <HudButton size="sm" variant="primary" className="flex-1" icon={<Play size={13} />} onClick={() => (done ? choose('journey') : resume('lesson'))}>
-              {done ? 'Journey map' : 'Resume lesson'}
+            <HudButton size="sm" variant="primary" className="flex-1" icon={next?.kind === 'quiz' ? <Target size={13} /> : <Play size={13} />} onClick={() => choose(next ? 'lesson' : 'journey')}>
+              {!next ? 'Skill journey' : next.kind === 'quiz' ? 'Take module quiz' : 'Resume lesson'}
             </HudButton>
-            {!done && (
-              <HudButton size="sm" icon={<Target size={13} />} onClick={() => resume('quiz')}>
-                Quiz
-              </HudButton>
-            )}
           </div>
         </div>
 
         {upNext.length > 0 && (
           <ul className="mt-3 hidden space-y-1.5 sm:block">
-            {upNext.map((t) => (
-              <li key={t.id} className="flex items-center gap-2.5 px-1 text-sm text-white/50">
-                <Lock size={12} /> <span className="truncate">{t.title}</span>
+            {upNext.map((it) => (
+              <li key={it.id} className="flex items-center gap-2.5 px-1 text-sm text-white/50">
+                {it.kind === 'quiz' ? <Target size={12} /> : <Lock size={12} />} <span className="truncate">{itemLabel(it)}</span>
               </li>
             ))}
           </ul>
@@ -205,8 +292,8 @@ function Overview({ active }: { active: ActiveCourse }) {
             <div className="font-display text-lg font-bold text-white">{stats.streak}</div>
           </div>
           <div className="rounded-xl bg-white/[0.04] px-3 py-2">
-            <div className="text-[11px] text-white/50">MMR</div>
-            <div className="font-display text-lg font-bold text-white">{stats.mmr.toLocaleString('en-IN')}</div>
+            <div className="text-[11px] text-white/50">{rankOf(stats.mmr).label}</div>
+            <div className="font-display text-lg font-bold text-white">{stats.mmr.toLocaleString('en-IN')} <span className="text-xs font-normal text-white/50">MMR</span></div>
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs text-white/55">
@@ -220,32 +307,74 @@ function Overview({ active }: { active: ActiveCourse }) {
         </p>
       </motion.section>
 
-      {/* Dock */}
-      <motion.nav aria-label="Lounge stations" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ duration: 0.4, delay: 0.08 }} className="pointer-events-auto absolute bottom-5 left-1/2 grid w-[min(1000px,calc(100vw-32px))] -translate-x-1/2 grid-cols-2 gap-2.5 sm:grid-cols-5">
-        {dock.map((w, i) => (
-          <motion.button
-            key={w.key}
-            type="button"
-            onClick={() => choose(w.key)}
-            onPointerEnter={(e) => e.pointerType === 'mouse' && audio.play('hover')}
-            whileHover={{ y: -4 }}
-            whileTap={{ scale: 0.97 }}
-            className={`card group flex cursor-pointer items-center gap-3 px-4 py-3.5 text-left transition-[border-color,box-shadow] hover:border-[var(--user)] hover:shadow-[0_0_40px_-10px_rgb(var(--user-rgb)/0.8)] ${w.key === 'new' ? 'col-span-2 sm:col-span-1' : ''}`}
-          >
-            <span className="grid size-10 shrink-0 place-items-center rounded-2xl transition-colors group-hover:text-[var(--user-ink)] group-hover:[background:var(--user)]" style={{ background: 'rgb(var(--user-rgb) / 0.16)', color: 'var(--user)' }}>
-              <w.icon size={19} />
-            </span>
-            <span className="min-w-0">
-              <span className="flex items-center gap-2 whitespace-nowrap font-display text-[15px] font-semibold text-white">
-                {w.title}
-                <kbd className="hidden rounded bg-white/10 px-1.5 font-mono text-[10px] text-white/50 sm:inline">{i + 1}</kbd>
-              </span>
-              <span className="block truncate text-xs text-white/55">{w.sub}</span>
-            </span>
-          </motion.button>
+      {/* Dock: Lesson is the hero; Quiz and Journey second tier; Profile and New course at the ends. */}
+      <motion.nav
+        aria-label="Lounge stations"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.4, delay: 0.08 }}
+        className="pointer-events-auto absolute bottom-5 left-1/2 grid w-[min(1180px,calc(100vw-32px))] -translate-x-1/2 grid-cols-2 gap-2.5 sm:grid-cols-4 lg:flex lg:items-end lg:gap-3"
+      >
+        {dock.map((w) => (
+          <DockCard key={w.key} item={w} />
         ))}
       </motion.nav>
     </>
+  );
+}
+
+interface DockItem {
+  key: DockKey;
+  hotkey: number;
+  tier: 1 | 2 | 3;
+  icon: LucideIcon;
+  title: string;
+  sub: string;
+  badge?: string;
+  /** Replaces the icon tile (e.g. the rank emblem). */
+  badgeNode?: ReactNode;
+  extra?: ReactNode;
+}
+
+const TIER = {
+  1: 'order-first col-span-2 sm:col-span-4 lg:order-none lg:min-h-[clamp(190px,26vh,290px)] lg:flex-[1.75] lg:p-6',
+  2: 'lg:min-h-[clamp(140px,18.5vh,205px)] lg:flex-[1.2] lg:p-5',
+  3: 'lg:min-h-[clamp(108px,13.5vh,150px)] lg:flex-[0.95] lg:p-4',
+} as const;
+
+function DockCard({ item: w }: { item: DockItem }) {
+  const hero = w.tier === 1;
+  return (
+    <motion.button
+      type="button"
+      onClick={() => choose(w.key)}
+      onPointerEnter={(e) => e.pointerType === 'mouse' && audio.play('hover')}
+      whileHover={{ y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      className={`card group relative flex min-w-0 cursor-pointer flex-wrap items-center gap-3 px-4 py-3.5 text-left transition-[border-color,box-shadow] hover:border-[var(--user)] hover:shadow-[0_0_40px_-10px_rgb(var(--user-rgb)/0.8)] lg:flex-col lg:flex-nowrap lg:items-start lg:justify-between ${TIER[w.tier]}`}
+      style={hero ? { background: 'linear-gradient(160deg, rgb(var(--user-rgb) / 0.22), rgb(13 18 32 / 0.82) 60%)' } : undefined}
+    >
+      <span className="flex items-center justify-between lg:w-full">
+        {w.badgeNode ?? (
+          <span
+            className={`grid shrink-0 place-items-center rounded-2xl transition-colors group-hover:text-[var(--user-ink)] group-hover:[background:var(--user)] ${hero ? 'size-11 lg:size-14' : w.tier === 2 ? 'size-10 lg:size-12' : 'size-10'}`}
+            style={{ background: 'rgb(var(--user-rgb) / 0.16)', color: 'var(--user)' }}
+          >
+            <w.icon size={hero ? 24 : 20} />
+          </span>
+        )}
+        <span className="hidden items-center gap-1.5 lg:flex">
+          {w.badge && <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-xs font-semibold text-amber-200">{w.badge}</span>}
+          <kbd className="rounded bg-white/10 px-1.5 font-mono text-[11px] text-white/50">{w.hotkey}</kbd>
+        </span>
+      </span>
+      <span className="min-w-0 flex-1 lg:w-full lg:flex-none">
+        <span className={`block truncate font-display font-semibold text-white ${hero ? 'text-lg lg:text-3xl' : w.tier === 2 ? 'text-[15px] lg:text-xl' : 'text-[15px] lg:text-base'}`}>{w.title}</span>
+        <span className={`block truncate text-white/60 ${hero ? 'text-sm lg:text-base' : 'text-xs lg:text-sm'}`}>{w.sub}</span>
+      </span>
+      {w.extra && <span className={`w-full ${hero ? 'block' : 'hidden lg:block'}`}>{w.extra}</span>}
+    </motion.button>
   );
 }
 
@@ -277,7 +406,7 @@ function EmptyState() {
   );
 }
 
-const TITLES = { journey: 'Observation window', profile: 'Pixel’s corner' } as const;
+const TITLES = { journey: 'Skill journey', profile: 'Pixel’s corner' } as const;
 
 function SectionPanel({ station }: { station: 'journey' | 'profile' }) {
   const wide = station === 'journey';
@@ -289,12 +418,12 @@ function SectionPanel({ station }: { station: 'journey' | 'profile' }) {
       animate={{ opacity: 1, x: 0, y: 0 }}
       exit={wide ? { opacity: 0, y: 30 } : { opacity: 0, x: 30 }}
       transition={{ duration: 0.45, delay: 0.35, ease: [0.2, 0.8, 0.25, 1] }}
-      className={`card scroll-y pointer-events-auto absolute ${wide ? 'bottom-5 left-1/2 max-h-[64vh] w-[min(980px,calc(100vw-32px))] -translate-x-1/2' : 'bottom-3 right-3 max-h-[80vh] w-[calc(100vw-24px)] sm:bottom-6 sm:right-6 sm:top-20 sm:max-h-none sm:w-[460px]'} p-5 sm:p-6`}
+      className={`card scroll-y pointer-events-auto absolute ${wide ? 'bottom-5 left-1/2 top-20 w-[min(1080px,calc(100vw-32px))] -translate-x-1/2' : 'bottom-3 right-3 max-h-[80vh] w-[calc(100vw-24px)] sm:bottom-6 sm:right-6 sm:top-20 sm:max-h-none sm:w-[460px]'} p-5 sm:p-6`}
     >
       <button type="button" onClick={() => (audio.play('click'), useHub.getState().go('hub'))} className="mb-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/[0.12] hover:text-white">
         <ArrowLeft size={13} /> Back to lounge <kbd className="ml-1 hidden font-mono text-[10px] text-white/40 sm:inline">Esc</kbd>
       </button>
-      {station === 'journey' ? <JourneySection /> : <ProfileSection />}
+      {station === 'journey' ? <SkillJourneySection /> : <ProfileSection />}
     </motion.section>
   );
 }

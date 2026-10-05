@@ -507,3 +507,13 @@
     animation: none;
   }
 }
+
+/* Tutorial pointer leader line marching towards the card. */
+.tutorial-dash {
+  animation: tutorial-dash 0.9s linear infinite;
+}
+@keyframes tutorial-dash {
+  to {
+    stroke-dashoffset: -22;
+  }
+}

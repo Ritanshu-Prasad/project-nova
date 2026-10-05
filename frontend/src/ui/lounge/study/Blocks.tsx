@@ -1,22 +1,29 @@
 import { motion } from 'framer-motion';
-import { Check, Copy, FileText, Info, Lightbulb, ListChecks, Sparkles, TriangleAlert } from 'lucide-react';
+import { Check, Copy, FileText, Info, KeyRound, Lightbulb, ListChecks, ListOrdered, Sparkles, Table2, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Block } from '../../../core/courseSchema';
+import { TYPE } from './typography';
 
 function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-2xl border border-white/[0.07] bg-white/[0.035] p-5 ${className}`}>{children}</div>;
 }
 
-function H({ children }: { children: ReactNode }) {
-  return <h3 className="mb-2 font-display text-lg font-semibold text-white">{children}</h3>;
+/** Every heading in the feed: same face, size and weight; only the icon colour varies. */
+function H({ children, icon: Icon, color = 'var(--user)' }: { children: ReactNode; icon?: LucideIcon; color?: string }) {
+  return (
+    <h3 className={`mb-3 flex items-center gap-2 ${TYPE.heading}`}>
+      {Icon && <Icon size={18} className="shrink-0" style={{ color }} />}
+      {children}
+    </h3>
+  );
 }
 
 function CodeBlock({ b }: { b: Extract<Block, { type: 'code' }> }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#070a12]">
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2 text-xs text-white/50">
-        <span className="font-mono uppercase tracking-wider">{b.language}</span>
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2 font-mono text-sm text-white/50">
+        <span>{b.language}</span>
         <button
           type="button"
           onClick={() => {
@@ -24,15 +31,15 @@ function CodeBlock({ b }: { b: Extract<Block, { type: 'code' }> }) {
             setCopied(true);
             setTimeout(() => setCopied(false), 1500);
           }}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 transition hover:bg-white/10 hover:text-white"
+          className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 font-sans transition hover:bg-white/10 hover:text-white"
         >
           {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <pre className="scroll-y overflow-x-auto p-4 font-mono text-[13px] leading-relaxed text-sky-100/90">
+      <pre className={`scroll-y overflow-x-auto p-4 ${TYPE.formula} text-sky-100/90!`}>
         <code>{b.code}</code>
       </pre>
-      {b.caption && <div className="border-t border-white/[0.06] px-4 py-2 text-xs text-white/55">{b.caption}</div>}
+      {b.caption && <p className={`border-t border-white/[0.06] px-4 py-3 ${TYPE.body}`}>{b.caption}</p>}
     </div>
   );
 }
@@ -50,7 +57,7 @@ function BlockView({ b }: { b: Block }) {
         <div>
           {b.title && <H>{b.title}</H>}
           {b.body.split(/\n\n+/).map((p, i) => (
-            <p key={i} className="mb-3 text-[16px] leading-[1.75] text-white/85 last:mb-0">
+            <p key={i} className={`mb-3 last:mb-0 ${TYPE.body}`}>
               {p}
             </p>
           ))}
@@ -59,23 +66,19 @@ function BlockView({ b }: { b: Block }) {
     case 'analogy':
       return (
         <Card className="border-[rgb(var(--user-rgb)/0.3)]">
-          <div className="chip-label mb-1.5">
-            <Sparkles size={12} /> Think of it like…
-          </div>
-          <p className="text-[15px] leading-relaxed text-white/85">{b.body}</p>
+          <H icon={Sparkles}>Think of it like…</H>
+          <p className={TYPE.body}>{b.body}</p>
         </Card>
       );
     case 'keyTerms':
       return (
         <div>
-          <H>Key terms</H>
+          <H icon={KeyRound}>Key terms</H>
           <div className="grid gap-2.5 sm:grid-cols-2">
             {b.terms.map((t) => (
-              <Card key={t.term} className="!p-4">
-                <div className="font-semibold" style={{ color: 'var(--user)' }}>
-                  {t.term}
-                </div>
-                <div className="mt-1 text-sm leading-relaxed text-white/75">{t.def}</div>
+              <Card key={t.term} className="p-4!">
+                <p className={`${TYPE.body} font-semibold text-white!`}>{t.term}</p>
+                <p className={`mt-1 ${TYPE.body}`}>{t.def}</p>
               </Card>
             ))}
           </div>
@@ -84,14 +87,14 @@ function BlockView({ b }: { b: Block }) {
     case 'steps':
       return (
         <div>
-          <H>{b.title ?? 'Step by step'}</H>
+          <H icon={ListOrdered}>{b.title ?? 'Step by step'}</H>
           <ol className="space-y-2.5">
             {b.steps.map((s, i) => (
               <li key={i} className="flex gap-3">
-                <span className="grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold text-[var(--user-ink)]" style={{ background: 'var(--user)' }}>
+                <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-sm font-bold text-[var(--user-ink)]" style={{ background: 'var(--user)' }}>
                   {i + 1}
                 </span>
-                <span className="pt-1 text-[15px] leading-relaxed text-white/85">{s}</span>
+                <span className={TYPE.body}>{s}</span>
               </li>
             ))}
           </ol>
@@ -101,20 +104,20 @@ function BlockView({ b }: { b: Block }) {
       return <CodeBlock b={b} />;
     case 'formula':
       return (
-        <Card className="text-center">
-          <div className="overflow-x-auto py-2 font-serif text-2xl tracking-wide text-white sm:text-3xl">{b.expr}</div>
-          {b.caption && <div className="mt-2 text-sm text-white/55">{b.caption}</div>}
+        <Card>
+          <div className={`overflow-x-auto rounded-xl bg-black/30 px-4 py-3 ${TYPE.formula}`}>{b.expr}</div>
+          {b.caption && <p className={`mt-3 ${TYPE.body}`}>{b.caption}</p>}
         </Card>
       );
     case 'compare':
       return (
         <div>
-          {b.title && <H>{b.title}</H>}
+          {b.title && <H icon={Table2}>{b.title}</H>}
           <div className="overflow-x-auto rounded-2xl border border-white/[0.07]">
-            <table className="w-full text-left text-sm">
+            <table className={`w-full text-left ${TYPE.body}`}>
               <thead className="bg-white/[0.05] text-white">
                 <tr>
-                  <th className="px-4 py-3 font-medium text-white/50" />
+                  <th className="px-4 py-3" />
                   <th className="px-4 py-3 font-semibold">{b.columns[0]}</th>
                   <th className="px-4 py-3 font-semibold">{b.columns[1]}</th>
                 </tr>
@@ -122,9 +125,9 @@ function BlockView({ b }: { b: Block }) {
               <tbody>
                 {b.rows.map((r) => (
                   <tr key={r[0]} className="border-t border-white/[0.06]">
-                    <td className="px-4 py-3 font-medium text-white/60">{r[0]}</td>
-                    <td className="px-4 py-3 text-white/85">{r[1]}</td>
-                    <td className="px-4 py-3 text-white/85">{r[2]}</td>
+                    <td className="px-4 py-3 font-semibold text-white">{r[0]}</td>
+                    <td className="px-4 py-3">{r[1]}</td>
+                    <td className="px-4 py-3">{r[2]}</td>
                   </tr>
                 ))}
               </tbody>
@@ -135,30 +138,29 @@ function BlockView({ b }: { b: Block }) {
     case 'example':
       return (
         <Card>
-          <div className="chip-label mb-1.5">{b.title ?? 'Worked example'}</div>
-          <p className="font-mono text-[14px] leading-relaxed text-white/85">{b.body}</p>
+          <H icon={Lightbulb} color="#34d399">
+            {b.title ?? 'Worked example'}
+          </H>
+          <p className={TYPE.body}>{b.body}</p>
         </Card>
       );
     case 'callout': {
       const t = TONES[b.tone];
       return (
-        <div className={`flex gap-3 rounded-2xl border p-4 ${t.cls}`}>
-          <t.icon size={18} className="mt-0.5 shrink-0" style={{ color: t.color }} />
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.color }}>
-              {t.label}
-            </div>
-            <p className="mt-0.5 text-[15px] leading-relaxed text-white/85">{b.body}</p>
-          </div>
+        <div className={`rounded-2xl border p-5 ${t.cls}`}>
+          <H icon={t.icon} color={t.color}>
+            {t.label}
+          </H>
+          <p className={TYPE.body}>{b.body}</p>
         </div>
       );
     }
     case 'source':
       return (
-        <figure className="rounded-2xl border-l-4 bg-white/[0.03] py-3 pl-5 pr-4" style={{ borderColor: 'var(--user)' }}>
-          <blockquote className="text-[15px] italic leading-relaxed text-white/80">“{b.excerpt}”</blockquote>
-          <figcaption className="mt-2 flex items-center gap-1.5 text-xs text-white/50">
-            <FileText size={12} /> {b.doc}
+        <figure className="rounded-2xl border-l-4 bg-white/[0.03] py-4 pl-5 pr-4" style={{ borderColor: 'var(--user)' }}>
+          <blockquote className={TYPE.body}>“{b.excerpt}”</blockquote>
+          <figcaption className={`mt-2 flex items-center gap-1.5 ${TYPE.body} text-white/55!`}>
+            <FileText size={14} /> {b.doc}
             {b.page ? ` · page ${b.page}` : ''}
           </figcaption>
         </figure>
@@ -166,13 +168,13 @@ function BlockView({ b }: { b: Block }) {
     case 'summary':
       return (
         <Card className="border-emerald-400/20 bg-emerald-400/[0.05]">
-          <div className="mb-2 flex items-center gap-2 font-display font-semibold text-emerald-200">
-            <ListChecks size={17} /> In a nutshell
-          </div>
+          <H icon={ListChecks} color="#6ee7b7">
+            In a nutshell
+          </H>
           <ul className="space-y-1.5">
             {b.points.map((p) => (
-              <li key={p} className="flex gap-2 text-[15px] text-white/85">
-                <Check size={15} className="mt-1 shrink-0 text-emerald-300" /> {p}
+              <li key={p} className={`flex gap-2 ${TYPE.body}`}>
+                <Check size={16} className="mt-1 shrink-0 text-emerald-300" /> {p}
               </li>
             ))}
           </ul>

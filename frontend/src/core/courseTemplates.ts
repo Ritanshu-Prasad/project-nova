@@ -1,4 +1,4 @@
-import type { Block, Course, Level, Module, Question, Topic, TopicKind } from './courseSchema';
+import type { Block, Course, Level, Module, Question, Topic, TopicKind, Panel } from './courseSchema';
 import { makeId } from './courseSchema';
 
 /**
@@ -13,6 +13,78 @@ const fill = (q: string, answer: string, why: string, accept: string[] = [], dif
 
 const terms = (...t: [string, string][]): Block => ({ type: 'keyTerms', terms: t.map(([term, def]) => ({ term, def })) });
 
+/** Topic-specific side-panel sections — each topic gets the ones that suit it (the AI backend sends its own). */
+const PANELS: Record<string, Panel[]> = {
+  'ai-1': [
+    { title: 'Common mistakes', items: ['Thinking more layers always means a smarter network', 'Forgetting the bias term', 'Using a linear activation everywhere'] },
+    { title: 'Where it’s used', items: ['Image recognition in your phone’s camera', 'Spam filters', 'Speech-to-text'] },
+  ],
+  'ai-2': [
+    { title: 'Common mistakes', items: ['Learning rate too high — the loss explodes', 'Reading one noisy batch as a trend', 'Forgetting to zero the gradients between steps'] },
+    { title: 'Memory trick', body: 'Gradient points uphill, so we step against it: minus sign, small step, repeat.' },
+    { title: 'Before you start', items: ['What a derivative measures', 'Weights and biases (topic 1.1)'] },
+  ],
+  'ai-3': [
+    { title: 'Before you start', items: ['The chain rule from calculus', 'One step of gradient descent (topic 1.2)'] },
+    { title: 'Common mistakes', items: ['Mixing up the forward and backward passes', 'Assuming backprop is a learning algorithm by itself — it only computes gradients'] },
+  ],
+  'ai-4': [
+    { title: 'Where it’s used', items: ['ChatGPT-style chat assistants', 'Machine translation', 'Protein structure prediction'] },
+    { title: 'Memory trick', body: 'Query asks, keys answer “how relevant am I?”, values carry the actual content.' },
+    { title: 'Common mistakes', items: ['Forgetting positional information', 'Thinking attention reads tokens one by one — it looks at all of them at once'] },
+  ],
+  'react-1': [
+    { title: 'Common mistakes', items: ['Deep inheritance chains between components', 'Giant components that do everything'] },
+    { title: 'Try this', body: 'Split a card into Card, CardHeader and CardBody, then reuse them on two screens.' },
+  ],
+  'react-2': [
+    { title: 'Rules of hooks', items: ['Call hooks at the top level only', 'Only call them from components or other hooks', 'Name custom hooks with a “use” prefix'] },
+    { title: 'Common mistakes', items: ['Calling a hook inside a condition or loop', 'Missing dependencies in useEffect'] },
+  ],
+  'react-3': [
+    { title: 'When to use it', items: ['Theme, language, signed-in user', 'Data many distant components need'] },
+    { title: 'Common mistakes', items: ['Putting fast-changing values in one big context', 'Reaching for context when passing a prop twice would do'] },
+  ],
+  'react-4': [
+    { title: 'Common mistakes', items: ['Memoising everything “just in case”', 'Passing new objects or arrays as props every render', 'Forgetting dependencies'] },
+    { title: 'Measure first', body: 'Open the React Profiler, find the slow render, then memoise exactly that.' },
+  ],
+  'la-1': [
+    { title: 'Where it’s used', items: ['Game physics: velocity and forces', 'Word embeddings in AI', 'GPS and navigation'] },
+    { title: 'Common mistakes', items: ['Adding vectors of different lengths', 'Confusing the dot product (a number) with a vector'] },
+    { title: 'Memory trick', body: 'Dot product = “how much do these two point the same way?” Same way: big. Perpendicular: zero.' },
+  ],
+  'la-2': [
+    { title: 'Before you start', items: ['Vectors and the dot product (topic 1.1)'] },
+    { title: 'Common mistakes', items: ['Assuming AB = BA', 'Multiplying matrices whose sizes don’t match'] },
+    { title: 'Where it’s used', items: ['Rotating and scaling images', '3D graphics in every video game', 'Every layer of a neural network'] },
+  ],
+  'la-3': [
+    { title: 'Memory trick', body: 'Determinant = area scale factor. Zero means the shape got squashed flat.' },
+    { title: 'Common mistakes', items: ['Forgetting the sign — a negative determinant means the space was flipped', 'Expecting a determinant for non-square matrices'] },
+  ],
+  'la-4': [
+    { title: 'Before you start', items: ['Matrix–vector multiplication (topic 1.2)', 'Determinants (topic 2.1)'] },
+    { title: 'Where it’s used', items: ['Google’s original PageRank', 'Principal component analysis (PCA)', 'Vibration analysis of bridges'] },
+  ],
+  'bio-1': [
+    { title: 'Memory trick', body: 'Phospholipid = tadpole: water-loving head, water-fearing tails tucked inside.' },
+    { title: 'Exam focus', items: ['Diffusion vs active transport', 'Why the membrane is “fluid mosaic”'] },
+  ],
+  'bio-2': [
+    { title: 'Common mistakes', items: ['Thinking prokaryotes have a nucleus', 'Mixing up chromatin and chromosomes'] },
+    { title: 'Exam focus', items: ['Role of nuclear pores', 'Where mRNA is made'] },
+  ],
+  'bio-3': [
+    { title: 'Memory trick', body: 'Mitochondria: Most ATP. Folded cristae = more surface = more energy.' },
+    { title: 'Where it’s used', items: ['Why muscles burn during sprints (anaerobic respiration)', 'Inherited mitochondrial diseases'] },
+  ],
+  'bio-4': [
+    { title: 'Memory trick', body: 'PMAT: Prophase, Metaphase, Anaphase, Telophase. Meiosis does it twice.' },
+    { title: 'Common mistakes', items: ['Mitosis makes identical cells; meiosis makes four different ones', 'Crossing over happens in meiosis only'] },
+  ],
+};
+
 function topic(
   id: string,
   title: string,
@@ -22,7 +94,7 @@ function topic(
   lesson: { minutes: number; objectives: string[]; simple: string; blocks: Block[] },
   quiz: Question[],
 ): Topic {
-  return { id, title, planet, kind, summary, lesson, quiz };
+  return { id, title, planet, kind, summary, lesson: { ...lesson, panels: PANELS[id] }, quiz };
 }
 
 interface Template {

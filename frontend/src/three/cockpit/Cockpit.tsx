@@ -12,6 +12,7 @@ import {
   type Mesh,
   type PointLight,
 } from 'three';
+import { trackAnchor } from '../../core/anchors';
 import { audio } from '../../core/audio';
 import { PREFLIGHT } from '../../core/content';
 import { pulse, setHolding, toggleSystem } from '../../core/director';
@@ -244,15 +245,17 @@ function Mfd({ index, yaw }: { index: number; yaw: number }) {
 }
 
 function Switch({ sys, yaw }: { sys: SystemKey; yaw: number }) {
+  const root = useRef<Group>(null);
   const lever = useRef<Group>(null);
   const guard = useRef<Group>(null);
   const led = useRef<MeshStandardMaterial>(null);
   const hovered = useRef(false);
   const { pos, rot } = onFace(yaw, SWITCH_Y, 0.0);
 
-  useFrame((_, dt) => {
+  useFrame((state, dt) => {
     const st = useNova.getState();
     const on = st.systems[sys];
+    if (st.phase === 'preflight' && root.current) trackAnchor(`switch:${sys}`, root.current, state.camera, state.size, [0, 0, 0.03]);
     const next = st.phase === 'preflight' && SYSTEM_ORDER.find((k) => !st.systems[k]) === sys;
     if (lever.current) lever.current.rotation.x = damp(lever.current.rotation.x, on ? -0.7 : 0.7, 14, dt);
     if (guard.current) guard.current.rotation.x = damp(guard.current.rotation.x, on || next || hovered.current ? -1.9 : 0, 10, dt);
@@ -269,7 +272,7 @@ function Switch({ sys, yaw }: { sys: SystemKey; yaw: number }) {
   };
 
   return (
-    <group position={pos} rotation={rot}>
+    <group ref={root} position={pos} rotation={rot}>
       <RoundedBox args={[0.055, 0.085, 0.018]} radius={0.004} material={hull} />
       <mesh position={[0, 0.032, 0.012]}>
         <sphereGeometry args={[0.006, 10, 10]} />

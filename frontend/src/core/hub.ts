@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { replayLaunch } from './director';
 import { useNova } from './store';
 
 /**
@@ -13,14 +14,19 @@ interface HubState {
   station: Station;
   /** Which tab the New course window opens on. */
   forgeTab: ForgeTab;
+  /** A surprise pop quiz is being offered in the lounge. */
+  surprise: boolean;
   go: (station: Station) => void;
+  setSurprise: (on: boolean) => void;
   setForgeTab: (tab: ForgeTab) => void;
 }
 
 export const useHub = create<HubState>()((set) => ({
   station: 'hub',
   forgeTab: 'goal',
-  go: (station) => set({ station }),
+  surprise: false,
+  go: (station) => set({ station, surprise: false }),
+  setSurprise: (surprise) => set({ surprise }),
   setForgeTab: (forgeTab) => set({ forgeTab }),
 }));
 
@@ -62,4 +68,10 @@ export function openForge(tab: ForgeTab = 'goal'): void {
   useHub.getState().setForgeTab(tab);
   useHub.getState().go('hub');
   useNova.getState().setCurriculumOpen(true);
+}
+
+/** Re-watch the opening cinematic (Profile button or the LAUNCH easter egg), then land back in the lounge. */
+export function relaunch(): void {
+  useHub.getState().go('hub');
+  replayLaunch();
 }

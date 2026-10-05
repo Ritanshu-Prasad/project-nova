@@ -1,8 +1,8 @@
 import { audio } from './audio';
-import { ARRIVAL_NOTICE, PREFLIGHT } from './content';
+import { PREFLIGHT } from './content';
 import { clamp, damp, easeOutCubic, kf, lerp, smoothstep, type Keyframes } from './math';
 import { resetRuntime, rt } from './runtime';
-import { resetJourney, tickJourney } from './journey';
+import { goToLounge, resetJourney, tickJourney } from './journey';
 import { BAY } from './scene';
 import { SYSTEM_ORDER, useNova, type Phase, type SystemKey } from './store';
 
@@ -102,6 +102,11 @@ export function enterPhase(phase: Phase): void {
       break;
     case 'landed':
       store().setIntroSeen(true);
+      if (replayingFromLounge) {
+        // A replay from the lounge: once landed, walk straight back to the lounge.
+        replayingFromLounge = false;
+        setTimeout(() => goToLounge(), 1400);
+      }
       break;
     default:
       break;
@@ -156,6 +161,14 @@ export function skipIntro(): void {
   void audio.init();
   bringEverythingOnline();
   enterPhase('arrive');
+}
+
+let replayingFromLounge = false;
+
+/** Easter egg / profile option: relive the wake-up and launch, then return to the lounge (no sign-in steps). */
+export function replayLaunch(): void {
+  replayingFromLounge = true;
+  replayIntro();
 }
 
 /** Back to the hangar, eyes shut, systems offline — then wake up again. */
@@ -282,7 +295,6 @@ function tick(dt: number): void {
         once('cleared', () => {
           s.setCleared(true);
           audio.play('doorOpen');
-          s.notify({ kind: 'quest', title: 'QUEST COMPLETE', lines: [PREFLIGHT.complete], ttl: 4.5 });
         });
         const tc = now - clearedAt;
         rt.clearance = smoothstep(0, 0.6, tc);
@@ -354,11 +366,6 @@ function tick(dt: number): void {
       rt.shake = damp(rt.shake, rm() ? 0 : 0.015, 2.5, dt);
       rt.engine = damp(rt.engine, 0.14, 1.5, dt);
       rt.speedKms = lerp(18_000, 1_240, easeOutCubic(clamp(t / TIMING.approach)));
-      if (t >= 1.4) {
-        once('notice', () =>
-          s.notify({ kind: 'system', title: ARRIVAL_NOTICE.title, lines: [...ARRIVAL_NOTICE.lines], ttl: 6 }),
-        );
-      }
       if (t >= TIMING.arrive) enterPhase('landed');
       break;
     }

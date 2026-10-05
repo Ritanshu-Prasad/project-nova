@@ -1,7 +1,7 @@
 import { LayoutGroup, motion } from 'framer-motion';
 import { Check, Flag, Lock, Rocket } from 'lucide-react';
 import { useId } from 'react';
-import { useActiveCourse } from '../../core/course';
+import { isUnlocked, useActiveCourse } from '../../core/course';
 
 const PLANET_TINTS = ['#f59e0b', '#a855f7', '#22d3ee', '#34d399', '#f472b6', '#60a5fa', '#fb7185', '#a3e635'];
 
@@ -20,7 +20,7 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
   const active = useActiveCourse();
   const id = useId();
   if (!active) return null;
-  const { topics, cleared, entry } = active;
+  const { topics, cleared, entry, outline } = active;
   const n = topics.length;
   const size = compact ? 22 : 44;
 
@@ -36,11 +36,11 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
         <ol className="flex min-w-full items-stretch" style={{ minWidth: compact ? undefined : n * 104 + 60 }} aria-label="Course journey">
           {topics.map((t, i) => {
             const done = !!entry.progress[t.id]?.cleared;
-            const locked = i > cleared;
+            const locked = !isUnlocked(entry, t.id, outline);
             const here = i === cleared;
             const tint = PLANET_TINTS[i % PLANET_TINTS.length];
             const firstOfModule = i === 0 || topics[i - 1].moduleIndex !== t.moduleIndex;
-            const status = done ? 'Cleared' : here ? 'Next destination' : locked ? 'Locked' : 'Open';
+            const status = done ? 'Cleared' : here && locked ? 'Pass the module quiz first' : here ? 'Next destination' : locked ? 'Locked' : 'Open';
             return (
               <li key={t.id} className={`group relative flex flex-1 flex-col items-center ${compact ? 'h-12' : 'h-36 justify-center'}`}>
                 {!compact && firstOfModule && (

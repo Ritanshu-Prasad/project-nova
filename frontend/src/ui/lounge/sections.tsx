@@ -1,73 +1,222 @@
-import { FileText, Library, Map, Palette, Plus, Sparkles, Trash2, UserRound } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Clapperboard, FileText, Flame, Library, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { firstUncleared, levelOf, levelProgress, useActiveCourse, useCourse } from '../../core/course';
+import { firstUncleared, levelOf, levelProgress, useActiveCourse, useCourse, type ActiveCourse } from '../../core/course';
 import { flatTopics } from '../../core/courseSchema';
-import { openForge, useHub, useProfile } from '../../core/hub';
+import { openForge, relaunch, useHub, useProfile } from '../../core/hub';
+import { rankOf, TIERS } from '../../core/rank';
 import { useNova } from '../../core/store';
+import RankEmblem from './RankEmblem';
 import RocketProgress from './RocketProgress';
 
-function Head({ icon, kicker, title }: { icon: ReactNode; kicker: string; title: string }) {
+function Label({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="grid size-10 shrink-0 place-items-center rounded-2xl" style={{ background: 'rgb(var(--user-rgb) / 0.16)', color: 'var(--user)' }}>
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <div className="chip-label">{kicker}</div>
-        <h2 className="mt-0.5 truncate font-display text-2xl font-bold leading-tight text-white">{title}</h2>
-      </div>
+    <div className="chip-label mb-2">
+      {icon} {children}
     </div>
   );
 }
 
-export function JourneySection() {
+/** Skill journey: where the pilot's MMR puts them on the ship ladder, how it has moved, and the course route. */
+export function SkillJourneySection() {
   const active = useActiveCourse();
-  if (!active) return null;
-  const { course, cleared, topics } = active;
-  const n = topics.length;
-  const next = topics[Math.min(cleared, n - 1)];
+  const stats = useCourse((s) => s.stats);
+  const rank = rankOf(stats.mmr);
+  const accuracy = stats.answered ? Math.round((stats.correct / stats.answered) * 100) : 0;
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <Head icon={<Map size={19} />} kicker={`Journey map · ${course.modules.length} modules`} title={course.title} />
-        <div className="text-right text-sm text-white/65">
-          <div className="font-display text-2xl font-bold text-white">
-            {cleared}/{n}
+    <div className="space-y-6">
+      {/* Current rank */}
+      <div className="flex flex-wrap items-center gap-5">
+        <RankEmblem rank={rank} size={88} />
+        <div className="min-w-0 flex-1">
+          <div className="chip-label">
+            <TrendingUp size={12} /> Skill journey
           </div>
-          planets cleared
+          <h2 className="font-display text-3xl font-bold leading-tight" style={{ color: rank.tier.color }}>
+            {rank.label}
+          </h2>
+          <div className="text-sm text-white/60">
+            {rank.tier.metal} tier · {stats.mmr.toLocaleString('en-IN')} MMR — {rank.tier.blurb}
+          </div>
+          {rank.nextLabel ? (
+            <div className="mt-3 max-w-md">
+              <div className="flex justify-between text-xs text-white/55">
+                <span>
+                  {rank.toNext} MMR to <span className="font-semibold text-white">{rank.nextLabel}</span>
+                </span>
+                <span>{Math.round(rank.progress * 100)}%</span>
+              </div>
+              <span className="mt-1 block h-2 overflow-hidden rounded-full bg-white/10">
+                <motion.span className="block h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${rank.progress * 100}%` }} transition={{ duration: 0.8, delay: 0.4 }} style={{ background: rank.tier.color }} />
+              </span>
+            </div>
+          ) : (
+            <div className="mt-2 text-sm font-semibold text-white">You’ve reached the top of the ladder.</div>
+          )}
+        </div>
+        <div className="grid w-full grid-cols-3 gap-2 sm:w-auto">
+          {[
+            { k: 'Accuracy', v: `${accuracy}%` },
+            { k: 'Answered', v: String(stats.answered) },
+            { k: 'Best streak', v: String(stats.bestStreak), icon: <Flame size={11} className="text-amber-300" /> },
+          ].map((x) => (
+            <div key={x.k} className="rounded-2xl bg-white/[0.04] px-3 py-2 sm:w-28">
+              <div className="flex items-center gap-1 text-[11px] text-white/50">
+                {x.icon}
+                {x.k}
+              </div>
+              <div className="font-display text-lg font-bold text-white">{x.v}</div>
+            </div>
+          ))}
         </div>
       </div>
-      {course.documents && course.documents.length > 0 ? (
-        <p className="flex flex-wrap items-center gap-2 text-sm text-white/55">
-          <FileText size={14} /> Built from {course.documents.map((d) => `${d.name} (${d.pages} pages)`).join(', ')}
-        </p>
-      ) : (
-        course.objective && <p className="text-sm text-white/55">Your goal: “{course.objective}”</p>
-      )}
-      <div className="rounded-2xl bg-black/25 px-3 py-3">
-        <RocketProgress
-          onSelect={(id) => {
-            useCourse.getState().openTopic(id);
-            useHub.getState().go('lesson');
-          }}
-        />
+
+      <RankLadder mmr={stats.mmr} />
+
+      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+        <div className="rounded-2xl bg-white/[0.04] p-4">
+          <Label icon={<TrendingUp size={12} />}>MMR over time</Label>
+          <MmrChart values={stats.mmrHistory} />
+        </div>
+        {active && <ModuleSkills active={active} />}
       </div>
-      <p className="text-sm text-white/65">
-        {cleared >= n ? 'All planets cleared — what a journey!' : `Next stop: ${next.planet} — ${next.title}. Hover a planet to see its topic; click an unlocked one to study it.`}
+
+      {active && <CourseRoute active={active} />}
+      <p className="flex items-start gap-2 text-sm text-white/55">
+        <Sparkles size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
+        Harder questions on later planets — and timed pop quizzes (×1.5) — move your MMR the most. Misses cost a little, so steady practice wins.
       </p>
     </div>
   );
 }
 
-function Sparkline({ values }: { values: number[] }) {
-  if (values.length < 2) return <div className="h-12 text-xs text-white/40">Answer a quiz to start your MMR graph.</div>;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const pts = values.map((v, i) => `${(i / (values.length - 1)) * 100},${40 - ((v - min) / Math.max(1, max - min)) * 34 - 3}`).join(' ');
+const DIV_INDEX = { III: 0, II: 1, I: 2 } as const;
+
+/** The seven ship classes in a row, with a rocket at the pilot's exact position. */
+function RankLadder({ mmr }: { mmr: number }) {
+  const rank = rankOf(mmr);
+  const within = rank.division ? (DIV_INDEX[rank.division] + rank.progress) / 3 : 0;
+  const pos = Math.min(1, (rank.index + within) / (TIERS.length - 1));
   return (
-    <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="h-12 w-full">
-      <polyline points={pts} fill="none" stroke="var(--user)" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-    </svg>
+    <div className="overflow-x-auto rounded-2xl bg-black/25 px-4 pb-4 pt-5">
+      <div className="relative min-w-[620px]">
+        <div className="absolute left-[7%] right-[7%] top-6 h-1 rounded-full bg-white/10">
+          <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${pos * 100}%` }} transition={{ duration: 1, delay: 0.3 }} style={{ background: `linear-gradient(90deg, ${TIERS[0].color}, ${rank.tier.color})` }} />
+          <motion.div className="absolute -top-6" initial={{ left: 0 }} animate={{ left: `${pos * 100}%` }} transition={{ duration: 1, delay: 0.3 }}>
+            <Rocket size={18} className="-translate-x-1/2 rotate-45 text-white drop-shadow-[0_0_6px_rgb(var(--user-rgb))]" fill="var(--user)" />
+          </motion.div>
+        </div>
+        <ol className="relative grid grid-cols-7">
+          {TIERS.map((t, i) => {
+            const reached = i <= rank.index;
+            const here = i === rank.index;
+            return (
+              <li key={t.id} className="flex flex-col items-center text-center">
+                <span className={`rounded-full p-1 ${here ? 'ring-2 ring-offset-2 ring-offset-[#0b1020]' : ''}`} style={here ? { ['--tw-ring-color' as string]: t.color } : undefined}>
+                  <RankEmblem tier={t} size={here ? 40 : 34} dim={!reached} />
+                </span>
+                <span className={`mt-1.5 font-display text-sm font-semibold ${reached ? 'text-white' : 'text-white/40'}`}>{t.name}</span>
+                <span className="text-[11px] text-white/40">{i === 0 ? 'Start' : `${t.min.toLocaleString('en-IN')}+`}</span>
+                <span className="text-[10px] uppercase tracking-wider text-white/30">{t.metal}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+/** MMR history over the ladder's tier bands. */
+function MmrChart({ values }: { values: number[] }) {
+  if (values.length < 2) return <div className="grid h-40 place-items-center text-center text-sm text-white/45">Answer a few questions and your skill curve appears here.</div>;
+  const lo = Math.min(...values) - 40;
+  const hi = Math.max(...values) + 40;
+  const y = (v: number) => ((hi - v) / (hi - lo)) * 100;
+  const pts = values.map((v, i) => `${(i / (values.length - 1)) * 100},${y(v)}`).join(' ');
+  const bands = TIERS.map((t, i) => ({ t, from: Math.max(lo, t.min), to: Math.min(hi, TIERS[i + 1]?.min ?? Infinity) })).filter((b) => b.to > b.from);
+  return (
+    <div className="relative h-40 overflow-hidden rounded-xl">
+      {bands.map((b) => (
+        <div key={b.t.id} className="absolute inset-x-0 border-t border-dashed border-white/10" style={{ top: `${y(b.to)}%`, height: `${y(b.from) - y(b.to)}%`, background: `${b.t.color}14` }}>
+          <span className="absolute left-2 top-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: `${b.t.color}cc` }}>
+            {b.t.name}
+          </span>
+        </div>
+      ))}
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full">
+        <polyline points={pts} fill="none" stroke="var(--user)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+      </svg>
+      <span className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_10px_var(--user)]" style={{ left: '100%', top: `${y(values[values.length - 1])}%`, marginLeft: -6 }} />
+    </div>
+  );
+}
+
+/** Per-module mastery: half from topics completed, half from the best module-quiz score. */
+function ModuleSkills({ active }: { active: ActiveCourse }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.04] p-4">
+      <Label icon={<Target size={12} />}>Skill breakdown</Label>
+      <ul className="space-y-3">
+        {active.course.modules.map((m, i) => {
+          const topics = m.topics.length;
+          const done = m.topics.filter((t) => active.entry.progress[t.id]?.cleared).length;
+          const quiz = active.entry.modules[m.id];
+          const mastery = Math.round(((done / Math.max(1, topics)) * 0.5 + (quiz?.best ?? 0) * 0.5) * 100);
+          return (
+            <li key={m.id}>
+              <div className="flex items-baseline justify-between gap-2 text-sm">
+                <span className="truncate font-semibold text-white">
+                  {i + 1}. {m.title}
+                </span>
+                <span className="shrink-0 text-white/60">{mastery}%</span>
+              </div>
+              <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-white/10">
+                <span className="block h-full rounded-full" style={{ width: `${mastery}%`, background: 'var(--user)' }} />
+              </span>
+              <div className="mt-1 text-xs text-white/45">
+                {done}/{topics} topics · {quiz ? `quiz best ${Math.round(quiz.best * 100)}%${quiz.passed ? ' ✓' : ''}` : 'quiz not taken'}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function CourseRoute({ active }: { active: ActiveCourse }) {
+  const { course, cleared, topics, next } = active;
+  const n = topics.length;
+  return (
+    <div>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <Label icon={<Rocket size={12} />}>Course route · {course.title}</Label>
+        <span className="mb-2 text-sm text-white/55">
+          {cleared}/{n} planets cleared
+        </span>
+      </div>
+      {course.documents && course.documents.length > 0 ? (
+        <p className="mb-2 flex flex-wrap items-center gap-2 text-sm text-white/55">
+          <FileText size={14} /> Built from {course.documents.map((d) => `${d.name} (${d.pages} pages)`).join(', ')}
+        </p>
+      ) : null}
+      <div className="rounded-2xl bg-black/25 px-3 py-3">
+        <RocketProgress
+          onSelect={(id) => {
+            if (useCourse.getState().open(id)) useHub.getState().go('lesson');
+          }}
+        />
+      </div>
+      <p className="mt-2 text-sm text-white/60">
+        {!next
+          ? 'All planets cleared — what a journey!'
+          : next.kind === 'quiz'
+            ? `Checkpoint: pass the Module ${next.moduleIndex + 1} quiz to fly on to the next module.`
+            : `Next stop: ${next.topic.planet} — ${next.topic.title}. Click an unlocked planet to study it.`}
+      </p>
+    </div>
   );
 }
 
@@ -79,6 +228,7 @@ export function ProfileSection() {
   const activeId = useCourse((s) => s.activeId);
   const level = levelOf(stats.xp);
   const accuracy = stats.answered ? Math.round((stats.correct / stats.answered) * 100) : 0;
+  const rank = rankOf(stats.mmr);
   const tiles = [
     { label: 'MMR', value: stats.mmr.toLocaleString('en-IN') },
     { label: 'Accuracy', value: `${accuracy}%` },
@@ -113,10 +263,14 @@ export function ProfileSection() {
           </div>
         ))}
       </div>
-      <div className="rounded-2xl bg-white/[0.04] px-4 py-3">
-        <div className="mb-1 text-xs text-white/50">MMR over time</div>
-        <Sparkline values={stats.mmrHistory} />
-      </div>
+      <button type="button" onClick={() => useHub.getState().go('journey')} className="flex w-full cursor-pointer items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3 text-left transition hover:bg-white/[0.07]">
+        <RankEmblem rank={rank} size={40} />
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-base font-semibold text-white">{rank.label}</span>
+          <span className="block text-xs text-white/55">{rank.nextLabel ? `${rank.toNext} MMR to ${rank.nextLabel}` : 'Top of the ladder'} · open Skill journey</span>
+        </span>
+        <TrendingUp size={16} className="text-white/45" />
+      </button>
 
       <div>
         <div className="chip-label mb-2">
@@ -159,9 +313,18 @@ export function ProfileSection() {
         </span>
         <input type="color" value={themeColor} onChange={(e) => useNova.getState().setThemeColor(e.target.value)} className="h-8 w-12 cursor-pointer rounded-lg border-0 bg-transparent" aria-label="Pick your colour" />
       </label>
-      <p className="flex items-start gap-2 text-sm text-white/60">
-        <Sparkles size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
-        Pixel tip: harder questions on later planets earn the most MMR.
+      <button type="button" onClick={relaunch} className="group flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:border-[var(--user)] hover:bg-white/[0.06]">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl transition-colors group-hover:text-[var(--user-ink)] group-hover:[background:var(--user)]" style={{ background: 'rgb(var(--user-rgb) / 0.16)', color: 'var(--user)' }}>
+          <Clapperboard size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-white">Relive your first launch</span>
+          <span className="block text-xs text-white/50">Watch the wake-up and launch again — you’ll land right back here.</span>
+        </span>
+      </button>
+      <p className="flex items-start gap-2 text-xs text-white/40">
+        <Sparkles size={13} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
+        Psst — Pixel knows a secret: type L-A-U-N-C-H anywhere in the lounge.
       </p>
     </div>
   );

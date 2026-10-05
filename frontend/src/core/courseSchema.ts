@@ -31,12 +31,21 @@ export type Question =
   | { type: 'truefalse'; q: string; answer: boolean; why: string; difficulty?: number }
   | { type: 'fill'; q: string; answer: string; accept?: string[]; why: string; difficulty?: number };
 
+/** A topic-specific side-panel section (e.g. "Common mistakes", "Where it's used"); the AI picks as many as the topic needs. */
+export interface Panel {
+  title: string;
+  items?: string[];
+  body?: string;
+}
+
 export interface Lesson {
   minutes: number;
   objectives: string[];
   /** One-paragraph plain-language version ("Explain simpler"). */
   simple: string;
   blocks: Block[];
+  /** Extra side-panel sections for this topic. */
+  panels?: Panel[];
 }
 
 export interface Topic {
@@ -54,6 +63,8 @@ export interface Module {
   id: string;
   title: string;
   topics: Topic[];
+  /** End-of-module quiz. When absent, it is assembled from the topics' question banks. */
+  quiz?: Question[];
 }
 
 export interface Course {
@@ -152,6 +163,7 @@ export function normalizeCourse(raw: unknown): Course {
     .map((m) => ({
       id: str(m.id) || makeId('mod'),
       title: str(m.title, 'Module'),
+      quiz: arr<Record<string, unknown>>(m.quiz).map(normQuestion).filter((q): q is Question => q !== null),
       topics: arr<Record<string, unknown>>(m.topics)
         .map((t): Topic => {
           const l = (t.lesson ?? {}) as Record<string, unknown>;
@@ -166,6 +178,9 @@ export function normalizeCourse(raw: unknown): Course {
               objectives: arr<unknown>(l.objectives).map((o) => str(o)).filter(Boolean),
               simple: str(l.simple),
               blocks: arr<Record<string, unknown>>(l.blocks).map(normBlock).filter((b): b is Block => b !== null),
+              panels: arr<Record<string, unknown>>(l.panels)
+                .map((x) => ({ title: str(x.title), items: arr<unknown>(x.items).map((i) => str(i)).filter(Boolean), body: str(x.body) }))
+                .filter((x) => x.title && (x.items.length || x.body)),
             },
             quiz: arr<Record<string, unknown>>(t.quiz).map(normQuestion).filter((q): q is Question => q !== null),
           };
