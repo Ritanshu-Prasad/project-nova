@@ -26,9 +26,9 @@ export interface GenerateResult {
   via: 'ai' | 'local';
 }
 
-const API = (import.meta.env.VITE_COURSE_API as string | undefined)?.replace(/\/$/, '');
-/** True when an AI backend is configured (uploads leave the device). */
-export const hasCourseApi = !!API;
+const API = (import.meta.env.VITE_COURSE_API as string | undefined)?.replace(/\/$/, '') || '';
+/** True when an AI backend is configured or running in Vercel production. */
+export const hasCourseApi = !!API || import.meta.env.PROD;
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function viaBackend(req: GenerateRequest, progress: ProgressFn): Promise<Course> {
@@ -49,7 +49,7 @@ async function viaBackend(req: GenerateRequest, progress: ProgressFn): Promise<C
 }
 
 export async function generateCourse(req: GenerateRequest, progress: ProgressFn): Promise<GenerateResult> {
-  if (API) {
+  if (hasCourseApi) {
     try {
       return { course: await viaBackend(req, progress), via: 'ai' };
     } catch (e) {
