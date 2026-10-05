@@ -1,228 +1,307 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, Check, ChevronRight, Cpu, Loader2, Play, Target, Zap } from 'lucide-react';
+import { ArrowRight, Check, Cpu, FileText, FileUp, Loader2, RotateCcw, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { audio } from '../../core/audio';
-import { findCourse, useCourse } from '../../core/course';
+import { useActiveCourse, useCourse } from '../../core/course';
+import { generateCourse, hasCourseApi, type GenerateRequest } from '../../core/courseApi';
+import type { Course, Level } from '../../core/courseSchema';
+import { TEMPLATE_PRESETS } from '../../core/courseTemplates';
 import { useHub } from '../../core/hub';
 import { goToLounge, holoBurst, useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
+import type { DocStructure } from '../../core/pdfCourse';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
 
-const PRESETS = [
-  { id: 'react', label: 'Advanced React Patterns', icon: <BookOpen size={13} /> },
-  { id: 'math', label: 'Linear Algebra Basics', icon: <Target size={13} /> },
-  { id: 'biology', label: 'Cellular Biology', icon: <Zap size={13} /> },
+type Stage = 'edit' | 'forge' | 'ready' | 'error';
+const LEVELS: { id: Level; label: string }[] = [
+  { id: 'beginner', label: 'Beginner' },
+  { id: 'intermediate', label: 'Intermediate' },
+  { id: 'advanced', label: 'Advanced' },
 ];
+const MAX_FILES = 5;
+const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 
-const STEPS = ['Parsing your objective', 'Retrieving knowledge · RAG, 768-d vectors', 'Calibrating difficulty to your MMR', 'Assembling course modules'];
-const STEP_MS = 700;
-
-type Stage = 'edit' | 'forge' | 'ready';
-
-/** The course forge: describe an objective, watch the System build the course, then walk to the lounge. */
+/** "New course": describe a goal or upload PDFs; NOVA builds a structured course and opens it in the lounge. */
 export default function CurriculumSetup() {
   const open = useNova((s) => s.curriculumOpen);
-  const themeColor = useNova((s) => s.themeColor);
-  const activeObjective = useNova((s) => s.activeObjective);
   const inLounge = useDeck((s) => s.deck === 'lounge');
+  const tab = useHub((s) => s.forgeTab);
+  const active = useActiveCourse();
   const [objective, setObjective] = useState('');
+  const [level, setLevel] = useState<Level>('beginner');
+  const [files, setFiles] = useState<File[]>([]);
+  const [focus, setFocus] = useState('');
+  const [structure, setStructure] = useState<DocStructure>('chapters');
+  const [drag, setDrag] = useState(false);
   const [stage, setStage] = useState<Stage>('edit');
-  const [step, setStep] = useState(0);
-  const timers = useRef<number[]>([]);
+  const [steps, setSteps] = useState<{ key: string; label: string }[]>([]);
+  const [error, setError] = useState('');
+  const [built, setBuilt] = useState<Course | null>(null);
+  const timer = useRef(0);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
-  const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms));
-
-  const forge = (final: string) => {
-    useNova.getState().setActiveObjective(final);
-    useCourse.getState().start(final);
-    setStage('forge');
-    setStep(0);
-    audio.play('hudBoot');
-    holoBurst(0.8);
-    STEPS.forEach((_, i) =>
-      later(() => {
-        setStep(i + 1);
-        audio.play('click');
-      }, STEP_MS * (i + 1)),
-    );
-    later(() => {
-      setStage('ready');
-      audio.play('quest');
-    }, STEP_MS * STEPS.length + 250);
-    later(() => {
-      useNova.getState().setCurriculumOpen(false);
-      const project = () => {
-        useHub.getState().go('hub');
-        holoBurst(1);
-        const c = findCourse(useCourse.getState().courseId);
-        useNova.getState().notify({ kind: 'system', title: 'Course ready', lines: [`${c.title} — ${c.subtopics.length} planets to explore.`, 'Pick a station below to begin.'] });
-      };
-      goToLounge(project);
-      later(() => {
-        setStage('edit');
-        setStep(0);
-      }, 800);
-    }, STEP_MS * STEPS.length + 1500);
+  const close = () => {
+    useNova.getState().setCurriculumOpen(false);
+    timer.current = window.setTimeout(() => {
+      setStage('edit');
+      setSteps([]);
+      setBuilt(null);
+    }, 500);
   };
 
-  const backToFeed = () => {
-    useNova.getState().setCurriculumOpen(false);
+  const canClose = !!active || inLounge;
+  const valid = tab === 'goal' ? objective.trim().length >= 3 : files.length > 0;
+
+  const addFiles = (list: FileList | null) => {
+    if (!list) return;
+    const pdfs = [...list].filter((f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
+    if (pdfs.length < list.length) useNova.getState().notify({ kind: 'warning', title: 'PDFs only', lines: ['Some files were skipped — only PDF files are supported for now.'], ttl: 3 });
+    setFiles((prev) => [...prev, ...pdfs.filter((p) => !prev.some((q) => q.name === p.name && q.size === p.size))].slice(0, MAX_FILES));
+  };
+
+  const run = async () => {
+    if (!valid) return;
+    setStage('forge');
+    setSteps([]);
+    audio.play('hudBoot');
+    holoBurst(0.8);
+    const req: GenerateRequest = tab === 'goal' ? { mode: 'goal', objective: objective.trim(), level } : { mode: 'documents', files, focus, structure, level };
+    try {
+      const { course, via } = await generateCourse(req, (key, label) =>
+        setSteps((prev) => {
+          const i = prev.findIndex((p) => p.key === key);
+          return i >= 0 ? prev.map((p, j) => (j === i ? { key, label: label ?? p.label } : p)) : [...prev, { key, label: label ?? key }];
+        }),
+      );
+      useCourse.getState().addCourse(course);
+      useNova.getState().setActiveObjective(course.objective);
+      setBuilt(course);
+      setStage('ready');
+      audio.play('quest');
+      timer.current = window.setTimeout(() => {
+        close();
+        const topics = course.modules.reduce((n, m) => n + m.topics.length, 0);
+        goToLounge(() => {
+          useHub.getState().go('hub');
+          holoBurst(1);
+          useNova.getState().notify({ kind: 'system', title: 'Course ready', lines: [`${course.title} — ${topics} planet${topics === 1 ? '' : 's'} in ${course.modules.length} module${course.modules.length === 1 ? '' : 's'}.`, via === 'ai' ? 'Generated by your AI tutor.' : 'Pick a station below to begin.'] });
+        });
+        setFiles([]);
+        setObjective('');
+        setFocus('');
+      }, 1400);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong while building the course.');
+      setStage('error');
+      audio.play('denied');
+    }
   };
 
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
-          key="course-forge"
-          className="pointer-events-none fixed inset-0 grid place-items-center p-4"
-          style={{ zIndex: Z.pillar + 4 }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.45, delay: 0.25 } }}
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,8,16,0.15),rgba(0,0,0,0.72))]" />
+        <motion.div key="new-course" className="pointer-events-none fixed inset-0 grid place-items-center p-4" style={{ zIndex: Z.topbar + 4 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.35, delay: 0.15 } }}>
+          <div className="pointer-events-auto absolute inset-0 bg-black/55 backdrop-blur-[3px]" onClick={() => canClose && stage === 'edit' && close()} />
+          <motion.section
+            role="dialog"
+            aria-labelledby="new-course-title"
+            className="card scroll-y pointer-events-auto relative max-h-[calc(100vh-32px)] w-full max-w-[760px] p-6 sm:p-8"
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+          >
+            {canClose && stage === 'edit' && (
+              <button type="button" onClick={close} aria-label="Close" className="absolute right-4 top-4 grid size-9 cursor-pointer place-items-center rounded-xl text-white/50 transition hover:bg-white/10 hover:text-white">
+                <X size={18} />
+              </button>
+            )}
 
-          <div className="relative w-full max-w-[640px]">
-            {/* Projector line the panel unfolds from */}
-            <motion.div
-              className="absolute left-0 right-0 top-1/2 h-px"
-              style={{ background: `linear-gradient(90deg, transparent, ${themeColor}, transparent)`, boxShadow: `0 0 18px ${themeColor}` }}
-              initial={{ scaleX: 0, opacity: 1 }}
-              animate={{ scaleX: 1, opacity: [1, 1, 0] }}
-              exit={{ scaleX: [1, 0], opacity: 1 }}
-              transition={{ duration: 0.6, times: [0, 0.7, 1] }}
-            />
-            <motion.section
-              role="dialog"
-              aria-labelledby="forge-title"
-              className="holo pointer-events-auto relative overflow-hidden p-6 sm:p-9"
-              style={{ borderColor: `${themeColor}66`, boxShadow: `0 0 70px -10px ${themeColor}55, inset 0 0 40px ${themeColor}14` }}
-              initial={{ scaleY: 0.01, opacity: 0 }}
-              animate={{ scaleY: 1, opacity: 1 }}
-              exit={{ scaleY: 0.01, opacity: 0, transition: { duration: 0.3 } }}
-              transition={{ delay: 0.35, duration: 0.55, ease: [0.2, 0.9, 0.2, 1] }}
-            >
-              <motion.div
-                className="pointer-events-none absolute inset-x-0 h-24"
-                style={{ background: `linear-gradient(180deg, transparent, ${themeColor}22, transparent)` }}
-                initial={{ top: '-30%' }}
-                animate={{ top: '130%' }}
-                transition={{ delay: 0.7, duration: 1.3, ease: 'easeInOut' }}
-              />
+            <AnimatePresence mode="wait">
+              {stage === 'edit' && (
+                <motion.div key="edit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }}>
+                  <div className="chip-label">New course</div>
+                  <h2 id="new-course-title" className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">
+                    What do you want to learn?
+                  </h2>
+                  <p className="mt-1.5 text-sm text-white/60">NOVA turns it into modules and bite-sized planets — each with a lesson and a quiz.</p>
 
-              <AnimatePresence mode="wait">
-                {stage === 'edit' ? (
-                  <motion.div key="edit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={{ delay: 0.55 }}>
-                    <div className="chip-label">New course</div>
-                    <h2 id="forge-title" className="glow-cyan mt-3 font-display text-2xl font-bold tracking-wide text-white sm:text-3xl">
-                      What do you want to learn?
-                    </h2>
-                    <p className="mt-2 max-w-lg text-sm leading-relaxed text-cyan-50/70">
-                      Describe your goal in your own words. NOVA builds a course of bite-sized planets at your level.
-                    </p>
+                  <div className="mt-6 grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.05] p-1" role="tablist">
+                    {(
+                      [
+                        { id: 'goal', icon: Sparkles, label: 'Describe a goal' },
+                        { id: 'docs', icon: FileUp, label: 'From my documents' },
+                      ] as const
+                    ).map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={tab === t.id}
+                        onClick={() => useHub.getState().setForgeTab(t.id)}
+                        className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition ${tab === t.id ? 'text-[var(--user-ink)]' : 'text-white/60 hover:text-white'}`}
+                        style={tab === t.id ? { background: 'var(--user)' } : undefined}
+                      >
+                        <t.icon size={15} /> {t.label}
+                      </button>
+                    ))}
+                  </div>
 
-                    <div className="group relative mt-6">
-                      <div className="absolute -inset-px rounded opacity-40 blur-sm transition group-focus-within:opacity-80" style={{ background: themeColor }} />
+                  {tab === 'goal' ? (
+                    <div className="mt-5 space-y-5">
                       <textarea
                         value={objective}
                         onChange={(e) => setObjective(e.target.value)}
+                        autoFocus
                         placeholder="e.g. I want to understand how Transformers work, starting from basic neural networks…"
-                        className="relative h-28 w-full resize-none rounded bg-black/70 p-4 font-mono text-sm leading-relaxed text-white outline-none ring-1 ring-cyan-300/25 placeholder:text-cyan-100/30 focus:ring-cyan-200/60"
+                        className="h-28 w-full resize-none rounded-2xl border border-white/10 bg-black/30 p-4 text-[15px] leading-relaxed text-white outline-none placeholder:text-white/30 focus:border-[var(--user)]"
                       />
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-2.5">
-                      {PRESETS.map((p, i) => (
-                        <motion.button
-                          key={p.id}
-                          type="button"
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.75 + i * 0.08 }}
-                          onClick={() => {
-                            setObjective(p.label);
-                            audio.play('click');
-                          }}
-                          className="flex cursor-pointer items-center gap-2 rounded-full bg-cyan-400/5 px-3.5 py-1.5 text-xs text-cyan-100 ring-1 ring-cyan-300/25 transition hover:bg-cyan-400/15 hover:text-white hover:ring-cyan-200/60"
-                        >
-                          <span style={{ color: themeColor }}>{p.icon}</span>
-                          {p.label}
-                        </motion.button>
-                      ))}
-                    </div>
-
-                    <div className="mt-7 flex flex-col gap-3 border-t border-cyan-300/15 pt-6 sm:flex-row">
-                      <HudButton variant="primary" size="lg" className="flex-1" disabled={!objective.trim()} onClick={() => forge(objective.trim())} icon={<Cpu size={16} />}>
-                        Generate course
-                      </HudButton>
-                      {activeObjective && !inLounge && (
-                        <HudButton size="lg" className="flex-1" icon={<Play size={15} />} onClick={() => forge(activeObjective)}>
-                          Resume lesson
-                        </HudButton>
-                      )}
-                      {inLounge && (
-                        <HudButton size="lg" className="flex-1" icon={<ArrowLeft size={15} />} onClick={backToFeed}>
-                          Back to lounge
-                        </HudButton>
-                      )}
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div key="forge" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="py-2">
-                    <div className="flex items-center gap-5">
-                      <div className="relative grid h-20 w-20 shrink-0 place-items-center">
-                        <motion.svg viewBox="0 0 80 80" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 2.4, repeat: Infinity, ease: 'linear' }}>
-                          <circle cx="40" cy="40" r="34" fill="none" stroke={`${themeColor}33`} strokeWidth="3" />
-                          <circle cx="40" cy="40" r="34" fill="none" stroke={themeColor} strokeWidth="3" strokeLinecap="round" strokeDasharray="60 154" />
-                        </motion.svg>
-                        {stage === 'ready' ? <Check size={30} className="text-emerald-300" /> : <Cpu size={26} style={{ color: themeColor }} />}
-                      </div>
                       <div>
-                        <div className="hud-label" style={{ color: themeColor }}>
-                          {stage === 'ready' ? 'Course ready' : 'Forging course'}
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">Ideas</div>
+                        <div className="flex flex-wrap gap-2">
+                          {TEMPLATE_PRESETS.map((p) => (
+                            <button key={p.label} type="button" onClick={() => (setObjective(p.objective), audio.play('click'))} className="cursor-pointer rounded-full bg-white/[0.05] px-3.5 py-1.5 text-sm text-white/80 ring-1 ring-white/10 transition hover:text-white hover:ring-[var(--user)]">
+                              {p.label}
+                            </button>
+                          ))}
                         </div>
-                        <div className="mt-1 line-clamp-2 font-display text-xl font-bold text-white">{activeObjective}</div>
                       </div>
+                      <LevelPicker level={level} onChange={setLevel} />
                     </div>
-                    <ol className="mt-6 space-y-3">
-                      {STEPS.map((s, i) => {
-                        const done = step > i;
-                        const running = step === i && stage === 'forge';
-                        return (
-                          <li key={s} className={`flex items-center gap-3 text-sm ${done ? 'text-cyan-50' : running ? 'text-white' : 'text-cyan-100/35'}`}>
-                            <span className="grid h-5 w-5 place-items-center">
-                              {done ? <Check size={15} className="text-emerald-300" /> : running ? <Loader2 size={14} className="animate-spin" style={{ color: themeColor }} /> : <span className="h-1.5 w-1.5 rounded-full bg-cyan-100/30" />}
-                            </span>
-                            <span className="flex-1">{s}</span>
-                            <span className="h-1 w-24 overflow-hidden rounded bg-cyan-400/10">
-                              <motion.span
-                                className="block h-full"
-                                style={{ background: themeColor }}
-                                initial={{ width: 0 }}
-                                animate={{ width: done ? '100%' : running ? '70%' : 0 }}
-                                transition={{ duration: running ? STEP_MS / 1000 : 0.2 }}
-                              />
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                    <AnimatePresence>
-                      {stage === 'ready' && (
-                        <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-6 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-emerald-300">
-                          <ChevronRight size={14} /> {inLounge ? 'Adding it to your lounge…' : 'Heading to the Cosmic Lounge…'}
-                        </motion.p>
+                  ) : (
+                    <div className="mt-5 space-y-5">
+                      <label
+                        onDragOver={(e) => (e.preventDefault(), setDrag(true))}
+                        onDragLeave={() => setDrag(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDrag(false);
+                          addFiles(e.dataTransfer.files);
+                        }}
+                        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-8 text-center transition ${drag ? 'border-[var(--user)] bg-[rgb(var(--user-rgb)/0.08)]' : 'border-white/15 bg-white/[0.03] hover:border-white/30'}`}
+                      >
+                        <input type="file" accept="application/pdf,.pdf" multiple className="sr-only" onChange={(e) => (addFiles(e.target.files), (e.target.value = ''))} />
+                        <span className="grid size-12 place-items-center rounded-2xl" style={{ background: 'rgb(var(--user-rgb) / 0.16)', color: 'var(--user)' }}>
+                          <FileUp size={22} />
+                        </span>
+                        <div className="mt-3 font-display text-lg font-semibold text-white">Drop PDFs here or browse</div>
+                        <div className="mt-0.5 text-sm text-white/55">Class notes, a textbook, papers · up to {MAX_FILES} files</div>
+                      </label>
+                      {files.length > 0 && (
+                        <ul className="space-y-2">
+                          {files.map((f) => (
+                            <li key={f.name + f.size} className="flex items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2.5">
+                              <FileText size={16} style={{ color: 'var(--user)' }} />
+                              <span className="min-w-0 flex-1 truncate text-sm text-white">{f.name}</span>
+                              <span className="text-xs text-white/45">{mb(f.size)}</span>
+                              <button type="button" aria-label={`Remove ${f.name}`} onClick={() => setFiles((p) => p.filter((x) => x !== f))} className="cursor-pointer rounded-lg p-1 text-white/40 hover:bg-white/10 hover:text-white">
+                                <X size={14} />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
                       )}
-                    </AnimatePresence>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.section>
-          </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(
+                          [
+                            { id: 'chapters', title: 'Follow the chapters', sub: 'Uses the document’s own table of contents' },
+                            { id: 'topics', title: 'Split into topics', sub: 'Even sections — great for loose notes' },
+                          ] as const
+                        ).map((o) => (
+                          <button key={o.id} type="button" onClick={() => setStructure(o.id)} className={`cursor-pointer rounded-2xl border p-4 text-left transition ${structure === o.id ? 'border-[var(--user)] bg-[rgb(var(--user-rgb)/0.08)]' : 'border-white/10 bg-white/[0.03] hover:border-white/25'}`}>
+                            <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                              <span className={`grid size-4 place-items-center rounded-full border ${structure === o.id ? 'border-[var(--user)]' : 'border-white/30'}`}>{structure === o.id && <span className="size-2 rounded-full" style={{ background: 'var(--user)' }} />}</span>
+                              {o.title}
+                            </div>
+                            <div className="mt-1 pl-6 text-xs text-white/55">{o.sub}</div>
+                          </button>
+                        ))}
+                      </div>
+                      <input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="Anything to focus on? e.g. “chapter on thermodynamics” (optional)" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-[var(--user)]" />
+                      <LevelPicker level={level} onChange={setLevel} />
+                      <p className="text-xs text-white/45">{hasCourseApi ? 'Your files are sent to the NOVA course service to build lessons and quizzes.' : 'Your files stay on this device — NOVA reads them right here in your browser.'}</p>
+                    </div>
+                  )}
+
+                  <div className="mt-7 flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
+                    {active && !inLounge ? (
+                      <button type="button" onClick={() => (close(), goToLounge())} className="cursor-pointer text-sm text-white/60 underline-offset-4 hover:text-white hover:underline">
+                        Continue “{active.course.title}” instead
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                    <HudButton variant="primary" size="lg" disabled={!valid} icon={<Cpu size={16} />} onClick={run}>
+                      Generate course
+                    </HudButton>
+                  </div>
+                </motion.div>
+              )}
+
+              {(stage === 'forge' || stage === 'ready') && (
+                <motion.div key="forge" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="py-2">
+                  <div className="flex items-center gap-4">
+                    <div className="relative grid size-16 shrink-0 place-items-center">
+                      <motion.svg viewBox="0 0 80 80" className="absolute inset-0" animate={{ rotate: stage === 'ready' ? 0 : 360 }} transition={{ duration: 2.2, repeat: stage === 'ready' ? 0 : Infinity, ease: 'linear' }}>
+                        <circle cx="40" cy="40" r="34" fill="none" stroke="rgb(var(--user-rgb) / 0.2)" strokeWidth="4" />
+                        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--user)" strokeWidth="4" strokeLinecap="round" strokeDasharray={stage === 'ready' ? '214 214' : '60 154'} />
+                      </motion.svg>
+                      {stage === 'ready' ? <Check size={26} className="text-emerald-300" /> : <Cpu size={22} style={{ color: 'var(--user)' }} />}
+                    </div>
+                    <div>
+                      <div className="chip-label">{stage === 'ready' ? 'Course ready' : 'Building your course'}</div>
+                      <div className="mt-0.5 font-display text-xl font-bold text-white">{built?.title ?? (tab === 'goal' ? objective : `${files.length} document${files.length > 1 ? 's' : ''}`)}</div>
+                    </div>
+                  </div>
+                  <ol className="mt-6 space-y-3">
+                    {steps.map((s, i) => {
+                      const done = stage === 'ready' || i < steps.length - 1;
+                      return (
+                        <motion.li key={s.key} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className={`flex items-center gap-3 text-sm ${done ? 'text-white/80' : 'text-white'}`}>
+                          {done ? <Check size={16} className="text-emerald-300" /> : <Loader2 size={16} className="animate-spin" style={{ color: 'var(--user)' }} />}
+                          {s.label}
+                        </motion.li>
+                      );
+                    })}
+                  </ol>
+                  {stage === 'ready' && built && (
+                    <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-6 flex items-center gap-2 text-sm font-medium text-emerald-300">
+                      <ArrowRight size={15} /> {built.modules.length} module{built.modules.length === 1 ? '' : 's'} · {built.modules.reduce((n, m) => n + m.topics.length, 0)} planets — {inLounge ? 'adding it to your lounge…' : 'heading to the Cosmic Lounge…'}
+                    </motion.p>
+                  )}
+                </motion.div>
+              )}
+
+              {stage === 'error' && (
+                <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2 text-center">
+                  <TriangleAlert size={36} className="mx-auto text-amber-300" />
+                  <h2 className="mt-3 font-display text-2xl font-bold text-white">Couldn’t build that course</h2>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-white/65">{error}</p>
+                  <HudButton className="mt-5" icon={<RotateCcw size={15} />} onClick={() => setStage('edit')}>
+                    Try again
+                  </HudButton>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.section>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+function LevelPicker({ level, onChange }: { level: Level; onChange: (l: Level) => void }) {
+  return (
+    <div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">Your level</div>
+      <div className="grid grid-cols-3 gap-2">
+        {LEVELS.map((l) => (
+          <button key={l.id} type="button" onClick={() => onChange(l.id)} className={`cursor-pointer rounded-xl border py-2 text-sm font-medium transition ${level === l.id ? 'border-[var(--user)] bg-[rgb(var(--user-rgb)/0.12)] text-white' : 'border-white/10 text-white/65 hover:text-white'}`}>
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
