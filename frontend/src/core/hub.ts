@@ -14,19 +14,14 @@ interface HubState {
   station: Station;
   /** Which tab the New course window opens on. */
   forgeTab: ForgeTab;
-  /** A surprise pop quiz is being offered in the lounge. */
-  surprise: boolean;
   go: (station: Station) => void;
-  setSurprise: (on: boolean) => void;
   setForgeTab: (tab: ForgeTab) => void;
 }
 
 export const useHub = create<HubState>()((set) => ({
   station: 'hub',
   forgeTab: 'goal',
-  surprise: false,
-  go: (station) => set({ station, surprise: false }),
-  setSurprise: (surprise) => set({ surprise }),
+  go: (station) => set({ station }),
   setForgeTab: (forgeTab) => set({ forgeTab }),
 }));
 

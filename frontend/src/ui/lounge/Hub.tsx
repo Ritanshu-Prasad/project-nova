@@ -2,14 +2,16 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, BookOpen, ChevronDown, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
-import { activeOf, DAILY_GOAL, levelOf, levelProgress, popPool, useActiveCourse, useCourse, type ActiveCourse, type OutlineItem } from '../../core/course';
-import { cheerPet, openForge, relaunch, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
+import { activeOf, DAILY_GOAL, levelOf, levelProgress, popPool, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
+import { openForge, relaunch, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
+import { POP, takePopQuiz, useBonusClock, usePop } from '../../core/popquiz';
+import { quizSizeLabel } from '../../core/quizBuilder';
 import { rankOf } from '../../core/rank';
 import { useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
-import { POP, PopQuiz, SurpriseOffer } from './PopQuiz';
+import { PopArrival, PopPill, PopQuiz } from './PopQuiz';
 import RankEmblem from './RankEmblem';
 import { ProfileSection, SkillJourneySection } from './sections';
 import StudyMode from './study/StudyMode';
@@ -23,6 +25,7 @@ const choose = (key: DockKey) => {
   const s = useCourse.getState();
   const e = s.activeId ? s.library[s.activeId] : null;
   if ((key === 'lesson' || key === 'quiz') && !e) return openForge();
+  if (key === 'quiz') return takePopQuiz();
   if (key === 'lesson' && e) {
     const next = activeOf(e)?.next;
     if (next) s.open(next.id);
@@ -30,19 +33,15 @@ const choose = (key: DockKey) => {
   useHub.getState().go(key);
 };
 
-/** Earliest surprise pop quiz after the last one (ms). */
-const SURPRISE_GAP = 4 * 60_000;
-let lastSurprise = 0;
-
 /** The lounge as a friendly widget menu; Lesson opens full-window study, Quiz the timed pop quiz. */
 export default function Hub() {
   const inLounge = useDeck((s) => s.deck === 'lounge');
   const forgeOpen = useNova((s) => s.curriculumOpen);
   const station = useHub((s) => s.station);
-  const surprise = useHub((s) => s.surprise);
+  const offer = usePop((s) => s.offer);
+  const running = usePop((s) => !!s.run);
   const active = useActiveCourse();
   const visible = inLounge && !forgeOpen;
-  const canPop = !!active && popPool(active.entry).length > 0;
 
   useEffect(() => {
     if (!visible) return;
@@ -70,33 +69,20 @@ export default function Hub() {
     return () => window.removeEventListener('keydown', onKey);
   }, [visible]);
 
-  useEffect(
-    () =>
-      useCourse.subscribe((s, prev) => {
-        if (s.stats.mmr === prev.stats.mmr) return;
-        const a = rankOf(prev.stats.mmr);
-        const b = rankOf(s.stats.mmr);
-        if (b.step <= a.step) return;
-        cheerPet();
-        if (b.index > a.index) useNova.getState().notify({ kind: 'levelup', title: `Rank up — ${b.tier.name}!`, lines: [`You now fly a ${b.tier.name} (${b.tier.metal} tier).`, b.tier.blurb], ttl: 5 });
-        else useNova.getState().notify({ kind: 'toast', title: `Promoted to ${b.label}`, ttl: 3 });
-      }),
-    [],
-  );
-
-  // While the pilot idles in the lounge, a timed pop quiz may be offered by surprise.
+  // Surprise pop quizzes arrive at random moments aboard — in the lounge or mid-lesson, never during a quiz.
   useEffect(() => {
-    if (!visible || station !== 'hub' || !canPop) return;
-    const wait = Math.max(45_000 + Math.random() * 45_000, lastSurprise + SURPRISE_GAP - Date.now());
-    const id = window.setTimeout(() => {
-      lastSurprise = Date.now();
-      useHub.getState().setSurprise(true);
-    }, wait);
-    return () => {
-      window.clearTimeout(id);
-      useHub.getState().setSurprise(false);
-    };
-  }, [visible, station, canPop]);
+    const id = window.setInterval(() => {
+      const p = usePop.getState();
+      if (p.offer || p.run || Date.now() < p.nextAt) return;
+      if (useDeck.getState().deck !== 'lounge' || useNova.getState().curriculumOpen) return;
+      const st = useHub.getState().station;
+      const c = useCourse.getState();
+      const e = c.activeId ? c.library[c.activeId] : undefined;
+      if (!e || st === 'quiz' || (st === 'lesson' && activeOf(e)?.item.kind === 'quiz')) return;
+      if (popPool(e).length) p.arrive(e.course.id);
+    }, 2000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <>
@@ -105,10 +91,15 @@ export default function Hub() {
           {visible && station === 'hub' && (active ? <Overview key="overview" active={active} /> : <EmptyState key="empty" />)}
           {visible && (station === 'journey' || station === 'profile') && <SectionPanel key={station} station={station} />}
           {visible && active && station === 'quiz' && <PopQuiz key="pop" />}
-          {visible && station === 'hub' && surprise && canPop && <SurpriseOffer key="surprise" />}
         </AnimatePresence>
       </div>
       <AnimatePresence>{visible && active && station === 'lesson' && <StudyMode key="study" />}</AnimatePresence>
+      {/* Pop quiz alerts sit above everything aboard, including the study screen. */}
+      <div className="pointer-events-none fixed inset-0" style={{ zIndex: Z.notices - 1 }}>
+        <AnimatePresence>
+          {visible && active && offer && !running && station !== 'quiz' && (offer.seen ? <PopPill key="pill" /> : <PopArrival key="arrival" />)}
+        </AnimatePresence>
+      </div>
     </>
   );
 }
@@ -140,6 +131,9 @@ function Overview({ active }: { active: ActiveCourse }) {
   const callsign = useProfile((s) => s.callsign) || 'Pilot';
   const library = useCourse((s) => s.library);
   const stats = useCourse((s) => s.stats);
+  const skill = useSkill();
+  const offer = usePop((s) => s.offer);
+  const bonusSecs = useBonusClock(offer);
   const { topics, cleared, course, outline, next } = active;
   const n = topics.length;
   const pct = Math.round((cleared / n) * 100);
@@ -148,11 +142,20 @@ function Overview({ active }: { active: ActiveCourse }) {
   const todayCount = stats.day === new Date().toISOString().slice(0, 10) ? stats.dayQuizzes : 0;
   const popReady = popPool(active.entry).length > 0;
   const nextModule = next ? course.modules[next.moduleIndex] : null;
-  const rank = rankOf(stats.mmr);
+  const rank = rankOf(skill.mmr);
 
   const dock: DockItem[] = [
     { key: 'new', hotkey: 5, tier: 3, icon: Plus, title: 'New course', sub: 'Goal or PDFs' },
-    { key: 'quiz', hotkey: 2, tier: 2, icon: Zap, title: 'Pop quiz', sub: popReady ? `${POP.count} questions · ${POP.seconds} s each` : 'After your first lesson', badge: `×${POP.multiplier}` },
+    {
+      key: 'quiz',
+      hotkey: 2,
+      tier: 2,
+      icon: Zap,
+      title: offer ? 'Pop quiz ready!' : 'Pop quiz',
+      sub: !popReady ? 'Opens with your first lesson' : offer ? (bonusSecs ? `Bonus ends in ${Math.floor(bonusSecs / 60)}:${String(bonusSecs % 60).padStart(2, '0')}` : 'Waiting · bonus ended') : 'Practice · surprises arrive anytime',
+      badge: offer && bonusSecs ? `×${POP.bonus}` : '×1',
+      hot: !!offer && bonusSecs > 0,
+    },
     {
       key: 'lesson',
       hotkey: 1,
@@ -183,7 +186,7 @@ function Overview({ active }: { active: ActiveCourse }) {
       icon: TrendingUp,
       badgeNode: <RankEmblem rank={rank} size={48} />,
       title: 'Skill journey',
-      sub: `${rank.label} · ${stats.mmr.toLocaleString('en-IN')} MMR`,
+      sub: `${rank.label} · ${skill.mmr.toLocaleString('en-IN')} MMR`,
       extra: (
         <span className="flex items-center gap-2 text-xs text-white/55">
           <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
@@ -245,7 +248,7 @@ function Overview({ active }: { active: ActiveCourse }) {
                   <Clock size={11} /> {next.topic.lesson.minutes} min
                 </span>
               ) : (
-                <span className="shrink-0">{next.questions.length} questions</span>
+                <span className="shrink-0">{quizSizeLabel(next.pool.length)} questions</span>
               )}
             </div>
           )}
@@ -292,8 +295,8 @@ function Overview({ active }: { active: ActiveCourse }) {
             <div className="font-display text-lg font-bold text-white">{stats.streak}</div>
           </div>
           <div className="rounded-xl bg-white/[0.04] px-3 py-2">
-            <div className="text-[11px] text-white/50">{rankOf(stats.mmr).label}</div>
-            <div className="font-display text-lg font-bold text-white">{stats.mmr.toLocaleString('en-IN')} <span className="text-xs font-normal text-white/50">MMR</span></div>
+            <div className="text-[11px] text-white/50">{rank.label}</div>
+            <div className="font-display text-lg font-bold text-white">{skill.mmr.toLocaleString('en-IN')} <span className="text-xs font-normal text-white/50">MMR</span></div>
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs text-white/55">
@@ -334,6 +337,8 @@ interface DockItem {
   badge?: string;
   /** Replaces the icon tile (e.g. the rank emblem). */
   badgeNode?: ReactNode;
+  /** Pulses amber (a pop quiz with a live bonus). */
+  hot?: boolean;
   extra?: ReactNode;
 }
 
@@ -353,8 +358,9 @@ function DockCard({ item: w }: { item: DockItem }) {
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
       className={`card group relative flex min-w-0 cursor-pointer flex-wrap items-center gap-3 px-4 py-3.5 text-left transition-[border-color,box-shadow] hover:border-[var(--user)] hover:shadow-[0_0_40px_-10px_rgb(var(--user-rgb)/0.8)] lg:flex-col lg:flex-nowrap lg:items-start lg:justify-between ${TIER[w.tier]}`}
-      style={hero ? { background: 'linear-gradient(160deg, rgb(var(--user-rgb) / 0.22), rgb(13 18 32 / 0.82) 60%)' } : undefined}
+      style={hero ? { background: 'linear-gradient(160deg, rgb(var(--user-rgb) / 0.22), rgb(13 18 32 / 0.82) 60%)' } : w.hot ? { borderColor: 'rgb(252 211 77 / 0.7)', boxShadow: '0 0 40px -8px rgb(252 211 77 / 0.6)' } : undefined}
     >
+      {w.hot && <span className="pointer-events-none absolute inset-0 animate-pulse rounded-[inherit] bg-amber-300/[0.07]" />}
       <span className="flex items-center justify-between lg:w-full">
         {w.badgeNode ?? (
           <span
@@ -365,7 +371,7 @@ function DockCard({ item: w }: { item: DockItem }) {
           </span>
         )}
         <span className="hidden items-center gap-1.5 lg:flex">
-          {w.badge && <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-xs font-semibold text-amber-200">{w.badge}</span>}
+          {w.badge && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${w.hot ? 'bg-amber-300 text-[#1a1203]' : 'bg-white/10 text-white/60'}`}>{w.badge}</span>}
           <kbd className="rounded bg-white/10 px-1.5 font-mono text-[11px] text-white/50">{w.hotkey}</kbd>
         </span>
       </span>

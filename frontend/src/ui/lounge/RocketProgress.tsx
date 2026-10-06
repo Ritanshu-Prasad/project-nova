@@ -42,10 +42,10 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
             const firstOfModule = i === 0 || topics[i - 1].moduleIndex !== t.moduleIndex;
             const status = done ? 'Cleared' : here && locked ? 'Pass the module quiz first' : here ? 'Next destination' : locked ? 'Locked' : 'Open';
             return (
-              <li key={t.id} className={`group relative flex flex-1 flex-col items-center ${compact ? 'h-12' : 'h-36 justify-center'}`}>
+              <li key={t.id} className={`group relative flex flex-1 flex-col items-center ${compact ? 'h-12' : 'h-36 justify-center'} ${!compact && firstOfModule && i > 0 ? 'border-l border-dashed border-white/15' : ''}`}>
                 {!compact && firstOfModule && (
-                  <div className="absolute left-0 top-0 max-w-[200px] truncate text-[11px] font-semibold uppercase tracking-wider text-white/40">
-                    {t.moduleTitle}
+                  <div className="absolute left-2 top-0 max-w-[220px] truncate text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                    M{t.moduleIndex + 1} · {t.moduleTitle}
                   </div>
                 )}
                 {/* Route segment towards the next planet */}

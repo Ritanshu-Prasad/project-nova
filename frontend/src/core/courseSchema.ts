@@ -29,7 +29,13 @@ export type Question =
   | { type: 'mcq'; q: string; options: string[]; answer: number; why: string; difficulty?: number }
   | { type: 'multi'; q: string; options: string[]; answers: number[]; why: string; difficulty?: number }
   | { type: 'truefalse'; q: string; answer: boolean; why: string; difficulty?: number }
-  | { type: 'fill'; q: string; answer: string; accept?: string[]; why: string; difficulty?: number };
+  | { type: 'fill'; q: string; answer: string; accept?: string[]; why: string; difficulty?: number }
+  /** Write code; graded by checks (regex sources) against the answer — the solution is shown afterwards. */
+  | { type: 'code'; q: string; language: string; starter?: string; solution: string; checks: { label: string; pattern: string }[]; why: string; difficulty?: number }
+  /** Put the items in order (`items` holds the correct order). */
+  | { type: 'order'; q: string; items: string[]; why: string; difficulty?: number }
+  /** Match each left item to its right item (`pairs` holds the correct matches). */
+  | { type: 'match'; q: string; pairs: [string, string][]; why: string; difficulty?: number };
 
 /** A topic-specific side-panel section (e.g. "Common mistakes", "Where it's used"); the AI picks as many as the topic needs. */
 export interface Panel {
@@ -151,6 +157,28 @@ function normQuestion(q: Record<string, unknown>): Question | null {
       return typeof q.answer === 'boolean' ? { type: 'truefalse', ...base, answer: q.answer } : null;
     case 'fill':
       return str(q.answer) ? { type: 'fill', ...base, answer: str(q.answer), accept: arr<unknown>(q.accept).map((a) => str(a)).filter(Boolean) } : null;
+    case 'code': {
+      const checks = arr<Record<string, unknown>>(q.checks)
+        .map((c) => ({ label: str(c.label), pattern: str(c.pattern) }))
+        .filter((c) => {
+          try {
+            return !!c.pattern && !!new RegExp(c.pattern);
+          } catch {
+            return false;
+          }
+        });
+      return str(q.solution) && checks.length ? { type: 'code', ...base, language: str(q.language, 'text'), starter: str(q.starter) || undefined, solution: str(q.solution), checks } : null;
+    }
+    case 'order': {
+      const items = arr<unknown>(q.items).map((i) => str(i)).filter(Boolean);
+      return items.length >= 3 ? { type: 'order', ...base, items } : null;
+    }
+    case 'match': {
+      const pairs = arr<unknown>(q.pairs)
+        .map((x) => (Array.isArray(x) ? ([str(x[0]), str(x[1])] as [string, string]) : null))
+        .filter((x): x is [string, string] => !!x && !!x[0] && !!x[1]);
+      return pairs.length >= 2 ? { type: 'match', ...base, pairs } : null;
+    }
     default:
       return null;
   }

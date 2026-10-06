@@ -29,10 +29,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { frontier, isDone, levelOf, useActiveCourse, useCourse, type ActiveCourse, type OutlineItem } from '../../../core/course';
+import { frontier, isDone, levelOf, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../../core/course';
 import type { Block, PlacedTopic } from '../../../core/courseSchema';
 import { useHub } from '../../../core/hub';
 import { Z } from '../../../core/layers';
+import { quizSizeLabel } from '../../../core/quizBuilder';
 import { rankOf } from '../../../core/rank';
 import RankEmblem from '../RankEmblem';
 import { KIND_TEMPLATES } from './kinds';
@@ -175,11 +176,12 @@ function IconBtn({ label, onClick, className = '', children }: { label: string; 
 
 function Stats() {
   const stats = useCourse((s) => s.stats);
-  const rank = rankOf(stats.mmr);
+  const skill = useSkill();
+  const rank = rankOf(skill.mmr);
   return (
     <div className="hidden items-center gap-2 text-sm md:flex">
       <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] py-1 pl-1.5 pr-2.5 text-white/80">
-        <RankEmblem rank={rank} size={20} /> {rank.label} · {stats.mmr.toLocaleString('en-IN')}
+        <RankEmblem rank={rank} size={20} /> {rank.label} · {skill.mmr.toLocaleString('en-IN')}
       </span>
       <span className="flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-amber-200">
         <Flame size={12} /> {stats.streak}
@@ -299,7 +301,7 @@ function OutlineRow({ active, it, locked }: { active: ActiveCourse; it: OutlineI
             <span className="font-semibold">Module quiz</span>
           )}
         </span>
-        <span className="text-xs text-white/35">{it.kind === 'topic' ? `${it.topic.lesson.minutes}m` : best !== undefined ? `${Math.round(best * 100)}%` : `${it.questions.length} Q`}</span>
+        <span className="text-xs text-white/35">{it.kind === 'topic' ? `${it.topic.lesson.minutes}m` : best !== undefined ? `${Math.round(best * 100)}%` : `${quizSizeLabel(it.pool.length)} Q`}</span>
       </button>
     </li>
   );

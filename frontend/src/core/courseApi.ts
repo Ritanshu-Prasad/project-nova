@@ -13,7 +13,8 @@ import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse'
  *     focus      string          (documents mode, optional)
  *     structure  chapters | topics
  *     files      PDF files       (documents mode, repeated field)
- *   → 200 application/json: a Course (see courseSchema.ts)
+ *   → 200 application/json: a Course (see courseSchema.ts). Module and topic counts are not fixed — size them
+ *     to the subject: broad subjects get more modules, dense modules more topics (the journey follows suit).
  *
  * Without the backend (or if it fails) NOVA falls back to built-in templates and in-browser PDF extraction.
  */

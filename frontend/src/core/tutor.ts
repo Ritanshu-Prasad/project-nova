@@ -175,7 +175,8 @@ function offlineAnswer(key: string, q: string, t: PlacedTopic): string {
   }
 
   if (/quiz|test me|question for me|practice/.test(ql)) {
-    const pool = t.quiz.filter((x) => x.type !== 'multi');
+    // Chat suits quick formats; code, ordering and matching live in the quiz screen.
+    const pool = t.quiz.filter((x) => x.type === 'mcq' || x.type === 'truefalse' || x.type === 'fill');
     if (pool.length) {
       const raw = pick(pool);
       // Templates store the right option first — show them shuffled.
@@ -240,6 +241,12 @@ function answerOf(q: Question): string {
       return q.answer;
     case 'multi':
       return q.answers.map((i) => q.options[i]).join(', ');
+    case 'code':
+      return q.solution;
+    case 'order':
+      return q.items.join(' → ');
+    case 'match':
+      return q.pairs.map(([a, b]) => `${a} = ${b}`).join('; ');
   }
 }
 
@@ -260,6 +267,9 @@ function checkAnswer(q: Question, reply: string): boolean | null {
     case 'fill':
       return [q.answer, ...(q.accept ?? [])].some((a) => norm(a) === r || r.includes(norm(a)));
     case 'multi':
+    case 'code':
+    case 'order':
+    case 'match':
       return null;
   }
 }

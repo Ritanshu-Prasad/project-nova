@@ -1,13 +1,20 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { flatTopics, type Course, type Module, type PlacedTopic, type Question } from './courseSchema';
+import { flatTopics, type Course, type Module, type PlacedTopic } from './courseSchema';
+import { QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
+
+export type { RatedQuestion } from './quizBuilder';
 
 /**
  * The pilot's course library and progress (persisted).
  *
  * A course is walked as an outline: each module's topics in order, then that module's quiz.
  * Completing a topic moves the rocket to the next planet; passing a module quiz unlocks the next module.
- * MMR follows an Elo-style update per answer (pop quizzes pay a bonus); XP drives the level.
+ *
+ * Skill (MMR) is per course: every new course starts at the bottom of the ladder (Probe III). Updates are
+ * Elo-style and scaled to the course's scope — question ratings climb across the course and the step size
+ * shrinks for bigger courses — so mastering any course, small or large, lands near the top of the ladder.
+ * XP, level, answer streak and the daily goal belong to the pilot.
  */
 
 export interface TopicProgress {
@@ -23,18 +30,25 @@ export interface ModuleProgress {
   attempts: number;
 }
 
+/** The pilot's skill in one course. */
+export interface CourseSkill {
+  mmr: number;
+  history: number[];
+  correct: number;
+  answered: number;
+}
+
 export interface LibraryEntry {
   course: Course;
   progress: Record<string, TopicProgress>;
   modules: Record<string, ModuleProgress>;
+  skill: CourseSkill;
   /** Outline item being studied: a topic id or `quiz:<moduleId>`. */
   current: string;
   updatedAt: number;
 }
 
 export interface Stats {
-  mmr: number;
-  mmrHistory: number[];
   xp: number;
   streak: number;
   bestStreak: number;
@@ -47,20 +61,25 @@ export interface Stats {
 
 export type OutlineItem =
   | { kind: 'topic'; id: string; topic: PlacedTopic; moduleIndex: number }
-  | { kind: 'quiz'; id: string; module: Module; moduleIndex: number; questions: Question[] };
+  /** End-of-module quiz; each attempt draws a fresh 5–10 questions from `pool`. */
+  | { kind: 'quiz'; id: string; module: Module; moduleIndex: number; pool: RatedQuestion[] };
 
 export const PASS_MARK = 0.6;
 export const DAILY_GOAL = 3;
-const MODULE_QUIZ_MAX = 8;
+/** Every course starts here: Probe III (Iron) — see core/rank.ts. */
+export const START_MMR = 1000;
 const KEY = 'nova.library.v2';
-/** New pilots start at the bottom of the ladder (Probe III) — see core/rank.ts. */
-const START_MMR = 1000;
 const today = () => new Date().toISOString().slice(0, 10);
+const freshSkill = (): CourseSkill => ({ mmr: START_MMR, history: [START_MMR], correct: 0, answered: 0 });
 
-/** The module's end-of-module quiz (authored, or assembled from its topics' question banks). */
-export function moduleQuestions(m: Module): Question[] {
-  const qs = m.quiz && m.quiz.length ? m.quiz : m.topics.flatMap((t) => t.quiz);
-  return qs.slice(0, MODULE_QUIZ_MAX);
+/** A module quiz's bank: its authored quiz (rated at the module's end) plus every topic's question bank. */
+function modulePool(course: Course, moduleIndex: number, topics: PlacedTopic[]): RatedQuestion[] {
+  const mine = topics.filter((t) => t.moduleIndex === moduleIndex);
+  const end = mine.length ? progressAt(mine[mine.length - 1].index, topics.length) : 0;
+  return [
+    ...(course.modules[moduleIndex].quiz ?? []).map((q) => ({ q, progress: end })),
+    ...mine.flatMap((t) => questionsFor(t, course).map((q) => ({ q, progress: progressAt(t.index, topics.length) }))),
+  ];
 }
 
 export function outlineOf(course: Course): OutlineItem[] {
@@ -68,8 +87,8 @@ export function outlineOf(course: Course): OutlineItem[] {
   const out: OutlineItem[] = [];
   course.modules.forEach((m, mi) => {
     for (const t of topics.filter((x) => x.moduleIndex === mi)) out.push({ kind: 'topic', id: t.id, topic: t, moduleIndex: mi });
-    const questions = moduleQuestions(m);
-    if (questions.length) out.push({ kind: 'quiz', id: `quiz:${m.id}`, module: m, moduleIndex: mi, questions });
+    const pool = modulePool(course, mi, topics);
+    if (pool.length) out.push({ kind: 'quiz', id: `quiz:${m.id}`, module: m, moduleIndex: mi, pool });
   });
   return out;
 }
@@ -95,11 +114,39 @@ export function isUnlocked(e: LibraryEntry, itemId: string, outline = outlineOf(
   return i >= 0 && i <= frontier(e, outline);
 }
 
-/** Questions for a surprise pop quiz: drawn from topics the pilot has completed. */
-export function popPool(e: LibraryEntry): Question[] {
-  return flatTopics(e.course)
-    .filter((t) => e.progress[t.id]?.cleared)
-    .flatMap((t) => t.quiz);
+/** Where a topic sits in the course, 0..1. */
+const progressAt = (index: number, count: number) => (count > 1 ? index / (count - 1) : 0);
+
+/** Questions for a pop quiz: any topic the pilot has reached so far — completed planets and the current one. */
+export function popPool(e: LibraryEntry): RatedQuestion[] {
+  const topics = flatTopics(e.course);
+  const rated = (t: PlacedTopic) => questionsFor(t, e.course).map((q) => ({ q, progress: progressAt(t.index, topics.length) }));
+  let reach = Math.min(firstUncleared(e), topics.length - 1);
+  let pool = topics.slice(0, reach + 1).flatMap(rated);
+  // Early on, peek a planet ahead so a round still has at least the minimum number of questions.
+  while (pool.length < QUIZ_MIN && reach < topics.length - 1) pool = [...pool, ...rated(topics[++reach])];
+  return pool;
+}
+
+/**
+ * Scope: roughly how many questions a pilot answers to walk this course (a 5–10 question quiz per module plus
+ * pop quizzes along the way). Bigger courses take smaller MMR steps, so every course spans the whole ladder.
+ */
+function kFactor(course: Course): number {
+  const answered = course.modules.length * ((QUIZ_MIN + QUIZ_MAX) / 2) + flatTopics(course).length * 3;
+  return Math.max(16, Math.min(56, Math.round(1800 / Math.max(1, answered))));
+}
+
+/** Elo rating of a question: climbs from Probe to Master across the course; harder questions rate higher. */
+const questionRating = (progress = 0, difficulty = 1) => START_MMR + progress * 850 + (difficulty - 1) * 60;
+
+export interface AnswerOpts {
+  difficulty?: number;
+  hint?: boolean;
+  /** Bonus on correct answers (e.g. ×1.75 for a pop quiz taken in time). */
+  multiplier?: number;
+  /** Where the question's topic sits in the course, 0..1. */
+  progress?: number;
 }
 
 interface CourseState {
@@ -115,8 +162,8 @@ interface CourseState {
   setNotes: (topicId: string, notes: string) => void;
   /** Completes a topic; returns the next outline item id (topic or module quiz). */
   completeTopic: (topicId: string) => string | null;
-  /** Scores one answer; returns the MMR change. */
-  answer: (correct: boolean, opts?: { difficulty?: number; hint?: boolean; multiplier?: number; position?: number }) => number;
+  /** Scores one answer in the active course; returns the MMR change. */
+  answer: (correct: boolean, opts?: AnswerOpts) => number;
   finishModuleQuiz: (moduleId: string, correct: number, total: number) => { passed: boolean; nextId: string | null };
   finishPopQuiz: (correct: number, total: number) => void;
 }
@@ -128,7 +175,11 @@ function load(): Saved | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const saved = JSON.parse(raw) as Saved;
-    for (const e of Object.values(saved.library)) e.modules ??= {};
+    // Older saves kept one MMR for everything; skill is per course now and starts fresh.
+    for (const e of Object.values(saved.library)) {
+      e.modules ??= {};
+      e.skill ??= freshSkill();
+    }
     return saved;
   } catch {
     return null;
@@ -138,11 +189,8 @@ function load(): Saved | null {
 const initial: Saved = load() ?? {
   activeId: null,
   library: {},
-  stats: { mmr: START_MMR, mmrHistory: [START_MMR], xp: 0, streak: 0, bestStreak: 0, correct: 0, answered: 0, day: today(), dayQuizzes: 0 },
+  stats: { xp: 0, streak: 0, bestStreak: 0, correct: 0, answered: 0, day: today(), dayQuizzes: 0 },
 };
-
-/** Elo rating of a question: harder and later questions are worth more. */
-const questionRating = (position = 0, difficulty = 1) => 1100 + position * 40 + difficulty * 70;
 
 export const useCourse = create<CourseState>()((set, get) => {
   const patchActive = (fn: (e: LibraryEntry) => LibraryEntry) => {
@@ -162,7 +210,7 @@ export const useCourse = create<CourseState>()((set, get) => {
     addCourse: (course) => {
       const topics = flatTopics(course);
       const progress = Object.fromEntries(topics.map((t) => [t.id, { cleared: false, notes: '' }]));
-      set({ activeId: course.id, library: { ...get().library, [course.id]: { course, progress, modules: {}, current: topics[0]?.id ?? '', updatedAt: Date.now() } } });
+      set({ activeId: course.id, library: { ...get().library, [course.id]: { course, progress, modules: {}, skill: freshSkill(), current: topics[0]?.id ?? '', updatedAt: Date.now() } } });
     },
 
     setActive: (id) => {
@@ -199,18 +247,24 @@ export const useCourse = create<CourseState>()((set, get) => {
     },
 
     answer: (correct, opts = {}) => {
-      const s = get().stats;
-      const expected = 1 / (1 + Math.pow(10, (questionRating(opts.position, opts.difficulty) - s.mmr) / 400));
-      let delta = 32 * ((correct ? 1 : 0) - expected) * (correct && opts.hint ? 0.5 : 1);
-      delta = correct ? Math.max(opts.hint ? 3 : 6, delta) : Math.min(-4, delta);
-      if (correct) delta *= opts.multiplier ?? 1;
+      const id = get().activeId;
+      const e = id ? get().library[id] : undefined;
+      if (!e) return 0;
+      const sk = e.skill;
+      const K = kFactor(e.course);
+      const expected = 1 / (1 + Math.pow(10, (questionRating(opts.progress, opts.difficulty) - sk.mmr) / 400));
+      let delta = K * ((correct ? 1 : 0) - expected) * (correct && opts.hint ? 0.5 : 1);
+      delta = correct ? Math.max(opts.hint ? 2 : 4, delta) * (opts.multiplier ?? 1) : Math.min(-3, delta);
       const d = Math.round(delta);
+      patchActive((x) => ({
+        ...x,
+        skill: { mmr: sk.mmr + d, history: [...sk.history, sk.mmr + d].slice(-80), correct: sk.correct + (correct ? 1 : 0), answered: sk.answered + 1 },
+      }));
+      const s = get().stats;
       const streak = correct ? s.streak + 1 : 0;
       set({
         stats: {
           ...s,
-          mmr: s.mmr + d,
-          mmrHistory: [...s.mmrHistory, s.mmr + d].slice(-60),
           xp: s.xp + (correct ? (opts.hint ? 20 : 30) : 5),
           streak,
           bestStreak: Math.max(s.bestStreak, streak),
@@ -247,6 +301,19 @@ useCourse.subscribe((s) => {
     /* ignore */
   }
 });
+
+const NO_SKILL: CourseSkill = freshSkill();
+
+/** The active course's skill (stable reference from the store). */
+export function useSkill(): CourseSkill {
+  return useCourse((s) => (s.activeId ? s.library[s.activeId]?.skill : undefined) ?? NO_SKILL);
+}
+
+/** Reads the active course's MMR outside React. */
+export const activeMmr = () => {
+  const s = useCourse.getState();
+  return (s.activeId ? s.library[s.activeId]?.skill.mmr : undefined) ?? START_MMR;
+};
 
 export interface ActiveCourse {
   entry: LibraryEntry;

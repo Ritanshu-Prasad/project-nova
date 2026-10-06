@@ -22,6 +22,7 @@ import UserSetupPopup from './ui/landing/UserSetupPopup';
 import CurriculumSetup from './ui/app/CurriculumSetup';
 import Hub from './ui/lounge/Hub';
 import { applyTheme } from './core/theme';
+import { usePop } from './core/popquiz';
 import { useCourse } from './core/course';
 import { useHub, useProfile } from './core/hub';
 
@@ -118,7 +119,7 @@ function useAutoWake() {
 function useDevHooks() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile };
+    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile, pop: usePop };
     const jump = new URLSearchParams(location.search).get('jump') as Phase | null;
     if (jump && PHASES.includes(jump)) director.debugJump(jump);
   }, []);

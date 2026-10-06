@@ -3,8 +3,10 @@ import type { Block, Course, Level, Module, Question, Topic } from './courseSche
 import { makeId } from './courseSchema';
 
 /**
- * Builds a structured course from the user's PDFs (class notes, a book) entirely in the browser:
- * chapters from the PDF outline (or headings when there is none) become topics, and heuristics write
+ * Builds a structured course from the user's PDFs (class notes, a book) entirely in the browser.
+ * The structure follows the material's scope: each chapter of the PDF outline becomes a module and its
+ * sections become topics, so a long book gets many modules and a dense chapter gets many topics. Without an
+ * outline, pages are split into topics (more pages → more topics) grouped into modules. Heuristics then write
  * overview / key-term / summary blocks plus practice questions. The AI backend can replace this later
  * with richer generation — the output format is the same.
  */
@@ -13,7 +15,8 @@ export type DocStructure = 'chapters' | 'topics';
 export type ProgressFn = (stage: string, detail?: string) => void;
 
 const MAX_FILES = 5;
-const MAX_SECTIONS = 10;
+/** Topics across all documents (keeps generation fast); chapters keep all their pages by merging. */
+const MAX_TOPICS = 36;
 const PAGES_PER_SECTION = 4;
 const PLANETS = ['Kepler', 'Vega', 'Lyra', 'Orion', 'Atlas', 'Halo', 'Zephyr', 'Echo', 'Juno', 'Rhea', 'Talos', 'Iris', 'Cora', 'Pax', 'Sol', 'Nyx', 'Aster', 'Mira', 'Tycho', 'Elara'];
 const STOP = new Set(
@@ -57,31 +60,83 @@ interface Section {
   end: number;
 }
 
-async function outlineSections(doc: PDFDocumentProxy): Promise<Section[]> {
-  const outline = await doc.getOutline().catch(() => null);
-  if (!outline || !outline.length) return [];
-  let items = outline;
-  if (items.length === 1 && items[0].items && items[0].items.length > 1) items = items[0].items;
-  const starts: { title: string; page: number }[] = [];
-  for (const it of items.slice(0, 30)) {
-    try {
-      const dest = typeof it.dest === 'string' ? await doc.getDestination(it.dest) : it.dest;
-      if (!dest || !dest[0]) continue;
-      const idx = typeof dest[0] === 'number' ? dest[0] : await doc.getPageIndex(dest[0]);
-      if (it.title.trim()) starts.push({ title: it.title.trim(), page: idx + 1 });
-    } catch {
-      /* unresolvable entry */
-    }
-  }
-  starts.sort((a, b) => a.page - b.page);
-  const unique = starts.filter((s, i) => i === 0 || s.page > starts[i - 1].page);
-  return unique.map((s, i) => ({ title: s.title, start: s.page, end: Math.max(s.page, (unique[i + 1]?.page ?? doc.numPages + 1) - 1) }));
+interface Chapter {
+  title: string;
+  sections: Section[];
 }
 
-function chunkSections(pages: number): Section[] {
-  const count = Math.max(1, Math.min(8, Math.round(pages / 6)));
+/** Splits a page range into topics: about one per 8 pages, at most `max`. */
+function splitRange(title: string, start: number, end: number, max = 6): Section[] {
+  const pages = end - start + 1;
+  const count = Math.max(1, Math.min(max, Math.round(pages / 8)));
   const size = Math.ceil(pages / count);
-  return Array.from({ length: count }, (_, i) => ({ title: '', start: i * size + 1, end: Math.min(pages, (i + 1) * size) })).filter((s) => s.start <= pages);
+  return Array.from({ length: count }, (_, i) => ({ title: count === 1 ? title : '', start: start + i * size, end: Math.min(end, start + (i + 1) * size - 1) })).filter((x) => x.start <= end);
+}
+
+type OutlineNode = { title: string; dest: unknown; items?: OutlineNode[] };
+
+async function pageOf(doc: PDFDocumentProxy, it: OutlineNode): Promise<number | null> {
+  try {
+    const dest = (typeof it.dest === 'string' ? await doc.getDestination(it.dest) : it.dest) as unknown[] | null;
+    if (!dest || !dest[0]) return null;
+    const idx = typeof dest[0] === 'number' ? dest[0] : await doc.getPageIndex(dest[0] as Parameters<PDFDocumentProxy['getPageIndex']>[0]);
+    return idx + 1;
+  } catch {
+    return null;
+  }
+}
+
+/** Chapters (outline top level) and their sections (second level), with page ranges. */
+async function outlineChapters(doc: PDFDocumentProxy): Promise<Chapter[]> {
+  const outline = (await doc.getOutline().catch(() => null)) as OutlineNode[] | null;
+  if (!outline || !outline.length) return [];
+  let roots = outline;
+  if (roots.length === 1 && roots[0].items && roots[0].items.length > 1) roots = roots[0].items;
+  const heads: { title: string; page: number; kids: { title: string; page: number }[] }[] = [];
+  for (const r of roots.slice(0, 40)) {
+    const page = await pageOf(doc, r);
+    if (!page || !r.title.trim()) continue;
+    const kids: { title: string; page: number }[] = [];
+    for (const k of (r.items ?? []).slice(0, 15)) {
+      const kp = await pageOf(doc, k);
+      if (kp && k.title.trim() && kp >= page) kids.push({ title: k.title.trim(), page: kp });
+    }
+    kids.sort((x, y) => x.page - y.page);
+    heads.push({ title: r.title.trim(), page, kids: kids.filter((k, i) => i === 0 || k.page > kids[i - 1].page) });
+  }
+  heads.sort((x, y) => x.page - y.page);
+  const uniq = heads.filter((h, i) => i === 0 || h.page > heads[i - 1].page);
+  return uniq.map((h, i) => {
+    const end = Math.max(h.page, (uniq[i + 1]?.page ?? doc.numPages + 1) - 1);
+    const sections =
+      h.kids.length >= 2
+        ? h.kids.map((k, j) => ({ title: k.title, start: j === 0 ? h.page : k.page, end: Math.max(k.page, Math.min(end, (h.kids[j + 1]?.page ?? end + 1) - 1)) }))
+        : splitRange(h.kids[0]?.title ?? h.title, h.page, end);
+    return { title: h.title, sections };
+  });
+}
+
+/** No outline: about one topic per 6 pages, grouped into modules of up to 5 topics. */
+function chunkChapters(pages: number, docName: string): Chapter[] {
+  const topics = Math.max(1, Math.min(24, Math.round(pages / 6)));
+  const size = Math.ceil(pages / topics);
+  const secs: Section[] = Array.from({ length: topics }, (_, i) => ({ title: '', start: i * size + 1, end: Math.min(pages, (i + 1) * size) })).filter((x) => x.start <= pages);
+  const groups = Math.max(1, Math.ceil(secs.length / 5));
+  const per = Math.ceil(secs.length / groups);
+  return Array.from({ length: groups }, (_, g) => ({ title: groups > 1 ? `${docName} · Part ${g + 1}` : docName, sections: secs.slice(g * per, (g + 1) * per) })).filter((c) => c.sections.length);
+}
+
+/** Keeps the topic count within budget: merges the last sections of the busiest chapters, then trims chapters. */
+function capChapters(chapters: Chapter[], budget: number): Chapter[] {
+  const out = chapters.map((c) => ({ ...c, sections: [...c.sections] }));
+  const total = () => out.reduce((n, c) => n + c.sections.length, 0);
+  while (total() > budget) {
+    const big = out.reduce((m, c) => (c.sections.length > m.sections.length ? c : m), out[0]);
+    if (big.sections.length <= 1) break;
+    const last = big.sections.pop()!;
+    big.sections[big.sections.length - 1] = { ...big.sections[big.sections.length - 1], end: last.end };
+  }
+  return out.slice(0, Math.max(1, budget));
 }
 
 const words = (t: string) => t.toLowerCase().match(/[a-z][a-z’'-]{2,}/g) ?? [];
@@ -226,7 +281,8 @@ export async function courseFromPdfs(
   const termPool: string[] = [];
   let planetIndex = 0;
   let foundText = false;
-  const gathered: { docName: string; picked: { s: Section; text: string }[] }[] = [];
+  const gathered: { docName: string; chapters: { title: string; picked: { s: Section; text: string }[] }[] }[] = [];
+  const budget = Math.max(4, Math.floor(MAX_TOPICS / docs.length));
 
   for (const file of docs) {
     progress('read', `Reading ${file.name}`);
@@ -240,49 +296,52 @@ export async function courseFromPdfs(
     documents.push({ name: docName, pages: doc.numPages });
 
     progress('outline', opts.structure === 'chapters' ? `Finding chapters in ${docName}` : `Splitting ${docName} into topics`);
-    let sections = opts.structure === 'chapters' ? await outlineSections(doc) : [];
-    if (!sections.length) sections = chunkSections(doc.numPages);
+    let chapters = opts.structure === 'chapters' ? await outlineChapters(doc) : [];
+    if (!chapters.length) chapters = chunkChapters(doc.numPages, docName);
+    chapters = capChapters(chapters, budget);
 
     // Read a few pages of every section (enough to write the lesson and questions).
-    const texts: string[] = [];
-    for (const sec of sections.slice(0, MAX_SECTIONS * 2)) {
-      let text = '';
-      for (let p = sec.start; p <= Math.min(sec.end, sec.start + PAGES_PER_SECTION - 1); p++) {
-        const r = await readPage(doc, p);
-        if (!sec.title && p === sec.start && r.heading) sec.title = r.heading;
-        text += `${r.text}\n\n`;
+    const read: { title: string; picked: { s: Section; text: string }[] }[] = [];
+    for (const ch of chapters) {
+      const picked: { s: Section; text: string }[] = [];
+      for (const sec of ch.sections) {
+        let text = '';
+        for (let pg = sec.start; pg <= Math.min(sec.end, sec.start + PAGES_PER_SECTION - 1); pg++) {
+          const r = await readPage(doc, pg);
+          if (!sec.title && pg === sec.start && r.heading) sec.title = r.heading;
+          text += `${r.text}\n\n`;
+        }
+        picked.push({ s: sec, text });
       }
-      texts.push(text);
+      read.push({ title: ch.title, picked });
     }
     await task.destroy();
 
-    // Optional focus: keep the sections that talk about it most.
-    let picked = sections.map((s, i) => ({ s, text: texts[i] ?? '' }));
+    // Optional focus: keep the sections that talk about it most (and the chapters that still have any).
     const focusWords = words(opts.focus ?? '').filter((w) => !STOP.has(w));
+    let kept = read;
     if (focusWords.length) {
-      const scored = picked.map((x) => ({ s: x.s, score: focusWords.reduce((a, w) => a + (x.text.toLowerCase().split(w).length - 1), 0) }));
-      const hits = scored.filter((x) => x.score > 0).sort((a, b) => b.score - a.score).slice(0, Math.max(3, Math.ceil(picked.length / 2)));
+      const score = (t: string) => focusWords.reduce((a, w) => a + (t.toLowerCase().split(w).length - 1), 0);
+      const all = read.flatMap((c) => c.picked.map((x) => ({ x, score: score(x.text) })));
+      const hits = all.filter((h) => h.score > 0).sort((p, q) => q.score - p.score).slice(0, Math.max(3, Math.ceil(all.length / 2)));
       if (hits.length) {
-        const keep = new Set(hits.map((h) => h.s));
-        picked = picked.filter((x) => keep.has(x.s));
+        const keep = new Set(hits.map((h) => h.x));
+        kept = read.map((c) => ({ ...c, picked: c.picked.filter((x) => keep.has(x)) })).filter((c) => c.picked.length);
       }
     }
-    picked = picked.slice(0, MAX_SECTIONS);
 
-    for (const x of picked) termPool.push(...definitionsOf(sentencesOf(stripHeadings(x.text))).map((d) => d.term));
-    gathered.push({ docName, picked });
+    for (const c of kept) for (const x of c.picked) termPool.push(...definitionsOf(sentencesOf(stripHeadings(x.text))).map((d) => d.term));
+    gathered.push({ docName, chapters: kept });
   }
 
-  for (const { docName, picked } of gathered) {
-    progress('topics', `Building ${picked.length} topics from ${docName}`);
-    const built = picked.map((x) => {
-      if (x.text.trim().length > 200) foundText = true;
-      return buildTopic(docName, x.s, x.text, PLANETS[planetIndex++ % PLANETS.length], termPool).topic;
-    });
-    // Large documents are split into parts so modules stay digestible.
-    for (let i = 0; i < built.length; i += 5) {
-      const part = built.length > 6 ? ` · Part ${i / 5 + 1}` : '';
-      modules.push({ id: makeId('mod'), title: `${docName}${part}`, topics: built.slice(i, i + 5) });
+  for (const { docName, chapters } of gathered) {
+    progress('topics', `Building ${chapters.reduce((n, c) => n + c.picked.length, 0)} topics in ${chapters.length} modules from ${docName}`);
+    for (const ch of chapters) {
+      const topics = ch.picked.map((x) => {
+        if (x.text.trim().length > 200) foundText = true;
+        return buildTopic(docName, x.s, x.text, PLANETS[planetIndex++ % PLANETS.length], termPool).topic;
+      });
+      modules.push({ id: makeId('mod'), title: ch.title || docName, topics });
     }
   }
 

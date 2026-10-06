@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { Clapperboard, FileText, Flame, Library, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound } from 'lucide-react';
+import { Clapperboard, FileText, Library, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { firstUncleared, levelOf, levelProgress, useActiveCourse, useCourse, type ActiveCourse } from '../../core/course';
+import { firstUncleared, levelOf, levelProgress, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
 import { flatTopics } from '../../core/courseSchema';
 import { openForge, relaunch, useHub, useProfile } from '../../core/hub';
 import { rankOf, TIERS } from '../../core/rank';
@@ -17,12 +17,16 @@ function Label({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   );
 }
 
-/** Skill journey: where the pilot's MMR puts them on the ship ladder, how it has moved, and the course route. */
+/**
+ * Skill journey for the active course: where this course's MMR puts the pilot on the ship ladder (every course
+ * starts at Probe III), how it has moved, mastery per module, and the course route.
+ */
 export function SkillJourneySection() {
   const active = useActiveCourse();
-  const stats = useCourse((s) => s.stats);
-  const rank = rankOf(stats.mmr);
-  const accuracy = stats.answered ? Math.round((stats.correct / stats.answered) * 100) : 0;
+  const skill = useSkill();
+  const rank = rankOf(skill.mmr);
+  const accuracy = skill.answered ? Math.round((skill.correct / skill.answered) * 100) : 0;
+  const passed = active ? active.course.modules.filter((m) => active.entry.modules[m.id]?.passed).length : 0;
 
   return (
     <div className="space-y-6">
@@ -31,13 +35,13 @@ export function SkillJourneySection() {
         <RankEmblem rank={rank} size={88} />
         <div className="min-w-0 flex-1">
           <div className="chip-label">
-            <TrendingUp size={12} /> Skill journey
+            <TrendingUp size={12} /> Skill journey · {active?.course.title}
           </div>
           <h2 className="font-display text-3xl font-bold leading-tight" style={{ color: rank.tier.color }}>
             {rank.label}
           </h2>
           <div className="text-sm text-white/60">
-            {rank.tier.metal} tier · {stats.mmr.toLocaleString('en-IN')} MMR — {rank.tier.blurb}
+            {rank.tier.metal} tier · {skill.mmr.toLocaleString('en-IN')} MMR in this course — {rank.tier.blurb}
           </div>
           {rank.nextLabel ? (
             <div className="mt-3 max-w-md">
@@ -58,26 +62,23 @@ export function SkillJourneySection() {
         <div className="grid w-full grid-cols-3 gap-2 sm:w-auto">
           {[
             { k: 'Accuracy', v: `${accuracy}%` },
-            { k: 'Answered', v: String(stats.answered) },
-            { k: 'Best streak', v: String(stats.bestStreak), icon: <Flame size={11} className="text-amber-300" /> },
+            { k: 'Answered', v: String(skill.answered) },
+            { k: 'Modules passed', v: `${passed}/${active?.course.modules.length ?? 0}` },
           ].map((x) => (
             <div key={x.k} className="rounded-2xl bg-white/[0.04] px-3 py-2 sm:w-28">
-              <div className="flex items-center gap-1 text-[11px] text-white/50">
-                {x.icon}
-                {x.k}
-              </div>
+              <div className="text-[11px] text-white/50">{x.k}</div>
               <div className="font-display text-lg font-bold text-white">{x.v}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <RankLadder mmr={stats.mmr} />
+      <RankLadder mmr={skill.mmr} />
 
       <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
         <div className="rounded-2xl bg-white/[0.04] p-4">
           <Label icon={<TrendingUp size={12} />}>MMR over time</Label>
-          <MmrChart values={stats.mmrHistory} />
+          <MmrChart values={skill.history} />
         </div>
         {active && <ModuleSkills active={active} />}
       </div>
@@ -85,7 +86,7 @@ export function SkillJourneySection() {
       {active && <CourseRoute active={active} />}
       <p className="flex items-start gap-2 text-sm text-white/55">
         <Sparkles size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
-        Harder questions on later planets — and timed pop quizzes (×1.5) — move your MMR the most. Misses cost a little, so steady practice wins.
+        Every course has its own ladder, scaled to its size: later planets are rated higher, and surprise pop quizzes taken in time pay ×1.75. Misses cost a little — steady practice wins.
       </p>
     </div>
   );
@@ -228,10 +229,11 @@ export function ProfileSection() {
   const activeId = useCourse((s) => s.activeId);
   const level = levelOf(stats.xp);
   const accuracy = stats.answered ? Math.round((stats.correct / stats.answered) * 100) : 0;
-  const rank = rankOf(stats.mmr);
+  const skill = useSkill();
+  const rank = rankOf(skill.mmr);
   const tiles = [
-    { label: 'MMR', value: stats.mmr.toLocaleString('en-IN') },
-    { label: 'Accuracy', value: `${accuracy}%` },
+    { label: 'Level', value: String(level) },
+    { label: 'Accuracy (all courses)', value: `${accuracy}%` },
     { label: 'Best streak', value: String(stats.bestStreak) },
     { label: 'Courses', value: String(Object.keys(library).length) },
   ];
@@ -267,7 +269,7 @@ export function ProfileSection() {
         <RankEmblem rank={rank} size={40} />
         <span className="min-w-0 flex-1">
           <span className="block font-display text-base font-semibold text-white">{rank.label}</span>
-          <span className="block text-xs text-white/55">{rank.nextLabel ? `${rank.toNext} MMR to ${rank.nextLabel}` : 'Top of the ladder'} · open Skill journey</span>
+          <span className="block text-xs text-white/55">{rank.nextLabel ? `${rank.toNext} MMR to ${rank.nextLabel}` : 'Top of the ladder'} · this course</span>
         </span>
         <TrendingUp size={16} className="text-white/45" />
       </button>
@@ -283,15 +285,17 @@ export function ProfileSection() {
               const n = flatTopics(e.course).length;
               const pct = Math.round((firstUncleared(e) / Math.max(1, n)) * 100);
               const isActive = e.course.id === activeId;
+              const r = rankOf(e.skill.mmr);
               return (
                 <li key={e.course.id} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${isActive ? 'bg-[rgb(var(--user-rgb)/0.12)] ring-1 ring-[rgb(var(--user-rgb)/0.4)]' : 'bg-white/[0.04]'}`}>
+                  <RankEmblem rank={r} size={30} />
                   <button type="button" onClick={() => useCourse.getState().setActive(e.course.id)} className="min-w-0 flex-1 cursor-pointer text-left">
                     <div className="truncate text-sm font-semibold text-white">{e.course.title}</div>
                     <div className="mt-1 flex items-center gap-2 text-[11px] text-white/50">
                       <span className="h-1 w-20 overflow-hidden rounded-full bg-white/10">
                         <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--user)' }} />
                       </span>
-                      {pct}% · {e.course.source === 'documents' ? 'from PDFs' : `${n} planets`}
+                      {pct}% · {r.label} · {e.course.modules.length} modules · {n} planets
                     </div>
                   </button>
                   <button type="button" aria-label={`Remove ${e.course.title}`} onClick={() => window.confirm(`Remove “${e.course.title}” and its progress?`) && useCourse.getState().removeCourse(e.course.id)} className="cursor-pointer rounded-lg p-1.5 text-white/35 transition hover:bg-white/10 hover:text-rose-300">

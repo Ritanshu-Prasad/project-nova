@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, RotateCcw, SendHorizontal, Sparkles, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ActiveCourse } from '../../../core/course';
-import { useCourse } from '../../../core/course';
+import { useSkill } from '../../../core/course';
 import { useProfile } from '../../../core/hub';
 import { rankOf } from '../../../core/rank';
 import { hasTutorApi, useTutor, type ChatMsg } from '../../../core/tutor';
@@ -21,7 +21,7 @@ export default function TutorChat({ active, variant = 'dock', onClose }: { activ
   const msgs = useTutor((s) => s.threads[key] ?? EMPTY);
   const busy = useTutor((s) => s.busy === key);
   const callsign = useProfile((s) => s.callsign) || 'pilot';
-  const mmr = useCourse((s) => s.stats.mmr);
+  const mmr = useSkill().mmr;
   const [open, setOpen] = useState(() => {
     try {
       return localStorage.getItem(LS_OPEN) !== '0';

@@ -10,11 +10,156 @@ const mcq = (q: string, options: string[], why: string, difficulty = 1): Questio
 const multi = (q: string, options: string[], answers: number[], why: string, difficulty = 2): Question => ({ type: 'multi', q, options, answers, why, difficulty });
 const tf = (q: string, answer: boolean, why: string, difficulty = 1): Question => ({ type: 'truefalse', q, answer, why, difficulty });
 const fill = (q: string, answer: string, why: string, accept: string[] = [], difficulty = 2): Question => ({ type: 'fill', q, answer, accept, why, difficulty });
+/** Write-code question: each check is [label, regex source] matched against the pilot's code. */
+const code = (q: string, language: string, solution: string, checks: [string, string][], why: string, starter?: string, difficulty = 3): Question => ({
+  type: 'code',
+  q,
+  language,
+  starter,
+  solution,
+  checks: checks.map(([label, pattern]) => ({ label, pattern })),
+  why,
+  difficulty,
+});
 
 const terms = (...t: [string, string][]): Block => ({ type: 'keyTerms', terms: t.map(([term, def]) => ({ term, def })) });
 
+/** Write-the-code questions for topics where code is the skill. */
+const CODE_QS: Record<string, Question[]> = {
+  'ai-1': [
+    code(
+      'Write neuron(x, w, b): the weighted sum of inputs x and weights w, plus the bias b (before any activation).',
+      'python',
+      'def neuron(x, w, b):\n    return sum(xi * wi for xi, wi in zip(x, w)) + b',
+      [
+        ['Defines neuron(x, w, b)', String.raw`def\s+neuron\s*\(\s*x\s*,\s*w\s*,\s*b\s*\)`],
+        ['Multiplies inputs by weights', String.raw`\*|dot\(|@`],
+        ['Adds the bias', String.raw`\+\s*b\b|\bb\s*\+`],
+        ['Returns the result', String.raw`\breturn\b`],
+      ],
+      'A neuron is a weighted sum plus a bias: w·x + b.',
+      'def neuron(x, w, b):\n    ',
+      2,
+    ),
+  ],
+  'ai-2': [
+    code(
+      'Write step(w, grad, lr): one gradient-descent update that returns the new weight.',
+      'python',
+      'def step(w, grad, lr):\n    return w - lr * grad',
+      [
+        ['Defines step(w, grad, lr)', String.raw`def\s+step\s*\(\s*w\s*,\s*grad\s*,\s*lr\s*\)`],
+        ['Moves against the gradient', String.raw`w\s*-\s*lr\s*\*\s*grad|w\s*-\s*grad\s*\*\s*lr|w\s*-=`],
+        ['Returns the new weight', String.raw`\breturn\b`],
+      ],
+      'Step against the gradient, scaled by the learning rate: w ← w − η·∂L/∂w.',
+      'def step(w, grad, lr):\n    ',
+      2,
+    ),
+  ],
+  'react-1': [
+    code(
+      'Write a Panel component that takes title and children and renders the title in an <h2> above the children.',
+      'tsx',
+      'function Panel({ title, children }) {\n  return (\n    <section>\n      <h2>{title}</h2>\n      {children}\n    </section>\n  );\n}',
+      [
+        ['Receives title and children', String.raw`\{\s*(title\s*,\s*children|children\s*,\s*title)\s*\}`],
+        ['Renders the title in an <h2>', String.raw`<h2[^>]*>\s*\{\s*title\s*\}\s*</h2>`],
+        ['Renders the children', String.raw`\{\s*children\s*\}\s*(<|\))`],
+      ],
+      'Composition: the parent decides what goes inside by passing children.',
+      'function Panel({ title, children }) {\n  return (\n    \n  );\n}',
+      2,
+    ),
+  ],
+  'react-2': [
+    code(
+      'Write a custom hook useToggle(initial) that returns [value, toggle], where toggle flips the value.',
+      'tsx',
+      'function useToggle(initial = false) {\n  const [value, setValue] = useState(initial);\n  const toggle = () => setValue((v) => !v);\n  return [value, toggle];\n}',
+      [
+        ['Named useToggle', String.raw`(function|const)\s+useToggle\b`],
+        ['Keeps state with useState', String.raw`useState\s*\(`],
+        ['Flips the value', String.raw`!\s*\w+`],
+        ['Returns [value, toggle]', String.raw`return\s*\[`],
+      ],
+      'A custom hook is a function starting with “use” that calls other hooks and returns what callers need.',
+      'function useToggle(initial = false) {\n  \n}',
+    ),
+  ],
+  'react-3': [
+    code(
+      'In a Badge component, read the current theme from ThemeContext and use it as the className of a <span>.',
+      'tsx',
+      'function Badge() {\n  const theme = useContext(ThemeContext);\n  return <span className={theme}>New</span>;\n}',
+      [
+        ['Calls useContext(ThemeContext)', String.raw`useContext\s*\(\s*ThemeContext\s*\)`],
+        ['Uses it as the className', String.raw`className=\{\s*\w+\s*\}`],
+      ],
+      'useContext reads the nearest Provider’s value — no props needed.',
+      'function Badge() {\n  \n}',
+      2,
+    ),
+  ],
+  'react-4': [
+    code(
+      'Memoise total so it is only recomputed when items changes.',
+      'tsx',
+      'const total = useMemo(\n  () => items.reduce((sum, i) => sum + i.price, 0),\n  [items],\n);',
+      [
+        ['Wraps the work in useMemo', String.raw`useMemo\s*\(\s*\(\s*\)\s*=>`],
+        ['Depends on items', String.raw`\[\s*items\s*\]`],
+      ],
+      'useMemo caches a value and recomputes it only when a dependency changes.',
+      'const total = items.reduce((sum, i) => sum + i.price, 0);',
+      2,
+    ),
+  ],
+  'la-1': [
+    code(
+      'Write dot(a, b): the dot product of two lists of the same length.',
+      'python',
+      'def dot(a, b):\n    return sum(x * y for x, y in zip(a, b))',
+      [
+        ['Defines dot(a, b)', String.raw`def\s+dot\s*\(\s*a\s*,\s*b\s*\)`],
+        ['Pairs up the entries', String.raw`zip\(|range\(|\[\s*i\s*\]`],
+        ['Multiplies and sums', String.raw`sum\(|\+=`],
+      ],
+      'Multiply matching components and add them up.',
+      'def dot(a, b):\n    ',
+      2,
+    ),
+  ],
+  'la-2': [
+    code(
+      'Write matvec(M, v): multiply a 2×2 matrix M (a list of rows) by a vector v of length 2.',
+      'python',
+      'def matvec(M, v):\n    return [row[0] * v[0] + row[1] * v[1] for row in M]',
+      [
+        ['Defines matvec(M, v)', String.raw`def\s+matvec\s*\(\s*M\s*,\s*v\s*\)`],
+        ['Works row by row', String.raw`for\s+\w+\s+in\s+M|M\[\s*\w+\s*\]`],
+        ['Returns a new vector', String.raw`return\s*\[|return\s+\w+`],
+      ],
+      'Each entry of the result is the dot product of a matrix row with the vector.',
+      'def matvec(M, v):\n    ',
+    ),
+  ],
+};
+
 /** Topic-specific side-panel sections — each topic gets the ones that suit it (the AI backend sends its own). */
 const PANELS: Record<string, Panel[]> = {
+  'ai-5': [
+    { title: 'Where it’s used', items: ['Search that understands meaning, not just keywords', 'Recommendations (“people who liked…”)', 'The first layer of every language model'] },
+    { title: 'Memory trick', body: 'Embedding = an address on the meaning map. Similar meaning, similar address.' },
+  ],
+  'ai-6': [
+    { title: 'Common mistakes', items: ['Judging a model by training accuracy alone', 'Tuning on the test set', 'Adding layers when the real fix is more data'] },
+    { title: 'Try this', body: 'Plot training and validation loss on one chart — the moment they split is where overfitting begins.' },
+  ],
+  'la-5': [
+    { title: 'Before you start', items: ['Adding and scaling vectors (topic 1.1)'] },
+    { title: 'Common mistakes', items: ['Thinking any two vectors span the plane — parallel ones don’t', 'Forgetting the zero vector is always in the span'] },
+  ],
   'ai-1': [
     { title: 'Common mistakes', items: ['Thinking more layers always means a smarter network', 'Forgetting the bias term', 'Using a linear activation everywhere'] },
     { title: 'Where it’s used', items: ['Image recognition in your phone’s camera', 'Spam filters', 'Speech-to-text'] },
@@ -94,7 +239,7 @@ function topic(
   lesson: { minutes: number; objectives: string[]; simple: string; blocks: Block[] },
   quiz: Question[],
 ): Topic {
-  return { id, title, planet, kind, summary, lesson: { ...lesson, panels: PANELS[id] }, quiz };
+  return { id, title, planet, kind, summary, lesson: { ...lesson, panels: PANELS[id] }, quiz: [...quiz, ...(CODE_QS[id] ?? [])] };
 }
 
 interface Template {
@@ -437,8 +582,87 @@ const TEMPLATES: Template[] = [
   },
 ];
 
+/**
+ * Course shape follows the subject's scope: bigger subjects get more modules, denser modules more topics.
+ * Templates are regrouped here (topics can be shared across layouts); the AI backend sizes its own courses.
+ */
+const LAYOUTS: Record<string, { id: string; title: string; topics: string[] }[]> = {
+  ai: [
+    { id: 'ai-m1', title: 'How networks learn', topics: ['ai-1', 'ai-2', 'ai-3'] },
+    { id: 'ai-m2', title: 'Modern architectures', topics: ['ai-5', 'ai-4'] },
+    { id: 'ai-m3', title: 'Training in practice', topics: ['ai-6'] },
+  ],
+  react: [
+    { id: 'react-m1', title: 'Building blocks', topics: ['react-1', 'react-2', 'react-3'] },
+    { id: 'react-m2', title: 'Performance', topics: ['react-4'] },
+  ],
+  linalg: [
+    { id: 'la-m1', title: 'Objects', topics: ['la-1', 'la-5', 'la-2'] },
+    { id: 'la-m2', title: 'Transformations', topics: ['la-3', 'la-4'] },
+  ],
+};
+
+/** Extra topics used by the layouts above. */
+const EXTRA_TOPICS: Topic[] = [
+  topic('ai-5', 'Embeddings & tokens', 'Vectoris', 'concept', 'Turning words into points in space.', {
+    minutes: 6,
+    objectives: ['Explain what a token is', 'Describe what an embedding captures', 'Compare two embeddings with cosine similarity'],
+    simple: 'Every word gets a set of coordinates, and words with similar meanings end up close together on the map.',
+    blocks: [
+      { type: 'text', title: 'From text to numbers', body: 'Models cannot read letters, so text is first split into tokens — whole words or word pieces. Each token is then looked up in a table that turns it into a vector of numbers: its embedding. Training nudges these vectors so that tokens used in similar ways end up near each other.' },
+      terms(['Token', 'A small piece of text — a word or part of one — that the model reads.'], ['Embedding', 'A learned vector of numbers that represents a token’s meaning.'], ['Vocabulary', 'The fixed list of tokens the model knows.']),
+      { type: 'analogy', body: 'Embeddings are like a city map for words: “cat” and “kitten” live on the same street, while “carburettor” is across town.' },
+      { type: 'formula', expr: 'similarity(a, b) = (a · b) / (‖a‖ ‖b‖)', caption: 'Cosine similarity: 1 means pointing the same way, 0 means unrelated.' },
+      { type: 'example', title: 'Directions carry meaning', body: 'In a well-trained embedding space, king − man + woman lands close to queen: the “gender” direction is shared across many words.' },
+      { type: 'summary', points: ['Text becomes tokens', 'Tokens become vectors', 'Nearby vectors mean similar usage'] },
+    ],
+  }, [
+    mcq('What does an embedding represent?', ['A token as a vector of numbers', 'A compressed image of the text', 'The model’s learning rate', 'A list of grammar rules'], 'An embedding is a learned vector for each token.'),
+    tf('Words with similar meanings tend to have nearby embeddings.', true, 'Training places tokens used in similar contexts close together.'),
+    fill('Before a model reads text, it is split into small pieces called ____.', 'tokens', 'Tokens are the units the model actually reads.', ['token']),
+  ]),
+  topic('ai-6', 'Overfitting & regularisation', 'Generalis', 'concept', 'Learning the lesson, not memorising the answers.', {
+    minutes: 6,
+    objectives: ['Spot overfitting from training and validation loss', 'Name three ways to reduce it'],
+    simple: 'A student who memorises last year’s paper word for word fails new questions — a model can do exactly the same.',
+    blocks: [
+      { type: 'text', title: 'Memorising vs learning', body: 'A model overfits when it learns the quirks and noise of its training data instead of the general pattern. It scores brilliantly on examples it has seen and poorly on new ones. We catch it by keeping a validation set the model never trains on.' },
+      { type: 'compare', title: 'Two ways to miss', columns: ['Underfitting', 'Overfitting'], rows: [['Training loss', 'High', 'Very low'], ['Validation loss', 'High', 'Rising'], ['Fix', 'Bigger model, train longer', 'More data, dropout, early stopping']] },
+      { type: 'steps', title: 'Fighting overfitting', steps: ['Hold out a validation set', 'Watch both loss curves', 'Add dropout or weight decay', 'Stop when validation loss stops improving'] },
+      { type: 'callout', tone: 'warning', body: 'Never tune your model on the test set — it quietly turns your test into training data.' },
+      { type: 'summary', points: ['Overfitting = memorising noise', 'Validation loss reveals it', 'Regularise or add data'] },
+    ],
+  }, [
+    mcq('Training loss keeps falling but validation loss rises. What is happening?', ['Overfitting', 'Underfitting', 'A perfect fit', 'The data failed to load'], 'The model is getting better at the training set only — classic overfitting.'),
+    tf('Dropout randomly switches off neurons during training to reduce overfitting.', true, 'Dropout stops the network relying on any single neuron.'),
+    mcq('Which of these helps against overfitting?', ['More training data', 'Training for much longer', 'Removing the validation set', 'Raising the learning rate'], 'More varied data makes memorising harder than learning the pattern.', 2),
+  ]),
+  topic('la-5', 'Span & linear combinations', 'Spanora', 'math', 'Everything you can build from a few vectors.', {
+    minutes: 6,
+    objectives: ['Write a linear combination', 'Decide whether two vectors span the plane'],
+    simple: 'With two different directions you can reach any point on a flat sheet just by mixing them.',
+    blocks: [
+      { type: 'text', title: 'Mixing vectors', body: 'Scale some vectors and add them up and you get a linear combination. The span is every vector you can reach this way. Two vectors that point in different directions span the whole plane; two parallel ones only reach a line.' },
+      { type: 'formula', expr: 'v = a·u + b·w', caption: 'A linear combination of u and w with weights a and b.' },
+      { type: 'example', body: 'u = (1, 0), w = (0, 1): then 3·u + 2·w = (3, 2). Any point (x, y) is x·u + y·w, so u and w span the plane.' },
+      terms(['Linear combination', 'A sum of scaled vectors, like a·u + b·w.'], ['Span', 'All vectors reachable by linear combinations.'], ['Linearly independent', 'No vector in the set is a combination of the others.']),
+      { type: 'callout', tone: 'fact', body: 'In 3D you need three independent vectors to span all of space.' },
+      { type: 'summary', points: ['Scale and add = linear combination', 'Span = everything reachable', 'Independent directions fill more space'] },
+    ],
+  }, [
+    mcq('What is the span of two non-parallel vectors in 2D?', ['The whole plane', 'A single line', 'Just the origin', 'A circle'], 'Two independent directions reach every point of the plane.'),
+    tf('Two parallel vectors span the whole plane.', false, 'Parallel vectors only reach the line they share.'),
+    fill('a·u + b·w is called a linear ____ of u and w.', 'combination', 'Scaling and adding vectors forms a linear combination.'),
+  ]),
+];
+
 function fromTemplate(t: Template, objective: string, level: Level): Course {
-  return { id: makeId('course'), title: t.title, subtitle: t.subtitle, objective, level, source: 'template', modules: t.modules };
+  const pool = [...t.modules.flatMap((m) => m.topics), ...EXTRA_TOPICS];
+  const layout = LAYOUTS[t.id];
+  const modules: Module[] = layout
+    ? layout.map((l) => ({ id: l.id, title: l.title, topics: l.topics.map((id) => pool.find((x) => x.id === id)).filter((x): x is Topic => !!x) }))
+    : t.modules;
+  return { id: makeId('course'), title: t.title, subtitle: t.subtitle, objective, level, source: 'template', modules };
 }
 
 /** A generic, honest starter plan for any goal: how to learn it well, until the AI writes the subject lessons. */
