@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import { flatTopics, type Course, type Module, type PlacedTopic } from './courseSchema';
-import { QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
+import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
 
 export type { RatedQuestion } from './quizBuilder';
 
@@ -117,23 +117,20 @@ export function isUnlocked(e: LibraryEntry, itemId: string, outline = outlineOf(
 /** Where a topic sits in the course, 0..1. */
 const progressAt = (index: number, count: number) => (count > 1 ? index / (count - 1) : 0);
 
-/** Questions for a pop quiz: any topic the pilot has reached so far — completed planets and the current one. */
-export function popPool(e: LibraryEntry): RatedQuestion[] {
-  const topics = flatTopics(e.course);
-  const rated = (t: PlacedTopic) => questionsFor(t, e.course).map((q) => ({ q, progress: progressAt(t.index, topics.length) }));
-  let reach = Math.min(firstUncleared(e), topics.length - 1);
-  let pool = topics.slice(0, reach + 1).flatMap(rated);
-  // Early on, peek a planet ahead so a round still has at least the minimum number of questions.
-  while (pool.length < QUIZ_MIN && reach < topics.length - 1) pool = [...pool, ...rated(topics[++reach])];
-  return pool;
+/** Modules the pilot has completed (passed their lesson quiz). */
+export const passedModules = (e: LibraryEntry) => e.course.modules.filter((m) => e.modules[m.id]?.passed);
+
+/** The hub quiz bank: every question from the modules the pilot has completed. */
+export function hubPool(e: LibraryEntry): RatedQuestion[] {
+  return outlineOf(e.course).flatMap((it) => (it.kind === 'quiz' && e.modules[it.module.id]?.passed ? it.pool : []));
 }
 
 /**
- * Scope: roughly how many questions a pilot answers to walk this course (a 5–10 question quiz per module plus
- * pop quizzes along the way). Bigger courses take smaller MMR steps, so every course spans the whole ladder.
+ * Scope: roughly how much MMR-weighted answering it takes to walk this course (lesson quizzes plus hub quizzes). Bigger courses take smaller MMR steps, so every course spans the whole ladder.
  */
 function kFactor(course: Course): number {
-  const answered = course.modules.length * ((QUIZ_MIN + QUIZ_MAX) / 2) + flatTopics(course).length * 3;
+  // Per module: a 3–5 question lesson quiz plus about one hub quiz (5–10 questions at roughly double MMR).
+  const answered = course.modules.length * ((LESSON_QUIZ.min + LESSON_QUIZ.max) / 2 + 2 * ((QUIZ_MIN + QUIZ_MAX) / 2));
   return Math.max(16, Math.min(56, Math.round(1800 / Math.max(1, answered))));
 }
 
@@ -143,8 +140,10 @@ const questionRating = (progress = 0, difficulty = 1) => START_MMR + progress * 
 export interface AnswerOpts {
   difficulty?: number;
   hint?: boolean;
-  /** Bonus on correct answers (e.g. ×1.75 for a pop quiz taken in time). */
-  multiplier?: number;
+  /** Multiplier on MMR gained when correct (hub quizzes pay 1.75–2.5×). */
+  gain?: number;
+  /** Multiplier on MMR lost when wrong (0 = no penalty, e.g. timed hub questions). */
+  loss?: number;
   /** Where the question's topic sits in the course, 0..1. */
   progress?: number;
 }
@@ -165,7 +164,7 @@ interface CourseState {
   /** Scores one answer in the active course; returns the MMR change. */
   answer: (correct: boolean, opts?: AnswerOpts) => number;
   finishModuleQuiz: (moduleId: string, correct: number, total: number) => { passed: boolean; nextId: string | null };
-  finishPopQuiz: (correct: number, total: number) => void;
+  finishHubQuiz: (correct: number, total: number) => void;
 }
 
 type Saved = Pick<CourseState, 'activeId' | 'library' | 'stats'>;
@@ -254,8 +253,8 @@ export const useCourse = create<CourseState>()((set, get) => {
       const K = kFactor(e.course);
       const expected = 1 / (1 + Math.pow(10, (questionRating(opts.progress, opts.difficulty) - sk.mmr) / 400));
       let delta = K * ((correct ? 1 : 0) - expected) * (correct && opts.hint ? 0.5 : 1);
-      delta = correct ? Math.max(opts.hint ? 2 : 4, delta) * (opts.multiplier ?? 1) : Math.min(-3, delta);
-      const d = Math.round(delta);
+      delta = correct ? Math.max(opts.hint ? 2 : 4, delta) * (opts.gain ?? 1) : Math.min(-3, delta) * (opts.loss ?? 1);
+      const d = Math.round(delta) || 0;
       patchActive((x) => ({
         ...x,
         skill: { mmr: sk.mmr + d, history: [...sk.history, sk.mmr + d].slice(-80), correct: sk.correct + (correct ? 1 : 0), answered: sk.answered + 1 },
@@ -289,7 +288,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       return { passed, nextId: outline[i + 1]?.id ?? null };
     },
 
-    finishPopQuiz: (correct) => bumpDay(correct * 15),
+    finishHubQuiz: (correct) => bumpDay(correct * 15),
   };
 });
 

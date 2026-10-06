@@ -66,8 +66,12 @@ interface Props {
   questions: Question[];
   /** Seconds per question (null = untimed); a timeout counts as a miss. */
   limits?: (number | null)[];
-  /** MMR multiplier on correct answers (pop quizzes pay a bonus). */
-  multiplier?: number;
+  /** MMR multipliers per question (hub quizzes): gain when right, loss when wrong. Default ×1 / ×1. */
+  rates?: { gain: number; loss: number }[];
+  /** Practice (a retake): answers are checked but score no MMR. */
+  practice?: boolean;
+  /** Called after each answer (lets a quiz left halfway still count what was answered). */
+  onAnswer?: (index: number, correct: boolean, delta: number) => void;
   /** Where each question sits in the course, 0..1 (later = rated higher) — one value or one per question. */
   progress?: number | number[];
   hints?: boolean;
@@ -78,7 +82,7 @@ interface Props {
  * Runs a list of questions of any format: answer, instant right/wrong feedback, next — then reports the result.
  * MMR is scored as you go but only revealed after the quiz, so the pilot can focus on the questions.
  */
-export default function QuizRunner({ questions, limits, multiplier = 1, progress = 0, hints = true, onComplete }: Props) {
+export default function QuizRunner({ questions, limits, rates, practice = false, progress = 0, hints = true, onComplete, onAnswer }: Props) {
   const streak = useCourse((s) => s.stats.streak);
   const [qi, setQi] = useState(0);
   const [resp, setResp] = useState<(Resp | null)[]>(() => questions.map(() => null));
@@ -96,8 +100,10 @@ export default function QuizRunner({ questions, limits, multiplier = 1, progress
     if (submitted.current) return;
     submitted.current = true;
     const at = Array.isArray(progress) ? (progress[qi] ?? 0) : progress;
-    const delta = useCourse.getState().answer(correct, { difficulty: q.difficulty, hint: hidden.length > 0, multiplier, progress: at });
+    const rate = rates?.[qi] ?? { gain: 1, loss: 1 };
+    const delta = practice ? 0 : useCourse.getState().answer(correct, { difficulty: q.difficulty, hint: hidden.length > 0, gain: rate.gain, loss: rate.loss, progress: at });
     setResp((prev) => prev.map((x, i) => (i === qi ? { correct, delta, timedOut } : x)));
+    onAnswer?.(qi, correct, delta);
     audio.play(correct ? 'quest' : 'denied');
   };
 
@@ -167,7 +173,7 @@ export default function QuizRunner({ questions, limits, multiplier = 1, progress
             )}
             {limit && (
               <span className="flex items-center gap-1.5 font-semibold text-amber-200">
-                <Timer size={13} /> {limit}s
+                <Timer size={13} /> {limit}s{!practice && rates?.[qi]?.loss === 0 ? ' · no penalty' : ''}
               </span>
             )}
           </div>

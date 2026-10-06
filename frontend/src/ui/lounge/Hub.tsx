@@ -2,16 +2,16 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, BookOpen, ChevronDown, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
-import { activeOf, DAILY_GOAL, levelOf, levelProgress, popPool, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
+import { activeOf, DAILY_GOAL, levelOf, levelProgress, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
 import { openForge, relaunch, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
-import { POP, takePopQuiz, useBonusClock, usePop } from '../../core/popquiz';
-import { quizSizeLabel } from '../../core/quizBuilder';
+import { duration, HUB_QUIZ, openHubQuiz, useCourseQuizzes, useFreshClock, useHubQuiz, useHubQuizScheduler } from '../../core/hubQuiz';
+import { LESSON_QUIZ, quizSizeLabel } from '../../core/quizBuilder';
 import { rankOf } from '../../core/rank';
 import { useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
-import { PopArrival, PopPill, PopQuiz } from './PopQuiz';
+import { HubQuizStation, QuizArrival, QuizPill } from './HubQuiz';
 import RankEmblem from './RankEmblem';
 import { ProfileSection, SkillJourneySection } from './sections';
 import StudyMode from './study/StudyMode';
@@ -25,7 +25,15 @@ const choose = (key: DockKey) => {
   const s = useCourse.getState();
   const e = s.activeId ? s.library[s.activeId] : null;
   if ((key === 'lesson' || key === 'quiz') && !e) return openForge();
-  if (key === 'quiz') return takePopQuiz();
+  if (key === 'quiz' && e) {
+    const qs = useHubQuiz.getState().quizzes.filter((q) => q.courseId === e.course.id);
+    if (!qs.length) {
+      audio.play('denied');
+      useNova.getState().notify({ kind: 'toast', title: passedModules(e).length ? 'Next hub quiz is on its way' : 'Complete a module to unlock the hub quiz', ttl: 2.5 });
+      return;
+    }
+    return openHubQuiz();
+  }
   if (key === 'lesson' && e) {
     const next = activeOf(e)?.next;
     if (next) s.open(next.id);
@@ -33,13 +41,13 @@ const choose = (key: DockKey) => {
   useHub.getState().go(key);
 };
 
-/** The lounge as a friendly widget menu; Lesson opens full-window study, Quiz the timed pop quiz. */
+/** The lounge as a friendly widget menu; Lesson opens full-window study, Quiz the big hub quiz. */
 export default function Hub() {
   const inLounge = useDeck((s) => s.deck === 'lounge');
   const forgeOpen = useNova((s) => s.curriculumOpen);
   const station = useHub((s) => s.station);
-  const offer = usePop((s) => s.offer);
-  const running = usePop((s) => !!s.run);
+  const { pending } = useCourseQuizzes();
+  const running = useHubQuiz((s) => !!s.run);
   const active = useActiveCourse();
   const visible = inLounge && !forgeOpen;
 
@@ -69,20 +77,8 @@ export default function Hub() {
     return () => window.removeEventListener('keydown', onKey);
   }, [visible]);
 
-  // Surprise pop quizzes arrive at random moments aboard — in the lounge or mid-lesson, never during a quiz.
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      const p = usePop.getState();
-      if (p.offer || p.run || Date.now() < p.nextAt) return;
-      if (useDeck.getState().deck !== 'lounge' || useNova.getState().curriculumOpen) return;
-      const st = useHub.getState().station;
-      const c = useCourse.getState();
-      const e = c.activeId ? c.library[c.activeId] : undefined;
-      if (!e || st === 'quiz' || (st === 'lesson' && activeOf(e)?.item.kind === 'quiz')) return;
-      if (popPool(e).length) p.arrive(e.course.id);
-    }, 2000);
-    return () => clearInterval(id);
-  }, []);
+  // Hub quizzes form at random moments once a module is complete.
+  useHubQuizScheduler();
 
   return (
     <>
@@ -90,14 +86,14 @@ export default function Hub() {
         <AnimatePresence>
           {visible && station === 'hub' && (active ? <Overview key="overview" active={active} /> : <EmptyState key="empty" />)}
           {visible && (station === 'journey' || station === 'profile') && <SectionPanel key={station} station={station} />}
-          {visible && active && station === 'quiz' && <PopQuiz key="pop" />}
+          {visible && active && station === 'quiz' && <HubQuizStation key="hubquiz" />}
         </AnimatePresence>
       </div>
       <AnimatePresence>{visible && active && station === 'lesson' && <StudyMode key="study" />}</AnimatePresence>
-      {/* Pop quiz alerts sit above everything aboard, including the study screen. */}
+      {/* Hub quiz alerts sit above everything aboard, including the study screen. */}
       <div className="pointer-events-none fixed inset-0" style={{ zIndex: Z.notices - 1 }}>
         <AnimatePresence>
-          {visible && active && offer && !running && station !== 'quiz' && (offer.seen ? <PopPill key="pill" /> : <PopArrival key="arrival" />)}
+          {visible && active && pending && !running && station !== 'quiz' && (pending.seen ? <QuizPill key="pill" q={pending} /> : <QuizArrival key={pending.id} q={pending} />)}
         </AnimatePresence>
       </div>
     </>
@@ -132,15 +128,15 @@ function Overview({ active }: { active: ActiveCourse }) {
   const library = useCourse((s) => s.library);
   const stats = useCourse((s) => s.stats);
   const skill = useSkill();
-  const offer = usePop((s) => s.offer);
-  const bonusSecs = useBonusClock(offer);
+  const { pending, past } = useCourseQuizzes();
+  const freshSecs = useFreshClock(pending);
+  const unlocked = passedModules(active.entry).length > 0;
   const { topics, cleared, course, outline, next } = active;
   const n = topics.length;
   const pct = Math.round((cleared / n) * 100);
   const ni = next ? outline.indexOf(next) : outline.length;
   const upNext = outline.slice(ni + 1, ni + 3);
   const todayCount = stats.day === new Date().toISOString().slice(0, 10) ? stats.dayQuizzes : 0;
-  const popReady = popPool(active.entry).length > 0;
   const nextModule = next ? course.modules[next.moduleIndex] : null;
   const rank = rankOf(skill.mmr);
 
@@ -150,11 +146,20 @@ function Overview({ active }: { active: ActiveCourse }) {
       key: 'quiz',
       hotkey: 2,
       tier: 2,
-      icon: Zap,
-      title: offer ? 'Pop quiz ready!' : 'Pop quiz',
-      sub: !popReady ? 'Opens with your first lesson' : offer ? (bonusSecs ? `Bonus ends in ${Math.floor(bonusSecs / 60)}:${String(bonusSecs % 60).padStart(2, '0')}` : 'Waiting · bonus ended') : 'Practice · surprises arrive anytime',
-      badge: offer && bonusSecs ? `×${POP.bonus}` : '×1',
-      hot: !!offer && bonusSecs > 0,
+      icon: pending ? Zap : Lock,
+      title: pending ? 'Hub quiz ready!' : 'Hub quiz',
+      sub: !unlocked
+        ? 'Complete a module to unlock'
+        : pending
+          ? freshSecs
+            ? `×${HUB_QUIZ.fresh.regular} for ${duration(freshSecs)}`
+            : `Waiting · ×${HUB_QUIZ.late.regular}`
+          : past.length
+            ? 'Next one arrives soon · retake past'
+            : 'Next one arrives soon',
+      badge: pending ? `×${freshSecs ? HUB_QUIZ.fresh.regular : HUB_QUIZ.late.regular}` : undefined,
+      hot: !!pending,
+      locked: !pending && !past.length,
     },
     {
       key: 'lesson',
@@ -248,13 +253,13 @@ function Overview({ active }: { active: ActiveCourse }) {
                   <Clock size={11} /> {next.topic.lesson.minutes} min
                 </span>
               ) : (
-                <span className="shrink-0">{quizSizeLabel(next.pool.length)} questions</span>
+                <span className="shrink-0">{quizSizeLabel(next.pool.length, LESSON_QUIZ.min, LESSON_QUIZ.max)} questions</span>
               )}
             </div>
           )}
           <div className="mt-3 flex gap-2">
             <HudButton size="sm" variant="primary" className="flex-1" icon={next?.kind === 'quiz' ? <Target size={13} /> : <Play size={13} />} onClick={() => choose(next ? 'lesson' : 'journey')}>
-              {!next ? 'Skill journey' : next.kind === 'quiz' ? 'Take module quiz' : 'Resume lesson'}
+              {!next ? 'Skill journey' : next.kind === 'quiz' ? 'Take lesson quiz' : 'Resume lesson'}
             </HudButton>
           </div>
         </div>
@@ -337,8 +342,10 @@ interface DockItem {
   badge?: string;
   /** Replaces the icon tile (e.g. the rank emblem). */
   badgeNode?: ReactNode;
-  /** Pulses amber (a pop quiz with a live bonus). */
+  /** Pulses amber (a hub quiz is waiting). */
   hot?: boolean;
+  /** Dimmed with a lock (nothing to open yet). */
+  locked?: boolean;
   extra?: ReactNode;
 }
 
@@ -358,7 +365,8 @@ function DockCard({ item: w }: { item: DockItem }) {
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
       className={`card group relative flex min-w-0 cursor-pointer flex-wrap items-center gap-3 px-4 py-3.5 text-left transition-[border-color,box-shadow] hover:border-[var(--user)] hover:shadow-[0_0_40px_-10px_rgb(var(--user-rgb)/0.8)] lg:flex-col lg:flex-nowrap lg:items-start lg:justify-between ${TIER[w.tier]}`}
-      style={hero ? { background: 'linear-gradient(160deg, rgb(var(--user-rgb) / 0.22), rgb(13 18 32 / 0.82) 60%)' } : w.hot ? { borderColor: 'rgb(252 211 77 / 0.7)', boxShadow: '0 0 40px -8px rgb(252 211 77 / 0.6)' } : undefined}
+      aria-disabled={w.locked || undefined}
+      style={hero ? { background: 'linear-gradient(160deg, rgb(var(--user-rgb) / 0.22), rgb(13 18 32 / 0.82) 60%)' } : w.locked ? { opacity: 0.6, filter: 'saturate(0.4)' } : w.hot ? { borderColor: 'rgb(252 211 77 / 0.7)', boxShadow: '0 0 40px -8px rgb(252 211 77 / 0.6)' } : undefined}
     >
       {w.hot && <span className="pointer-events-none absolute inset-0 animate-pulse rounded-[inherit] bg-amber-300/[0.07]" />}
       <span className="flex items-center justify-between lg:w-full">

@@ -17,8 +17,8 @@ export interface Outcome {
   /** Active course MMR before and after. */
   before: number;
   after: number;
-  /** Bonus multiplier that applied (pop quizzes). */
-  multiplier?: number;
+  /** Multipliers that applied, e.g. "×2 · timed ×2.5" (hub quizzes). */
+  bonus?: string;
 }
 
 type Mode = 'victory' | 'defeat' | 'even';
@@ -120,7 +120,7 @@ export default function QuizOutcome({ outcome, onDone }: { outcome: Outcome; onD
         </div>
         <p className="mt-2 text-base text-white/70">
           {outcome.correct} of {outcome.total} correct
-          {outcome.multiplier && outcome.multiplier > 1 ? ` · ×${outcome.multiplier} bonus` : ''}
+          {outcome.bonus ? ` · ${outcome.bonus}` : ''}
         </p>
 
         {/* Rank bar */}

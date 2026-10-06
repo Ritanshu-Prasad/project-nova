@@ -33,7 +33,7 @@ import { frontier, isDone, levelOf, useActiveCourse, useCourse, useSkill, type A
 import type { Block, PlacedTopic } from '../../../core/courseSchema';
 import { useHub } from '../../../core/hub';
 import { Z } from '../../../core/layers';
-import { quizSizeLabel } from '../../../core/quizBuilder';
+import { LESSON_QUIZ, quizSizeLabel } from '../../../core/quizBuilder';
 import { rankOf } from '../../../core/rank';
 import RankEmblem from '../RankEmblem';
 import { KIND_TEMPLATES } from './kinds';
@@ -301,7 +301,7 @@ function OutlineRow({ active, it, locked }: { active: ActiveCourse; it: OutlineI
             <span className="font-semibold">Module quiz</span>
           )}
         </span>
-        <span className="text-xs text-white/35">{it.kind === 'topic' ? `${it.topic.lesson.minutes}m` : best !== undefined ? `${Math.round(best * 100)}%` : `${quizSizeLabel(it.pool.length)} Q`}</span>
+        <span className="text-xs text-white/35">{it.kind === 'topic' ? `${it.topic.lesson.minutes}m` : best !== undefined ? `${Math.round(best * 100)}%` : `${quizSizeLabel(it.pool.length, LESSON_QUIZ.min, LESSON_QUIZ.max)} Q`}</span>
       </button>
     </li>
   );

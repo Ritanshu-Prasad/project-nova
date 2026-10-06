@@ -86,7 +86,7 @@ export function SkillJourneySection() {
       {active && <CourseRoute active={active} />}
       <p className="flex items-start gap-2 text-sm text-white/55">
         <Sparkles size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
-        Every course has its own ladder, scaled to its size: later planets are rated higher, and surprise pop quizzes taken in time pay ×1.75. Misses cost a little — steady practice wins.
+        Every course has its own ladder, scaled to its size. Lesson quizzes move MMR a little; hub quizzes move it a lot — ×2 within 24 h of arriving (timed questions ×2.5, and they never cost MMR), ×1.75 after that.
       </p>
     </div>
   );

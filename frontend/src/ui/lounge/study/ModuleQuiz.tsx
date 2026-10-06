@@ -1,10 +1,8 @@
-import { ArrowRight, Check, Play, RotateCcw, Target, Timer, Trophy, X } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
-import { useRef, useState } from 'react';
-import { activeMmr, PASS_MARK, useCourse, type ActiveCourse, type OutlineItem } from '../../../core/course';
-import { buildQuiz, FORMAT_LABEL } from '../../../core/quizBuilder';
+import { ArrowRight, Check, Play, RotateCcw, Target, Trophy, X } from 'lucide-react';
+import { useState } from 'react';
+import { PASS_MARK, useCourse, type ActiveCourse, type OutlineItem } from '../../../core/course';
+import { buildQuiz, FORMAT_LABEL, LESSON_QUIZ } from '../../../core/quizBuilder';
 import { useNova } from '../../../core/store';
-import QuizOutcome, { type Outcome } from '../QuizOutcome';
 import Btn from './Btn';
 import { TYPE } from './typography';
 import QuizRunner, { AnswerView, type QuizResult } from './QuizRunner';
@@ -12,48 +10,43 @@ import QuizRunner, { AnswerView, type QuizResult } from './QuizRunner';
 type QuizItem = Extract<OutlineItem, { kind: 'quiz' }>;
 
 /**
- * The end-of-module checkpoint: intro → questions → galactic outcome → result (pass to unlock the next module).
- * Every attempt is a fresh random draw of 5–10 mixed-format questions from the whole module.
+ * The lesson quiz at the end of each module: a small, untimed check of 3–5 questions on this module's topics,
+ * drawn fresh each attempt. Normal MMR up or down, no fanfare — pass to unlock the next module (and the hub quiz).
  */
 export default function ModuleQuiz({ item, active }: { item: QuizItem; active: ActiveCourse }) {
   const [stage, setStage] = useState<'intro' | 'run' | 'done'>('intro');
   const [result, setResult] = useState<(QuizResult & { passed: boolean; nextId: string | null }) | null>(null);
   const progress = active.entry.modules[item.module.id];
   const nextModule = active.course.modules[item.moduleIndex + 1];
-  const [quiz, setQuiz] = useState(() => buildQuiz(item.pool));
+  const draw = () => buildQuiz(item.pool, { min: LESSON_QUIZ.min, max: LESSON_QUIZ.max, timedFinale: false });
+  const [quiz, setQuiz] = useState(draw);
   const n = quiz.questions.length;
   const formats = [...new Set(quiz.questions.map((x) => FORMAT_LABEL[x.q.type]))];
-  const timed = quiz.limits.filter((l) => l !== null).length;
-  const before = useRef(0);
-  const [outcome, setOutcome] = useState<Outcome | null>(null);
 
   const finish = (r: QuizResult) => {
     const out = useCourse.getState().finishModuleQuiz(item.module.id, r.correct, r.total);
-    setOutcome({ delta: r.delta, correct: r.correct, total: r.total, before: before.current, after: activeMmr() });
+    const firstPass = out.passed && !progress?.passed;
+    if (out.passed)
+      useNova.getState().notify({
+        kind: 'levelup',
+        title: 'Module complete',
+        lines: [nextModule ? `${nextModule.title} is unlocked.` : 'You finished the whole course!', ...(firstPass ? ['A hub quiz on this module will arrive soon.'] : [])],
+        ttl: 4,
+      });
     setResult({ ...r, ...out });
     setStage('done');
   };
 
-  // After the victory/defeat moment, celebrate the unlock.
-  const outcomeDone = () => {
-    setOutcome(null);
-    if (result?.passed) useNova.getState().notify({ kind: 'levelup', title: 'Module complete', lines: [nextModule ? `${nextModule.title} is unlocked.` : 'You finished the whole course!'], ttl: 3.5 });
-  };
-
-  const start = () => {
-    before.current = activeMmr();
-    setStage('run');
-  };
+  const start = () => setStage('run');
   // A retake draws a new set of questions.
   const retake = () => {
-    setQuiz(buildQuiz(item.pool));
+    setQuiz(draw());
     setResult(null);
     setStage('intro');
   };
 
   return (
     <article className="font-sans">
-      <AnimatePresence>{outcome && <QuizOutcome key="outcome" outcome={outcome} onDone={outcomeDone} />}</AnimatePresence>
       <header>
         <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--user)' }}>
           <Target size={14} /> Module {item.moduleIndex + 1} quiz
@@ -64,7 +57,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
       {stage === 'intro' && (
         <div className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6">
           <p className={TYPE.body}>
-            {n} questions drawn at random from everything in this module. Score {Math.round(PASS_MARK * 100)}% or more to pass{nextModule ? ` and unlock “${nextModule.title}”` : ' and finish the course'}.
+            A quick check: {n} questions on this module’s topics. Score {Math.round(PASS_MARK * 100)}% or more to pass{nextModule ? ` and unlock “${nextModule.title}”` : ' and finish the course'}.
           </p>
           <ul className={`mt-4 grid gap-2 sm:grid-cols-3 ${TYPE.body}`}>
             <li className="rounded-xl bg-white/[0.04] px-3 py-2">{n} questions · {formats.length} formats</li>
@@ -78,11 +71,6 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
               </span>
             ))}
           </div>
-          {timed > 0 && (
-            <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-amber-200">
-              <Timer size={14} /> The last {timed} questions are timed — tougher ones get more time.
-            </p>
-          )}
           <Btn variant="primary" className="mt-5" icon={<Play size={15} />} onClick={start}>
             {progress?.attempts ? 'Start new attempt' : 'Start quiz'}
           </Btn>
@@ -91,11 +79,11 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
 
       {stage === 'run' && (
         <div className="mt-6">
-          <QuizRunner questions={quiz.questions.map((x) => x.q)} progress={quiz.questions.map((x) => x.progress)} limits={quiz.limits} onComplete={finish} />
+          <QuizRunner questions={quiz.questions.map((x) => x.q)} progress={quiz.questions.map((x) => x.progress)} onComplete={finish} />
         </div>
       )}
 
-      {stage === 'done' && result && !outcome && (
+      {stage === 'done' && result && (
         <div className="mt-6 space-y-5">
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 text-center">
             {result.passed ? <Trophy size={40} className="mx-auto text-amber-300" /> : <RotateCcw size={36} className="mx-auto text-white/60" />}

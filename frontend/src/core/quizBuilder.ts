@@ -1,9 +1,11 @@
 import { flatTopics, type Block, type Course, type PlacedTopic, type Question } from './courseSchema';
 
 /**
- * Quiz assembly. Every quiz is a fresh random draw of 5–10 questions spread across formats (multiple choice,
- * multiple select, true/false, fill-in, ordering, matching, writing code), easier first. In a full 10-question
- * quiz the last three are against the clock, with time scaled to each question's format and difficulty.
+ * Quiz assembly. A quiz is a random draw spread across formats (multiple choice, multiple select, true/false,
+ * fill-in, ordering, matching, writing code), easier first:
+ *   - lesson quizzes (end of each module): 3–5 questions, untimed;
+ *   - hub quizzes (the big dashboard quiz): 5–10 questions; in a full 10-question quiz the last three are
+ *     against the clock, with time scaled to each question's format and difficulty.
  *
  * Each topic's bank is its authored questions plus questions generated from the lesson itself (key terms,
  * steps, takeaways, formulas), so every topic can feed a varied quiz.
@@ -21,8 +23,11 @@ export interface BuiltQuiz {
   limits: (number | null)[];
 }
 
+/** Hub quiz size. */
 export const QUIZ_MIN = 5;
 export const QUIZ_MAX = 10;
+/** Lesson (end-of-module) quiz size. */
+export const LESSON_QUIZ = { min: 3, max: 5 } as const;
 /** In a full-length quiz, this many final questions are timed. */
 export const TIMED_LAST = 3;
 
@@ -41,8 +46,8 @@ export const FORMAT_LABEL: Record<Question['type'], string> = {
   code: 'Write code',
 };
 
-/** "5–10 Q" style label for a bank of `n` questions. */
-export const quizSizeLabel = (n: number) => (n >= QUIZ_MIN ? `${QUIZ_MIN}–${Math.min(QUIZ_MAX, n)}` : String(n));
+/** "3–5" style label for a bank of `n` questions. */
+export const quizSizeLabel = (n: number, min = QUIZ_MIN, max = QUIZ_MAX) => (n >= min ? `${min}–${Math.min(max, n)}` : String(n));
 
 function shuffle<T>(xs: T[], rand: () => number): T[] {
   const a = [...xs];
@@ -54,10 +59,11 @@ function shuffle<T>(xs: T[], rand: () => number): T[] {
 }
 
 /** Draws a quiz: random length, formats taken in turn so every quiz mixes them, hardest questions last. */
-export function buildQuiz(pool: RatedQuestion[], rand: () => number = Math.random): BuiltQuiz {
+export function buildQuiz(pool: RatedQuestion[], opts: { min?: number; max?: number; timedFinale?: boolean } = {}, rand: () => number = Math.random): BuiltQuiz {
+  const { min = QUIZ_MIN, max = QUIZ_MAX, timedFinale = true } = opts;
   const seen = new Set<string>();
   const uniq = pool.filter((x) => !seen.has(x.q.q) && !!seen.add(x.q.q));
-  const want = Math.min(uniq.length, QUIZ_MIN + Math.floor(rand() * (QUIZ_MAX - QUIZ_MIN + 1)));
+  const want = Math.min(uniq.length, min + Math.floor(rand() * (max - min + 1)));
   const byType = new Map<Question['type'], RatedQuestion[]>();
   for (const x of shuffle(uniq, rand)) byType.set(x.q.type, [...(byType.get(x.q.type) ?? []), x]);
   const types = shuffle([...byType.keys()], rand);
@@ -71,7 +77,7 @@ export function buildQuiz(pool: RatedQuestion[], rand: () => number = Math.rando
   }
   // Easier first (stable, so ties keep their random order) — the hardest land in the timed finale.
   picked.sort((a, b) => (a.q.difficulty ?? 1) - (b.q.difficulty ?? 1));
-  const timedFrom = picked.length === QUIZ_MAX ? QUIZ_MAX - TIMED_LAST : Infinity;
+  const timedFrom = timedFinale && picked.length === QUIZ_MAX ? QUIZ_MAX - TIMED_LAST : Infinity;
   return { questions: picked, limits: picked.map((x, i) => (i >= timedFrom ? timeLimitFor(x.q) : null)) };
 }
 
