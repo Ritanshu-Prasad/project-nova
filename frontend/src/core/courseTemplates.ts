@@ -744,1385 +744,1385 @@ const LAYOUTS: Record<string, { id: string; title: string; topics: string[] }[]>
 
 /** Extra topics used by the layouts above. */
 const EXTRA_TOPICS: Topic[] = [
-  topic('ai-gen-1', 'Deep Dive: Part 1', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('ai-gen-1', 'Scalars, Vectors, and Tensors', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'In machine learning, data is represented mathematically. A scalar is a single number. A vector is a 1D array of numbers. A matrix is a 2D grid. A tensor is a generalization to n-dimensions. Most neural networks process data as multi-dimensional tensors.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-2', 'Deep Dive: Part 2', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('ai-gen-2', 'Linear Transformations', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'A neural network layer is fundamentally a linear transformation (y = Wx + b) followed by a non-linear activation. The weight matrix W scales and rotates the input vector x, projecting it into a new representational space.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-3', 'Deep Dive: Part 3', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('ai-gen-3', 'Derivatives and Gradients', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'To train a network, we need to know how changing a weight affects the error. The derivative tells us the slope of a function at a point. The gradient is simply a vector containing the partial derivatives for all weights in the network.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-4', 'Deep Dive: Part 4', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('ai-gen-4', 'The Chain Rule', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Neural networks are nested functions: f(g(x)). To find the derivative of the loss with respect to the first layer, we use the chain rule from calculus. This is the mathematical foundation of backpropagation.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-5', 'Deep Dive: Part 5', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('ai-gen-5', 'Probability Distributions', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Many ML models output probabilities. For example, a classifier doesn\'t just say \'Cat\'; it outputs a probability distribution (e.g., 90% Cat, 10% Dog). Softmax is the function used to convert raw scores (logits) into a valid probability distribution.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-6', 'Deep Dive: Part 6', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('ai-gen-6', 'Expected Value & Entropy', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Cross-entropy loss measures the difference between two probability distributions: the model\'s prediction and the true label. Minimizing cross-entropy is equivalent to maximizing the likelihood of the training data under the model.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-7', 'Deep Dive: Part 7', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('ai-gen-7', 'Activation Functions: ReLU', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Without activation functions, a deep neural network collapses into a single linear transformation. ReLU (Rectified Linear Unit) is f(x) = max(0, x). It is computationally cheap and helps prevent the vanishing gradient problem.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-8', 'Deep Dive: Part 8', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('ai-gen-8', 'Mean Squared Error vs Cross Entropy', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'For regression tasks (predicting a continuous number), Mean Squared Error (MSE) is the standard loss function. For classification tasks, Cross-Entropy is preferred because it penalizes confident wrong answers much more heavily.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-9', 'Deep Dive: Part 9', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('ai-gen-9', 'The Vanishing Gradient Problem', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'In very deep networks using Sigmoid or Tanh activations, the gradients can become infinitesimally small as they propagate backwards. This means the earliest layers never update their weights and stop learning.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-10', 'Deep Dive: Part 10', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('ai-gen-10', 'Stochastic Gradient Descent (SGD)', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Instead of calculating the gradient over the entire massive dataset (which is too slow), SGD calculates the gradient on a small random \'batch\' of data. This introduces noise but drastically speeds up the optimization process.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-11', 'Deep Dive: Part 11', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('ai-gen-11', 'L1 and L2 Regularization', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'To prevent overfitting, we add a penalty to the loss function based on the size of the weights. L1 regularization (Lasso) forces many weights to become exactly zero, while L2 (Ridge) forces weights to be small but non-zero.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-12', 'Deep Dive: Part 12', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('ai-gen-12', 'Dropout', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Dropout is a powerful regularization technique where, during training, random neurons are temporarily disabled (\'dropped out\') on each forward pass. This forces the network to learn robust, redundant representations rather than relying on a few specific neurons.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-13', 'Deep Dive: Part 13', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('ai-gen-13', 'Images as Tensors', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'A color image is represented as a 3D tensor: Height x Width x Channels (RGB). A batch of images is a 4D tensor (Batch x H x W x C). Convolutional networks are specifically designed to process this spatial grid structure efficiently.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-14', 'Deep Dive: Part 14', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('ai-gen-14', 'Strides and Padding', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'When applying a convolutional filter, \'stride\' determines how many pixels the filter moves at a time. \'Padding\' adds zeros around the border of the image to preserve the spatial dimensions after a convolution.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-15', 'Deep Dive: Part 15', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('ai-gen-15', '1x1 Convolutions', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'A 1x1 convolution looks at a single pixel across all channels. It is mathematically equivalent to a standard Dense layer applied to every pixel independently. It is primarily used to reduce the depth (number of channels) of a feature map.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-16', 'Deep Dive: Part 16', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('ai-gen-16', 'Global Average Pooling', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Instead of flattening a massive spatial feature map into a 1D vector (which requires millions of parameters), Global Average Pooling takes the average value of each channel across the entire spatial dimensions. This drastically reduces overfitting.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-17', 'Deep Dive: Part 17', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('ai-gen-17', 'Residual Connections (ResNet)', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'In ultra-deep networks, adding layers actually degrades performance. ResNets solve this using \'skip connections\' (x + f(x)), allowing gradients to flow directly backwards through the network. This allowed networks to go from 20 layers to 152+ layers.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-18', 'Deep Dive: Part 18', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('ai-gen-18', 'Word Embeddings', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Words cannot be fed directly into a neural network. Word embeddings (like Word2Vec) map discrete words into a continuous, dense vector space where semantic relationships are captured by geometric distances (e.g., King - Man + Woman = Queen).' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-19', 'Deep Dive: Part 19', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('ai-gen-19', 'The Problem with RNNs', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'RNNs process sequences step-by-step. This sequential nature prevents parallelization on GPUs, making them very slow to train. Furthermore, despite LSTMs, they struggle to retain information from the very beginning of a long sequence.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-20', 'Deep Dive: Part 20', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('ai-gen-20', 'Bidirectional RNNs', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Sometimes, understanding a word requires context from the future. \'He swung the bat and hit the ball.\' To know \'bat\' is a sports item, you need to see \'hit the ball\'. Bidirectional RNNs process the sequence forwards and backwards simultaneously.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-21', 'Deep Dive: Part 21', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('ai-gen-21', 'LSTMs: Forget and Input Gates', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'An LSTM cell uses \'gates\' to control information flow. The Forget gate decides what past information to throw away. The Input gate decides what new information to add. This allows LSTMs to maintain a long-term memory state.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-22', 'Deep Dive: Part 22', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('ai-gen-22', 'Positional Encoding', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Because Transformers do not process sequences step-by-step, they have no inherent concept of word order. Positional encodings are mathematical sine/cosine waves added to the word embeddings so the network knows the position of each word.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('ai-gen-23', 'Deep Dive: Part 23', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('ai-gen-23', 'RLHF: Alignment', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
+    minutes: 6,
+    objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
+    simple: 'A detailed look at Artificial Intelligence.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Raw LLMs are just text predictors; they might generate toxic or useless text. Reinforcement Learning from Human Feedback (RLHF) uses human raters to score the model\'s outputs. A \'Reward Model\' learns these preferences, and PPO is used to fine-tune the LLM to maximize this reward.' },
+      { type: 'summary', points: ['Mathematical intuition', 'Architectural logic', 'Optimization'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this concept crucial for Deep Learning?', ['It enables the network to learn complex patterns.', 'It renders the UI.', 'It connects to a SQL database.', 'It writes CSS.'], 'Neural networks rely on calculus and linear algebra to optimize their weights.'),
+    tf('Deep learning models are magic boxes with no mathematical basis.', false, 'They are entirely deterministic mathematical functions optimized via calculus.')
   ]),
-  topic('react-gen-1', 'Deep Dive: Part 1', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('react-gen-1', 'The React Philosophy', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'React is fundamentally about UI as a pure function of state: UI = f(state). Instead of imperatively mutating the DOM (like jQuery), you declare what the UI should look like for any given state, and React handles the DOM updates.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-2', 'Deep Dive: Part 2', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('react-gen-2', 'JSX: JavaScript XML', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'JSX looks like HTML but is syntactic sugar for React.createElement(). It allows you to embed JavaScript expressions directly into your markup using curly braces {}, combining rendering logic and markup in a single file.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-3', 'Deep Dive: Part 3', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('react-gen-3', 'The Virtual DOM', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Manipulating the real DOM is incredibly slow. React keeps a lightweight, in-memory representation of the DOM called the Virtual DOM. When state changes, React creates a new Virtual DOM tree and compares it to the old one.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-4', 'Deep Dive: Part 4', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('react-gen-4', 'The Reconciliation Algorithm', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'The process of comparing the old and new Virtual DOM is called Reconciliation. React uses a heuristic O(n) algorithm. It assumes elements of different types produce different trees, and uses the \'key\' prop to track child elements across renders.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-5', 'Deep Dive: Part 5', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('react-gen-5', 'React Fiber Architecture', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Introduced in React 16, Fiber is a complete rewrite of the reconciliation engine. It breaks rendering work into chunks (fibers) that can be paused, aborted, or prioritized. This enables smooth UI rendering without blocking the main thread.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-6', 'Deep Dive: Part 6', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('react-gen-6', 'Component Mounting', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Mounting is the phase when a component is inserted into the DOM. In modern functional components, this happens when the component function is first executed, and any initial effects (useEffect with an empty dependency array) are fired.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-7', 'Deep Dive: Part 7', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('react-gen-7', 'Understanding useEffect dependencies', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'The dependency array in useEffect tells React when to re-run the effect. If omitted, it runs on every render. If empty [], it runs only on mount. If it contains variables [x, y], the effect runs only when x or y change between renders.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-8', 'Deep Dive: Part 8', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('react-gen-8', 'Cleanup Functions in useEffect', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'If your effect creates a subscription, timer, or event listener, it must return a cleanup function. React runs this cleanup function right before the component unmounts, or before re-running the effect due to changed dependencies, preventing memory leaks.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-9', 'Deep Dive: Part 9', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('react-gen-9', 'The Rules of Hooks', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Hooks must only be called at the top level of your component. Never call them inside loops, conditions, or nested functions. This rule is necessary because React relies on the call order of hooks to maintain state between renders.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-10', 'Deep Dive: Part 10', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('react-gen-10', 'Custom Hooks', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'A custom hook is simply a JavaScript function whose name starts with \'use\' and that calls other hooks. They allow you to extract and reuse stateful logic across multiple components, adhering to the DRY principle without complex component hierarchies.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-11', 'Deep Dive: Part 11', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('react-gen-11', 'Prop Drilling', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Prop drilling occurs when you pass data through many layers of intermediate components that don\'t need the data themselves, just to reach a deeply nested child. It makes the intermediate components bloated and tightly coupled.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-12', 'Deep Dive: Part 12', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('react-gen-12', 'The Context API', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'React Context provides a way to pass data through the component tree without having to pass props down manually at every level. It is ideal for global data like themes, user authentication status, or locale preferences.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-13', 'Deep Dive: Part 13', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('react-gen-13', 'Higher-Order Components (HOCs)', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'An HOC is a function that takes a component and returns a new, enhanced component. While popular in class-component eras (e.g., connect() in Redux), they can lead to \'wrapper hell\' and have largely been superseded by Hooks.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-14', 'Deep Dive: Part 14', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('react-gen-14', 'Render Props Pattern', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'The render props pattern involves passing a function as a prop to a component. The component calls this function to determine what to render, passing its internal state as an argument. This is another way to share stateful logic.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-15', 'Deep Dive: Part 15', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('react-gen-15', 'Compound Components', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Compound components are a pattern where two or more components work together to accomplish a useful task (like <select> and <option>). They often use Context implicitly to share state between the parent and child components without explicit prop passing.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-16', 'Deep Dive: Part 16', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('react-gen-16', 'Controlled vs Uncontrolled Inputs', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'A controlled input has its value bound to React state (value={state} onChange={setState}). An uncontrolled input maintains its own internal DOM state, which you access using a ref. Controlled inputs are the React standard for forms.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-17', 'Deep Dive: Part 17', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('react-gen-17', 'Memoization with React.memo', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'By default, when a parent component re-renders, all its children re-render. Wrapping a child in React.memo() tells React to skip rendering the child if its props haven\'t changed, performing a shallow comparison of the props.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-18', 'Deep Dive: Part 18', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('react-gen-18', 'useMemo and useCallback', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'useMemo caches the result of an expensive calculation between renders. useCallback caches a function definition. They are crucial for maintaining referential equality of props passed to child components wrapped in React.memo.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-19', 'Deep Dive: Part 19', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('react-gen-19', 'Redux Architecture', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Redux uses a single, global immutable store. State can only be updated by dispatching an \'action\' object. Pure functions called \'reducers\' take the current state and the action, and return a completely new state object.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-20', 'Deep Dive: Part 20', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('react-gen-20', 'Zustand & Modern State', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Zustand is a modern, unopinionated state manager that uses hooks. It avoids the boilerplate of Redux (actions, reducers, providers) while still offering centralized state, transient updates, and devtools support.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-21', 'Deep Dive: Part 21', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('react-gen-21', 'React Router Basics', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'React Router allows you to build single-page applications with client-side routing. The URL changes in the browser without requesting a new HTML document from the server, making navigation feel instantaneous.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-22', 'Deep Dive: Part 22', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('react-gen-22', 'Suspense and Lazy Loading', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'React.lazy allows you to dynamically import a component file only when it\'s needed. You wrap the lazy component in a <Suspense> boundary, providing a \'fallback\' UI (like a spinner) while the network request fetches the component code.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-23', 'Deep Dive: Part 23', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('react-gen-23', 'Server Components (RSC)', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'React Server Components run exclusively on the server and never ship their JavaScript to the client. They allow you to fetch data directly from the database during render, drastically reducing bundle size and improving initial load times.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('react-gen-24', 'Deep Dive: Part 24', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('react-gen-24', 'Client vs Server Components', 'Reactis', 'concept', 'Advanced React patterns and mechanics.', {
+    minutes: 6,
+    objectives: ['Master advanced React patterns', 'Optimize component rendering'],
+    simple: 'A deep dive into React architecture.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'In the modern app router (e.g., Next.js), you must explicitly mark Client Components with \'use client\' if they need interactivity (useState, onClick). Server components are the default and are best for static data and security.' },
+      { type: 'summary', points: ['Core API', 'Architecture', 'Performance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('What is a key benefit of this React pattern?', ['It optimizes rendering and architecture.', 'It bypasses the Virtual DOM.', 'It turns JavaScript into HTML.', 'It disables the browser cache.'], 'Understanding patterns allows for scalable and performant React applications.'),
+    tf('This pattern requires mutating the real DOM directly.', false, 'React strictly manages DOM updates via the Virtual DOM.')
   ]),
-  topic('la-gen-1', 'Deep Dive: Part 1', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('la-gen-1', 'Dot Product Geometric Interpretation', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'The dot product of two vectors tells you how much they point in the same direction. Geometrically, it is the length of the projection of vector A onto vector B, multiplied by the length of B. If they are perpendicular, the dot product is zero.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-2', 'Deep Dive: Part 2', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('la-gen-2', 'The Cross Product', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'While the dot product yields a scalar, the cross product of two 3D vectors yields a new vector that is perfectly orthogonal (perpendicular) to both original vectors. Its length represents the area of the parallelogram formed by the two vectors.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-3', 'Deep Dive: Part 3', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('la-gen-3', 'The Right-Hand Rule', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'To find the direction of a cross product (A x B), point your index finger in the direction of A and your middle finger in the direction of B. Your thumb will point in the direction of the resulting cross product vector.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-4', 'Deep Dive: Part 4', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('la-gen-4', 'Linear Combinations', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'A linear combination involves multiplying a set of vectors by scalar numbers and adding the results together. The entire coordinate system you use every day (x, y) is just a linear combination of the basis vectors i-hat and j-hat.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-5', 'Deep Dive: Part 5', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('la-gen-5', 'Span of Vectors', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'The \'span\' of a set of vectors is the set of all possible points you can reach through linear combinations of those vectors. Two non-parallel 2D vectors span the entire 2D plane. Two parallel 2D vectors only span a single 1D line.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-6', 'Deep Dive: Part 6', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('la-gen-6', 'Linear Dependence', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'If you have a set of vectors, and one of them can be created by a linear combination of the others, that vector is redundant. The set is \'linearly dependent\'. It adds no new dimensions to your span.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-7', 'Deep Dive: Part 7', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('la-gen-7', 'Basis Vectors', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'A \'basis\' for a vector space is a set of linearly independent vectors that span the entire space. It is the minimum number of vectors needed to describe every point in that space. For 3D space, you need exactly 3 basis vectors.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-8', 'Deep Dive: Part 8', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('la-gen-8', 'Matrices as Transformations', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Do not think of a matrix as just a grid of numbers. Think of it as a function that transforms space. When you multiply a vector by a matrix, you are stretching, rotating, or shearing the coordinate system itself.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-9', 'Deep Dive: Part 9', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('la-gen-9', 'Tracking the Basis Vectors', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'To understand what a 2x2 matrix transformation does to 2D space, you only need to know where it sends the two basis vectors (i-hat and j-hat). The columns of the matrix literally tell you the new coordinates of i-hat and j-hat.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-10', 'Deep Dive: Part 10', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('la-gen-10', 'Matrix Composition', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Multiplying two matrices together (AB) is the geometric equivalent of applying transformation B, and then applying transformation A. Matrix multiplication is not commutative (AB != BA) because order matters when you rotate and shear space.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-11', 'Deep Dive: Part 11', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('la-gen-11', 'The Identity Matrix', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'The Identity Matrix (1s on the diagonal, 0s elsewhere) is the matrix equivalent of the number 1. It represents a transformation that does absolutely nothing to the space. Multiplying any matrix by the Identity Matrix leaves it unchanged.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-12', 'Deep Dive: Part 12', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('la-gen-12', 'Eigenvectors: The Unchanged', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'During a matrix transformation, most vectors get knocked off their original span. Eigenvectors are the special, rare vectors that stay on their exact original line after the transformation. They are only stretched or squished.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-13', 'Deep Dive: Part 13', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('la-gen-13', 'Eigenvalues: The Scale Factor', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'If an eigenvector stays on its original line during a transformation, the eigenvalue is the scalar number representing how much it was stretched or squished. An eigenvalue of 2 means the eigenvector doubled in length. An eigenvalue of -1 means it flipped direction.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-14', 'Deep Dive: Part 14', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('la-gen-14', 'Diagonalization', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'If a matrix has enough eigenvectors, you can change your coordinate system so the eigenvectors become the new basis vectors. In this new basis, the transformation matrix becomes diagonal, making calculations (like raising the matrix to a power) trivially easy.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('la-gen-15', 'Deep Dive: Part 15', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('la-gen-15', 'Singular Value Decomposition', 'Vectoris', 'concept', 'Explore linear algebra.', {
+    minutes: 6,
+    objectives: ['Understand geometric interpretations', 'Apply algebraic rules'],
+    simple: 'A detailed look at Linear Algebra.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'SVD is the crown jewel of linear algebra. It proves that ANY matrix transformation can be broken down into three simple steps: a rotation, a scaling along the axes, and another rotation. This is widely used in data compression and machine learning.' },
+      { type: 'summary', points: ['Geometric intuition', 'Algebraic computation', 'Real-world application'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this geometric intuition important?', ['It prevents memorizing blind formulas.', 'It helps you write HTML.', 'It replaces calculus.', 'It runs on the GPU.'], 'Visualizing the math makes the formulas intuitive.'),
+    tf('Linear algebra only applies to 2D space.', false, 'The rules of linear algebra generalize to N-dimensional space.')
   ]),
-  topic('bio-gen-1', 'Deep Dive: Part 1', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('bio-gen-1', 'Water: The Solvent of Life', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Water is polar, meaning it has a partial positive charge on hydrogens and a partial negative charge on oxygen. This polarity allows it to form hydrogen bonds, making it an excellent solvent for other polar molecules and ions. Without water, cellular chemistry would halt.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-2', 'Deep Dive: Part 2', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('bio-gen-2', 'Carbon and Macromolecules', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Carbon\'s ability to form four covalent bonds makes it the backbone of life. It creates complex, diverse macromolecules like carbohydrates, lipids, proteins, and nucleic acids. These molecules are typically formed via dehydration synthesis reactions.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-3', 'Deep Dive: Part 3', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('bio-gen-3', 'Carbohydrates: Energy & Structure', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Carbohydrates (sugars) provide immediate energy and structural support. Glucose is the primary fuel for cells, while polysaccharides like cellulose provide structural integrity to plant cell walls, and glycogen stores energy in animals.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-4', 'Deep Dive: Part 4', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('bio-gen-4', 'Lipids: Membranes & Storage', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Lipids are hydrophobic molecules. Triglycerides store immense amounts of energy, while phospholipids form the fundamental bilayer of all cellular membranes. Steroids, like cholesterol, maintain membrane fluidity and act as signaling hormones.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-5', 'Deep Dive: Part 5', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('bio-gen-5', 'The Fluid Mosaic Model', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'The plasma membrane is a \'fluid mosaic\' of phospholipids, cholesterol, and proteins. It is not rigid; lipids and proteins constantly drift laterally. This flexibility is crucial for cell division, shape changes, and vesicle fusion.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-6', 'Deep Dive: Part 6', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('bio-gen-6', 'Simple vs Facilitated Diffusion', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Diffusion is the passive movement of molecules down their concentration gradient. Small, nonpolar molecules (like O2) simply slip through the membrane. Polar molecules or ions require \'facilitated diffusion\' via specific protein channels to cross the hydrophobic core.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-7', 'Deep Dive: Part 7', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('bio-gen-7', 'Active Transport & Pumps', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'When a cell needs to move substances against their gradient (from low to high concentration), it requires energy (ATP). The Sodium-Potassium pump is a classic example, using ATP to maintain vital electrochemical gradients across the membrane.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-8', 'Deep Dive: Part 8', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('bio-gen-8', 'The Nucleus: Command Center', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'The nucleus houses the cell\'s genetic material (DNA). It is enclosed by a double membrane called the nuclear envelope, punctuated by pores that regulate the entry and exit of RNA and proteins. The nucleolus, inside the nucleus, synthesizes ribosomes.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-9', 'Deep Dive: Part 9', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('bio-gen-9', 'Ribosomes: Protein Factories', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Ribosomes are complexes of rRNA and proteins that translate messenger RNA (mRNA) into polypeptide chains. They can be free-floating in the cytoplasm (making proteins for the cell\'s own use) or bound to the Endoplasmic Reticulum (for secreted proteins).' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-10', 'Deep Dive: Part 10', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('bio-gen-10', 'The Endoplasmic Reticulum', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'The ER is a massive network of membranous tubules. Rough ER (studded with ribosomes) synthesizes and folds proteins destined for membranes or secretion. Smooth ER lacks ribosomes and synthesizes lipids, detoxifies poisons, and stores calcium.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-11', 'Deep Dive: Part 11', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('bio-gen-11', 'The Golgi Apparatus', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'The Golgi is the cell\'s shipping and receiving center. It consists of flattened sacs called cisternae. Proteins arriving from the ER are modified (e.g., glycosylated), sorted, and packaged into transport vesicles bound for their final destinations.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-12', 'Deep Dive: Part 12', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('bio-gen-12', 'Lysosomes: Cellular Digestion', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Lysosomes are acidic sacs containing hydrolytic enzymes. They digest food particles, destroy invading viruses, and recycle damaged organelles in a process called autophagy. Without lysosomes, cellular waste would accumulate fatally.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-13', 'Deep Dive: Part 13', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('bio-gen-13', 'Microtubules & Microfilaments', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'The cytoskeleton provides structural support and motility. Microtubules are thick, hollow tubes acting as tracks for motor proteins and pulling chromosomes apart during division. Microfilaments (actin) are thin strands vital for cell contraction and shape.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-14', 'Deep Dive: Part 14', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('bio-gen-14', 'Enzyme Thermodynamics', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Enzymes do not alter the overall thermodynamics (Delta G) of a reaction; they only lower the activation energy required to start it. They achieve this by binding substrates at their active site, orienting them perfectly to facilitate the chemical reaction.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-15', 'Deep Dive: Part 15', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('bio-gen-15', 'Enzyme Inhibition', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Competitive inhibitors mimic the substrate and block the active site directly. Non-competitive (allosteric) inhibitors bind elsewhere, changing the enzyme\'s shape so the active site no longer functions. This is a common mechanism for feedback inhibition.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-16', 'Deep Dive: Part 16', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('bio-gen-16', 'ATP: The Cellular Currency', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Adenosine Triphosphate (ATP) stores energy in its unstable phosphate bonds. When the terminal phosphate is hydrolyzed (forming ADP), energy is released to power cellular work, such as active transport, muscle contraction, or chemical synthesis.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-17', 'Deep Dive: Part 17', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('bio-gen-17', 'Glycolysis: Splitting Sugar', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Glycolysis occurs in the cytoplasm and requires no oxygen. It splits one 6-carbon glucose into two 3-carbon pyruvate molecules, yielding a net gain of 2 ATP and 2 NADH. It is the universal first step of cellular respiration.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-18', 'Deep Dive: Part 18', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('bio-gen-18', 'Pyruvate Oxidation', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Before entering the Krebs cycle, pyruvate moves into the mitochondria where it is oxidized and converted into Acetyl-CoA. This step releases CO2 and reduces NAD+ to NADH, acting as the critical link between glycolysis and the Krebs cycle.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-19', 'Deep Dive: Part 19', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('bio-gen-19', 'The Krebs Cycle (Citric Acid)', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Occurring in the mitochondrial matrix, the Krebs cycle completely oxidizes the Acetyl-CoA. It produces a small amount of ATP, but its main purpose is to harvest high-energy electrons, transferring them to carrier molecules (NADH and FADH2).' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-20', 'Deep Dive: Part 20', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('bio-gen-20', 'The Electron Transport Chain', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Located on the inner mitochondrial membrane, the ETC is a series of protein complexes. Electrons from NADH and FADH2 are passed down the chain, releasing energy that is used to pump protons (H+) into the intermembrane space, creating a massive gradient.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-21', 'Deep Dive: Part 21', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('bio-gen-21', 'Chemiosmosis & ATP Synthase', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'The proton gradient created by the ETC represents potential energy. Protons flow back into the matrix through an enzyme called ATP Synthase. This flow spins a rotor within the enzyme, driving the synthesis of roughly 28-32 ATP molecules per glucose.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-22', 'Deep Dive: Part 22', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('bio-gen-22', 'Light-Dependent Reactions', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'In the chloroplast\'s thylakoid membranes, chlorophyll absorbs solar energy, which excites electrons. These electrons travel down a photosynthetic ETC, generating ATP and NADPH. Water is split to replace the electrons, releasing oxygen as a byproduct.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-23', 'Deep Dive: Part 23', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('bio-gen-23', 'The Calvin Cycle (Dark Reactions)', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Occurring in the chloroplast stroma, the Calvin Cycle uses the ATP and NADPH generated by the light reactions to fix carbon dioxide from the air into organic sugar molecules (G3P). This is the foundation of the global food chain.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-24', 'Deep Dive: Part 24', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('bio-gen-24', 'DNA: The Double Helix', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'DNA consists of two anti-parallel strands of nucleotides. The sugar-phosphate backbone provides structure, while the nitrogenous bases (A, T, C, G) point inward. A pairs with T via two hydrogen bonds, and C pairs with G via three, ensuring uniform width.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-25', 'Deep Dive: Part 25', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('bio-gen-25', 'Helicase and Topoisomerase', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'During replication, Helicase unzips the DNA double helix by breaking hydrogen bonds. This creates intense twisting tension ahead of the replication fork, which is relieved by Topoisomerase, an enzyme that cuts, untwists, and rejoins the DNA strands.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-26', 'Deep Dive: Part 26', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('bio-gen-26', 'DNA Polymerase and Ligase', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'DNA Polymerase synthesizes the new DNA strand by adding nucleotides to the 3\' end. Because it can only build 5\' to 3\', the \'lagging strand\' is built in chunks called Okazaki fragments. DNA Ligase then acts as cellular glue, sealing the fragments together.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-27', 'Deep Dive: Part 27', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('bio-gen-27', 'Transcription: DNA to mRNA', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Transcription occurs in the nucleus. RNA Polymerase binds to a promoter region on the DNA, unzips the helix, and builds a single-stranded messenger RNA (mRNA) transcript that is complementary to the template gene.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-28', 'Deep Dive: Part 28', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('bio-gen-28', 'RNA Processing (Splicing)', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Before leaving the nucleus, the raw pre-mRNA is modified. A 5\' cap and a 3\' poly-A tail are added for protection. Then, non-coding regions called introns are cut out (spliced), and the coding regions (exons) are joined together.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-29', 'Deep Dive: Part 29', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('bio-gen-29', 'Translation: mRNA to Protein', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'In the cytoplasm, the ribosome reads the mRNA sequence in triplets called codons. Transfer RNA (tRNA) molecules carry specific amino acids to the ribosome. The tRNA\'s anticodon binds to the mRNA codon, ensuring the correct amino acid is added to the chain.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-30', 'Deep Dive: Part 30', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('bio-gen-30', 'Mutations: Point vs Frameshift', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'A point mutation changes a single nucleotide. It might be silent, or it might change one amino acid (missense). A frameshift mutation (insertion or deletion) shifts the entire reading frame of the ribosome, usually resulting in a completely non-functional protein.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-31', 'Deep Dive: Part 31', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('bio-gen-31', 'The Cell Cycle (Interphase)', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'A cell spends most of its life in Interphase, which is divided into G1 (growth), S (DNA synthesis/replication), and G2 (preparation for division). Strict checkpoints ensure the cell does not divide if its DNA is damaged.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('bio-gen-32', 'Deep Dive: Part 32', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('bio-gen-32', 'Mitosis: PMAT', 'Gaia', 'concept', 'Explore cellular mechanisms.', {
+    minutes: 6,
+    objectives: ['Understand biological structures', 'Analyze cellular functions'],
+    simple: 'A detailed look at cellular biology.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Mitosis divides the nucleus. Prophase (chromosomes condense), Metaphase (chromosomes align at the equator), Anaphase (sister chromatids are pulled apart), and Telophase (new nuclei form). This is immediately followed by cytokinesis, splitting the cell in two.' },
+      { type: 'summary', points: ['Core concept', 'Mechanism', 'Biological importance'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Why is this biological mechanism important?', ['It sustains cellular function.', 'It creates infinite energy.', 'It destroys the cell.', 'It is vestigial.'], 'Cellular processes are highly conserved for survival.'),
+    tf('This process occurs in complete isolation from other cellular functions.', false, 'Biological systems are deeply interconnected.')
   ]),
-  topic('eng-gen-1', 'Deep Dive: Part 1', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('eng-gen-1', 'Pronouns in Practice', 'Lexis', 'concept', 'Replacing nouns to avoid repetition.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Replacing nouns to avoid repetition.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Pronouns are the ultimate shortcut in language. Without them, we would have to repeat names endlessly: \'Mary went to Mary\'s car because Mary forgot Mary\'s keys.\' Instead, we use pronouns: \'Mary went to her car because she forgot her keys.\' Examples include I, you, he, she, it, we, and they. But beware of ambiguous pronouns! If you write \'The dog chased the cat until it fell exhausted,\' we don\'t know who \'it\' refers to.' },
+      { type: 'summary', points: ['Pronouns replace nouns', 'Avoid ambiguous references', 'Case matters (he vs him)'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Which sentence avoids an ambiguous pronoun?', ['Sarah told Jane that Jane won the prize.', 'Sarah told Jane that she won the prize.', 'The car hit the wall and it broke.', 'When the teachers met the students, they were happy.'], 'Repeating the noun \'Jane\' ensures there is no confusion about who won.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-2', 'Deep Dive: Part 2', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('eng-gen-2', 'Action and Linking Verbs', 'Lexis', 'concept', 'Verbs do more than just show action.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Verbs do more than just show action.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'While most verbs express action (run, jump, write), linking verbs connect the subject to more information about it. For example, in the sentence \'The soup smells delicious,\' \'smells\' is a linking verb connecting \'soup\' to \'delicious.\' It doesn\'t mean the soup has a nose and is sniffing! Common linking verbs include forms of \'to be\' (is, am, are, was, were), seem, become, and feel.' },
+      { type: 'summary', points: ['Action verbs show doing', 'Linking verbs connect states', 'To be is the most common'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Identify the linking verb in this sentence: \'The sky grew dark as the storm approached.\'', ['grew', 'dark', 'approached', 'storm'], '\'Grew\' links \'sky\' to the adjective \'dark\', indicating a change in state.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-3', 'Deep Dive: Part 3', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('eng-gen-3', 'Mastering Verb Tenses', 'Lexis', 'concept', 'Time travel using verbs.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Time travel using verbs.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Verbs tell us not just what happened, but when. English relies on tense to indicate time. Simple past (I walked) means it\'s over. Present perfect (I have walked) means it happened in the past but is still relevant now. Past perfect (I had walked) is the \'past of the past\'—useful for establishing order: \'I had already eaten by the time John arrived.\' Using tenses consistently is the key to clear storytelling.' },
+      { type: 'summary', points: ['Simple tenses (past, present, future)', 'Perfect tenses show completion', 'Consistency is crucial'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Which sentence correctly uses the past perfect tense?', ['She had finished the report before the meeting started.', 'She has finished the report yesterday.', 'She finishes the report before the meeting.', 'She finished the report and had left.'], 'Past perfect (\'had finished\') happens before another past action (\'started\').'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-4', 'Deep Dive: Part 4', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('eng-gen-4', 'Adjectives: Painting with Words', 'Lexis', 'concept', 'Modifying nouns for vivid imagery.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Modifying nouns for vivid imagery.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Adjectives describe or modify nouns and pronouns. Instead of saying \'a dog,\' you might say \'a ferocious, foaming, giant dog.\' Order matters in English adjectives. Native speakers instinctively use the order: opinion, size, age, shape, color, origin, material, purpose. This is why \'a beautiful little old French silver whittling knife\' sounds perfectly natural, but \'a silver French beautiful little old whittling knife\' sounds completely wrong.' },
+      { type: 'summary', points: ['Adjectives modify nouns', 'Order of adjectives matters', 'Use them sparingly for impact'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Which phrase follows the natural order of English adjectives?', ['A lovely little old wooden box', 'A wooden little old lovely box', 'An old lovely wooden little box', 'A little lovely old wooden box'], 'Opinion (lovely) comes before size (little), age (old), and material (wooden).'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-5', 'Deep Dive: Part 5', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('eng-gen-5', 'Adverbs: How, When, Where', 'Lexis', 'concept', 'Modifying verbs, adjectives, and other adverbs.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Modifying verbs, adjectives, and other adverbs.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Adverbs modify verbs, adjectives, or even other adverbs. They answer questions like how (quickly), when (yesterday), where (everywhere), and to what extent (very). Example: \'He ran remarkably fast.\' \'Fast\' modifies the verb \'ran\', making it an adverb, and \'remarkably\' modifies \'fast\', making it an adverb too. Beware of the common mistake: \'I did good on the test.\' Good is an adjective. You should say, \'I did well on the test.\'' },
+      { type: 'summary', points: ['Modify verbs and adjectives', 'Often end in -ly', 'Well vs. Good'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('In the sentence \'The incredibly talented musician played perfectly,\' how many adverbs are there?', ['Two', 'One', 'Three', 'None'], '\'Incredibly\' modifies \'talented\' (adjective) and \'perfectly\' modifies \'played\' (verb).'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-6', 'Deep Dive: Part 6', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('eng-gen-6', 'Prepositional Phrases', 'Lexis', 'concept', 'Showing relationships in space and time.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Showing relationships in space and time.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Prepositions tell you the relationship between a noun and another part of the sentence, often indicating space or time. Think of a preposition as anything a mouse can do to a log: it can go over, under, through, in, out, or around the log. The preposition combined with its noun is a \'prepositional phrase\' (e.g., \'under the bed\'). Avoid ending a sentence with a preposition if it sounds awkward, but don\'t force it—as Winston Churchill allegedly joked, \'This is the sort of English up with which I will not put.\'' },
+      { type: 'summary', points: ['Indicate space and time', 'Preposition + Object = Phrase', 'Ending sentences with them is fine'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Identify the prepositional phrase: \'The cat slept peacefully on the warm radiator.\'', ['on the warm radiator', 'slept peacefully', 'The cat slept', 'peacefully on'], 'It starts with the preposition \'on\' and ends with the noun \'radiator\'.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-7', 'Deep Dive: Part 7', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('eng-gen-7', 'Conjunctions: The Glue', 'Lexis', 'concept', 'Joining words, phrases, and clauses.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Joining words, phrases, and clauses.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'Conjunctions connect ideas. Coordinating conjunctions (FANBOYS: For, And, Nor, But, Or, Yet, So) connect equal parts: \'I wanted ice cream, but the shop was closed.\' Subordinating conjunctions (because, although, if, since) connect an independent clause to a dependent clause: \'Because the shop was closed, I went home.\' Using the right conjunction clarifies the logic between your thoughts.' },
+      { type: 'summary', points: ['FANBOYS for equal parts', 'Subordinating for dependent parts', 'Clarify logical relationships'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('Which word is a coordinating conjunction?', ['But', 'Although', 'Because', 'Since'], '\'But\' is part of FANBOYS, used to connect independent clauses.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-8', 'Deep Dive: Part 8', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('eng-gen-8', 'Subjects: The \'Who\' or \'What\'', 'Lexis', 'concept', 'The star of the sentence.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'The star of the sentence.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'Every complete sentence must have a subject. The subject is the person, place, thing, or idea that is doing or being something. In \'The ancient, crumbling castle stood on the hill,\' the simple subject is just \'castle,\' while the complete subject is \'The ancient, crumbling castle.\' Sometimes the subject is understood but not written, as in the command: \'Stop!\' (The subject is an implied \'You\').' },
+      { type: 'summary', points: ['The doer of the action', 'Simple vs Complete subject', 'Implied \'You\' in commands'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('What is the simple subject in the sentence: \'A flock of wild geese flew overhead.\'?', ['flock', 'geese', 'flew', 'A flock of wild geese'], '\'Flock\' is the singular noun doing the flying; \'of wild geese\' is a prepositional phrase describing it.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-9', 'Deep Dive: Part 9', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('eng-gen-9', 'Predicates: The Action', 'Lexis', 'concept', 'What the subject does or is.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'What the subject does or is.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'If the subject is the star, the predicate is what the star does. It contains the verb and everything following it that describes the action. In \'The dog buried his bone in the garden,\' the complete predicate is \'buried his bone in the garden.\' The simple predicate is just the verb: \'buried.\' A sentence is not complete without a predicate, even if the subject is very long.' },
+      { type: 'summary', points: ['Contains the verb', 'Describes the subject\'s action', 'Cannot be omitted'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('What is the complete predicate in: \'The brave firefighter rescued the kitten.\'?', ['rescued the kitten', 'rescued', 'The brave firefighter rescued', 'kitten'], 'It includes the verb \'rescued\' and its object \'the kitten\'.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-10', 'Deep Dive: Part 10', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('eng-gen-10', 'Independent Clauses', 'Lexis', 'concept', 'A complete thought.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'A complete thought.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'An independent clause has a subject, a verb, and expresses a complete thought. It can stand alone as a sentence. \'The sun sets.\' is an independent clause. \'Although the sun sets\' is not. When you write, you are stringing together independent clauses. You can join two of them using a semicolon or a comma with a coordinating conjunction (FANBOYS).' },
+      { type: 'summary', points: ['Subject + Verb + Complete Thought', 'Can stand alone', 'Joined by semicolons or FANBOYS'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Which of the following is an independent clause?', ['The dog barked loudly.', 'Because the dog barked loudly.', 'When the dog barked.', 'Barking loudly at the mailman.'], 'It has a subject (dog), verb (barked), and is a complete thought.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-11', 'Deep Dive: Part 11', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('eng-gen-11', 'Dependent Clauses', 'Lexis', 'concept', 'Needs help to stand up.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Needs help to stand up.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'A dependent clause has a subject and a verb, but it cannot stand alone because it begins with a subordinating word (like although, because, if, when, which). \'When the timer rings\' leaves you hanging. It must be attached to an independent clause: \'When the timer rings, take the cake out.\' Understanding this distinction is the secret to fixing sentence fragments.' },
+      { type: 'summary', points: ['Has subject and verb', 'Starts with subordinating word', 'Cannot stand alone'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('Identify the dependent clause: \'I will go to the park if it stops raining.\'', ['if it stops raining', 'I will go', 'to the park', 'I will go to the park'], 'It starts with the subordinating conjunction \'if\' and cannot stand alone.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-12', 'Deep Dive: Part 12', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('eng-gen-12', 'Simple and Compound Sentences', 'Lexis', 'concept', 'Sentence structures basics.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Sentence structures basics.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'A simple sentence consists of one independent clause: \'The ice melted.\' A compound sentence joins two independent clauses using a conjunction or semicolon: \'The ice melted, and the water spilled.\' Using a variety of simple and compound sentences gives your writing rhythm. Too many simple sentences sound choppy; too many compound sentences sound rambling.' },
+      { type: 'summary', points: ['Simple: 1 clause', 'Compound: 2+ independent clauses', 'Vary sentence lengths'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('What type of sentence is: \'She wanted to play outside, but it was raining.\'?', ['Compound', 'Simple', 'Complex', 'Fragment'], 'It connects two independent clauses with the conjunction \'but\'.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-13', 'Deep Dive: Part 13', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('eng-gen-13', 'Complex Sentences', 'Lexis', 'concept', 'Layering information.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Layering information.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'A complex sentence combines one independent clause with at least one dependent clause. \'Although she was tired (dependent), she finished her homework (independent).\' If the dependent clause comes first, use a comma. If the independent clause comes first, you usually don\'t need a comma: \'She finished her homework although she was tired.\'' },
+      { type: 'summary', points: ['1 Independent + 1+ Dependent', 'Comma if dependent comes first', 'Adds nuance to writing'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Does this complex sentence need a comma: \'He bought the shoes because they were on sale.\'?', ['No comma needed', 'Yes, before \'because\'', 'Yes, after \'because\'', 'Yes, after \'shoes\''], 'Because the independent clause comes first, no comma is needed before the dependent clause.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-14', 'Deep Dive: Part 14', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('eng-gen-14', 'Mastering the Comma', 'Lexis', 'concept', 'The breath of the sentence.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'The breath of the sentence.',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'Commas are often misused. Use them to separate items in a list (apples, oranges, and pears), to separate two independent clauses with a conjunction, or after an introductory dependent clause. Do NOT use a comma just because you would take a breath while speaking. The \'comma splice\' is a fatal error: joining two complete sentences with only a comma (\'I went home, I was tired\').' },
+      { type: 'summary', points: ['Lists and introductions', 'FANBOYS joining complete sentences', 'Beware the comma splice'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Which sentence contains a comma splice error?', ['The wind blew fiercely, the trees shook.', 'The wind blew fiercely, and the trees shook.', 'Because the wind blew fiercely, the trees shook.', 'The wind blew fiercely; the trees shook.'], 'It illegally joins two complete sentences with just a comma.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-15', 'Deep Dive: Part 15', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('eng-gen-15', 'The Colon', 'Lexis', 'concept', 'The drumroll.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'The drumroll.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'A colon is a drumroll: it introduces something important that follows from what was just said. It can introduce a list, a quote, or an explanation. Crucially, the text before the colon must be a complete independent sentence. CORRECT: \'I have three favorite colors: red, blue, and green.\' INCORRECT: \'My favorite colors are: red, blue, and green.\' (Because \'My favorite colors are\' is not a complete sentence).' },
+      { type: 'summary', points: ['Acts as a drumroll', 'Must follow an independent clause', 'Introduces lists or explanations'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Which sentence uses a colon correctly?', ['He had one rule: never look back.', 'She bought: apples, milk, and bread.', 'The best team is: the Eagles.', 'Such as: cats, dogs, and birds.'], '\'He had one rule\' is a complete sentence introducing an explanation.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-16', 'Deep Dive: Part 16', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('eng-gen-16', 'The Em Dash', 'Lexis', 'concept', 'The dramatic pause.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'The dramatic pause.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'The em dash (—) is the versatile bad boy of punctuation. It can replace commas for a more dramatic parenthetical thought, replace a colon for emphasis, or indicate an abrupt change in thought. \'The pie—which was supposed to be cherry—was filled with meat.\' It adds a highly stylized, punchy rhythm to your writing. Just don\'t overuse it, or your writing will feel frantic.' },
+      { type: 'summary', points: ['Adds dramatic emphasis', 'Can replace commas or colons', 'Use sparingly for impact'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('What is the primary effect of using an em dash instead of commas?', ['It adds dramatic emphasis or abruptness.', 'It makes the sentence grammatically formal.', 'It changes the tense of the verb.', 'It turns an independent clause into a dependent one.'], 'Em dashes disrupt the flow visually to emphasize the enclosed text.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-17', 'Deep Dive: Part 17', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Translating theory into actual architecture.',
+  topic('eng-gen-17', 'Fixing Run-On Sentences', 'Lexis', 'concept', 'Knowing when to stop.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Knowing when to stop.',
     blocks: [
-      { type: 'text', body: 'Theory is useless without an architectural pattern to implement it. Here, we analyze how modern engineering teams structure this concept in production, examining real-world edge cases and optimization strategies.' },
-      { type: 'summary', points: ['Architectural patterns', 'Production optimization', 'Handling edge cases'] }
+      { type: 'text', body: 'A run-on sentence isn\'t just a long sentence; it\'s a grammatical failure where two independent clauses are mashed together without proper punctuation. \'I drove to the store I bought milk.\' This is a fused sentence. You can fix it with a period (\'store. I\'), a semicolon (\'store; I\'), or a conjunction with a comma (\'store, and I\'). A 100-word sentence can be grammatically perfect, while a 5-word sentence can be a run-on.' },
+      { type: 'summary', points: ['Not about length', 'Missing punctuation between clauses', 'Fix with periods or semicolons'] }
     ]
   }, [
-    mcq('What is the primary focus when moving from theory to architecture?', ['Optimization and edge cases', 'Writing fewer lines of code', 'Memorizing definitions', 'Upgrading the UI'], 'Production requires handling scale and exceptions.'),
-    tf('Architectural patterns are entirely theoretical.', false, 'Patterns are born from solving real production bottlenecks.')
+    mcq('How can you fix this run-on: \'The alarm rang she woke up.\'?', ['The alarm rang; she woke up.', 'The alarm rang she, woke up.', 'The alarm, rang she woke up.', 'The alarm rang she woke, up.'], 'A semicolon properly separates two closely related independent clauses.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-18', 'Deep Dive: Part 18', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Common pitfalls and anti-patterns.',
+  topic('eng-gen-18', 'Avoiding Sentence Fragments', 'Lexis', 'concept', 'Missing the core components.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Missing the core components.',
     blocks: [
-      { type: 'text', body: 'Even senior engineers fall into these traps. We will dissect the most common anti-patterns associated with this topic, revealing how subtle misconfigurations can lead to catastrophic performance degradation.' },
-      { type: 'summary', points: ['Identifying anti-patterns', 'Performance degradation', 'Configuration safety'] }
+      { type: 'text', body: 'A fragment is a piece of a sentence pretending to be a whole one. It is usually missing a subject or a verb, or it\'s a dependent clause masquerading as an independent one. Example: \'Walking through the dark forest.\' Who is walking? What happened? The sentence is incomplete. Fix it by attaching it to a real sentence: \'Walking through the dark forest, the knight drew his sword.\'' },
+      { type: 'summary', points: ['Missing subject or verb', 'Or is a lone dependent clause', 'Fix by combining sentences'] }
     ]
   }, [
-    mcq('What is a common consequence of subtle misconfigurations?', ['Performance degradation', 'Immediate syntax errors', 'Faster build times', 'Hardware failure'], 'Subtle bugs often manifest as memory leaks or slow responses.'),
-    tf('Anti-patterns are easily caught by basic linters.', false, 'Many anti-patterns are logical or architectural, not syntactic.')
+    mcq('Which of the following is a sentence fragment?', ['Because the bridge collapsed during the storm.', 'The bridge collapsed during the storm.', 'They closed the bridge.', 'Storms collapse bridges.'], 'It starts with \'Because\', making it a dependent clause that needs an independent clause to finish the thought.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-19', 'Deep Dive: Part 19', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Scaling and distributed considerations.',
+  topic('eng-gen-19', 'Passive Voice Pitfalls', 'Lexis', 'concept', 'Who is doing what?', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Who is doing what?',
     blocks: [
-      { type: 'text', body: 'As your application grows, a naive approach will bottleneck. This module focuses on scaling the concept horizontally and vertically, dealing with concurrency, and maintaining consistency under heavy load.' },
-      { type: 'summary', points: ['Horizontal scaling', 'Concurrency models', 'Load consistency'] }
+      { type: 'text', body: 'In the active voice, the subject performs the action: \'The dog bit the man.\' In the passive voice, the subject receives the action: \'The man was bitten by the dog.\' Passive voice often requires more words and obscures responsibility (\'Mistakes were made\' vs \'I made mistakes\'). While passive voice isn\'t strictly grammatically incorrect, relying on active voice makes your writing punchier, clearer, and more direct.' },
+      { type: 'summary', points: ['Active: Subject acts', 'Passive: Subject is acted upon', 'Active is usually clearer'] }
     ]
   }, [
-    mcq('What happens to a naive approach under heavy load?', ['It bottlenecks', 'It scales automatically', 'It consumes less memory', 'It becomes more secure'], 'Without distributed design, single nodes become overwhelmed.'),
-    tf('Horizontal scaling means upgrading a single server to have more RAM.', false, 'Horizontal scaling means adding more machines, vertical is adding more RAM.')
+    mcq('Identify the sentence written in the active voice:', ['The chef cooked a delicious meal.', 'A delicious meal was cooked by the chef.', 'The meal was cooked quickly.', 'The meal had been cooked.'], 'The subject (chef) is performing the action (cooked).'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-20', 'Deep Dive: Part 20', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Integrating with the modern ecosystem.',
+  topic('eng-gen-20', 'Paragraph Transitions', 'Lexis', 'concept', 'Bridging your thoughts.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Bridging your thoughts.',
     blocks: [
-      { type: 'text', body: 'No technology exists in a vacuum. We explore how this concept integrates seamlessly into the broader developer ecosystem, touching on CI/CD pipelines, containerization, and modern deployment strategies.' },
-      { type: 'summary', points: ['Ecosystem integration', 'CI/CD impacts', 'Deployment strategies'] }
+      { type: 'text', body: 'Even if every sentence is grammatically perfect, your writing will fail if the ideas don\'t connect. Transitions are the bridges between paragraphs. Instead of jumping from a paragraph about apples directly into a paragraph about oranges, a transition sentence eases the reader in: \'While apples offer a crisp sweetness, citrus fruits like oranges provide an entirely different nutritional profile.\' Use transitional adverbs like however, furthermore, or conversely.' },
+      { type: 'summary', points: ['Connect disparate ideas', 'Guide the reader\'s logic', 'Use transitional phrases'] }
     ]
   }, [
-    mcq('How should modern technologies be evaluated?', ['By their ecosystem integration', 'In complete isolation', 'By their release date', 'By their logo'], 'Tools must work together in a pipeline to be useful.'),
-    tf('CI/CD pipelines have no relation to this topic.', false, 'Deployment and integration are universal requirements.')
+    mcq('Which word is best used to show a contrast between two paragraphs?', ['Conversely', 'Furthermore', 'Additionally', 'Consequently'], '\'Conversely\' indicates that the following idea is opposite or contrasting to the previous one.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ]),
-  topic('eng-gen-21', 'Deep Dive: Part 21', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
-    minutes: 7,
-    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
-    simple: 'Understanding the mathematical core.',
+  topic('eng-gen-21', 'The Art of Editing', 'Lexis', 'concept', 'Writing is rewriting.', {
+    minutes: 6,
+    objectives: ['Understand the grammar rule', 'Apply correctly in writing'],
+    simple: 'Writing is rewriting.',
     blocks: [
-      { type: 'text', body: 'Before applying advanced frameworks, we must decompose the mechanics mathematically. This lesson unpacks the underlying equations, scalar relationships, and historical context of the topic to give you robust intuition.' },
-      { type: 'summary', points: ['Mathematical foundations', 'Historical context', 'Core intuition'] }
+      { type: 'text', body: 'Great writing doesn\'t happen on the first draft. The art of editing involves mercilessly cutting filler words (very, really, just, that), replacing weak adjectives with strong verbs, and reading your work aloud to catch awkward rhythms. If a sentence requires the reader to re-read it twice to understand it, the sentence is broken. Your goal is frictionless transfer of thought from your brain to the reader\'s.' },
+      { type: 'summary', points: ['Cut filler words', 'Prioritize strong verbs', 'Read aloud for rhythm'] }
     ]
   }, [
-    mcq('Why is the mathematical core important for this topic?', ['It provides robust intuition', 'It makes the code longer', 'It is required for compilation', 'It increases latency'], 'Solid math foundations help generalize knowledge.'),
-    tf('Frameworks alone are sufficient without understanding the underlying math.', false, 'Relying solely on frameworks prevents debugging complex failures.')
+    mcq('What is a highly effective technique for catching awkward phrasing during editing?', ['Reading the text aloud.', 'Running a spellchecker.', 'Changing the font size.', 'Adding more adjectives.'], 'Reading aloud engages your ear, quickly revealing unnatural rhythms and clunky phrasing.'),
+    tf('Reviewing this rule makes you a better writer.', true, 'Mastery requires practice.')
   ])
 ];
 
