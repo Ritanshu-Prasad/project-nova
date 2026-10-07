@@ -364,12 +364,9 @@ export const levelProgress = (xp: number) => (xp % 150) / 150;
 
 /** Stable shuffled order for a question's options (templates store the correct option first). */
 export function shuffledIndices(q: { q: string; options: string[] }): number[] {
-  let seed = 0;
-  for (let i = 0; i < q.q.length; i++) seed = (seed * 31 + q.q.charCodeAt(i)) >>> 0;
   const idx = q.options.map((_, i) => i);
   for (let i = idx.length - 1; i > 0; i--) {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    const j = seed % (i + 1);
+    const j = Math.floor(Math.random() * (i + 1));
     [idx[i], idx[j]] = [idx[j], idx[i]];
   }
   return idx;
