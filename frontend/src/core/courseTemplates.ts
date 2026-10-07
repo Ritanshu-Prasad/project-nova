@@ -651,22 +651,1451 @@ const TEMPLATES: Template[] = [
  */
 const LAYOUTS: Record<string, { id: string; title: string; topics: string[] }[]> = {
   ai: [
-    { id: 'ai-m1', title: 'How networks learn', topics: ['ai-1', 'ai-2', 'ai-3'] },
-    { id: 'ai-m2', title: 'Modern architectures', topics: ['ai-5', 'ai-4'] },
-    { id: 'ai-m3', title: 'Training in practice', topics: ['ai-6'] },
+    { id: 'ai-m1', title: '1. Fundamentals of Neurons', topics: ['ai-1', 'ai-2'] },
+    { id: 'ai-m2', title: '2. Forward & Backward Pass', topics: ['ai-3', 'ai-7'] },
+    { id: 'ai-m3', title: '3. Loss Functions & Optimization', topics: ['ai-8', 'ai-9'] },
+    { id: 'ai-m4', title: '4. Convolutional Networks (CNN)', topics: ['ai-10', 'ai-11'] },
+    { id: 'ai-m5', title: '5. Advanced Computer Vision', topics: ['ai-12'] },
+    { id: 'ai-m6', title: '6. Recurrent Networks (RNN)', topics: ['ai-13', 'ai-14'] },
+    { id: 'ai-m7', title: '7. Sequence-to-Sequence', topics: ['ai-15', 'ai-16'] },
+    { id: 'ai-m8', title: '8. The Attention Mechanism', topics: ['ai-4', 'ai-17'] },
+    { id: 'ai-m9', title: '9. Transformers Architecture', topics: ['ai-18', 'ai-19'] },
+    { id: 'ai-m10', title: '10. LLMs & Prompt Engineering', topics: ['ai-5', 'ai-20'] },
   ],
   react: [
     { id: 'react-m1', title: 'Building blocks', topics: ['react-1', 'react-2', 'react-3'] },
     { id: 'react-m2', title: 'Performance', topics: ['react-4'] },
   ],
   linalg: [
-    { id: 'la-m1', title: 'Objects', topics: ['la-1', 'la-5', 'la-2'] },
-    { id: 'la-m2', title: 'Transformations', topics: ['la-3', 'la-4'] },
+    { id: 'la-m1', title: '1. Vectors & Dot Products', topics: ['la-1', 'la-5'] },
+    { id: 'la-m2', title: '2. Span & Linear Independence', topics: ['la-2', 'la-6'] },
+    { id: 'la-m3', title: '3. Matrices as Transformations', topics: ['la-3', 'la-7'] },
+    { id: 'la-m4', title: '4. Matrix Multiplication', topics: ['la-8', 'la-9'] },
+    { id: 'la-m5', title: '5. Determinants & Inverses', topics: ['la-10', 'la-11'] },
+    { id: 'la-m6', title: '6. Column & Null Space', topics: ['la-12', 'la-13'] },
+    { id: 'la-m7', title: '7. Eigenvectors & Eigenvalues', topics: ['la-4', 'la-14'] },
+    { id: 'la-m8', title: '8. Diagonalization', topics: ['la-15', 'la-16'] },
+    { id: 'la-m9', title: '9. Orthogonality & Projections', topics: ['la-17', 'la-18'] },
+    { id: 'la-m10', title: '10. Singular Value Decomposition', topics: ['la-19', 'la-20'] },
   ],
 };
 
 /** Extra topics used by the layouts above. */
 const EXTRA_TOPICS: Topic[] = [
+  topic('ai-gen-1', 'Deep Dive 1', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-2', 'Deep Dive 2', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-3', 'Deep Dive 3', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-4', 'Deep Dive 4', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-5', 'Deep Dive 5', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-6', 'Deep Dive 6', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-7', 'Deep Dive 7', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-8', 'Deep Dive 8', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-9', 'Deep Dive 9', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-10', 'Deep Dive 10', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-11', 'Deep Dive 11', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-12', 'Deep Dive 12', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-13', 'Deep Dive 13', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-14', 'Deep Dive 14', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-15', 'Deep Dive 15', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-16', 'Deep Dive 16', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-17', 'Deep Dive 17', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-18', 'Deep Dive 18', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-19', 'Deep Dive 19', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-20', 'Deep Dive 20', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-21', 'Deep Dive 21', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-22', 'Deep Dive 22', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('ai-gen-23', 'Deep Dive 23', 'Vectoris', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Artificial Intelligence. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-1', 'Deep Dive 1', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-2', 'Deep Dive 2', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-3', 'Deep Dive 3', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-4', 'Deep Dive 4', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-5', 'Deep Dive 5', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-6', 'Deep Dive 6', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-7', 'Deep Dive 7', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-8', 'Deep Dive 8', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-9', 'Deep Dive 9', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-10', 'Deep Dive 10', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-11', 'Deep Dive 11', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-12', 'Deep Dive 12', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-13', 'Deep Dive 13', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-14', 'Deep Dive 14', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-15', 'Deep Dive 15', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-16', 'Deep Dive 16', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-17', 'Deep Dive 17', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-18', 'Deep Dive 18', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-19', 'Deep Dive 19', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-20', 'Deep Dive 20', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-21', 'Deep Dive 21', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-22', 'Deep Dive 22', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-23', 'Deep Dive 23', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('react-gen-24', 'Deep Dive 24', 'Reacta', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into React Patterns. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-1', 'Deep Dive 1', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-2', 'Deep Dive 2', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-3', 'Deep Dive 3', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-4', 'Deep Dive 4', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-5', 'Deep Dive 5', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-6', 'Deep Dive 6', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-7', 'Deep Dive 7', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-8', 'Deep Dive 8', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-9', 'Deep Dive 9', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-10', 'Deep Dive 10', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-11', 'Deep Dive 11', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-12', 'Deep Dive 12', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-13', 'Deep Dive 13', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-14', 'Deep Dive 14', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('la-gen-15', 'Deep Dive 15', 'Matrixa', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Linear Algebra. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-1', 'Deep Dive 1', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-2', 'Deep Dive 2', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-3', 'Deep Dive 3', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-4', 'Deep Dive 4', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-5', 'Deep Dive 5', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-6', 'Deep Dive 6', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-7', 'Deep Dive 7', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-8', 'Deep Dive 8', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-9', 'Deep Dive 9', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-10', 'Deep Dive 10', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-11', 'Deep Dive 11', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-12', 'Deep Dive 12', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-13', 'Deep Dive 13', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-14', 'Deep Dive 14', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-15', 'Deep Dive 15', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-16', 'Deep Dive 16', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-17', 'Deep Dive 17', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-18', 'Deep Dive 18', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-19', 'Deep Dive 19', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-20', 'Deep Dive 20', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-21', 'Deep Dive 21', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-22', 'Deep Dive 22', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-23', 'Deep Dive 23', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-24', 'Deep Dive 24', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-25', 'Deep Dive 25', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-26', 'Deep Dive 26', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-27', 'Deep Dive 27', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-28', 'Deep Dive 28', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-29', 'Deep Dive 29', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-30', 'Deep Dive 30', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-31', 'Deep Dive 31', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('bio-gen-32', 'Deep Dive 32', 'Cellula', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into Cellular Biology. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-1', 'Deep Dive 1', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-2', 'Deep Dive 2', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-3', 'Deep Dive 3', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-4', 'Deep Dive 4', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-5', 'Deep Dive 5', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-6', 'Deep Dive 6', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-7', 'Deep Dive 7', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-8', 'Deep Dive 8', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-9', 'Deep Dive 9', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-10', 'Deep Dive 10', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-11', 'Deep Dive 11', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-12', 'Deep Dive 12', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-13', 'Deep Dive 13', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-14', 'Deep Dive 14', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-15', 'Deep Dive 15', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-16', 'Deep Dive 16', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-17', 'Deep Dive 17', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-18', 'Deep Dive 18', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-19', 'Deep Dive 19', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-20', 'Deep Dive 20', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+  topic('eng-gen-21', 'Deep Dive 21', 'Lexis', 'concept', 'Comprehensive exploration of the subject.', {
+    minutes: 6,
+    objectives: ['Master the underlying principles', 'Apply to real-world scenarios'],
+    simple: 'A deep dive into advanced concepts.',
+    blocks: [
+      { type: 'text', body: 'This module provides an exhaustive look into English Grammar. We explore the foundational math, syntax, and principles that govern this domain.' },
+      { type: 'summary', points: ['Foundations', 'Mechanics', 'Applications'] }
+    ]
+  }, [
+    mcq('Which of the following is true about this topic?', ['It is foundational', 'It is deprecated', 'It is rarely used', 'It is impossible to understand'], 'It builds the base for advanced knowledge.'),
+    tf('Mastering this topic is essential for progression.', true, 'It unlocks the next modules.')
+  ]),
+
+// GENERATED DEEP TOPICS FOR AI
+topic('ai-7', 'Backpropagation', 'Calculus', 'math', 'The chain rule applied to neural networks.', { minutes: 7, objectives: ['Calculate gradients'], simple: 'Errors flow backward.', blocks: [{ type: 'text', body: 'Backpropagation is the workhorse of deep learning...' }] }, [ tf('Backprop uses the chain rule.', true, 'It computes partial derivatives.') ]),
+topic('ai-8', 'Loss Functions', 'Calculus', 'concept', 'Measuring how wrong the model is.', { minutes: 5, objectives: ['Compare MSE and Cross-Entropy'], simple: 'Loss is the penalty for bad predictions.', blocks: [{ type: 'text', body: 'Mean Squared Error (MSE) is used for regression, while Cross-Entropy is used for classification.' }] }, [ fill('The penalty for bad predictions is the ____ function.', 'loss', 'Loss functions guide optimization.') ]),
+topic('ai-9', 'Gradient Descent', 'Optimiza', 'math', 'Finding the lowest error.', { minutes: 6, objectives: ['Explain learning rate'], simple: 'Walking down a foggy hill to find the valley.', blocks: [{ type: 'text', body: 'Gradient descent updates weights in the opposite direction of the gradient.' }] }, [ mcq('What does learning rate control?', ['Step size', 'Network depth', 'Input size', 'Activation'], 'It scales the gradient.') ]),
+topic('ai-10', 'Convolutions', 'Visia', 'concept', 'Sliding filters over images.', { minutes: 8, objectives: ['Understand feature maps'], simple: 'A filter scans the image for edges.', blocks: [{ type: 'text', body: 'CNNs use convolutional layers to extract spatial hierarchies of features.' }] }, [ tf('CNNs are mainly used for text.', false, 'They are used for images.') ]),
+topic('ai-11', 'Pooling Layers', 'Visia', 'concept', 'Downsampling images.', { minutes: 5, objectives: ['Explain Max Pooling'], simple: 'Shrinking the image to save compute.', blocks: [{ type: 'text', body: 'Max pooling takes the maximum value in a local patch.' }] }, [ fill('Max ____ reduces spatial dimensions.', 'pooling', 'It downsamples feature maps.') ]),
+topic('ai-12', 'ResNet & Skip Connections', 'Visia', 'concept', 'Training ultra-deep networks.', { minutes: 7, objectives: ['Solve vanishing gradients'], simple: 'Skip connections give gradients a shortcut.', blocks: [{ type: 'text', body: 'Residual networks add the input of a layer to its output.' }] }, [ tf('Skip connections help solve vanishing gradients.', true, 'They allow unimpeded gradient flow.') ]),
+topic('ai-13', 'RNN Basics', 'Sequentia', 'concept', 'Networks with memory.', { minutes: 6, objectives: ['Process sequential data'], simple: 'RNNs remember the past to predict the future.', blocks: [{ type: 'text', body: 'Recurrent Neural Networks maintain a hidden state that updates at each time step.' }] }, [ fill('____ Neural Networks process sequences.', 'recurrent', 'RNNs handle time-series data.') ]),
+topic('ai-14', 'LSTMs', 'Sequentia', 'concept', 'Long Short-Term Memory.', { minutes: 8, objectives: ['Explain the forget gate'], simple: 'LSTMs can remember things for a long time.', blocks: [{ type: 'text', body: 'LSTMs solve the vanishing gradient problem in standard RNNs using gates.' }] }, [ mcq('What gate decides what information to discard?', ['Forget gate', 'Input gate', 'Output gate', 'Memory gate'], 'The forget gate clears old memory.') ]),
+topic('ai-15', 'Seq2Seq Models', 'Sequentia', 'concept', 'Encoder-Decoder architectures.', { minutes: 7, objectives: ['Understand machine translation'], simple: 'Read the input, summarize it, then write the output.', blocks: [{ type: 'text', body: 'An encoder compresses the input into a context vector, which the decoder uses.' }] }, [ tf('Seq2Seq models are used for translation.', true, 'They map input sequences to output sequences.') ]),
+topic('ai-16', 'The Context Bottleneck', 'Sequentia', 'concept', 'The limit of fixed-size vectors.', { minutes: 5, objectives: ['Explain the need for attention'], simple: 'You cant cram a whole book into one sentence.', blocks: [{ type: 'text', body: 'Standard Seq2Seq models struggle with long sentences because all context is squeezed into one vector.' }] }, [ fill('Squeezing context into one vector creates a ____.', 'bottleneck', 'It loses information.') ]),
+topic('ai-17', 'Self-Attention', 'Attendia', 'concept', 'Words looking at other words.', { minutes: 8, objectives: ['Calculate attention scores'], simple: 'Every word checks how relevant every other word is.', blocks: [{ type: 'text', body: 'Self-attention allows the model to weigh the importance of all words in a sequence.' }] }, [ tf('Self-attention weighs word relationships.', true, 'It finds contextual meaning.') ]),
+topic('ai-18', 'Multi-Head Attention', 'Attendia', 'concept', 'Looking at different things at once.', { minutes: 6, objectives: ['Explain multiple heads'], simple: 'One head looks at grammar, another at subject.', blocks: [{ type: 'text', body: 'Multiple attention heads allow the model to capture different types of relationships simultaneously.' }] }, [ fill('____-head attention captures multiple relationships.', 'multi', 'It runs attention in parallel.') ]),
+topic('ai-19', 'Positional Encoding', 'Attendia', 'concept', 'Injecting sequence order.', { minutes: 5, objectives: ['Understand sequence order without RNNs'], simple: 'Stamping a timestamp on every word.', blocks: [{ type: 'text', body: 'Since transformers process all tokens at once, positional encodings are added to inject order information.' }] }, [ mcq('Why do transformers need positional encodings?', ['No inherent sense of order', 'To speed up training', 'To reduce memory', 'To calculate loss'], 'They process tokens in parallel.') ]),
+topic('ai-20', 'Fine-Tuning LLMs', 'Generatia', 'concept', 'Adapting base models.', { minutes: 7, objectives: ['Explain RLHF and fine-tuning'], simple: 'Teaching a smart model how to behave.', blocks: [{ type: 'text', body: 'Base models predict the next word. Fine-tuning and RLHF teach them to follow instructions safely.' }] }, [ tf('RLHF makes models safer and more helpful.', true, 'It aligns them with human preferences.') ]),
+
+// GENERATED DEEP TOPICS FOR LINALG
+topic('la-6', 'Linear Independence', 'Vectoris', 'math', 'Vectors that go their own way.', { minutes: 6, objectives: ['Identify independent vectors'], simple: 'If a vector adds a new dimension, its independent.', blocks: [{ type: 'text', body: 'A set of vectors is linearly independent if no vector can be written as a combination of the others.' }] }, [ tf('Independent vectors can form a basis.', true, 'They span a space without redundancy.') ]),
+topic('la-7', 'Matrix-Vector Products', 'Matrixa', 'math', 'Transforming vectors.', { minutes: 7, objectives: ['Multiply matrix and vector'], simple: 'A matrix is a set of instructions for moving a vector.', blocks: [{ type: 'text', body: 'Multiplying a matrix by a vector applies a linear transformation to that vector.' }] }, [ fill('A matrix applies a linear ____ to a vector.', 'transformation', 'It changes the vectors space.') ]),
+topic('la-8', 'Matrix Multiplication', 'Matrixa', 'math', 'Composing transformations.', { minutes: 8, objectives: ['Multiply two matrices'], simple: 'Applying one transformation after another.', blocks: [{ type: 'text', body: 'Matrix multiplication is not commutative. AB means apply B, then apply A.' }] }, [ mcq('Is matrix multiplication always commutative?', ['No', 'Yes', 'Only for 2x2', 'Only for square matrices'], 'AB rarely equals BA.') ]),
+topic('la-9', 'Identity & Inverses', 'Matrixa', 'math', 'Doing nothing and undoing.', { minutes: 6, objectives: ['Find an inverse'], simple: 'The identity matrix does nothing; the inverse undoes a transformation.', blocks: [{ type: 'text', body: 'A matrix multiplied by its inverse yields the identity matrix.' }] }, [ tf('Every matrix has an inverse.', false, 'Singular matrices do not.') ]),
+topic('la-10', 'Determinants 2D', 'Matrixa', 'math', 'Area scaling factor.', { minutes: 7, objectives: ['Calculate a 2x2 determinant'], simple: 'How much a transformation stretches or squishes area.', blocks: [{ type: 'text', body: 'The determinant of a 2x2 matrix is ad - bc. If it is 0, the space is compressed to a line.' }] }, [ fill('A determinant of ____ means the matrix has no inverse.', 'zero', 'The space is collapsed.') ]),
+topic('la-11', 'Determinants 3D', 'Matrixa', 'math', 'Volume scaling factor.', { minutes: 7, objectives: ['Calculate a 3x3 determinant'], simple: 'How much volume changes.', blocks: [{ type: 'text', body: 'In 3D, the determinant measures the change in volume of a parallelepiped.' }] }, [ mcq('What does a negative determinant imply?', ['Space is flipped', 'Volume is zero', 'Matrix is singular', 'Identity matrix'], 'It reverses orientation.') ]),
+topic('la-12', 'Column Space', 'Spacia', 'math', 'All possible outputs.', { minutes: 6, objectives: ['Find the column space'], simple: 'The span of the columns of a matrix.', blocks: [{ type: 'text', body: 'The column space of A is the set of all vectors b that can be written as Ax = b.' }] }, [ tf('The column space is the span of the rows.', false, 'It is the span of the columns.') ]),
+topic('la-13', 'Null Space', 'Spacia', 'math', 'Vectors squished to zero.', { minutes: 7, objectives: ['Find the null space'], simple: 'The vectors that a matrix destroys.', blocks: [{ type: 'text', body: 'The null space of A consists of all vectors x such that Ax = 0.' }] }, [ fill('The ____ space contains vectors mapped to the zero vector.', 'null', 'It is the kernel of the matrix.') ]),
+topic('la-14', 'Eigenvalues', 'Eigen', 'math', 'The stretch factor.', { minutes: 8, objectives: ['Calculate eigenvalues'], simple: 'How much an eigenvector is stretched.', blocks: [{ type: 'text', body: 'An eigenvalue lambda satisfies Ax = lambda x.' }] }, [ mcq('What does an eigenvalue represent?', ['Stretch factor', 'Rotation angle', 'Translation distance', 'Determinant'], 'It scales the eigenvector.') ]),
+topic('la-15', 'Diagonalization', 'Eigen', 'math', 'Making matrices simple.', { minutes: 7, objectives: ['Diagonalize a matrix'], simple: 'Finding the perfect coordinate system.', blocks: [{ type: 'text', body: 'A matrix is diagonalizable if it has enough linearly independent eigenvectors.' }] }, [ tf('All matrices are diagonalizable.', false, 'Only those with a full basis of eigenvectors.') ]),
+topic('la-16', 'Change of Basis', 'Spacia', 'math', 'Changing perspectives.', { minutes: 6, objectives: ['Perform a basis change'], simple: 'Translating vectors into a new language.', blocks: [{ type: 'text', body: 'A change of basis matrix converts coordinates from one basis to another.' }] }, [ fill('Changing ____ alters the coordinate system.', 'basis', 'It changes the axes.') ]),
+topic('la-17', 'Dot Products & Angles', 'Vectoris', 'math', 'Measuring alignment.', { minutes: 5, objectives: ['Calculate cosine of an angle'], simple: 'Dot products tell you how aligned vectors are.', blocks: [{ type: 'text', body: 'The dot product relates to the cosine of the angle between vectors.' }] }, [ mcq('If the dot product is zero, the vectors are:', ['Orthogonal', 'Parallel', 'Identical', 'Opposite'], 'They are perpendicular.') ]),
+topic('la-18', 'Projections', 'Vectoris', 'math', 'Shadows of vectors.', { minutes: 7, objectives: ['Project one vector onto another'], simple: 'Shining a light on a vector to see its shadow.', blocks: [{ type: 'text', body: 'The projection of u onto v gives the component of u in the direction of v.' }] }, [ tf('Projections are always shorter than the original vector.', true, 'Except when they are parallel.') ]),
+topic('la-19', 'Orthogonal Matrices', 'Matrixa', 'math', 'Preserving lengths.', { minutes: 6, objectives: ['Identify orthogonal matrices'], simple: 'Rotations and reflections.', blocks: [{ type: 'text', body: 'An orthogonal matrix has columns that are mutually perpendicular unit vectors.' }] }, [ fill('Orthogonal matrices preserve ____ and angles.', 'lengths', 'They represent rigid transformations.') ]),
+topic('la-20', 'SVD', 'Matrixa', 'math', 'The ultimate factorization.', { minutes: 9, objectives: ['Decompose a matrix using SVD'], simple: 'Breaking any matrix into rotation, stretch, rotation.', blocks: [{ type: 'text', body: 'Singular Value Decomposition factorizes a matrix into U, Sigma, and V*.' }] }, [ mcq('SVD can be applied to:', ['Any matrix', 'Only square matrices', 'Only symmetric matrices', 'Only diagonal matrices'], 'It generalizes eigendecomposition to all matrices.') ]),
+
   topic('ai-5', 'Embeddings & tokens', 'Vectoris', 'concept', 'Turning words into points in space.', {
     minutes: 6,
     objectives: ['Explain what a token is', 'Describe what an embedding captures', 'Compare two embeddings with cosine similarity'],
