@@ -580,6 +580,69 @@ const TEMPLATES: Template[] = [
       },
     ],
   },
+  {
+    id: 'eng',
+    title: 'English Essentials',
+    subtitle: 'Grammar, punctuation, and clear communication',
+    match: /english|grammar|language|writing|speaking|punctuation/i,
+    modules: [
+      {
+        id: 'eng-m1',
+        title: 'Grammar Fundamentals',
+        topics: [
+          topic('eng-1', 'Nouns and Verbs', 'Terra', 'language', 'The building blocks of every sentence.', {
+            minutes: 5,
+            objectives: ['Identify nouns and verbs', 'Understand subject-verb agreement'],
+            simple: 'Nouns are the things, and verbs are the actions they do.',
+            blocks: [
+              { type: 'text', body: 'A sentence needs a subject (a noun or pronoun) and a predicate (a verb). The subject is the "who" or "what," and the verb tells what the subject does or is.' },
+              terms(['Noun', 'A person, place, thing, or idea.'], ['Verb', 'An action or state of being.']),
+              { type: 'example', body: 'In "The dog barks," "dog" is the noun and "barks" is the verb.' },
+              { type: 'summary', points: ['Nouns are things', 'Verbs are actions', 'Subjects and verbs must agree'] }
+            ]
+          }, [
+            mcq('What part of speech is an action word?', ['Verb', 'Noun', 'Adjective', 'Adverb'], 'A verb expresses action or a state of being.'),
+            fill('A person, place, thing, or idea is a ____.', 'noun', 'Nouns represent the entities in a sentence.'),
+            tf('Every complete sentence must have at least one verb.', true, 'A sentence without a verb is just a fragment.')
+          ]),
+          topic('eng-2', 'Punctuation Basics', 'Comma', 'language', 'Making sentences clear and readable.', {
+            minutes: 5,
+            objectives: ['Use commas and periods correctly', 'Understand sentence boundaries'],
+            simple: 'Punctuation tells the reader when to pause and when to stop.',
+            blocks: [
+              { type: 'text', body: 'Periods end a complete thought. Commas separate items in a list, link clauses, and indicate brief pauses. Using them correctly prevents run-on sentences and confusion.' },
+              { type: 'compare', columns: ['Punctuation', 'Purpose'], rows: [['Period (.)', 'Ends a declarative sentence', 'Full stop'], ['Comma (,)', 'Separates clauses or lists', 'Brief pause'], ['Question Mark (?)', 'Ends a question', 'Rising tone']] },
+              { type: 'summary', points: ['Periods end thoughts', 'Commas add pauses', 'Punctuation creates clarity'] }
+            ]
+          }, [
+            mcq('Which punctuation mark is used to separate items in a list?', ['Comma', 'Period', 'Question Mark', 'Exclamation Point'], 'Commas separate three or more items in a series.'),
+            tf('A run-on sentence happens when two independent clauses are joined without proper punctuation.', true, 'Run-on sentences lack the necessary periods or conjunctions to separate distinct thoughts.', 2),
+            fill('A ____ is used to indicate a full stop at the end of a sentence.', 'period', 'Periods mark the end of declarative sentences.')
+          ])
+        ]
+      },
+      {
+        id: 'eng-m2',
+        title: 'Effective Writing',
+        topics: [
+          topic('eng-3', 'Active Voice', 'Activa', 'language', 'Making your writing energetic and direct.', {
+            minutes: 6,
+            objectives: ['Identify active and passive voice', 'Rewrite passive sentences into active ones'],
+            simple: 'Active voice puts the doer of the action first, making sentences punchier.',
+            blocks: [
+              { type: 'text', body: 'In the active voice, the subject performs the action. In the passive voice, the subject receives the action. Active writing is generally clearer and more direct.' },
+              { type: 'compare', columns: ['Active Voice', 'Passive Voice'], rows: [['The chef cooked the meal.', 'The meal was cooked by the chef.', 'Clearer vs Wordy'], ['I made a mistake.', 'Mistakes were made.', 'Takes responsibility vs Avoids it']] },
+              { type: 'summary', points: ['Active voice is direct', 'The subject does the action', 'Use passive voice sparingly'] }
+            ]
+          }, [
+            mcq('Which sentence is in the active voice?', ['The cat chased the mouse.', 'The mouse was chased by the cat.', 'The ball was thrown.', 'The song was sung.'], 'In the active voice, the subject (the cat) performs the action (chased).'),
+            tf('Passive voice is always grammatically incorrect.', false, 'Passive voice is grammatically correct and useful when the actor is unknown, but active voice is usually preferred for clarity.', 2),
+            fill('When the subject performs the action, the sentence is in the ____ voice.', 'active', 'Active voice emphasizes the doer.')
+          ])
+        ]
+      }
+    ]
+  }
 ];
 
 /**
@@ -740,4 +803,5 @@ export const TEMPLATE_PRESETS = [
   { label: 'Advanced React patterns', objective: 'Advanced React patterns' },
   { label: 'Linear algebra basics', objective: 'Linear algebra basics' },
   { label: 'Cellular biology', objective: 'Cellular biology' },
+  { label: 'English Essentials', objective: 'English Essentials' },
 ];
