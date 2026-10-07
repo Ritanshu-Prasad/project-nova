@@ -101,7 +101,7 @@ export default function QuizRunner({ questions, limits, rates, practice = false,
     submitted.current = true;
     const at = Array.isArray(progress) ? (progress[qi] ?? 0) : progress;
     const rate = rates?.[qi] ?? { gain: 1, loss: 1 };
-    const delta = practice ? 0 : useCourse.getState().answer(correct, { difficulty: q.difficulty, hint: hidden.length > 0, gain: rate.gain, loss: rate.loss, progress: at });
+    const delta = practice ? 0 : useCourse.getState().answer(correct, { difficulty: q.difficulty, hint: hidden.length > 0, gain: rate.gain, loss: rate.loss, progress: at, qId: q.q });
     setResp((prev) => prev.map((x, i) => (i === qi ? { correct, delta, timedOut } : x)));
     onAnswer?.(qi, correct, delta);
     audio.play(correct ? 'quest' : 'denied');

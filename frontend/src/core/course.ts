@@ -30,12 +30,12 @@ export interface ModuleProgress {
   attempts: number;
 }
 
-/** The pilot's skill in one course. */
 export interface CourseSkill {
   mmr: number;
   history: number[];
   correct: number;
   answered: number;
+  questionHistory?: Record<string, boolean>;
 }
 
 export interface LibraryEntry {
@@ -146,6 +146,8 @@ export interface AnswerOpts {
   loss?: number;
   /** Where the question's topic sits in the course, 0..1. */
   progress?: number;
+  /** Unique ID (usually the question string) to track repeats. */
+  qId?: string;
 }
 
 interface CourseState {
@@ -254,10 +256,24 @@ export const useCourse = create<CourseState>()((set, get) => {
       const expected = 1 / (1 + Math.pow(10, (questionRating(opts.progress, opts.difficulty) - sk.mmr) / 400));
       let delta = K * ((correct ? 1 : 0) - expected) * (correct && opts.hint ? 0.5 : 1);
       delta = correct ? Math.max(opts.hint ? 2 : 4, delta) * (opts.gain ?? 1) : Math.min(-3, delta) * (opts.loss ?? 1);
+      
+      // Repeat question MMR logic
+      const qHistory = sk.questionHistory ?? {};
+      if (opts.qId && opts.qId in qHistory) {
+        if (qHistory[opts.qId] && correct) delta = 0;
+        else if (!qHistory[opts.qId] && correct) delta *= 0.5;
+      }
+
       const d = Math.round(delta) || 0;
       patchActive((x) => ({
         ...x,
-        skill: { mmr: sk.mmr + d, history: [...sk.history, sk.mmr + d].slice(-80), correct: sk.correct + (correct ? 1 : 0), answered: sk.answered + 1 },
+        skill: { 
+          mmr: sk.mmr + d, 
+          history: [...sk.history, sk.mmr + d].slice(-80), 
+          correct: sk.correct + (correct ? 1 : 0), 
+          answered: sk.answered + 1,
+          questionHistory: opts.qId ? { ...qHistory, [opts.qId]: correct } : qHistory
+        },
       }));
       const s = get().stats;
       const streak = correct ? s.streak + 1 : 0;
