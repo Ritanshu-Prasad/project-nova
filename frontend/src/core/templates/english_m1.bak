@@ -1,0 +1,97 @@
+import type { Topic } from '../courseSchema';
+
+export const englishM1Topics: Topic[] = [
+  {
+    id: 'eng-1',
+    title: 'Nouns: The Foundations of Naming',
+    kind: 'language',
+    planet: 'Earth',
+    summary: 'A comprehensive study of nouns, including proper, common, abstract, concrete, countable, and uncountable nouns.',
+    lesson: {
+      minutes: 45,
+      objectives: [
+        'Identify various types of nouns in complex sentences.',
+        'Differentiate between proper and common nouns.',
+        'Distinguish abstract nouns from concrete nouns.',
+        'Apply rules for countable and uncountable nouns correctly.'
+      ],
+      simple: 'Mastering nouns and their classifications.',
+      blocks: [
+        { type: 'text', body: 'Nouns are fundamentally the building blocks of language. They serve to name people, places, things, concepts, and ideas. Without nouns, we would have no subjects to perform actions and no objects to receive them.' },
+        { type: 'keyTerms', terms: [{term: 'Noun', def: 'A word used to identify any of a class of people, places, or things'}] },
+        { type: 'text', body: 'The primary division in nouns is between **Proper** and **Common** nouns. A proper noun refers to a specific, unique entity and is always capitalized. A common noun refers to a general class of entities and is not capitalized unless it begins a sentence.' },
+        { type: 'example', body: 'Consider the sentence: "The city of Paris is known for its beautiful architecture." Here, "city" is a common noun (a general place), while "Paris" is a proper noun (a specific place).' },
+        { type: 'text', body: 'Another crucial distinction is between **Concrete** and **Abstract** nouns. Concrete nouns are things that can be experienced through the five physical senses (touch, sight, taste, hearing, or smell). Abstract nouns refer to ideas, concepts, emotions, or traits that cannot be physically sensed.' },
+        { type: 'example', body: 'Concrete: "The aroma of the *coffee* filled the *room*." \nAbstract: "His *bravery* in the face of *danger* earned him great *respect*."' },
+        { type: 'text', body: 'Furthermore, nouns are classified as either **Countable** (count) or **Uncountable** (mass). Countable nouns have both singular and plural forms and can be used with numbers or articles like "a" or "an". Uncountable nouns represent substances, concepts, or masses that cannot be individually counted and typically only have a singular form.' },
+        { type: 'example', body: 'Countable: "She bought three *apples* and a *book*."\nUncountable: "The *information* provided much-needed *clarity* to the *research*."' },
+        { type: 'summary', points: ['Nouns classify the world into specific (proper) or general (common) entities, tangible (concrete) or intangible (abstract) concepts, and distinct units (countable) or continuous masses (uncountable).'] }
+      ],
+      }, quiz: [
+        { type: 'mcq', q: 'Identify the proper noun in this sentence: "Despite the heavy rain, the students arrived at Oxford University on time."', options: ['students', 'rain', 'time', 'Oxford University'], answer: 3, why: 'Oxford University is a specific name of an institution.' },
+        { type: 'mcq', q: 'Which of the following sentences contains an abstract noun?', options: ['The velvet curtains blocked the sunlight.', 'Her determination inspired the entire team.', 'He poured cold water into the glass.', 'The dog barked loudly at the mailman.'], answer: 1, why: '"Determination" is an abstract concept that cannot be physically touched or seen.' },
+        { type: 'truefalse', q: 'In the sentence "The water in the lake is freezing", "water" is a countable noun.', answer: false, why: '"Water" is an uncountable mass noun.' },
+        { type: 'fill', q: 'A noun that refers to a specific, unique entity and is capitalized is called a {{proper}} noun.', answer: 'TODO', why: 'TODO' },
+        { type: 'multi', q: 'Select all the concrete nouns in this sentence: "The mechanic dropped his wrench on the concrete floor."', options: ['mechanic', 'dropped', 'wrench', 'floor', 'concrete'], answers: [0, 2, 3], why: '"Mechanic", "wrench", and "floor" are concrete nouns. "Concrete" here is an adjective modifying "floor".' },
+        { type: 'mcq', q: 'Identify the uncountable noun:', options: ['Chair', 'Happiness', 'Computer', 'Bottle'], answer: 1, why: 'Happiness cannot be counted directly (e.g., "three happinesses" is incorrect).' },
+        { type: 'mcq', q: 'Which sentence correctly uses an uncountable noun?', options: ['I need to gather more informations for the report.', 'She has a lot of luggages for the trip.', 'We require more equipment for the laboratory.', 'He gave me several good advices.'], answer: 2, why: '"Equipment" is uncountable. Informations, luggages, and advices are incorrect pluralizations of uncountable nouns.' },
+        { type: 'truefalse', q: '"Democracy" functions as an abstract noun.', answer: true, why: 'Democracy is a system or concept, not a tangible object.' },
+        { type: 'fill', q: 'Nouns that can be experienced through the five physical senses are called {{concrete}} nouns.', answer: 'TODO', why: 'TODO' },
+        { type: 'multi', q: 'Which of these are common nouns?', options: ['Eiffel Tower', 'bridge', 'river', 'Thames', 'monument'], answers: [1, 2, 4], why: 'Eiffel Tower and Thames are proper nouns. Bridge, river, and monument are general common nouns.' },
+        { type: 'mcq', q: 'In the phrase "a herd of cattle", what type of noun is "herd"?', options: ['Abstract Noun', 'Proper Noun', 'Collective Noun', 'Uncountable Noun'], answer: 2, why: 'A collective noun refers to a group of individuals or things.' },
+        { type: 'truefalse', q: 'All proper nouns must be preceded by the definite article "the".', answer: false, why: 'Many proper nouns, such as names of people (John) or countries (France), do not take "the".' },
+        { type: 'fill', q: 'To make most singular countable nouns ending in -s, -sh, -ch, or -x plural, you add {{es}} to the end.', answer: 'TODO', why: 'TODO' },
+        { type: 'mcq', q: 'Which noun can be BOTH countable and uncountable depending on the context?', options: ['Glass', 'Information', 'Boy', 'Oxygen'], answer: 0, why: '"Glass" can be uncountable (the material) or countable (a drinking vessel).' },
+        { type: 'multi', q: 'Select the abstract nouns from the list:', options: ['Freedom', 'Table', 'Courage', 'Cloud', 'Justice'], answers: [0, 2, 4], why: 'Freedom, Courage, and Justice are concepts or ideals.' },
+        { type: 'mcq', q: 'Identify the noun in the sentence that acts as an adjective (noun adjunct): "The stone wall was hundreds of years old."', options: ['wall', 'years', 'stone', 'hundreds'], answer: 2, why: '"Stone" is a noun modifying another noun ("wall").' }
+      ]
+    },
+  {
+    id: 'eng-gen-1',
+    title: 'Pronouns: The Art of Substitution',
+    kind: 'language',
+    planet: 'Earth',
+    summary: 'An in-depth exploration of pronouns, focusing on personal, possessive, relative, and reflexive types.',
+    lesson: {
+      minutes: 45,
+      objectives: [
+        'Understand the role of pronouns as noun substitutes.',
+        'Correctly apply personal and possessive pronouns in complex sentences.',
+        'Master the use of relative pronouns to connect clauses.',
+        'Differentiate between reflexive and intensive pronouns.'
+      ],
+      simple: 'Understanding and applying various pronoun types effectively.',
+      blocks: [
+        { type: 'text', body: 'Pronouns are versatile words that substitute for nouns or noun phrases. They prevent tedious repetition and make sentences flow smoothly. The noun that a pronoun replaces is called its **antecedent**.' },
+        { type: 'example', body: 'Instead of saying "Mary placed Mary\'s book on the table before Mary left," we use pronouns: "Mary placed *her* book on the table before *she* left." Here, "Mary" is the antecedent for both "her" and "she".' },
+        { type: 'text', body: '**Personal Pronouns** refer to specific people or things and change form depending on their grammatical person (first, second, or third), number (singular or plural), gender, and case (subjective or objective). Subjective pronouns act as the subject of a sentence (I, you, he, she, it, we, they), while objective pronouns act as the object of a verb or preposition (me, you, him, her, it, us, them).' },
+        { type: 'example', body: 'Subjective: "*They* organized the event."\nObjective: "The committee congratulated *them*."' },
+        { type: 'text', body: '**Possessive Pronouns** demonstrate ownership or possession. They are absolute and stand alone, replacing the noun entirely (mine, yours, his, hers, ours, theirs). Note that possessive adjectives (my, your, his, her, our, their) are similar but always precede a noun.' },
+        { type: 'example', body: 'Possessive Adjective: "This is *my* laptop."\nPossessive Pronoun: "This laptop is *mine*."' },
+        { type: 'text', body: '**Relative Pronouns** introduce relative clauses, linking them to independent clauses. The most common relative pronouns are who, whom, whose, which, and that. "Who" and "whom" refer to people, "which" refers to things, and "that" can refer to both.' },
+        { type: 'example', body: '"The scientist *who* made the discovery was awarded the prize." Here, "who" links the descriptive clause to the antecedent "scientist".' },
+        { type: 'text', body: '**Reflexive Pronouns** are used when the subject and the object of a sentence are the same entity. They end in "-self" or "-selves" (myself, yourself, himself, herself, itself, ourselves, yourselves, themselves).' },
+        { type: 'example', body: '"She accidentally cut *herself* while chopping vegetables." The subject (she) and object (herself) are the same person.' },
+        { type: 'summary', points: ['Pronouns are essential stand-ins for nouns. Mastering their types—whether acting as subjects/objects (personal), showing ownership (possessive), linking clauses (relative), or reflecting action back to the subject (reflexive)—is key to fluent writing.'] }
+      ],
+      }, quiz: [
+        { type: 'mcq', q: 'Identify the antecedent of the pronoun "their" in the sentence: "The workers submitted their final reports before the deadline."', options: ['reports', 'deadline', 'workers', 'submitted'], answer: 2, why: 'The pronoun "their" refers back to the noun "workers".' },
+        { type: 'mcq', q: 'Choose the correct relative pronoun to complete the sentence: "The book, _______ cover was torn, contained ancient maps."', options: ['which', 'that', 'who', 'whose'], answer: 3, why: '"Whose" indicates possession (the cover of the book).' },
+        { type: 'multi', q: 'Which of the following are objective personal pronouns?', options: ['he', 'them', 'us', 'they', 'me'], answers: [1, 2, 4], why: '"Them", "us", and "me" receive the action. "He" and "they" are subjective.' },
+        { type: 'truefalse', q: 'In the sentence "The prize is yours", the word "yours" is a possessive adjective.', answer: false, why: '"Yours" is a possessive pronoun. It stands alone. "Your" would be the possessive adjective.' },
+        { type: 'fill', q: 'Pronouns that refer back to the subject of the clause or sentence are called {{reflexive}} pronouns.', answer: 'TODO', why: 'TODO' },
+        { type: 'mcq', q: 'Which sentence correctly uses "whom"?', options: ['Whom is going to the party?', 'The manager whom I spoke to was very helpful.', 'I don’t know whom wrote this letter.', 'Whom has the keys?'], answer: 1, why: '"Whom" is the object of the preposition "to".' },
+        { type: 'mcq', q: 'Identify the reflexive pronoun in this sentence: "The CEO himself delivered the presentation."', options: ['CEO', 'himself', 'delivered', 'presentation'], answer: 1, why: 'Note: Technically "himself" here acts as an intensive pronoun to add emphasis, but it takes the reflexive form.' },
+        { type: 'truefalse', q: '"Which" is generally used to refer to people in a relative clause.', answer: false, why: '"Which" is used for animals and things. "Who" or "whom" is used for people.' },
+        { type: 'multi', q: 'Select the possessive pronouns from the list below:', options: ['my', 'mine', 'theirs', 'our', 'ours'], answers: [1, 2, 4], why: '"Mine", "theirs", and "ours" stand alone as pronouns. "My" and "our" are possessive adjectives.' },
+        { type: 'mcq', q: 'In the sentence "Between you and me, this plan will never work," why is "me" correct instead of "I"?', options: ['It is the subject of the sentence.', 'It sounds more formal.', 'It is the object of the preposition "Between".', 'It is a reflexive pronoun.'], answer: 2, why: 'Prepositions require objective pronouns.' },
+        { type: 'fill', q: 'The relative pronoun that can refer to either people or things in restrictive clauses is {{that}}.', answer: 'TODO', why: 'TODO' },
+        { type: 'mcq', q: 'Replace the underlined words with the correct pronoun: "The teacher gave (John and Sarah) extra homework."', options: ['they', 'them', 'their', 'themselves'], answer: 1, why: '"John and Sarah" act as the indirect object, so the objective pronoun "them" is required.' },
+        { type: 'truefalse', q: 'Demonstrative pronouns (this, that, these, those) point to specific things.', answer: true, why: 'They indicate proximity and number (e.g., this book vs. those books).' },
+        { type: 'mcq', q: 'Which sentence contains an intensive pronoun?', options: ['He hurt himself on the playground.', 'I myself prefer tea over coffee.', 'She bought a gift for herself.', 'They saw themselves in the mirror.'], answer: 1, why: '"Myself" emphasizes the subject "I" but is not essential to the sentence\'s grammar.' },
+        { type: 'multi', q: 'Select all the relative pronouns in the following sentence: "The artist who painted the mural that you admire is a local resident."', options: ['artist', 'who', 'mural', 'that', 'you'], answers: [1, 3], why: '"Who" links to "artist" and "that" links to "mural".' }
+      ] }
+];
+
+
+

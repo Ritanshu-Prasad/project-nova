@@ -1,3 +1,4 @@
+import { allEnglishTopics } from './templates/english_index';
 import type { Block, Course, Level, Module, Question, Topic, TopicKind, Panel } from './courseSchema';
 import { makeId } from './courseSchema';
 
@@ -744,6 +745,7 @@ const LAYOUTS: Record<string, { id: string; title: string; topics: string[] }[]>
 
 /** Extra topics used by the layouts above. */
 const EXTRA_TOPICS: Topic[] = [
+  ...allEnglishTopics,
   topic('ai-gen-1', 'Scalars, Vectors, and Tensors', 'Vectoris', 'concept', 'Explore deep learning mechanics.', {
     minutes: 6,
     objectives: ['Understand mathematical foundations', 'Implement neural architectures'],
@@ -2357,7 +2359,7 @@ const EXTRA_TOPICS: Topic[] = [
 ];
 
 function fromTemplate(t: Template, objective: string, level: Level): Course {
-  const pool = [...t.modules.flatMap((m) => m.topics), ...EXTRA_TOPICS];
+const pool = [...EXTRA_TOPICS, ...t.modules.flatMap((m) => m.topics)];
   const layout = LAYOUTS[t.id];
   const modules: Module[] = layout
     ? layout.map((l) => ({ id: l.id, title: l.title, topics: l.topics.map((id) => pool.find((x) => x.id === id)).filter((x): x is Topic => !!x) }))
@@ -2442,3 +2444,5 @@ export const TEMPLATE_PRESETS = [
   { label: 'Cellular biology', objective: 'Cellular biology' },
   { label: 'English Essentials', objective: 'English Essentials' },
 ];
+
+

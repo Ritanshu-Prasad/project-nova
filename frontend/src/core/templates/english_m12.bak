@@ -1,0 +1,76 @@
+import type { Topic } from '../courseSchema';
+
+export const englishM12Topics: Topic[] = [
+  {
+    id: 'eng-gen-20',
+    title: 'Paragraph Cohesion',
+    kind: 'language',
+    planet: 'Earth',
+    summary: 'A comprehensive guide to building smooth, connected, and logical paragraphs.',
+    lesson: {
+      minutes: 25,
+      objectives: ['Understand cohesion mechanisms', 'Apply transitional phrases effectively', 'Maintain paragraph unity'],
+      simple: 'A comprehensive guide to building smooth, connected, and logical paragraphs.',
+      blocks: [
+        { type: 'text', body: 'Paragraph cohesion refers to the "glue" that holds sentences together, ensuring that ideas flow smoothly and logically from one to the next. A cohesive paragraph allows readers to follow the writer\'s train of thought without stumbling over abrupt shifts or disconnected ideas.' ] },
+        { type: 'text', body: 'Cohesion is achieved through several mechanisms: transitional words and phrases, pronoun reference, repetition of key words, and parallel structure. Transitions act as signposts, indicating the relationship between sentences (e.g., addition, contrast, cause and effect). Pronouns link back to antecedents in previous sentences, creating a web of reference.' ] },
+        { type: 'example', body: 'Without cohesion: The team played well. They practiced hard. The weather was bad. We lost the game.\nWith cohesion: Despite the bad weather, the team played well because they had practiced hard. Nevertheless, we ultimately lost the game.' ] },
+        { type: 'text', body: 'Repetition of key terms or synonyms helps to keep the central focus clear. However, writers must balance repetition with variation to avoid monotony. Parallel structure involves using the same grammatical pattern for coordinate ideas, which not only aids cohesion but also enhances the rhythm of the prose.' ] },
+        { type: 'summary', points: ['Cohesion transforms a collection of isolated sentences into a unified, readable paragraph through transitions, references, repetition, and parallelism.'] }
+      ],
+      }, quiz: [
+        { type: 'mcq', q: 'Which cohesive device is most prominently used in this pair of sentences? "The mayor announced a new initiative. The initiative aims to reduce traffic congestion."', options: ['Pronoun reference', 'Repetition of a key word', 'Parallel structure', 'Transitional phrase'], answer: 1, why: 'The word "initiative" is repeated to directly link the two sentences.' ] },
+        { type: 'mcq', q: 'Select the best transition to complete the sentence: "The experiment yielded inconclusive results; ________, the researchers decided to conduct a follow-up study."', options: ['however', 'consequently', 'for example', 'similarly'], answer: 1, why: '"Consequently" shows the cause-and-effect relationship.' ] },
+        { type: 'truefalse', q: 'True or False: Using too many transitional phrases can make a paragraph feel clunky and unnatural.', answer: true, why: 'Overusing transitions can interrupt the natural flow of ideas and distract the reader.' ] },
+        { type: 'fill', q: 'Pronouns create cohesion by referring back to a noun introduced earlier, known as the ________.', answer: 'antecedent', why: 'An antecedent is the word a pronoun refers to.' ] },
+        { type: 'multi', q: 'Which of the following are primary mechanisms of paragraph cohesion? (Select all that apply)', options: ['Transitions', 'Pronoun reference', 'Random capitalization', 'Parallel structure'], answers: [0, 1, 3], why: 'Capitalization is a mechanics rule, not a cohesive device.' ] },
+        { type: 'mcq', q: 'Read the following sentences: "Cooking requires patience. Baking demands precision." This is an example of which cohesive device?', options: ['Pronoun reference', 'Parallel structure', 'Transitional phrase', 'Synonym replacement'], answer: 1, why: 'Both sentences use the [Gerund subject] + [Verb] + [Noun object] structure.' ] },
+        { type: 'mcq', q: 'Which transition best signals a contrast?', options: ['Furthermore', 'In addition', 'Conversely', 'Therefore'], answer: 2, why: '"Conversely" introduces an opposing or contrasting idea.' ] },
+        { type: 'truefalse', q: 'True or False: Cohesion and coherence are exactly the same concept in writing.', answer: false, why: 'Cohesion is the explicit structural linking of sentences, while coherence is the overall logical sense and unity of the ideas.' ] },
+        { type: 'fill', q: 'A ________ structure uses identical grammatical forms to express equal ideas, enhancing the flow of the paragraph.', answer: 'parallel', why: 'Parallelism provides rhythm and clarity.' ] },
+        { type: 'multi', q: 'Which sentences demonstrate effective pronoun reference? (Select all that apply)', options: ['John left his book on the table. It was gone when he returned.', 'The students complained about the homework, but they still completed it.', 'Mary told Susan that she had failed the test.', 'The dog chased the ball and brought it back.'], answers: [0, 1, 3], why: 'Option 2 is ambiguous (who does "she" refer to?). The others have clear antecedents.' ] },
+        { type: 'mcq', q: 'Identify the cohesion issue in this passage: "I love hiking. The mountains are beautiful. My shoes are old."', options: ['Overuse of transitions', 'Lack of parallel structure', 'Lack of logical connection (coherence/cohesion)', 'Incorrect pronoun reference'], answer: 2, why: 'The sentences are isolated and lack connections or a unified flow.' ] },
+        { type: 'mcq', q: 'Which word acts as a cohesive tie in the second sentence? "The company launched a massive marketing campaign. This strategy led to a surge in sales."', options: ['company', 'strategy', 'surge', 'sales'], answer: 1, why: '"This strategy" encapsulates the "massive marketing campaign" from the previous sentence.' ] },
+        { type: 'truefalse', q: 'True or False: Synonyms can be used to achieve cohesion while avoiding repetitive vocabulary.', answer: true, why: 'Synonyms link ideas back to earlier concepts without sounding redundant.' ] },
+        { type: 'fill', q: 'Words like "first," "next," and "finally" are examples of ________ transitions.', answer: 'sequential', why: 'They indicate order or sequence.' ] },
+        { type: 'mcq', q: 'How does repetition aid cohesion?', options: ['By padding the word count', 'By confusing the reader', 'By keeping the reader focused on central ideas across sentences', 'By replacing the need for pronouns'], answer: 2, why: 'Strategic repetition reinforces the main topic.' ] }
+      ]
+    },
+  {
+    id: 'eng-gen-21',
+    title: 'Editing',
+    kind: 'language',
+    planet: 'Earth',
+    summary: 'Mastering the art of refining and polishing prose.',
+    lesson: {
+      minutes: 25,
+      objectives: ['Distinguish between revising and editing', 'Identify common grammatical and stylistic errors', 'Apply editing techniques to improve clarity'],
+      simple: 'Mastering the art of refining and polishing prose.',
+      blocks: [
+        { type: 'text', body: 'Editing is the crucial stage of the writing process where the writer zooms in on the micro-level details of their prose. Unlike revising—which focuses on big-picture elements like structure, argument, and organization—editing is concerned with clarity, conciseness, grammar, punctuation, and style.' ] },
+        { type: 'text', body: 'A thorough edit involves reading the text multiple times, often with a different focus for each pass. For example, one pass might check for subject-verb agreement and verb tense consistency, while another might focus on eliminating wordiness and ensuring precise vocabulary. Reading the text aloud is a highly effective technique during this stage, as it forces the editor to slow down and listen for awkward phrasing or missed punctuation.' ] },
+        { type: 'example', body: 'Draft: "Due to the fact that the meeting went over time, we were unable to make it to the restaurant before they closed their doors."\nEdited: "Because the meeting ran late, we missed the restaurant\'s closing time." (Reduced wordiness and improved clarity).' ] },
+        { type: 'text', body: 'Editors must also be vigilant about common pitfalls such as passive voice overuse, dangling modifiers, and comma splices. While passive voice isn\'t inherently wrong, changing it to active voice often makes sentences more vigorous and direct. Punctuation plays a critical role in pacing and clarity, acting as traffic signals for the reader.' ] },
+        { type: 'summary', body: 'Editing refines prose by correcting grammatical errors, improving sentence structure, and enhancing style, ultimately ensuring the writer\'s message is conveyed clearly and professionally.' ] }
+      ],
+      }, quiz: [
+        { type: 'mcq', q: 'Which of the following is an editing task rather than a revising task?', options: ['Reorganizing paragraphs for better flow', 'Adding a new main point to the thesis', 'Correcting a comma splice', 'Changing the target audience of the essay'], answer: 2, why: 'Fixing a comma splice is a sentence-level mechanical correction.' ] },
+        { type: 'mcq', q: 'How can you best edit this wordy phrase: "At this point in time"?', options: ['Currently', 'Now', 'Both Currently and Now', 'In the present moment'], answer: 2, why: 'Both "currently" and "now" are concise alternatives.' ] },
+        { type: 'truefalse', q: 'True or False: Reading a text aloud is generally considered a poor editing strategy because it takes too much time.', answer: false, why: 'Reading aloud is highly recommended as it helps identify awkward rhythms, missing words, and punctuation errors.' ] },
+        { type: 'fill', q: 'A ________ modifier is a phrase that describes something that has been left out of the sentence, causing confusion.', answer: 'dangling', why: 'Dangling modifiers lack a logical grammatical target in the sentence.' ] },
+        { type: 'multi', q: 'Which of the following sentences contain a comma splice? (Select all that apply)', options: ['I went to the store, I bought milk.', 'The sun is shining, we should go outside.', 'I love pizza, but I hate pasta.', 'She studied hard; therefore, she passed.'], answers: [0, 1], why: 'Options A and B join two independent clauses with only a comma.' ] },
+        { type: 'mcq', q: 'Which edited version of this sentence is the most concise? "The reason why he failed the test is because he did not study at all."', options: ['He failed the test due to the fact that he did not study.', 'He failed the test because he didn\'t study.', 'The reason for his failing is that he studied nothing.', 'His lack of studying is the reason why he failed the test.'], answer: 1, why: '"He failed the test because he didn\'t study" eliminates redundant phrases like "The reason why" and "is because".' ] },
+        { type: 'mcq', q: 'What is the primary benefit of changing passive voice to active voice during editing?', options: ['It makes sentences longer and more impressive.', 'It clarifies who is performing the action and usually makes sentences more direct.', 'It removes the need for punctuation.', 'It ensures the paragraph is cohesive.'], answer: 1, why: 'Active voice puts the actor in the subject position, driving the action forward.' ] },
+        { type: 'truefalse', q: 'True or False: Editing should always be done immediately after writing the first draft.', answer: false, why: 'It is usually best to take a break between writing and editing to view the text with fresh eyes.' ] },
+        { type: 'fill', q: 'The term for eliminating unnecessary words to make writing more direct is achieving ________.', answer: 'conciseness', why: 'Conciseness means expressing much in few words.' ] },
+        { type: 'multi', q: 'Which of the following are common stylistic errors to look for during editing? (Select all that apply)', options: ['Subject-verb disagreement', 'Overuse of cliches', 'Repetitive sentence structures', 'Inconsistent verb tenses'], answers: [1, 2], why: 'Cliches and repetitive structures are stylistic; disagreement and tense shifts are grammatical (though all are edited).' ] },
+        { type: 'mcq', q: 'Identify the error in this sentence: "Walking down the street, the trees were beautiful."', options: ['Comma splice', 'Dangling modifier', 'Passive voice', 'Misspelling'], answer: 1, why: 'The sentence implies the trees were beautiful while they (the trees) were walking down the street.' ] },
+        { type: 'mcq', q: 'Which edit corrects this sentence: "Each of the students have a book."?', options: ['Each of the students having a book.', 'Each of the student has a book.', 'Each of the students has a book.', 'All of the student have books.'], answer: 2, why: '"Each" is singular and requires the singular verb "has".' ] },
+        { type: 'truefalse', q: 'True or False: Relying solely on a computer\'s grammar and spell checker is sufficient for a thorough edit.', answer: false, why: 'Automated checkers miss context-dependent errors, stylistic issues, and homophone mix-ups.' ] },
+        { type: 'fill', q: 'A run-on sentence occurs when two independent ________ are joined without proper punctuation or conjunctions.', answer: 'clauses', why: 'Independent clauses must be joined correctly.' ] },
+        { type: 'mcq', q: 'Which of the following strategies is best for catching missing words or typos?', options: ['Reading the text backward sentence by sentence.', 'Skimming quickly.', 'Focusing only on the first paragraph.', 'Using a larger font.'], answer: 0, why: 'Reading backward breaks the flow and forces the brain to focus on individual words and sentences rather than anticipating meaning.' ] }
+      ] }
+];
+
+
+
