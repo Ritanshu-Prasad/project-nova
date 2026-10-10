@@ -18,7 +18,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
   const [result, setResult] = useState<(QuizResult & { passed: boolean; nextId: string | null }) | null>(null);
   const progress = active.entry.modules[item.module.id];
   const nextModule = active.course.modules[item.moduleIndex + 1];
-  const draw = () => buildQuiz(item.pool, { min: LESSON_QUIZ.min, max: LESSON_QUIZ.max, timedFinale: false });
+  const draw = () => buildQuiz(item.pool, { min: LESSON_QUIZ.min, max: LESSON_QUIZ.max, timedFinale: false, prefer: (x) => !active.entry.skill.questionHistory?.[x.q.q] });
   const [quiz, setQuiz] = useState(draw);
   const n = quiz.questions.length;
   const formats = [...new Set(quiz.questions.map((x) => FORMAT_LABEL[x.q.type]))];

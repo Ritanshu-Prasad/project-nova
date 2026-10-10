@@ -1,4 +1,5 @@
 import { allEnglishTopics } from './templates/english_index';
+import { coreTopics } from './templates/core_topics';
 import type { Block, Course, Level, Module, Question, Topic, TopicKind, Panel } from './courseSchema';
 import { makeId } from './courseSchema';
 
@@ -158,7 +159,7 @@ const PANELS: Record<string, Panel[]> = {
     { title: 'Try this', body: 'Plot training and validation loss on one chart — the moment they split is where overfitting begins.' },
   ],
   'la-5': [
-    { title: 'Before you start', items: ['Adding and scaling vectors (topic 1.1)'] },
+    { title: 'Before you start', items: ['Adding and scaling vectors (Vectors module)'] },
     { title: 'Common mistakes', items: ['Thinking any two vectors span the plane — parallel ones don’t', 'Forgetting the zero vector is always in the span'] },
   ],
   'ai-1': [
@@ -168,10 +169,10 @@ const PANELS: Record<string, Panel[]> = {
   'ai-2': [
     { title: 'Common mistakes', items: ['Learning rate too high — the loss explodes', 'Reading one noisy batch as a trend', 'Forgetting to zero the gradients between steps'] },
     { title: 'Memory trick', body: 'Gradient points uphill, so we step against it: minus sign, small step, repeat.' },
-    { title: 'Before you start', items: ['What a derivative measures', 'Weights and biases (topic 1.1)'] },
+    { title: 'Before you start', items: ['Derivatives and gradients (Calculus for Learning)', 'Weights and biases (The Artificial Neuron)'] },
   ],
   'ai-3': [
-    { title: 'Before you start', items: ['The chain rule from calculus', 'One step of gradient descent (topic 1.2)'] },
+    { title: 'Before you start', items: ['The chain rule (Calculus for Learning)', 'What a loss function measures (Loss Functions)'] },
     { title: 'Common mistakes', items: ['Mixing up the forward and backward passes', 'Assuming backprop is a learning algorithm by itself — it only computes gradients'] },
   ],
   'ai-4': [
@@ -201,7 +202,7 @@ const PANELS: Record<string, Panel[]> = {
     { title: 'Memory trick', body: 'Dot product = “how much do these two point the same way?” Same way: big. Perpendicular: zero.' },
   ],
   'la-2': [
-    { title: 'Before you start', items: ['Vectors and the dot product (topic 1.1)'] },
+    { title: 'Before you start', items: ['Vectors and the dot product (Vectors; Dot Products & Angles)'] },
     { title: 'Common mistakes', items: ['Assuming AB = BA', 'Multiplying matrices whose sizes don’t match'] },
     { title: 'Where it’s used', items: ['Rotating and scaling images', '3D graphics in every video game', 'Every layer of a neural network'] },
   ],
@@ -210,7 +211,7 @@ const PANELS: Record<string, Panel[]> = {
     { title: 'Common mistakes', items: ['Forgetting the sign — a negative determinant means the space was flipped', 'Expecting a determinant for non-square matrices'] },
   ],
   'la-4': [
-    { title: 'Before you start', items: ['Matrix–vector multiplication (topic 1.2)', 'Determinants (topic 2.1)'] },
+    { title: 'Before you start', items: ['Matrices as transformations (Matrices as Transformations)', 'Determinants (Determinants module)'] },
     { title: 'Where it’s used', items: ['Google’s original PageRank', 'Principal component analysis (PCA)', 'Vibration analysis of bridges'] },
   ],
   'bio-1': [
@@ -652,80 +653,74 @@ const TEMPLATES: Template[] = [
  */
 const LAYOUTS: Record<string, { id: string; title: string; topics: string[] }[]> = {
   ai: [
-    { id: 'ai-m1', title: '1. Vectors & Matrices for ML', topics: ['ai-gen-1', 'ai-gen-2'] },
-    { id: 'ai-m2', title: '2. Calculus & Optimization', topics: ['ai-gen-3', 'ai-gen-4'] },
-    { id: 'ai-m3', title: '3. Probabilities & Weights', topics: ['ai-gen-5', 'ai-gen-6'] },
-    { id: 'ai-m4', title: '4. The Artificial Neuron', topics: ['ai-1', 'ai-2'] },
-    { id: 'ai-m5', title: '5. Forward Propagation', topics: ['ai-3', 'ai-gen-7'] },
-    { id: 'ai-m6', title: '6. Loss Functions Deep Dive', topics: ['ai-8', 'ai-gen-8'] },
-    { id: 'ai-m7', title: '7. Backpropagation', topics: ['ai-7', 'ai-gen-9'] },
-    { id: 'ai-m8', title: '8. Gradient Descent Variants', topics: ['ai-9', 'ai-gen-10'] },
-    { id: 'ai-m9', title: '9. Regularization & Dropout', topics: ['ai-gen-11', 'ai-gen-12'] },
-    { id: 'ai-m10', title: '10. Intro to Computer Vision', topics: ['ai-gen-13', 'ai-gen-14'] },
-    { id: 'ai-m11', title: '11. Convolutional Filters', topics: ['ai-10', 'ai-gen-15'] },
-    { id: 'ai-m12', title: '12. Pooling & Downsampling', topics: ['ai-11', 'ai-gen-16'] },
-    { id: 'ai-m13', title: '13. Advanced CNNs (ResNet)', topics: ['ai-12', 'ai-gen-17'] },
-    { id: 'ai-m14', title: '14. Sequential Data Basics', topics: ['ai-gen-18', 'ai-gen-19'] },
-    { id: 'ai-m15', title: '15. Recurrent Neural Networks', topics: ['ai-13', 'ai-gen-20'] },
-    { id: 'ai-m16', title: '16. LSTMs & Gates', topics: ['ai-14', 'ai-gen-21'] },
-    { id: 'ai-m17', title: '17. Seq2Seq & The Bottleneck', topics: ['ai-15', 'ai-16'] },
-    { id: 'ai-m18', title: '18. The Attention Mechanism', topics: ['ai-17', 'ai-18'] },
-    { id: 'ai-m19', title: '19. The Transformer Architecture', topics: ['ai-19', 'ai-gen-22'] },
-    { id: 'ai-m20', title: '20. LLMs & RLHF', topics: ['ai-20', 'ai-gen-23'] }
+    { id: 'ai-m1', title: 'Vectors & Matrices for ML', topics: ['ai-gen-1', 'ai-gen-2'] },
+    { id: 'ai-m2', title: 'Calculus for Learning', topics: ['ai-gen-3', 'ai-gen-4'] },
+    { id: 'ai-m3', title: 'Probability & Information', topics: ['ai-gen-5', 'ai-gen-6'] },
+    { id: 'ai-m4', title: 'The Artificial Neuron', topics: ['ai-1', 'ai-gen-7'] },
+    { id: 'ai-m5', title: 'Forward Propagation', topics: ['ai-core-1'] },
+    { id: 'ai-m6', title: 'Loss Functions', topics: ['ai-gen-8'] },
+    { id: 'ai-m7', title: 'Backpropagation', topics: ['ai-3', 'ai-gen-9'] },
+    { id: 'ai-m8', title: 'Gradient Descent', topics: ['ai-2', 'ai-gen-10'] },
+    { id: 'ai-m9', title: 'Regularization & Dropout', topics: ['ai-gen-11', 'ai-gen-12'] },
+    { id: 'ai-m10', title: 'Computer Vision Basics', topics: ['ai-gen-13', 'ai-gen-14'] },
+    { id: 'ai-m11', title: 'Convolutional Filters', topics: ['ai-core-2', 'ai-gen-15'] },
+    { id: 'ai-m12', title: 'Pooling & Downsampling', topics: ['ai-gen-16'] },
+    { id: 'ai-m13', title: 'Residual Networks (ResNet)', topics: ['ai-gen-17'] },
+    { id: 'ai-m14', title: 'Sequence Data Basics', topics: ['ai-gen-18', 'ai-gen-19'] },
+    { id: 'ai-m15', title: 'Recurrent Neural Networks', topics: ['ai-core-3', 'ai-gen-20'] },
+    { id: 'ai-m16', title: 'LSTMs & Gates', topics: ['ai-gen-21'] },
+    { id: 'ai-m17', title: 'Seq2Seq & the Bottleneck', topics: ['ai-core-4'] },
+    { id: 'ai-m18', title: 'The Attention Mechanism', topics: ['ai-4'] },
+    { id: 'ai-m19', title: 'The Transformer Architecture', topics: ['ai-core-5', 'ai-gen-22'] },
+    { id: 'ai-m20', title: 'LLMs & RLHF', topics: ['ai-core-6', 'ai-gen-23'] },
   ],
   react: [
-    { id: 'react-m1', title: '1. The Virtual DOM', topics: ['react-gen-1', 'react-gen-2'] },
-    { id: 'react-m2', title: '2. Fiber Architecture', topics: ['react-gen-3', 'react-gen-4'] },
-    { id: 'react-m3', title: '3. Component Lifecycle', topics: ['react-gen-5', 'react-gen-6'] },
-    { id: 'react-m4', title: '4. Hooks: useState & useEffect', topics: ['react-1', 'react-2'] },
-    { id: 'react-m5', title: '5. Hooks: useRef & DOM', topics: ['react-3', 'react-gen-7'] },
-    { id: 'react-m6', title: '6. Memoization & Performance', topics: ['react-4', 'react-gen-8'] },
-    { id: 'react-m7', title: '7. Custom Hooks Architecture', topics: ['react-gen-9', 'react-gen-10'] },
-    { id: 'react-m8', title: '8. Context API', topics: ['react-gen-11', 'react-gen-12'] },
-    { id: 'react-m9', title: '9. Higher-Order Components', topics: ['react-gen-13', 'react-gen-14'] },
-    { id: 'react-m10', title: '10. Render Props Pattern', topics: ['react-gen-15', 'react-gen-16'] },
-    { id: 'react-m11', title: '11. Compound Components', topics: ['react-gen-17', 'react-gen-18'] },
-    { id: 'react-m12', title: '12. State at Scale: Redux', topics: ['react-gen-19', 'react-gen-20'] },
-    { id: 'react-m13', title: '13. State at Scale: Zustand', topics: ['react-gen-21', 'react-gen-22'] },
-    { id: 'react-m14', title: '14. Server Components (RSC)', topics: ['react-gen-23', 'react-gen-24'] }
+    { id: 'react-m1', title: 'Thinking in React', topics: ['react-gen-1', 'react-gen-2'] },
+    { id: 'react-m2', title: 'The Virtual DOM & Reconciliation', topics: ['react-gen-3', 'react-gen-4'] },
+    { id: 'react-m3', title: 'Fiber & the Component Lifecycle', topics: ['react-gen-5', 'react-gen-6'] },
+    { id: 'react-m4', title: 'Composition', topics: ['react-1'] },
+    { id: 'react-m5', title: 'Effects with useEffect', topics: ['react-gen-7', 'react-gen-8'] },
+    { id: 'react-m6', title: 'Rules of Hooks & Custom Hooks', topics: ['react-gen-9', 'react-2', 'react-gen-10'] },
+    { id: 'react-m7', title: 'Sharing State with Context', topics: ['react-gen-11', 'react-3', 'react-gen-12'] },
+    { id: 'react-m8', title: 'Higher-Order Components & Render Props', topics: ['react-gen-13', 'react-gen-14'] },
+    { id: 'react-m9', title: 'Component APIs', topics: ['react-gen-15', 'react-gen-16'] },
+    { id: 'react-m10', title: 'Memoization & Performance', topics: ['react-4', 'react-gen-17', 'react-gen-18'] },
+    { id: 'react-m11', title: 'State at Scale: Redux & Zustand', topics: ['react-gen-19', 'react-gen-20'] },
+    { id: 'react-m12', title: 'Routing & Code Splitting', topics: ['react-gen-21', 'react-gen-22'] },
+    { id: 'react-m13', title: 'Server Components (RSC)', topics: ['react-gen-23', 'react-gen-24'] },
   ],
   linalg: [
-    { id: 'la-m1', title: '1. Intro to Vectors', topics: ['la-1', 'la-5'] },
-    { id: 'la-m2', title: '2. Dot Products & Angles', topics: ['la-17', 'la-gen-1'] },
-    { id: 'la-m3', title: '3. Cross Products & Areas', topics: ['la-gen-2', 'la-gen-3'] },
-    { id: 'la-m4', title: '4. Linear Combinations', topics: ['la-2', 'la-gen-4'] },
-    { id: 'la-m5', title: '5. Span & Vector Spaces', topics: ['la-gen-5', 'la-gen-6'] },
-    { id: 'la-m6', title: '6. Linear Independence', topics: ['la-6', 'la-gen-7'] },
-    { id: 'la-m7', title: '7. Basis & Dimension', topics: ['la-gen-8', 'la-gen-9'] },
-    { id: 'la-m8', title: '8. Matrices as Transformations', topics: ['la-3', 'la-7'] },
-    { id: 'la-m9', title: '9. Matrix Multiplication', topics: ['la-8', 'la-gen-10'] },
-    { id: 'la-m10', title: '10. Determinants', topics: ['la-10', 'la-11'] },
-    { id: 'la-m11', title: '11. Inverse Matrices', topics: ['la-9', 'la-gen-11'] },
-    { id: 'la-m12', title: '12. Column & Null Space', topics: ['la-12', 'la-13'] },
-    { id: 'la-m13', title: '13. Eigenvectors', topics: ['la-14', 'la-gen-12'] },
-    { id: 'la-m14', title: '14. Eigenvalues', topics: ['la-4', 'la-gen-13'] },
-    { id: 'la-m15', title: '15. Diagonalization', topics: ['la-15', 'la-gen-14'] },
-    { id: 'la-m16', title: '16. Singular Value Decomposition', topics: ['la-20', 'la-gen-15'] }
+    { id: 'la-m1', title: 'Vectors', topics: ['la-1'] },
+    { id: 'la-m2', title: 'Dot Products & Angles', topics: ['la-gen-1'] },
+    { id: 'la-m3', title: 'Cross Products & Areas', topics: ['la-gen-2', 'la-gen-3'] },
+    { id: 'la-m4', title: 'Linear Combinations & Span', topics: ['la-gen-4', 'la-gen-5'] },
+    { id: 'la-m5', title: 'Linear Independence & Basis', topics: ['la-gen-6', 'la-gen-7'] },
+    { id: 'la-m6', title: 'Matrices as Transformations', topics: ['la-2', 'la-gen-8', 'la-gen-9'] },
+    { id: 'la-m7', title: 'Matrix Multiplication', topics: ['la-gen-10'] },
+    { id: 'la-m8', title: 'Determinants', topics: ['la-3'] },
+    { id: 'la-m9', title: 'Inverse Matrices', topics: ['la-gen-11', 'la-core-1'] },
+    { id: 'la-m10', title: 'Column & Null Space', topics: ['la-core-2'] },
+    { id: 'la-m11', title: 'Eigenvectors & Eigenvalues', topics: ['la-4', 'la-gen-12', 'la-gen-13'] },
+    { id: 'la-m12', title: 'Diagonalization', topics: ['la-gen-14'] },
+    { id: 'la-m13', title: 'Singular Value Decomposition', topics: ['la-gen-15'] },
   ],
   bio: [
-    { id: 'bio-m1', title: '1. Chemistry of Life', topics: ['bio-gen-1', 'bio-gen-2'] },
-    { id: 'bio-m2', title: '2. Macromolecules', topics: ['bio-gen-3', 'bio-gen-4'] },
-    { id: 'bio-m3', title: '3. The Plasma Membrane', topics: ['bio-1', 'bio-gen-5'] },
-    { id: 'bio-m4', title: '4. Passive & Active Transport', topics: ['bio-gen-6', 'bio-gen-7'] },
-    { id: 'bio-m5', title: '5. The Nucleus & Ribosomes', topics: ['bio-2', 'bio-gen-8'] },
-    { id: 'bio-m6', title: '6. Endomembrane System', topics: ['bio-gen-9', 'bio-gen-10'] },
-    { id: 'bio-m7', title: '7. Cytoskeleton', topics: ['bio-gen-11', 'bio-gen-12'] },
-    { id: 'bio-m8', title: '8. Thermodynamics in Biology', topics: ['bio-gen-13', 'bio-gen-14'] },
-    { id: 'bio-m9', title: '9. Enzymes & Catalysis', topics: ['bio-gen-15', 'bio-gen-16'] },
-    { id: 'bio-m10', title: '10. Cellular Respiration Basics', topics: ['bio-3', 'bio-gen-17'] },
-    { id: 'bio-m11', title: '11. Krebs Cycle', topics: ['bio-gen-18', 'bio-gen-19'] },
-    { id: 'bio-m12', title: '12. Electron Transport Chain', topics: ['bio-gen-20', 'bio-gen-21'] },
-    { id: 'bio-m13', title: '13. Photosynthesis Basics', topics: ['bio-gen-22', 'bio-gen-23'] },
-    { id: 'bio-m14', title: '14. DNA Structure', topics: ['bio-gen-24', 'bio-gen-25'] },
-    { id: 'bio-m15', title: '15. DNA Replication', topics: ['bio-gen-26', 'bio-gen-27'] },
-    { id: 'bio-m16', title: '16. Transcription', topics: ['bio-gen-28', 'bio-gen-29'] },
-    { id: 'bio-m17', title: '17. Translation', topics: ['bio-gen-30', 'bio-gen-31'] },
-    { id: 'bio-m18', title: '18. Cell Cycle & Mitosis', topics: ['bio-4', 'bio-gen-32'] }
+    { id: 'bio-m1', title: 'Chemistry of Life', topics: ['bio-gen-1', 'bio-gen-2'] },
+    { id: 'bio-m2', title: 'Macromolecules', topics: ['bio-gen-3', 'bio-gen-4'] },
+    { id: 'bio-m3', title: 'The Plasma Membrane', topics: ['bio-1', 'bio-gen-5'] },
+    { id: 'bio-m4', title: 'Passive & Active Transport', topics: ['bio-gen-6', 'bio-gen-7'] },
+    { id: 'bio-m5', title: 'The Nucleus & Ribosomes', topics: ['bio-2', 'bio-gen-8', 'bio-gen-9'] },
+    { id: 'bio-m6', title: 'The Endomembrane System', topics: ['bio-gen-10', 'bio-gen-11', 'bio-gen-12'] },
+    { id: 'bio-m7', title: 'The Cytoskeleton', topics: ['bio-gen-13'] },
+    { id: 'bio-m8', title: 'Enzymes & Energy', topics: ['bio-gen-14', 'bio-gen-15', 'bio-gen-16'] },
+    { id: 'bio-m9', title: 'Cellular Respiration Basics', topics: ['bio-3', 'bio-gen-17'] },
+    { id: 'bio-m10', title: 'Pyruvate Oxidation & the Krebs Cycle', topics: ['bio-gen-18', 'bio-gen-19'] },
+    { id: 'bio-m11', title: 'The Electron Transport Chain', topics: ['bio-gen-20', 'bio-gen-21'] },
+    { id: 'bio-m12', title: 'Photosynthesis', topics: ['bio-gen-22', 'bio-gen-23'] },
+    { id: 'bio-m13', title: 'DNA Structure & Replication', topics: ['bio-gen-24', 'bio-gen-25', 'bio-gen-26'] },
+    { id: 'bio-m14', title: 'Transcription & RNA Processing', topics: ['bio-gen-27', 'bio-gen-28'] },
+    { id: 'bio-m15', title: 'Translation & Mutations', topics: ['bio-gen-29', 'bio-gen-30'] },
+    { id: 'bio-m16', title: 'The Cell Cycle & Mitosis', topics: ['bio-gen-31', 'bio-gen-32', 'bio-4'] },
   ],
   eng: [
     { id: 'eng-m1', title: '1. Nouns & Pronouns', topics: ['eng-1', 'eng-gen-1'] },
@@ -2359,7 +2354,7 @@ const EXTRA_TOPICS: Topic[] = [
 ];
 
 function fromTemplate(t: Template, objective: string, level: Level): Course {
-const pool = [...EXTRA_TOPICS, ...t.modules.flatMap((m) => m.topics)];
+const pool = [...EXTRA_TOPICS, ...coreTopics, ...t.modules.flatMap((m) => m.topics)];
   const layout = LAYOUTS[t.id];
   const modules: Module[] = layout
     ? layout.map((l) => ({ id: l.id, title: l.title, topics: l.topics.map((id) => pool.find((x) => x.id === id)).filter((x): x is Topic => !!x) }))

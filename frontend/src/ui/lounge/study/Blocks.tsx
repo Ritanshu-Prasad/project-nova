@@ -2,7 +2,18 @@ import { motion } from 'framer-motion';
 import { Check, Copy, FileText, Info, KeyRound, Lightbulb, ListChecks, ListOrdered, Sparkles, Table2, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Block } from '../../../core/courseSchema';
+import { prettyMath } from '../../../core/mathText';
 import { TYPE } from './typography';
+
+/** Inline emphasis in lesson text: **bold**, *italic* and `code`. */
+function rich(text: string): ReactNode[] {
+  return text.split(/((?<![\w*])\*\*[^*]+\*\*(?![\w*])|(?<![\w*])\*[^*\s][^*]*\*(?![\w*])|`[^`]+`)/g).map((part, i) => {
+    if (part.length > 4 && part.startsWith('**') && part.endsWith('**')) return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
+    if (part.length > 2 && part.startsWith('*') && part.endsWith('*')) return <em key={i} className="text-white">{part.slice(1, -1)}</em>;
+    if (part.length > 2 && part.startsWith('`') && part.endsWith('`')) return <code key={i} className="rounded bg-black/30 px-1 font-mono text-[0.95em] text-white">{part.slice(1, -1)}</code>;
+    return part;
+  });
+}
 
 function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-2xl border border-white/[0.07] bg-white/[0.035] p-5 ${className}`}>{children}</div>;
@@ -58,7 +69,7 @@ function BlockView({ b }: { b: Block }) {
           {b.title && <H>{b.title}</H>}
           {b.body.split(/\n\n+/).map((p, i) => (
             <p key={i} className={`mb-3 last:mb-0 ${TYPE.body}`}>
-              {p}
+              {rich(p)}
             </p>
           ))}
         </div>
@@ -67,7 +78,7 @@ function BlockView({ b }: { b: Block }) {
       return (
         <Card className="border-[rgb(var(--user-rgb)/0.3)]">
           <H icon={Sparkles}>Think of it like…</H>
-          <p className={TYPE.body}>{b.body}</p>
+          <p className={TYPE.body}>{rich(b.body)}</p>
         </Card>
       );
     case 'keyTerms':
@@ -78,7 +89,7 @@ function BlockView({ b }: { b: Block }) {
             {b.terms.map((t) => (
               <Card key={t.term} className="p-4!">
                 <p className={`${TYPE.body} font-semibold text-white!`}>{t.term}</p>
-                <p className={`mt-1 ${TYPE.body}`}>{t.def}</p>
+                <p className={`mt-1 ${TYPE.body}`}>{rich(t.def)}</p>
               </Card>
             ))}
           </div>
@@ -94,7 +105,7 @@ function BlockView({ b }: { b: Block }) {
                 <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-sm font-bold text-[var(--user-ink)]" style={{ background: 'var(--user)' }}>
                   {i + 1}
                 </span>
-                <span className={TYPE.body}>{s}</span>
+                <span className={TYPE.body}>{rich(s)}</span>
               </li>
             ))}
           </ol>
@@ -105,7 +116,7 @@ function BlockView({ b }: { b: Block }) {
     case 'formula':
       return (
         <Card>
-          <div className={`overflow-x-auto rounded-xl bg-black/30 px-4 py-3 ${TYPE.formula}`}>{b.expr}</div>
+          <div className={`overflow-x-auto rounded-xl bg-black/30 px-4 py-3 ${TYPE.formula}`}>{prettyMath(b.expr)}</div>
           {b.caption && <p className={`mt-3 ${TYPE.body}`}>{b.caption}</p>}
         </Card>
       );
@@ -141,7 +152,7 @@ function BlockView({ b }: { b: Block }) {
           <H icon={Lightbulb} color="#34d399">
             {b.title ?? 'Worked example'}
           </H>
-          <p className={TYPE.body}>{b.body}</p>
+          <p className={TYPE.body}>{rich(b.body)}</p>
         </Card>
       );
     case 'callout': {
@@ -151,7 +162,7 @@ function BlockView({ b }: { b: Block }) {
           <H icon={t.icon} color={t.color}>
             {t.label}
           </H>
-          <p className={TYPE.body}>{b.body}</p>
+          <p className={TYPE.body}>{rich(b.body)}</p>
         </div>
       );
     }
@@ -174,7 +185,7 @@ function BlockView({ b }: { b: Block }) {
           <ul className="space-y-1.5">
             {b.points.map((p) => (
               <li key={p} className={`flex gap-2 ${TYPE.body}`}>
-                <Check size={16} className="mt-1 shrink-0 text-emerald-300" /> {p}
+                <Check size={16} className="mt-1 shrink-0 text-emerald-300" /> {rich(p)}
               </li>
             ))}
           </ul>

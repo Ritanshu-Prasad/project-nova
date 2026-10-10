@@ -61,7 +61,10 @@ export async function generateCourse(req: GenerateRequest, progress: ProgressFn)
   // Templates are instant; pace the steps so the forge reads well.
   progress('read', 'Understanding your goal');
   await pause(500);
-  const course = courseFromObjective(req.objective, req.level);
+  // Demo lessons and question pools are large, so they load in their own chunk (plain templates if it fails).
+  const authored = await import('./templates/content').catch(() => null);
+  const base = courseFromObjective(req.objective, req.level);
+  const course = authored ? authored.withAuthoredContent(base) : base;
   progress('outline', 'Planning modules');
   await pause(500);
   progress('topics', `Building ${course.modules.reduce((n, m) => n + m.topics.length, 0)} topics`);

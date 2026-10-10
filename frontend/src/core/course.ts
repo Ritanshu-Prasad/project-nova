@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { create } from 'zustand';
 import { flatTopics, type Course, type Module, type PlacedTopic } from './courseSchema';
 import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
+import { tidyCourse } from './tidyCourse';
 
 export type { RatedQuestion } from './quizBuilder';
 
@@ -76,10 +77,11 @@ const freshSkill = (): CourseSkill => ({ mmr: START_MMR, history: [START_MMR], c
 function modulePool(course: Course, moduleIndex: number, topics: PlacedTopic[]): RatedQuestion[] {
   const mine = topics.filter((t) => t.moduleIndex === moduleIndex);
   const end = mine.length ? progressAt(mine[mine.length - 1].index, topics.length) : 0;
-  return [
-    ...(course.modules[moduleIndex].quiz ?? []).map((q) => ({ q, progress: end })),
-    ...mine.flatMap((t) => questionsFor(t, course).map((q) => ({ q, progress: progressAt(t.index, topics.length) }))),
-  ];
+  const rated = (t: PlacedTopic) => questionsFor(t, course).map((q) => ({ q, progress: progressAt(t.index, topics.length) }));
+  const pool = [...(course.modules[moduleIndex].quiz ?? []).map((q) => ({ q, progress: end })), ...mine.flatMap(rated)];
+  // A thin module borrows review questions from the module before it, so its lesson quiz still has enough.
+  if (pool.length < LESSON_QUIZ.min && moduleIndex > 0) pool.push(...topics.filter((t) => t.moduleIndex === moduleIndex - 1).flatMap(rated).slice(0, LESSON_QUIZ.min - pool.length + 1));
+  return pool;
 }
 
 export function outlineOf(course: Course): OutlineItem[] {
@@ -120,9 +122,13 @@ const progressAt = (index: number, count: number) => (count > 1 ? index / (count
 /** Modules the pilot has completed (passed their lesson quiz). */
 export const passedModules = (e: LibraryEntry) => e.course.modules.filter((m) => e.modules[m.id]?.passed);
 
-/** The hub quiz bank: every question from the modules the pilot has completed. */
+/** The hub quiz bank: every lesson and practice question from the modules the pilot has completed. */
 export function hubPool(e: LibraryEntry): RatedQuestion[] {
-  return outlineOf(e.course).flatMap((it) => (it.kind === 'quiz' && e.modules[it.module.id]?.passed ? it.pool : []));
+  const topics = flatTopics(e.course);
+  const practice = topics
+    .filter((t) => e.modules[e.course.modules[t.moduleIndex]?.id]?.passed)
+    .flatMap((t) => (t.practice ?? []).map((q) => ({ q, progress: progressAt(t.index, topics.length) })));
+  return [...outlineOf(e.course).flatMap((it) => (it.kind === 'quiz' && e.modules[it.module.id]?.passed ? it.pool : [])), ...practice];
 }
 
 /**
@@ -180,6 +186,7 @@ function load(): Saved | null {
     for (const e of Object.values(saved.library)) {
       e.modules ??= {};
       e.skill ??= freshSkill();
+      e.course = tidyCourse(e.course);
     }
     return saved;
   } catch {
@@ -208,7 +215,8 @@ export const useCourse = create<CourseState>()((set, get) => {
   return {
     ...initial,
 
-    addCourse: (course) => {
+    addCourse: (raw) => {
+      const course = tidyCourse(raw);
       const topics = flatTopics(course);
       const progress = Object.fromEntries(topics.map((t) => [t.id, { cleared: false, notes: '' }]));
       set({ activeId: course.id, library: { ...get().library, [course.id]: { course, progress, modules: {}, skill: freshSkill(), current: topics[0]?.id ?? '', updatedAt: Date.now() } } });
@@ -317,6 +325,17 @@ useCourse.subscribe((s) => {
   }
 });
 
+// Saved demo courses pick up the latest authored lessons and question pools, loaded in their own chunk after start-up.
+if (Object.values(initial.library).some((e) => e.course.source === 'template'))
+  void import('./templates/content')
+    .then(({ withAuthoredContent }) => {
+      const lib = useCourse.getState().library;
+      useCourse.setState({
+        library: Object.fromEntries(Object.entries(lib).map(([id, e]) => [id, e.course.source === 'template' ? { ...e, course: tidyCourse(withAuthoredContent(e.course)) } : e])),
+      });
+    })
+    .catch(() => {});
+
 const NO_SKILL: CourseSkill = freshSkill();
 
 /** The active course's skill (stable reference from the store). */
@@ -362,7 +381,7 @@ export function useActiveCourse(): ActiveCourse | null {
 export const levelOf = (xp: number) => 1 + Math.floor(xp / 150);
 export const levelProgress = (xp: number) => (xp % 150) / 150;
 
-/** Stable shuffled order for a question's options (templates store the correct option first). */
+/** A random order for a question's options (templates often store the correct option first) — memoise per question. */
 export function shuffledIndices(q: { q: string; options: string[] }): number[] {
   const idx = q.options.map((_, i) => i);
   for (let i = idx.length - 1; i > 0; i--) {

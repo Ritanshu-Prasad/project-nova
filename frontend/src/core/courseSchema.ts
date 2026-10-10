@@ -62,7 +62,10 @@ export interface Topic {
   kind: TopicKind;
   summary: string;
   lesson: Lesson;
+  /** Lesson-quiz questions (drawn for the end-of-module quiz and the hub quiz). */
   quiz: Question[];
+  /** Extra practice questions — only the hub quiz draws on these, so it has a large pool of unique questions. */
+  practice?: Question[];
 }
 
 export interface Module {
@@ -211,6 +214,7 @@ export function normalizeCourse(raw: unknown): Course {
                 .filter((x) => x.title && (x.items.length || x.body)),
             },
             quiz: arr<Record<string, unknown>>(t.quiz).map(normQuestion).filter((q): q is Question => q !== null),
+            practice: arr<Record<string, unknown>>(t.practice).map(normQuestion).filter((q): q is Question => q !== null),
           };
         })
         .filter((t) => t.lesson.blocks.length > 0),

@@ -102,7 +102,8 @@ export const useHubQuiz = create<State>()((set, get) => ({
   form: (e) => {
     const pool = hubPool(e);
     if (!pool.length) return null;
-    const built = buildQuiz(pool);
+    // Favour questions the pilot has not already answered correctly (repeats of those earn no MMR).
+    const built = buildQuiz(pool, { prefer: (x) => !e.skill.questionHistory?.[x.q.q] });
     const quiz: HubQuiz = { id: `hq-${Date.now().toString(36)}`, courseId: e.course.id, formedAt: Date.now(), title: coverage(e), questions: built.questions, limits: built.limits, seen: false };
     // Keep the archive bounded: the newest 12 per course.
     const mine = get().quizzes.filter((q) => q.courseId === e.course.id);

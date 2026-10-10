@@ -33,6 +33,7 @@ import { frontier, isDone, levelOf, useActiveCourse, useCourse, useSkill, type A
 import type { Block, PlacedTopic } from '../../../core/courseSchema';
 import { useHub } from '../../../core/hub';
 import { Z } from '../../../core/layers';
+import { prettyMath } from '../../../core/mathText';
 import { LESSON_QUIZ, quizSizeLabel } from '../../../core/quizBuilder';
 import { rankOf } from '../../../core/rank';
 import RankEmblem from '../RankEmblem';
@@ -388,7 +389,7 @@ function sectionsFor(topic: PlacedTopic, checklist: ReactNode): SectionDef[] {
       ),
     });
   const f = blocksOf(topic, 'formula');
-  if (f.length) out.push({ title: 'Formula list', icon: Sigma, count: f.length, body: <List mono items={f.map((x) => x.expr)} /> });
+  if (f.length) out.push({ title: 'Formula list', icon: Sigma, count: f.length, body: <List mono items={f.map((x) => prettyMath(x.expr))} /> });
   const code = blocksOf(topic, 'code');
   if (code.length) out.push({ title: 'Code snippets', icon: Braces, count: code.length, body: <List mono items={code.map((x) => x.code.split('\n')[0])} /> });
   const steps = blocksOf(topic, 'steps');
