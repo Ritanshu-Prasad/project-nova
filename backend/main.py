@@ -10,7 +10,13 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # sibling modules on serverless runtimes too
+from accounts import router as accounts_router  # noqa: E402
+
 app = FastAPI(title="Project Nova API")
+app.include_router(accounts_router)
 
 # Allow requests from our Vite frontend
 app.add_middleware(

@@ -1,3 +1,5 @@
+// First: clears the pre-accounts local pilot before any store reads localStorage.
+import './core/localPilot';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/oxanium';

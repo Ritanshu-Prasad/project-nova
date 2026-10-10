@@ -25,6 +25,7 @@ import { applyTheme } from './core/theme';
 import { useHubQuiz } from './core/hubQuiz';
 import { useCourse } from './core/course';
 import { useHub, useProfile } from './core/hub';
+import * as account from './core/account';
 
 /** The WebGL scene loads in its own chunk so the gate paints instantly. */
 const Experience = lazy(() => import('./three/Experience'));
@@ -41,11 +42,14 @@ export default function App() {
 
   useEffect(() => {
     const stop = director.startDirector();
-    // Returning pilot: skip the cinematic — straight to the cockpit with the course forge open.
+    // Returning pilot: skip the cinematic — straight to the lounge (the course forge if they have no course yet).
     if (useNova.getState().isLoggedIn) {
       director.debugJump('landed');
-      useNova.getState().setCurriculumOpen(true);
+      journey.enterLoungeNow();
+      if (!Object.keys(useCourse.getState().library).length) useNova.getState().setCurriculumOpen(true);
     }
+    // Confirms the remembered account and syncs its progress in the background.
+    void account.restoreSession();
     return stop;
   }, []);
   
@@ -119,7 +123,7 @@ function useAutoWake() {
 function useDevHooks() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile, hubQuiz: useHubQuiz };
+    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile, hubQuiz: useHubQuiz, account };
     const jump = new URLSearchParams(location.search).get('jump') as Phase | null;
     if (jump && PHASES.includes(jump)) director.debugJump(jump);
   }, []);

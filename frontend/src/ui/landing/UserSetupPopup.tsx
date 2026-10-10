@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { User, X, Check, Upload, PenTool } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAccount } from '../../core/account';
 import { audio } from '../../core/audio';
 import { Z } from '../../core/layers';
 import { useProfile } from '../../core/hub';
@@ -11,7 +12,10 @@ import { HudButton } from '../common/HudButton';
 export default function UserSetupPopup() {
   const phase = useNova((s) => s.phase);
   const open = useNova((s) => s.userSetupOpen);
-  const [username, setUsername] = useState('');
+  const accountName = useAccount((s) => s.user?.name ?? '');
+  // The Google first name is suggested until the pilot types their own callsign.
+  const [typed, setUsername] = useState<string | null>(null);
+  const username = typed ?? (accountName.trim().split(/\s+/)[0] ?? '').slice(0, 20);
   const [selectedAvatar, setSelectedAvatar] = useState<string>('default');
   const [themeColor, setThemeColor] = useState('#06b6d4'); // Default cyan
 

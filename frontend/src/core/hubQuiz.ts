@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
-import { activeOf, hubPool, passedModules, useCourse, type LibraryEntry, type RatedQuestion } from './course';
+import { activeOf, coveredTopics, hubPool, passedModules, useCourse, type LibraryEntry, type RatedQuestion } from './course';
 import { useHub, type Station } from './hub';
 import { useDeck } from './journey';
 import { buildQuiz } from './quizBuilder';
@@ -9,8 +9,9 @@ import { useNova } from './store';
 /**
  * The hub quiz — the big dashboard quiz (lesson quizzes at the end of each module are separate and small).
  *
- * - Locked until the pilot completes a module. From then on, quizzes form at random moments from everything
- *   in the completed modules, and wait until the pilot takes them (an alert, then a pill and the dock card).
+ * - Locked until the pilot completes a module. The first one forms soon after; each next one forms 12–24 h
+ *   (at random) after the last one was taken, and waits until the pilot takes it (an alert, a pill, the dock card).
+ * - Its questions come only from the topics the pilot had completed when it formed.
  * - 5–10 mixed questions; a full 10-question quiz ends with three timed questions.
  * - Heavy MMR both ways: within 24 h of forming, correct answers pay 2× (timed ones 2.5×); after that 1.75×
  *   (timed 2×). Wrong answers cost the same multiple — except timed questions, which never cost MMR.
@@ -22,8 +23,8 @@ export const HUB_QUIZ = {
   late: { regular: 1.75, timed: 2 },
   /** After a module is first completed, the next quiz forms within this random delay. */
   afterModule: [30_000, 90_000],
-  /** Random gap before another quiz forms once the last one has been taken. */
-  gap: [20 * 60_000, 60 * 60_000],
+  /** Random gap before another quiz forms once the last one has been taken — never sooner than the first value. */
+  gap: [12 * 3600_000, 24 * 3600_000],
 } as const;
 
 export interface HubQuiz {
@@ -88,8 +89,9 @@ function load(): Pick<State, 'quizzes' | 'nextAt'> {
   return { quizzes: [], nextAt: {} };
 }
 
+/** "Modules 1–3": the modules whose completed topics the quiz covers. */
 const coverage = (e: LibraryEntry) => {
-  const idx = passedModules(e).map((m) => e.course.modules.indexOf(m) + 1);
+  const idx = [...new Set(coveredTopics(e).map((t) => t.moduleIndex + 1))];
   if (!idx.length) return 'Review';
   return idx.length === 1 ? `Module ${idx[0]}` : `Modules ${idx[0]}–${idx[idx.length - 1]}`;
 };
@@ -112,7 +114,8 @@ export const useHubQuiz = create<State>()((set, get) => ({
     return quiz;
   },
 
-  schedule: (courseId, range) => set({ nextAt: { ...get().nextAt, [courseId]: Date.now() + rand(range) } }),
+  // Never brings a quiz forward: a gap already running after the last quiz is kept.
+  schedule: (courseId, range) => set({ nextAt: { ...get().nextAt, [courseId]: Math.max(Date.now() + rand(range), get().nextAt[courseId] ?? 0) } }),
 
   defer: (id) => set({ quizzes: get().quizzes.map((q) => (q.id === id ? { ...q, seen: true } : q)) }),
 
@@ -190,7 +193,10 @@ export function openHubQuiz() {
   useHub.getState().go('quiz');
 }
 
-/** Forms quizzes at random moments once a module is complete — never mid-quiz, only while aboard. */
+/** When the pilot last finished one of this course's quizzes (0 if never). */
+const lastTaken = (courseId: string) => Math.max(0, ...useHubQuiz.getState().quizzes.filter((q) => q.courseId === courseId).map((q) => q.result?.at ?? 0));
+
+/** Forms quizzes once a module is complete, at least 12 h apart — never mid-quiz, only while aboard. */
 export function useHubQuizScheduler() {
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -201,7 +207,7 @@ export function useHubQuizScheduler() {
       if (s.quizzes.some((q) => q.courseId === e.course.id && !q.result)) return;
       const at = s.nextAt[e.course.id];
       if (at === undefined) return s.schedule(e.course.id, HUB_QUIZ.afterModule);
-      if (Date.now() < at) return;
+      if (Date.now() < at || Date.now() < lastTaken(e.course.id) + HUB_QUIZ.gap[0]) return;
       if (useDeck.getState().deck !== 'lounge' || useNova.getState().curriculumOpen) return;
       const st = useHub.getState().station;
       if (st === 'quiz' || (st === 'lesson' && activeOf(e)?.item.kind === 'quiz')) return;

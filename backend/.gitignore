@@ -1,0 +1,4 @@
+# Local development account store (production uses Upstash Redis)
+.data/
+__pycache__/
+.env

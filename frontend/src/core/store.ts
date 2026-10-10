@@ -146,8 +146,9 @@ export const useNova = create<NovaState>()((set, get) => ({
   feedOpen: false,
   isTransitioning: false,
   
-  // DEV MODE OVERRIDE: Always start from the beginning on refresh
-  isLoggedIn: false, // readFlag('nova.isLoggedIn', false),
+  // A signed-in pilot with a profile skips the intro and starts in the lounge (see App.tsx).
+  isLoggedIn: readFlag('nova.isLoggedIn', false),
+  // DEV MODE OVERRIDE: the intro is never marked as seen.
   introSeen: false, // readFlag(LS_INTRO, false),
   
   themeColor: localStorage.getItem('nova.themeColor') || '#06b6d4',

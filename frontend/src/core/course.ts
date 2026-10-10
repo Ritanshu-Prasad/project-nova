@@ -122,13 +122,22 @@ const progressAt = (index: number, count: number) => (count > 1 ? index / (count
 /** Modules the pilot has completed (passed their lesson quiz). */
 export const passedModules = (e: LibraryEntry) => e.course.modules.filter((m) => e.modules[m.id]?.passed);
 
-/** The hub quiz bank: every lesson and practice question from the modules the pilot has completed. */
+/** Topics the pilot has completed so far. */
+export const coveredTopics = (e: LibraryEntry) => flatTopics(e.course).filter((t) => e.progress[t.id]?.cleared);
+
+/**
+ * The hub quiz bank, as of now: the lesson and practice questions of every topic the pilot has completed, plus the
+ * module-level questions of modules they have passed. Nothing from topics they haven't reached yet.
+ */
 export function hubPool(e: LibraryEntry): RatedQuestion[] {
   const topics = flatTopics(e.course);
-  const practice = topics
-    .filter((t) => e.modules[e.course.modules[t.moduleIndex]?.id]?.passed)
-    .flatMap((t) => (t.practice ?? []).map((q) => ({ q, progress: progressAt(t.index, topics.length) })));
-  return [...outlineOf(e.course).flatMap((it) => (it.kind === 'quiz' && e.modules[it.module.id]?.passed ? it.pool : [])), ...practice];
+  const rated = (t: PlacedTopic) => [...questionsFor(t, e.course), ...(t.practice ?? [])].map((q) => ({ q, progress: progressAt(t.index, topics.length) }));
+  const modules = e.course.modules.flatMap((m, mi) => {
+    if (!e.modules[m.id]?.passed || !m.quiz?.length) return [];
+    const last = topics.filter((t) => t.moduleIndex === mi).pop();
+    return m.quiz.map((q) => ({ q, progress: last ? progressAt(last.index, topics.length) : 0 }));
+  });
+  return [...modules, ...coveredTopics(e).flatMap(rated)];
 }
 
 /**
@@ -325,16 +334,22 @@ useCourse.subscribe((s) => {
   }
 });
 
-// Saved demo courses pick up the latest authored lessons and question pools, loaded in their own chunk after start-up.
-if (Object.values(initial.library).some((e) => e.course.source === 'template'))
-  void import('./templates/content')
-    .then(({ withAuthoredContent }) => {
-      const lib = useCourse.getState().library;
-      useCourse.setState({
-        library: Object.fromEntries(Object.entries(lib).map(([id, e]) => [id, e.course.source === 'template' ? { ...e, course: tidyCourse(withAuthoredContent(e.course)) } : e])),
-      });
-    })
-    .catch(() => {});
+/** Demo courses pick up the latest authored lessons and question pools, loaded in their own chunk. */
+export async function upgradeDemoCourses(): Promise<void> {
+  if (!Object.values(useCourse.getState().library).some((e) => e.course.source === 'template')) return;
+  try {
+    const { withAuthoredContent } = await import('./templates/content');
+    const lib = useCourse.getState().library;
+    useCourse.setState({
+      library: Object.fromEntries(Object.entries(lib).map(([id, e]) => [id, e.course.source === 'template' ? { ...e, course: tidyCourse(withAuthoredContent(e.course)) } : e])),
+    });
+  } catch {
+    /* chunk unavailable (offline) — the plain template lessons stay */
+  }
+}
+
+// Saved demo courses are upgraded right after start-up.
+void upgradeDemoCourses();
 
 const NO_SKILL: CourseSkill = freshSkill();
 

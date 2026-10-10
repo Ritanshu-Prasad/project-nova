@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Clapperboard, FileText, Library, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound } from 'lucide-react';
+import { Clapperboard, Cloud, CloudOff, FileText, Library, LogOut, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { signOut, useAccount, type SyncStatus } from '../../core/account';
 import { firstUncleared, levelOf, levelProgress, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
 import { flatTopics } from '../../core/courseSchema';
 import { openForge, relaunch, useHub, useProfile } from '../../core/hub';
@@ -326,10 +327,46 @@ export function ProfileSection() {
           <span className="block text-xs text-white/50">Watch the wake-up and launch again — you’ll land right back here.</span>
         </span>
       </button>
+      <AccountCard />
       <p className="flex items-start gap-2 text-xs text-white/40">
         <Sparkles size={13} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
         Psst — Pixel knows a secret: type L-A-U-N-C-H anywhere in the lounge.
       </p>
+    </div>
+  );
+}
+
+const SYNC_TEXT: Record<SyncStatus, string> = {
+  idle: 'Progress is saved to your account',
+  saving: 'Saving to your account…',
+  saved: 'All progress saved to your account',
+  offline: 'Offline — progress will save when you reconnect',
+};
+
+/** The Google account the pilot is signed in with, whether progress has reached it, and sign-out. */
+function AccountCard() {
+  const user = useAccount((s) => s.user);
+  const sync = useAccount((s) => s.sync);
+  if (!user) return null;
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+      {user.picture ? (
+        <img src={user.picture} alt="" referrerPolicy="no-referrer" className="size-9 shrink-0 rounded-full" />
+      ) : (
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/10 text-white/70">
+          <UserRound size={16} />
+        </span>
+      )}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-white">{user.email || user.name}</span>
+        <span className={`flex items-center gap-1.5 text-xs ${sync === 'offline' ? 'text-amber-300/80' : 'text-white/50'}`}>
+          {sync === 'offline' ? <CloudOff size={12} /> : <Cloud size={12} />}
+          {SYNC_TEXT[sync]}
+        </span>
+      </span>
+      <button type="button" onClick={() => void signOut()} className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-3 py-2 text-xs text-white/60 ring-1 ring-white/10 transition hover:text-white hover:ring-white/30">
+        <LogOut size={13} /> Sign out
+      </button>
     </div>
   );
 }

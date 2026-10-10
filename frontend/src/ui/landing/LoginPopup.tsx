@@ -1,9 +1,12 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { GOOGLE_CLIENT_ID, prepareGoogle, signInWithGoogle } from '../../core/account';
 import { audio } from '../../core/audio';
+import { useCourse } from '../../core/course';
+import { useProfile } from '../../core/hub';
 import { Z } from '../../core/layers';
-import { useDeck } from '../../core/journey';
+import { goToLounge, useDeck } from '../../core/journey';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
 import GoogleG from './GoogleG';
@@ -15,6 +18,8 @@ const AUTO_OPEN = 1.6;
 export default function LoginPopup() {
   const phase = useNova((s) => s.phase);
   const open = useNova((s) => s.loginOpen);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (phase !== 'landed' || useDeck.getState().deck !== 'cockpit') return;
@@ -24,6 +29,8 @@ export default function LoginPopup() {
 
   useEffect(() => {
     if (!open) return;
+    // Load Google's library now so the click can open its popup immediately.
+    if (GOOGLE_CLIENT_ID) prepareGoogle().catch(() => {});
     audio.play('chime');
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && useNova.getState().setLoginOpen(false);
     window.addEventListener('keydown', onKey);
@@ -31,10 +38,25 @@ export default function LoginPopup() {
   }, [open]);
 
   const close = () => useNova.getState().setLoginOpen(false);
-  const signIn = () => {
-    // Instantly bypass Google auth for local testing
-    close();
-    useNova.getState().setUserSetupOpen(true);
+  const signIn = async () => {
+    setError('');
+    setBusy(true);
+    try {
+      const r = await signInWithGoogle();
+      close();
+      if (r.hasProfile) {
+        // Returning pilot: progress is restored — straight to the lounge.
+        useNova.getState().setLoggedIn(true);
+        useNova.getState().notify({ kind: 'toast', title: 'Welcome back', lines: [`Progress restored, ${useProfile.getState().callsign}.`] });
+        goToLounge(() => {
+          if (!Object.keys(useCourse.getState().library).length) useNova.getState().setCurriculumOpen(true);
+        });
+      } else useNova.getState().setUserSetupOpen(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-in failed — try again');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -75,9 +97,14 @@ export default function LoginPopup() {
                 <div key={s} className="rounded-[2px] bg-blue-500/10 px-2 py-2 text-center ring-1 ring-inset ring-blue-400/25">{s}</div>
               ))}
             </div>
-            <HudButton variant="primary" size="lg" className="mt-6 w-full" icon={<GoogleG className="h-5 w-5" />} onClick={signIn} autoFocus>
-              Continue with Google
+            <HudButton variant="primary" size="lg" className="mt-6 w-full" icon={<GoogleG className="h-5 w-5" />} onClick={() => void signIn()} disabled={busy} autoFocus>
+              {busy ? 'Signing in…' : 'Continue with Google'}
             </HudButton>
+            {error && (
+              <p role="alert" className="mt-3 text-center text-xs leading-relaxed text-rose-300">
+                {error}
+              </p>
+            )}
             <button type="button" onClick={close} className="mt-3 w-full cursor-pointer py-2 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-blue-200/55 hover:text-white">
               Look around first
             </button>
