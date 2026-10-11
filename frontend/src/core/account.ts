@@ -64,6 +64,11 @@ export interface SignInResult {
 }
 
 export const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) || '';
+/**
+ * Real Google sign-in is switched off for now: "Continue with Google" goes straight to the profile step and progress
+ * stays in this browser. Set VITE_GOOGLE_AUTH=on (with the client ID and backend settings) to turn accounts back on.
+ */
+export const GOOGLE_AUTH_ENABLED = import.meta.env.VITE_GOOGLE_AUTH === 'on';
 
 const LS_SESSION = 'nova.session';
 const LS_SYNC = 'nova.sync';
@@ -91,7 +96,8 @@ const writeJSON = (key: string, v: unknown) => {
 const readSync = () => readJSON<LocalSync>(LS_SYNC);
 const writeSync = (s: LocalSync) => writeJSON(LS_SYNC, s);
 
-export const useAccount = create<AccountState>()(() => ({ user: readJSON<AccountUser>(LS_SESSION), sync: 'idle', syncedAt: null }));
+// With sign-in switched off, a remembered account is ignored (no session checks, no syncing).
+export const useAccount = create<AccountState>()(() => ({ user: GOOGLE_AUTH_ENABLED ? readJSON<AccountUser>(LS_SESSION) : null, sync: 'idle', syncedAt: null }));
 
 const setUser = (user: AccountUser | null) => {
   writeJSON(LS_SESSION, user);

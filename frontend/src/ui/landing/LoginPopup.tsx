@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { GOOGLE_CLIENT_ID, prepareGoogle, signInWithGoogle } from '../../core/account';
+import { GOOGLE_AUTH_ENABLED, GOOGLE_CLIENT_ID, prepareGoogle, signInWithGoogle } from '../../core/account';
 import { audio } from '../../core/audio';
 import { useCourse } from '../../core/course';
 import { useProfile } from '../../core/hub';
@@ -30,7 +30,7 @@ export default function LoginPopup() {
   useEffect(() => {
     if (!open) return;
     // Load Google's library now so the click can open its popup immediately.
-    if (GOOGLE_CLIENT_ID) prepareGoogle().catch(() => {});
+    if (GOOGLE_AUTH_ENABLED && GOOGLE_CLIENT_ID) prepareGoogle().catch(() => {});
     audio.play('chime');
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && useNova.getState().setLoginOpen(false);
     window.addEventListener('keydown', onKey);
@@ -39,6 +39,12 @@ export default function LoginPopup() {
 
   const close = () => useNova.getState().setLoginOpen(false);
   const signIn = async () => {
+    if (!GOOGLE_AUTH_ENABLED) {
+      // Google sign-in is switched off for now: straight on to the profile step.
+      close();
+      useNova.getState().setUserSetupOpen(true);
+      return;
+    }
     setError('');
     setBusy(true);
     try {
