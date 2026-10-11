@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Play, RotateCcw, Target, Trophy, X } from 'lucide-react';
+import { ArrowRight, Award, Check, Play, RotateCcw, Target, Trophy, X } from 'lucide-react';
 import { useState } from 'react';
 import { PASS_MARK, useCourse, type ActiveCourse, type OutlineItem } from '../../../core/course';
 import { buildQuiz, FORMAT_LABEL, LESSON_QUIZ } from '../../../core/quizBuilder';
@@ -103,6 +103,10 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
               ) : !result.passed ? (
                 <Btn variant="primary" icon={<RotateCcw size={15} />} onClick={retake}>
                   Try again
+                </Btn>
+              ) : active.entry.completedAt ? (
+                <Btn variant="primary" icon={<Award size={15} />} onClick={() => useCourse.getState().showGraduation(active.entry.course.id)}>
+                  View your certificate
                 </Btn>
               ) : null}
             </div>

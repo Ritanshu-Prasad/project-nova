@@ -12,6 +12,8 @@ export const PILOT_KEYS = [
   'nova.hubquiz.v1',
   'nova.tutor.v1',
   'nova.callsign',
+  'nova.avatar',
+  'nova.pilotId',
   'nova.themeColor',
   'nova.activeObjective',
   'nova.isLoggedIn',

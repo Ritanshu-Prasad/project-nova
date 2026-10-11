@@ -51,6 +51,7 @@ export const audio: AudioEngine = {
 import { createBus, MASTER_LEVEL, openCutoff, type Bus } from './audio/bus';
 import { CUE_MIN_GAP, CUES } from './audio/cues';
 import { rt } from './runtime';
+import { useSettings } from './settings';
 import { useNova } from './store';
 
 let ctx: AudioContext | null = null;
@@ -102,12 +103,20 @@ const engineImpl: AudioEngine = {
     try {
       if (!ctx) {
         ctx = new AudioContext();
-        bus = createBus(ctx, ctx.destination, { safetyClip: true, level: useNova.getState().soundOn ? MASTER_LEVEL : 0 });
+        bus = createBus(ctx, ctx.destination, { safetyClip: true, level: 0 });
         layers = buildLayers(bus);
-        useNova.subscribe((s, prev) => {
-          if (s.soundOn === prev.soundOn || !bus || !ctx) return;
-          bus.master.gain.setTargetAtTime(s.soundOn ? MASTER_LEVEL : 0, ctx.currentTime, 0.08);
-        });
+        // Mute, master volume and the ship / interface switches (Settings).
+        const applyLevels = () => {
+          if (!bus || !ctx) return;
+          const st = useSettings.getState();
+          const t = ctx.currentTime;
+          bus.master.gain.setTargetAtTime(useNova.getState().soundOn ? MASTER_LEVEL * st.volume : 0, t, 0.08);
+          bus.world.gain.setTargetAtTime(st.shipSounds ? 1 : 0, t, 0.08);
+          bus.head.gain.setTargetAtTime(st.uiSounds ? 1 : 0, t, 0.08);
+        };
+        applyLevels();
+        useNova.subscribe((s, prev) => s.soundOn !== prev.soundOn && applyLevels());
+        useSettings.subscribe(applyLevels);
         document.addEventListener('visibilitychange', () => {
           if (!ctx) return;
           if (document.hidden) void ctx.suspend();

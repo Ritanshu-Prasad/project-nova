@@ -70,7 +70,7 @@ export default function TutorChat({ active, variant = 'dock', onClose }: { activ
     if (!q.trim() || busy) return;
     if (!open && variant === 'dock') toggle();
     setText('');
-    void useTutor.getState().send(key, q, { course: active.course.title, module: active.course.modules[item.moduleIndex].title, topic: item.topic, rank: rankOf(mmr).label });
+    void useTutor.getState().send(key, q, { course: active.course.title, module: active.course.modules[item.moduleIndex].title, topic: item.topic, rank: rankOf(mmr).label, courseRef: active.course });
   };
 
   return (

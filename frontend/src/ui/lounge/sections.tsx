@@ -1,12 +1,16 @@
 import { motion } from 'framer-motion';
-import { Clapperboard, Cloud, CloudOff, FileText, Library, LogOut, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Award, Clapperboard, Cloud, CloudOff, Settings, FileText, Image as ImageIcon, Library, LogOut, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound, Users } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { signOut, useAccount, type SyncStatus } from '../../core/account';
 import { firstUncleared, levelOf, levelProgress, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
 import { flatTopics } from '../../core/courseSchema';
+import { courseKey, fetchBoard, type FleetBoard } from '../../core/fleet';
 import { openForge, relaunch, useHub, useProfile } from '../../core/hub';
 import { rankOf, TIERS } from '../../core/rank';
+import { useSettings } from '../../core/settings';
 import { useNova } from '../../core/store';
+import AvatarChooser from '../common/AvatarChooser';
+import PilotAvatar from '../common/PilotAvatar';
 import RankEmblem from './RankEmblem';
 import RocketProgress from './RocketProgress';
 
@@ -85,6 +89,7 @@ export function SkillJourneySection() {
       </div>
 
       {active && <CourseRoute active={active} />}
+      <FleetLeaderboard active={active} />
       <p className="flex items-start gap-2 text-sm text-white/55">
         <Sparkles size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
         Every course has its own ladder, scaled to its size. Lesson quizzes move MMR a little; hub quizzes move it a lot — ×2 within 24 h of arriving (timed questions ×2.5, and they never cost MMR), ×1.75 after that.
@@ -224,6 +229,7 @@ function CourseRoute({ active }: { active: ActiveCourse }) {
 
 export function ProfileSection() {
   const callsign = useProfile((s) => s.callsign) || 'Pilot';
+  const avatar = useProfile((s) => s.avatar);
   const themeColor = useNova((s) => s.themeColor);
   const stats = useCourse((s) => s.stats);
   const library = useCourse((s) => s.library);
@@ -241,9 +247,7 @@ export function ProfileSection() {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
-        <div className="grid size-16 shrink-0 place-items-center rounded-3xl font-display text-2xl font-bold text-[var(--user-ink)]" style={{ background: 'var(--user)', boxShadow: '0 0 30px rgb(var(--user-rgb) / 0.45)' }}>
-          {callsign.slice(0, 2).toUpperCase()}
-        </div>
+        <PilotAvatar size={64} />
         <div className="min-w-0">
           <div className="chip-label">
             <UserRound size={12} /> Pilot profile
@@ -299,6 +303,11 @@ export function ProfileSection() {
                       {pct}% · {r.label} · {e.course.modules.length} modules · {n} planets
                     </div>
                   </button>
+                  {e.completedAt && (
+                    <button type="button" aria-label={`Certificate for ${e.course.title}`} title="Certificate" onClick={() => useCourse.getState().showGraduation(e.course.id)} className="cursor-pointer rounded-lg p-1.5 text-amber-300/80 transition hover:bg-white/10 hover:text-amber-200">
+                      <Award size={15} />
+                    </button>
+                  )}
                   <button type="button" aria-label={`Remove ${e.course.title}`} onClick={() => window.confirm(`Remove “${e.course.title}” and its progress?`) && useCourse.getState().removeCourse(e.course.id)} className="cursor-pointer rounded-lg p-1.5 text-white/35 transition hover:bg-white/10 hover:text-rose-300">
                     <Trash2 size={14} />
                   </button>
@@ -318,6 +327,12 @@ export function ProfileSection() {
         </span>
         <input type="color" value={themeColor} onChange={(e) => useNova.getState().setThemeColor(e.target.value)} className="h-8 w-12 cursor-pointer rounded-lg border-0 bg-transparent" aria-label="Pick your colour" />
       </label>
+      <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.04] px-4 py-3">
+        <span className="flex items-center gap-2.5 text-sm text-white/85">
+          <ImageIcon size={16} style={{ color: 'var(--user)' }} /> Your avatar
+        </span>
+        <AvatarChooser compact value={avatar} onChange={(url) => useProfile.getState().setAvatar(url)} />
+      </div>
       <button type="button" onClick={relaunch} className="group flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:border-[var(--user)] hover:bg-white/[0.06]">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl transition-colors group-hover:text-[var(--user-ink)] group-hover:[background:var(--user)]" style={{ background: 'rgb(var(--user-rgb) / 0.16)', color: 'var(--user)' }}>
           <Clapperboard size={18} />
@@ -327,11 +342,79 @@ export function ProfileSection() {
           <span className="block text-xs text-white/50">Watch the wake-up and launch again — you’ll land right back here.</span>
         </span>
       </button>
+      <button type="button" onClick={() => useSettings.getState().setOpen(true)} className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl bg-white/[0.04] px-4 py-3 text-left text-sm text-white/85 transition hover:bg-white/[0.07]">
+        <Settings size={16} style={{ color: 'var(--user)' }} /> Settings
+        <span className="text-xs text-white/45">sound, motion, keyboard shortcuts</span>
+      </button>
       <AccountCard />
       <p className="flex items-start gap-2 text-xs text-white/40">
         <Sparkles size={13} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
         Psst — Pixel knows a secret: type L-A-U-N-C-H anywhere in the lounge.
       </p>
+    </div>
+  );
+}
+
+/** Other pilots' standings: everyone by XP, or the current demo course by MMR. */
+function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
+  const demo = active?.course.source === 'template' ? { key: courseKey(active.course.title), title: active.course.title } : null;
+  const [board, setBoard] = useState(demo?.key ?? 'global');
+  const [result, setResult] = useState<{ board: string; data?: FleetBoard; error?: string } | null>(null);
+  const loading = result?.board !== board;
+
+  useEffect(() => {
+    let live = true;
+    fetchBoard(board)
+      .then((data) => live && setResult({ board, data }))
+      .catch((e: unknown) => live && setResult({ board, error: e instanceof Error ? e.message : 'offline' }));
+    return () => {
+      live = false;
+    };
+  }, [board]);
+
+  const tabs = [{ key: 'global', label: 'All pilots · XP' }, ...(demo ? [{ key: demo.key, label: `${demo.title} · MMR` }] : [])];
+  const data = loading ? undefined : result?.data;
+  return (
+    <div className="rounded-2xl bg-white/[0.04] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Label icon={<Users size={12} />}>Fleet leaderboard</Label>
+        <div className="mb-2 flex overflow-hidden rounded-lg ring-1 ring-white/10" role="tablist" aria-label="Leaderboard">
+          {tabs.map((t) => (
+            <button key={t.key} type="button" role="tab" aria-selected={board === t.key} onClick={() => setBoard(t.key)} className={`max-w-56 cursor-pointer truncate px-3 py-1.5 text-xs font-semibold transition ${board === t.key ? 'bg-[rgb(var(--user-rgb)/0.2)] text-white' : 'text-white/55 hover:text-white'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {loading ? (
+        <p className="py-6 text-center text-sm text-white/45">Contacting the fleet…</p>
+      ) : result?.error ? (
+        <p className="py-5 text-center text-sm text-white/55">
+          {result.error === 'storage' ? 'The fleet leaderboard is offline until its storage is connected (Upstash Redis on Vercel).' : 'The fleet leaderboard is offline right now — your own journey above is always up to date.'}
+        </p>
+      ) : data && data.top.length ? (
+        <>
+          <p className="mb-2 text-xs text-white/55">{data.you ? `You’re #${data.you.rank} of ${data.pilots} pilot${data.pilots === 1 ? '' : 's'}` : `${data.pilots} pilot${data.pilots === 1 ? '' : 's'} on this board`}</p>
+          <ol className="space-y-1.5">
+            {data.top.slice(0, 20).map((r) => (
+              <li key={r.rank} className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${r.me ? 'bg-[rgb(var(--user-rgb)/0.14)] ring-1 ring-[rgb(var(--user-rgb)/0.45)]' : 'bg-white/[0.03]'}`}>
+                <span className={`w-6 text-right font-display font-bold ${r.rank <= 3 ? 'text-amber-300' : 'text-white/50'}`}>{r.rank}</span>
+                <span className="size-2.5 shrink-0 rounded-full" style={{ background: r.color }} aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate font-semibold text-white">
+                  {r.callsign}
+                  {r.me && <span className="ml-1.5 text-xs font-normal text-white/50">(you)</span>}
+                </span>
+                <span className="text-xs text-white/45">LV {r.level}</span>
+                <span className="w-20 text-right font-display font-bold text-white">
+                  {r.score.toLocaleString('en-IN')} <span className="text-[10px] font-normal text-white/45">{board === 'global' ? 'XP' : 'MMR'}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
+      ) : (
+        <p className="py-5 text-center text-sm text-white/55">No pilots on this board yet — finish a lesson and you’ll be the first.</p>
+      )}
     </div>
   );
 }

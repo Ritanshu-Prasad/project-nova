@@ -20,6 +20,7 @@ import LoginPopup from './ui/landing/LoginPopup';
 import PillarPanel from './ui/landing/PillarPanel';
 import UserSetupPopup from './ui/landing/UserSetupPopup';
 import CurriculumSetup from './ui/app/CurriculumSetup';
+import SettingsModal from './ui/hud/SettingsModal';
 import Hub from './ui/lounge/Hub';
 import { applyTheme } from './core/theme';
 import { useHubQuiz } from './core/hubQuiz';
@@ -85,6 +86,7 @@ export default function App() {
       <CurriculumSetup />
       <IntroUI />
       <TopBar />
+      <SettingsModal />
       <Eyelids />
       <Gate />
       <Notifications />

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { LogIn, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { LogIn, RotateCcw, Settings, Volume2, VolumeX } from 'lucide-react';
 import { audio } from '../../core/audio';
+import { useSettings } from '../../core/settings';
 import { BRAND, HERO } from '../../core/content';
 import { replayIntro } from '../../core/director';
 import { Z } from '../../core/layers';
@@ -90,6 +91,15 @@ export default function TopBar() {
             </motion.div>
           )}
         </AnimatePresence>
+        <HudButton
+          variant="ghost"
+          size="sm"
+          onClick={() => useSettings.getState().setOpen(true)}
+          aria-label="Settings"
+          title="Settings — sound, motion, shortcuts"
+          icon={<Settings className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
+          className="pointer-events-auto w-9 px-0!"
+        />
         <HudButton
           variant="ghost"
           size="sm"

@@ -1,6 +1,6 @@
 import json
 import os
-import shutil
+import uuid
 from typing import List, Literal
 
 import httpx
@@ -14,9 +14,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # sibling modules on serverless runtimes too
 from accounts import router as accounts_router  # noqa: E402
+from fleet import router as fleet_router  # noqa: E402
 
 app = FastAPI(title="Project Nova API")
 app.include_router(accounts_router)
+app.include_router(fleet_router)
 
 # Allow requests from our Vite frontend
 app.add_middleware(
@@ -37,37 +39,35 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 def read_root():
     return {"status": "System Online", "service": "Project Nova API"}
 
+AVATAR_TYPES = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "image/gif": ".gif"}
+AVATAR_MAX_BYTES = 5 * 1024 * 1024
+
+
+async def _store_avatar(file: UploadFile, prefix: str) -> dict:
+    """Saves an avatar under a random name (never the client's filename) — images only, up to 5 MB.
+    Note: on Vercel the disk is not permanent; the app itself keeps avatars inside the pilot profile."""
+    ext = AVATAR_TYPES.get(file.content_type or "")
+    if not ext:
+        raise HTTPException(415, "Avatar must be a PNG, JPEG, WebP or GIF image")
+    data = await file.read(AVATAR_MAX_BYTES + 1)
+    if len(data) > AVATAR_MAX_BYTES:
+        raise HTTPException(413, "Avatar is larger than 5 MB")
+    filename = f"{prefix}{uuid.uuid4().hex}{ext}"
+    with open(os.path.join(UPLOAD_DIR, filename), "wb") as buffer:
+        buffer.write(data)
+    return {"status": "success", "filename": filename, "url": f"/uploads/avatars/{filename}"}
+
+
 @app.post("/api/users/avatar/upload")
 async def upload_avatar(file: UploadFile = File(...)):
-    """
-    Endpoint to handle uploading an image file for a user's avatar.
-    """
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    # Return the URL path where the frontend can fetch the image
-    return {
-        "status": "success",
-        "filename": file.filename,
-        "url": f"/uploads/avatars/{file.filename}"
-    }
+    """An uploaded image for a user's avatar."""
+    return await _store_avatar(file, "")
+
 
 @app.post("/api/users/avatar/doodle")
 async def upload_doodle(file: UploadFile = File(...)):
-    """
-    Endpoint to handle uploading a custom doodle (usually sent as a base64 blob converted to file).
-    """
-    filename = f"doodle_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
-    return {
-        "status": "success",
-        "filename": filename,
-        "url": f"/uploads/avatars/{filename}"
-    }
+    """A drawn doodle avatar (sent as an image file)."""
+    return await _store_avatar(file, "doodle_")
 
 # ---------------------------------------------------------------------------
 # AI tutor — the lesson assistant in the study screen's side panel.
@@ -92,8 +92,11 @@ How to answer:
 - Help the learner understand THIS lesson. Prefer the lesson's own terms, examples and formulas.
 - Be encouraging and concise: short paragraphs or bullet lists, usually under 150 words.
 - Use `backticks` for formulas and code. Do not use LaTeX.
-- If asked to quiz them, ask one question at a time and wait for their answer.
-- If a question is off-topic, answer briefly and steer back to the lesson."""
+- If asked to quiz them, this is the Practice Arena: write NEW questions of your own from the lesson — never reuse
+  or reword the course's graded questions listed below. Ask one question at a time (multiple choice with options
+  A–D, or a short answer), wait for their reply, then say whether it is right and explain why in a sentence or two.
+  Practice answers earn no MMR, so it is a safe place to try.
+- If a question is off-topic, answer briefly and steer back to the lesson.{avoid}"""
 
 
 class ChatMessage(BaseModel):
@@ -107,11 +110,21 @@ class TutorContext(BaseModel):
     topic: str = ""
     lesson: str = ""
     rank: str = ""
+    # The course's graded questions for this topic — the Practice Arena must not reuse them.
+    avoid: List[str] = Field(default_factory=list, max_length=60)
 
 
 class TutorRequest(BaseModel):
     messages: List[ChatMessage]
     context: TutorContext
+
+
+def _avoid_block(questions: List[str]) -> str:
+    """The graded questions the Practice Arena must not reuse, appended to the system prompt."""
+    if not questions:
+        return ""
+    listed = "\n".join(f"- {q[:200]}" for q in questions[:40])
+    return f"\n\nGraded questions (do not ask these or close variants):\n{listed}"
 
 
 @app.post("/api/tutor/chat")
@@ -129,6 +142,7 @@ async def tutor_chat(req: TutorRequest):
         course=c.course or "-",
         rank=c.rank or "new pilot",
         lesson=c.lesson[:8000],
+        avoid=_avoid_block(c.avoid),
     )
     messages = [{"role": "system", "content": system}] + [m.model_dump() for m in req.messages[-12:]]
 

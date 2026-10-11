@@ -9,14 +9,20 @@ import { LESSON_QUIZ, quizSizeLabel } from '../../core/quizBuilder';
 import { rankOf } from '../../core/rank';
 import { useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
+import { actionFor, keyLabel, useSettings, type Action } from '../../core/settings';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
+import Graduation from './Graduation';
 import { HubQuizStation, QuizArrival, QuizPill } from './HubQuiz';
 import RankEmblem from './RankEmblem';
 import { ProfileSection, SkillJourneySection } from './sections';
 import StudyMode from './study/StudyMode';
 
 type DockKey = Station | 'new';
+
+/** Which shortcut (Settings → keyboard) opens each dock card. */
+const DOCK_ACTION: Record<DockKey, Action> = { hub: 'lesson', lesson: 'lesson', quiz: 'quiz', journey: 'journey', profile: 'profile', new: 'newCourse' };
+const ACTION_DOCK: Partial<Record<Action, DockKey>> = { lesson: 'lesson', quiz: 'quiz', journey: 'journey', profile: 'profile', newCourse: 'new' };
 
 /** Go to a station; Lesson resumes at the first unfinished item. */
 const choose = (key: DockKey) => {
@@ -49,6 +55,7 @@ export default function Hub() {
   const { pending } = useCourseQuizzes();
   const running = useHubQuiz((s) => !!s.run);
   const active = useActiveCourse();
+  const graduation = useCourse((s) => s.graduation);
   const visible = inLounge && !forgeOpen;
 
   useEffect(() => {
@@ -67,10 +74,10 @@ export default function Hub() {
       }
       const st = useHub.getState().station;
       if (e.key === 'Escape' && st !== 'hub') useHub.getState().go('hub');
-      if (st === 'hub') {
-        const keys: DockKey[] = ['lesson', 'quiz', 'journey', 'profile', 'new'];
-        const i = Number(e.key) - 1;
-        if (i >= 0 && i < keys.length) choose(keys[i]);
+      if (st === 'hub' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const action = actionFor(e.code);
+        const dock = action && ACTION_DOCK[action];
+        if (dock) choose(dock);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -96,6 +103,7 @@ export default function Hub() {
           {visible && active && pending && !running && station !== 'quiz' && (pending.seen ? <QuizPill key="pill" q={pending} /> : <QuizArrival key={pending.id} q={pending} />)}
         </AnimatePresence>
       </div>
+      <AnimatePresence>{inLounge && graduation && <Graduation key={graduation} />}</AnimatePresence>
     </>
   );
 }
@@ -356,6 +364,7 @@ const TIER = {
 } as const;
 
 function DockCard({ item: w }: { item: DockItem }) {
+  const keys = useSettings((s) => s.keys);
   const hero = w.tier === 1;
   return (
     <motion.button
@@ -380,7 +389,7 @@ function DockCard({ item: w }: { item: DockItem }) {
         )}
         <span className="hidden items-center gap-1.5 lg:flex">
           {w.badge && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${w.hot ? 'bg-amber-300 text-[#1a1203]' : 'bg-white/10 text-white/60'}`}>{w.badge}</span>}
-          <kbd className="rounded bg-white/10 px-1.5 font-mono text-[11px] text-white/50">{w.hotkey}</kbd>
+          <kbd className="rounded bg-white/10 px-1.5 font-mono text-[11px] text-white/50">{keyLabel(keys[DOCK_ACTION[w.key]])}</kbd>
         </span>
       </span>
       <span className="min-w-0 flex-1 lg:w-full lg:flex-none">

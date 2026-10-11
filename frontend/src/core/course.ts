@@ -47,6 +47,8 @@ export interface LibraryEntry {
   /** Outline item being studied: a topic id or `quiz:<moduleId>`. */
   current: string;
   updatedAt: number;
+  /** When the pilot finished every planet and module quiz (the graduation). */
+  completedAt?: number;
 }
 
 export interface Stats {
@@ -109,6 +111,12 @@ export function firstUncleared(e: LibraryEntry): number {
   const topics = flatTopics(e.course);
   const i = topics.findIndex((t) => !e.progress[t.id]?.cleared);
   return i < 0 ? topics.length : i;
+}
+
+/** Every planet cleared and every module quiz passed. */
+export function isComplete(e: LibraryEntry): boolean {
+  const outline = outlineOf(e.course);
+  return outline.length > 0 && frontier(e, outline) === outline.length;
 }
 
 export function isUnlocked(e: LibraryEntry, itemId: string, outline = outlineOf(e.course)): boolean {
@@ -182,6 +190,9 @@ interface CourseState {
   answer: (correct: boolean, opts?: AnswerOpts) => number;
   finishModuleQuiz: (moduleId: string, correct: number, total: number) => { passed: boolean; nextId: string | null };
   finishHubQuiz: (correct: number, total: number) => void;
+  /** Course whose graduation screen is open (opens by itself when a course is first completed). */
+  graduation: string | null;
+  showGraduation: (courseId: string | null) => void;
 }
 
 type Saved = Pick<CourseState, 'activeId' | 'library' | 'stats'>;
@@ -221,8 +232,19 @@ export const useCourse = create<CourseState>()((set, get) => {
     set({ stats: { ...s, xp: s.xp + xp, day, dayQuizzes: (s.day === day ? s.dayQuizzes : 0) + 1 } });
   };
 
+  /** The first time the active course is complete: stamp it and open the graduation screen. */
+  const markGraduation = () => {
+    const id = get().activeId;
+    const e = id ? get().library[id] : undefined;
+    if (!e || e.completedAt || !isComplete(e)) return;
+    patchActive((x) => ({ ...x, completedAt: Date.now() }));
+    set({ graduation: id });
+  };
+
   return {
     ...initial,
+    graduation: null,
+    showGraduation: (graduation) => set({ graduation }),
 
     addCourse: (raw) => {
       const course = tidyCourse(raw);
@@ -259,6 +281,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const first = !e.progress[topicId]?.cleared;
       patchActive((x) => ({ ...x, progress: { ...x.progress, [topicId]: { ...(x.progress[topicId] ?? { notes: '' }), cleared: true } } }));
       if (first) set({ stats: { ...get().stats, xp: get().stats.xp + 30 } });
+      markGraduation();
       const outline = outlineOf(e.course);
       const i = outline.findIndex((it) => it.id === topicId);
       return outline[i + 1]?.id ?? null;
@@ -316,6 +339,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const passed = score >= PASS_MARK;
       patchActive((x) => ({ ...x, modules: { ...x.modules, [moduleId]: { passed: prev.passed || passed, best: Math.max(prev.best, score), attempts: prev.attempts + 1 } } }));
       bumpDay(passed && !prev.passed ? 80 : 0);
+      markGraduation();
       const outline = outlineOf(e.course);
       const i = outline.findIndex((it) => it.id === `quiz:${moduleId}`);
       return { passed, nextId: outline[i + 1]?.id ?? null };

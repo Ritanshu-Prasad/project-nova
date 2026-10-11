@@ -191,3 +191,12 @@
     animation: none;
   }
 }
+
+/* Graduation screen: bits of light falling behind the certificate. */
+@keyframes nova-confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(540deg); opacity: 0.85; }
+}
+.nova-confetti { animation: nova-confetti-fall linear infinite; }
+@media (prefers-reduced-motion: reduce) { .nova-confetti { display: none; } }

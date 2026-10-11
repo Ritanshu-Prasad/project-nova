@@ -106,6 +106,43 @@ export function questionsFor(topic: PlacedTopic, course: Course): Question[] {
   return m.get(topic.id) ?? topic.quiz;
 }
 
+/**
+ * Practice Arena questions for the tutor chat: built fresh from the lesson's key terms, definitions and takeaways
+ * and worded differently from the graded ones. Anything equal to a graded question (lesson quiz, hub practice pool
+ * or the generated fallback bank) is left out, so practising in chat never spoils a quiz.
+ */
+export function practiceQuestions(t: PlacedTopic, course: Course): Question[] {
+  const topics = flatTopics(course);
+  const graded = new Set([...questionsFor(t, course), ...(t.practice ?? [])].map((q) => q.q));
+  // The lesson's own key terms read best; definitions lifted from the text only fill in for thin topics.
+  const termsOf = (x: PlacedTopic) => {
+    const key = blocksOf(x, 'keyTerms').flatMap((b) => b.terms);
+    return [...key, ...(key.length >= 3 ? [] : textDefinitions(x).map(({ term, def }) => ({ term, def })))].filter(
+      (v, i, a) => v.term.trim() && v.def.trim() && a.findIndex((w) => w.term.toLowerCase() === v.term.toLowerCase()) === i,
+    );
+  };
+  const mine = termsOf(t);
+  const others = topics.filter((x) => x.id !== t.id).flatMap(termsOf).filter((o) => !mine.some((m) => m.term.toLowerCase() === o.term.toLowerCase()));
+  const rand = Math.random;
+  const unique = (xs: string[]) => xs.filter((x, i) => xs.indexOf(x) === i);
+  const out: Question[] = [];
+  for (const k of mine) {
+    const pool = [...mine.filter((x) => x !== k), ...shuffle(others, rand)];
+    const terms = unique(pool.map((x) => x.term)).slice(0, 3);
+    if (terms.length >= 2) out.push({ type: 'mcq', q: `Practice: which term is being described? “${clip(k.def, 160)}”`, options: [k.term, ...terms], answer: 0, why: `${k.term} — ${k.def}`, difficulty: 1 });
+    const defs = unique(pool.map((x) => clip(x.def, 120))).filter((d) => d !== clip(k.def, 120)).slice(0, 3);
+    if (defs.length >= 2) out.push({ type: 'mcq', q: `Practice: what does “${k.term}” mean in “${t.title}”?`, options: [clip(k.def, 120), ...defs], answer: 0, why: `${k.term} — ${k.def}`, difficulty: 1 });
+  }
+  // Fill the gap in a takeaway: a key term that appears in one of the lesson's summary points.
+  for (const p of blocksOf(t, 'summary').flatMap((b) => b.points)) {
+    const k = mine.find((m) => m.term.length > 2 && new RegExp(`\\b${escapeRe(m.term)}\\b`, 'i').test(p));
+    if (!k) continue;
+    const q = `Practice — fill the gap: “${p.replace(new RegExp(`\\b${escapeRe(k.term)}\\b`, 'i'), '____')}”`;
+    out.push({ type: 'fill', q, answer: k.term, accept: [k.term.toLowerCase()], why: `The takeaway reads: “${p}”`, difficulty: 2 });
+  }
+  return out.filter((q) => !graded.has(q.q));
+}
+
 /** Deterministic per-topic randomness, so generated questions are stable between visits. */
 function seeded(key: string): () => number {
   let s = 2166136261;

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { shuffledIndices } from './course';
-import type { Block, PlacedTopic, Question } from './courseSchema';
+import type { Block, Course, PlacedTopic, Question } from './courseSchema';
+import { practiceQuestions, questionsFor } from './quizBuilder';
 
 /**
  * NOVA's lesson assistant. With the backend available (VITE_COURSE_API, or /api in production) it streams
@@ -12,6 +13,9 @@ import type { Block, PlacedTopic, Question } from './courseSchema';
  *
  * Otherwise (or if the call fails) an offline tutor answers from the lesson itself — explain, examples,
  * formulas, recaps and quick "quiz me" rounds it can mark.
+ *
+ * "Quiz me" is the Practice Arena: new questions, never the graded ones (the model is told which to avoid; the offline
+ * tutor builds its own from the lesson). Practice earns no MMR.
  */
 export interface ChatMsg {
   role: 'user' | 'assistant';
@@ -25,6 +29,8 @@ export interface TutorContext {
   module: string;
   topic: PlacedTopic;
   rank: string;
+  /** The whole course — the Practice Arena keeps clear of its graded questions and borrows distractors from it. */
+  courseRef?: Course;
 }
 
 const API = (import.meta.env.VITE_COURSE_API as string | undefined)?.replace(/\/$/, '') || '';
@@ -50,6 +56,11 @@ const load = (): Record<string, ChatMsg[]> => {
 
 /** A pending "quiz me" question per thread, so the offline tutor can mark the reply. */
 const pendingQuiz = new Map<string, Question>();
+/** Practice questions already asked per thread — each round brings a new one until the set runs out. */
+const asked = new Map<string, Set<string>>();
+
+/** The graded questions of a topic (lesson quiz, hub practice pool, generated fallback) as plain text. */
+const gradedStems = (t: PlacedTopic, course?: Course) => [...new Set([...(course ? questionsFor(t, course) : t.quiz), ...(t.practice ?? [])].map((q) => q.q))];
 
 export const useTutor = create<TutorState>()((set, get) => {
   const push = (key: string, msg: ChatMsg) => set({ threads: { ...get().threads, [key]: [...(get().threads[key] ?? []), msg].slice(-MAX_MSGS) } });
@@ -77,7 +88,7 @@ export const useTutor = create<TutorState>()((set, get) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: history.map(({ role, content }) => ({ role, content })),
-            context: { course: ctx.course, module: ctx.module, topic: ctx.topic.title, lesson: lessonText(ctx.topic), rank: ctx.rank },
+            context: { course: ctx.course, module: ctx.module, topic: ctx.topic.title, lesson: lessonText(ctx.topic), rank: ctx.rank, avoid: gradedStems(ctx.topic, ctx.courseRef).slice(0, 40) },
           }),
         });
         if (!res.ok || !res.body) throw new Error(`tutor ${res.status}`);
@@ -93,7 +104,7 @@ export const useTutor = create<TutorState>()((set, get) => {
         if (!last?.content.trim()) throw new Error('empty');
       } catch {
         // Offline tutor: answer from the lesson, revealed at a natural typing pace.
-        const answer = offlineAnswer(key, q, ctx.topic);
+        const answer = offlineAnswer(key, q, ctx.topic, ctx.courseRef);
         patchLast(key, (m) => ({ ...m, content: '', offline: true }));
         for (let i = 0; i < answer.length; i += 6) {
           await new Promise((r) => setTimeout(r, 12));
@@ -106,6 +117,7 @@ export const useTutor = create<TutorState>()((set, get) => {
 
     clear: (key) => {
       pendingQuiz.delete(key);
+      asked.delete(key);
       const { [key]: _gone, ...rest } = get().threads;
       void _gone;
       set({ threads: rest });
@@ -162,7 +174,7 @@ const words = (s: string) => s.toLowerCase().match(/[a-z0-9]+/g)?.filter((w) => 
 const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
-function offlineAnswer(key: string, q: string, t: PlacedTopic): string {
+function offlineAnswer(key: string, q: string, t: PlacedTopic, course?: Course): string {
   const ql = q.toLowerCase();
   const of = <T extends Block['type']>(type: T) => t.lesson.blocks.filter((b): b is Extract<Block, { type: T }> => b.type === type);
 
@@ -171,21 +183,28 @@ function offlineAnswer(key: string, q: string, t: PlacedTopic): string {
   if (pending) {
     pendingQuiz.delete(key);
     const ok = checkAnswer(pending, q);
-    if (ok !== null) return `${ok ? '**Correct!** Nice one.' : `**Not quite.** The answer is **${answerOf(pending)}**.`}${pending.why ? `\n\n${pending.why}` : ''}\n\nSay “quiz me” for another.`;
+    if (ok !== null) return `${ok ? '**Correct!** Nice one.' : `**Not quite.** The answer is **${answerOf(pending)}**.`}${pending.why ? `\n\n${pending.why}` : ''}\n\nSay “quiz me” for another practice question.`;
   }
 
   if (/quiz|test me|question for me|practice/.test(ql)) {
-    // Chat suits quick formats; code, ordering and matching live in the quiz screen.
-    const pool = t.quiz.filter((x) => x.type === 'mcq' || x.type === 'truefalse' || x.type === 'fill');
+    // Practice Arena: new questions from the lesson, never the graded ones. Chat suits quick formats.
+    const done = asked.get(key) ?? new Set<string>();
+    const all = course ? practiceQuestions(t, course) : [];
+    const fresh = all.filter((x) => !done.has(x.q));
+    if (!fresh.length) done.clear(); // every practice question asked: start the round again
+    const pool = fresh.length ? fresh : all;
     if (pool.length) {
       const raw = pick(pool);
+      done.add(raw.q);
+      asked.set(key, done);
       // Templates store the right option first — show them shuffled.
       const order = raw.type === 'mcq' ? shuffledIndices(raw) : [];
       const item: Question = raw.type === 'mcq' ? { ...raw, options: order.map((i) => raw.options[i]), answer: order.indexOf(raw.answer) } : raw;
       pendingQuiz.set(key, item);
       const opts = item.type === 'mcq' ? '\n' + item.options.map((o, i) => `- **${'ABCD'[i]}** ${o}`).join('\n') : item.type === 'truefalse' ? '\n- True\n- False' : '';
-      return `Here’s one:\n\n**${item.q}**${opts}\n\nReply with your answer and I’ll check it.`;
+      return `**Practice Arena** — no MMR here, so have a go:\n\n**${item.q.replace(/^Practice\s*[:—-]\s*(.)/, (_, c: string) => c.toUpperCase())}**${opts}\n\nReply with your answer and I’ll check it.`;
     }
+    return 'I can’t build a fresh practice question from this lesson — try the module quiz, or ask me to **explain it simply** or give an **example**.';
   }
   if (/simpl|eli5|easy|plain|confus|don.?t (get|understand)/.test(ql)) {
     return `In plain words: ${t.lesson.simple || t.summary}${of('analogy')[0] ? `\n\nThink of it like this: ${of('analogy')[0].body}` : ''}`;

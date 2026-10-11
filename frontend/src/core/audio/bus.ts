@@ -15,9 +15,9 @@ const REVERB_RETURN = 0.8;
 export interface Bus {
   ctx: BaseAudioContext;
   /** World sounds: ship, hangar, space. Muffled while the pilot is still waking up. */
-  world: AudioNode;
+  world: GainNode;
   /** "Inside the head": heartbeat, breath and the System's UI sounds. Never muffled. */
-  head: AudioNode;
+  head: GainNode;
   /** Reverb send; the return joins the world bus. */
   verb: AudioNode;
   /** Wake-up muffle on the world bus (steered by the layers from `rt.blur`). */

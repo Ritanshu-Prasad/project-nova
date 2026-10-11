@@ -3,6 +3,7 @@ import { audio } from './audio';
 import { setHolding, skipIntro, toggleSystem, wake } from './director';
 import { clamp, damp } from './math';
 import { rt } from './runtime';
+import { actionFor, resolveMotion } from './settings';
 import { INTRO_PHASES, SYSTEM_ORDER, useNova } from './store';
 
 const isTypingTarget = (el: EventTarget | null) =>
@@ -13,7 +14,7 @@ const DIGITS = ['Digit1', 'Digit2', 'Digit3'];
 /**
  * Global input, installed once by <App>:
  *  - mouse/pen position → head-look target (rt.lookX / rt.lookY); touch drag looks around and eases back
- *  - Space (hold) → launch charge · 1/2/3 → ship systems · M → mute · Enter → wake · Esc → skip intro / close panel
+ *  - Space (hold) → launch charge · 1/2/3 → ship systems · mute key (M by default, see Settings) · Enter → wake · Esc → skip intro / close panel
  *  - prefers-reduced-motion changes → store
  */
 export function useGlobalInput(): void {
@@ -72,16 +73,16 @@ export function useGlobalInput(): void {
         return;
       }
       if (e.repeat) return;
-      if (e.code === 'KeyM') {
+      // Pre-flight's 1/2/3 ship systems come first, whatever the shortcut settings say.
+      if (s.phase === 'preflight' && DIGITS.includes(e.code)) {
+        toggleSystem(SYSTEM_ORDER[DIGITS.indexOf(e.code)]);
+      } else if (actionFor(e.code) === 'mute') {
         s.toggleSound();
       } else if (e.code === 'Enter' && s.phase === 'gate') {
         wake();
       } else if (e.code === 'Escape') {
         if (s.activePillar !== null) s.setActivePillar(null);
         else if (INTRO_PHASES.includes(s.phase)) skipIntro();
-      } else if (s.phase === 'preflight') {
-        const i = DIGITS.indexOf(e.code);
-        if (i >= 0) toggleSystem(SYSTEM_ORDER[i]);
       }
     };
 
@@ -94,7 +95,7 @@ export function useGlobalInput(): void {
     const release = () => setHolding(false);
 
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onMotionPref = () => useNova.getState().setReducedMotion(media.matches);
+    const onMotionPref = () => useNova.getState().setReducedMotion(resolveMotion(media.matches));
 
     window.addEventListener('pointerdown', onPointerDown, { passive: true });
     window.addEventListener('pointermove', onPointerMove, { passive: true });

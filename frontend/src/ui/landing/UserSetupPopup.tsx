@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { User, X, Check, Upload, PenTool } from 'lucide-react';
+import { User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAccount } from '../../core/account';
 import { audio } from '../../core/audio';
@@ -7,6 +7,7 @@ import { Z } from '../../core/layers';
 import { useProfile } from '../../core/hub';
 import { useNova } from '../../core/store';
 import { applyTheme } from '../../core/theme';
+import AvatarChooser from '../common/AvatarChooser';
 import { HudButton } from '../common/HudButton';
 
 export default function UserSetupPopup() {
@@ -16,7 +17,7 @@ export default function UserSetupPopup() {
   // The Google first name is suggested until the pilot types their own callsign.
   const [typed, setUsername] = useState<string | null>(null);
   const username = typed ?? (accountName.trim().split(/\s+/)[0] ?? '').slice(0, 20);
-  const [selectedAvatar, setSelectedAvatar] = useState<string>('default');
+  const [avatar, setAvatar] = useState(() => useProfile.getState().avatar);
   const [themeColor, setThemeColor] = useState('#06b6d4'); // Default cyan
 
   useEffect(() => {
@@ -41,13 +42,12 @@ export default function UserSetupPopup() {
     close();
     useNova.getState().setThemeColor(themeColor);
     useProfile.getState().setCallsign(username.trim());
+    useProfile.getState().setAvatar(avatar);
     useNova.getState().setLoggedIn(true);
     
     setTimeout(() => {
       useNova.getState().setCurriculumOpen(true);
     }, 500); // Short delay to let the window fade out
-    
-    console.log("Setup complete:", { username, avatar: selectedAvatar, theme: themeColor });
   };
 
   return (
@@ -85,45 +85,8 @@ export default function UserSetupPopup() {
             <div className="mt-8 flex gap-8">
               {/* Avatar Selection Area */}
               <div className="flex-1">
-                <div className="hud-label mb-3">Avatar Image (Required)</div>
-                <div className="flex gap-4 items-center">
-                  
-                  {/* Default Silhouette */}
-                  <button 
-                    onClick={() => setSelectedAvatar('default')}
-                    className={`relative flex flex-col items-center justify-center w-16 h-16 rounded-sm ring-1 ring-inset transition-all ${
-                      selectedAvatar === 'default' ? 'ring-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)] bg-emerald-900/20' : 'ring-blue-500/30 hover:ring-blue-400/60 bg-blue-900/10'
-                    }`}
-                  >
-                    <User size={24} className={selectedAvatar === 'default' ? 'text-emerald-400' : 'text-blue-400/60'} />
-                    <span className="text-[9px] font-mono mt-1 text-blue-200/60">DEFAULT</span>
-                    {selectedAvatar === 'default' && <Check size={14} className="absolute -top-2 -right-2 text-emerald-400" />}
-                  </button>
-
-                  {/* Option: Upload */}
-                  <button 
-                    onClick={() => setSelectedAvatar('upload')}
-                    className={`relative flex flex-col items-center justify-center w-16 h-16 rounded-sm ring-1 ring-inset transition-all ${
-                      selectedAvatar === 'upload' ? 'ring-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)] bg-emerald-900/20' : 'ring-blue-500/30 hover:ring-blue-400/60 bg-blue-900/10'
-                    }`}
-                  >
-                    <Upload size={20} className={selectedAvatar === 'upload' ? 'text-emerald-400' : 'text-blue-400/60'} />
-                    <span className="text-[9px] font-mono mt-1 text-blue-200/60">UPLOAD</span>
-                    {selectedAvatar === 'upload' && <Check size={14} className="absolute -top-2 -right-2 text-emerald-400" />}
-                  </button>
-
-                  {/* Option: Doodle / Generate */}
-                  <button 
-                    onClick={() => setSelectedAvatar('doodle')}
-                    className={`relative flex flex-col items-center justify-center w-16 h-16 rounded-sm ring-1 ring-inset transition-all ${
-                      selectedAvatar === 'doodle' ? 'ring-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)] bg-emerald-900/20' : 'ring-blue-500/30 hover:ring-blue-400/60 bg-blue-900/10'
-                    }`}
-                  >
-                    <PenTool size={20} className={selectedAvatar === 'doodle' ? 'text-emerald-400' : 'text-blue-400/60'} />
-                    <span className="text-[9px] font-mono mt-1 text-blue-200/60">DOODLE</span>
-                    {selectedAvatar === 'doodle' && <Check size={14} className="absolute -top-2 -right-2 text-emerald-400" />}
-                  </button>
-                </div>
+                <div className="hud-label mb-3">Avatar</div>
+                <AvatarChooser value={avatar} onChange={setAvatar} />
               </div>
 
               {/* Theme Color Picker */}

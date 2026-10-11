@@ -40,7 +40,7 @@ export interface PilotSave {
   v: 1;
   course: { activeId: string | null; library: Record<string, LibraryEntry>; stats: Stats };
   hub: { quizzes: HubQuiz[]; nextAt: Record<string, number> };
-  profile: { callsign: string; themeColor: string; activeObjective: string | null };
+  profile: { callsign: string; avatar?: string; themeColor: string; activeObjective: string | null };
   tutor: Record<string, ChatMsg[]>;
 }
 
@@ -244,7 +244,7 @@ const EMPTY_SAVE: PilotSave = {
   v: 1,
   course: { activeId: null, library: {}, stats: freshStats() },
   hub: { quizzes: [], nextAt: {} },
-  profile: { callsign: '', themeColor: DEFAULT_COLOR, activeObjective: null },
+  profile: { callsign: '', avatar: '', themeColor: DEFAULT_COLOR, activeObjective: null },
   tutor: {},
 };
 
@@ -270,7 +270,7 @@ export function collectSave(): PilotSave {
     v: 1,
     course: { activeId: c.activeId, library: Object.fromEntries(Object.entries(c.library).map(([id, e]) => [id, slim(e)])), stats: c.stats },
     hub: { quizzes: h.quizzes, nextAt: h.nextAt },
-    profile: { callsign: useProfile.getState().callsign, themeColor: n.themeColor, activeObjective: n.activeObjective },
+    profile: { callsign: useProfile.getState().callsign, avatar: useProfile.getState().avatar, themeColor: n.themeColor, activeObjective: n.activeObjective },
     tutor: useTutor.getState().threads,
   };
 }
@@ -285,6 +285,7 @@ function applySave(save: PilotSave) {
     // After the courses: replaces any hub quiz the course change might have scheduled.
     useHubQuiz.setState({ quizzes: save.hub?.quizzes ?? [], nextAt: save.hub?.nextAt ?? {}, run: null });
     useProfile.getState().setCallsign(save.profile?.callsign ?? '');
+    useProfile.getState().setAvatar(save.profile?.avatar ?? '');
     useNova.getState().setThemeColor(save.profile?.themeColor || DEFAULT_COLOR);
     const objective = save.profile?.activeObjective ?? null;
     if (objective) useNova.getState().setActiveObjective(objective);
@@ -392,7 +393,7 @@ async function doPush(): Promise<void> {
 // Watch everything that belongs in the save.
 useCourse.subscribe((s, p) => (s.library !== p.library || s.stats !== p.stats || s.activeId !== p.activeId) && onLocalChange());
 useHubQuiz.subscribe((s, p) => (s.quizzes !== p.quizzes || s.nextAt !== p.nextAt) && onLocalChange());
-useProfile.subscribe((s, p) => s.callsign !== p.callsign && onLocalChange());
+useProfile.subscribe((s, p) => (s.callsign !== p.callsign || s.avatar !== p.avatar) && onLocalChange());
 useNova.subscribe((s, p) => (s.themeColor !== p.themeColor || s.activeObjective !== p.activeObjective) && onLocalChange());
 useTutor.subscribe((s, p) => s.threads !== p.threads && onLocalChange());
 

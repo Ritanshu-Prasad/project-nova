@@ -26,29 +26,42 @@ export const useHub = create<HubState>()((set) => ({
 }));
 
 const LS_CALLSIGN = 'nova.callsign';
+const LS_AVATAR = 'nova.avatar';
 
-const readCallsign = () => {
+const readLS = (key: string) => {
   try {
-    return localStorage.getItem(LS_CALLSIGN) ?? '';
+    return localStorage.getItem(key) ?? '';
   } catch {
     return '';
+  }
+};
+const writeLS = (key: string, value: string) => {
+  try {
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
+  } catch {
+    /* ignore */
   }
 };
 
 interface ProfileState {
   callsign: string;
+  /** The pilot's picture as a small image data URL (uploaded or doodled); '' = initials. */
+  avatar: string;
   setCallsign: (name: string) => void;
+  setAvatar: (dataUrl: string) => void;
 }
 
 export const useProfile = create<ProfileState>()((set) => ({
-  callsign: readCallsign(),
+  callsign: readLS(LS_CALLSIGN),
+  avatar: readLS(LS_AVATAR),
   setCallsign: (callsign) => {
-    try {
-      localStorage.setItem(LS_CALLSIGN, callsign);
-    } catch {
-      /* ignore */
-    }
+    writeLS(LS_CALLSIGN, callsign);
     set({ callsign });
+  },
+  setAvatar: (avatar) => {
+    writeLS(LS_AVATAR, avatar);
+    set({ avatar });
   },
 }));
 
