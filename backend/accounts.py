@@ -22,16 +22,23 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import time
 from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request, Response
+from pydantic import BaseModel, Field, field_validator
+from typing import Any, Dict, List, Literal, Optional
 
 router = APIRouter()
 
 ON_VERCEL = bool(os.getenv("VERCEL"))
+ENVIRONMENT = os.getenv("ENVIRONMENT", os.getenv("ENV", "development" if not ON_VERCEL else "production")).lower()
+IS_PRODUCTION = ENVIRONMENT == "production" or ON_VERCEL
+DEV_EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+
 COOKIE = "nova_session"
 SESSION_DAYS = 30
 # Vercel functions accept request bodies up to 4.5 MB; leave headroom.
@@ -118,16 +125,68 @@ def _save_key(sub: str) -> str:
 
 # ── Sessions ───────────────────────────────────────────────────────────────
 
-_dev_secret = secrets.token_urlsafe(32)
+
+def _validate_session_secret_at_startup() -> None:
+    """Fails fast on startup if production environment lacks a cryptographically sound secret."""
+    if IS_PRODUCTION:
+        s = os.getenv("SESSION_SECRET")
+        if not s:
+            raise RuntimeError(
+                "CRITICAL SECURITY CONFIGURATION ERROR: SESSION_SECRET is not configured! "
+                "A cryptographically strong SESSION_SECRET (at least 32 characters) is required in production."
+            )
+        s = s.strip()
+        if len(s) < 32:
+            raise RuntimeError(
+                "CRITICAL SECURITY CONFIGURATION ERROR: SESSION_SECRET is too short! "
+                "It must be at least 32 characters long to ensure cryptographic integrity."
+            )
+        if s.lower() in {"secret", "changeme", "default", "session_secret", "12345678901234567890123456789012"}:
+            raise RuntimeError(
+                "CRITICAL SECURITY CONFIGURATION ERROR: SESSION_SECRET uses an insecure default value! "
+                "Set a random, high-entropy secret (e.g., using `openssl rand -hex 32`)."
+            )
+
+
+def _get_dev_secret() -> str:
+    """Retrieves or generates a persistent development secret saved in .data/dev_session_secret.txt.
+    Prevents session drops across multiple Uvicorn worker processes and live server reloads."""
+    secret_file = Path(__file__).parent / ".data" / "dev_session_secret.txt"
+    try:
+        if secret_file.exists():
+            content = secret_file.read_text("utf-8").strip()
+            if len(content) >= 32:
+                return content
+    except OSError:
+        pass
+    new_secret = secrets.token_urlsafe(32)
+    try:
+        secret_file.parent.mkdir(parents=True, exist_ok=True)
+        secret_file.write_text(new_secret, "utf-8")
+        try:
+            os.chmod(secret_file, 0o600)
+        except OSError:
+            pass
+        return new_secret
+    except OSError:
+        return new_secret
+
+
+_validate_session_secret_at_startup()
+_dev_secret: str = _get_dev_secret() if not IS_PRODUCTION else ""
 
 
 def _secret() -> bytes:
     s = os.getenv("SESSION_SECRET")
     if s:
+        s = s.strip()
+        if len(s) < 32 and IS_PRODUCTION:
+            raise HTTPException(500, "SESSION_SECRET must be at least 32 characters long in production")
         return s.encode()
-    if ON_VERCEL:
-        raise HTTPException(503, "SESSION_SECRET is not configured")
-    return _dev_secret.encode()  # local only: sessions end when the server restarts
+    if IS_PRODUCTION:
+        raise HTTPException(503, "SESSION_SECRET is not configured (required in production)")
+    return _dev_secret.encode()
+
 
 
 def _b64(b: bytes) -> str:
@@ -166,7 +225,7 @@ def _set_session(response: Response, request: Request, sub: str) -> None:
         _sign(sub),
         max_age=SESSION_DAYS * 86400,
         httponly=True,
-        secure=request.url.scheme == "https" or ON_VERCEL,
+        secure=request.url.scheme == "https" or IS_PRODUCTION,
         samesite="lax",
         path="/",
     )
@@ -262,14 +321,20 @@ async def auth_google(request: Request, response: Response):
 
 @router.post("/api/auth/dev")
 async def auth_dev(request: Request, response: Response):
-    """Local testing only — a fake account without Google."""
-    if os.getenv("NOVA_DEV_LOGIN") != "1" or ON_VERCEL:
+    """Local development only — mock authentication strictly gated against production."""
+    if IS_PRODUCTION or os.getenv("NOVA_DEV_LOGIN") != "1":
         raise HTTPException(404, "Not found")
     _require_csrf(request)
     body = await request.json()
-    email = str(body.get("email") or "pilot@example.com")
+    if not isinstance(body, dict):
+        raise HTTPException(400, "Invalid JSON body")
+    email = str(body.get("email") or "pilot@example.com").strip().lower()
+    if not DEV_EMAIL_REGEX.match(email) or len(email) > 100:
+        raise HTTPException(400, "Invalid email format (max 100 characters)")
+    raw_name = str(body.get("name") or "Test Pilot").strip()
+    name = re.sub(r"[\x00-\x1f\x7f<>]", "", raw_name)[:50] or "Test Pilot"
     sub = f"dev:{email}"
-    _, is_new = await _upsert_user(sub, email, str(body.get("name") or "Test Pilot"), "")
+    _, is_new = await _upsert_user(sub, email, name, "")
     _set_session(response, request, sub)
     reply = await _account_reply(sub)
     return {**reply, "isNew": is_new}
@@ -294,24 +359,196 @@ async def get_progress(request: Request):
     return save or {"savedAt": None, "save": None}
 
 
+# ── Progress Schema Validation Models ─────────────────────────────────────────
+
+HEX_COLOR_REGEX = re.compile(r"^#[0-9a-fA-F]{3,8}$")
+
+
+class StatsSyncModel(BaseModel):
+    xp: int = Field(0, ge=0, le=10_000_000)
+    streak: int = Field(0, ge=0, le=10_000)
+    bestStreak: int = Field(0, ge=0, le=10_000)
+    correct: int = Field(0, ge=0, le=500_000)
+    answered: int = Field(0, ge=0, le=500_000)
+    day: Optional[str] = Field(None, max_length=20)
+    dayQuizzes: Optional[int] = Field(0, ge=0, le=1000)
+
+
+class TopicProgressModel(BaseModel):
+    cleared: bool = False
+    notes: str = Field("", max_length=5000)
+
+    @field_validator("notes")
+    @classmethod
+    def sanitize_notes(cls, v: str) -> str:
+        return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", str(v or "")).strip()[:5000]
+
+
+class ModuleProgressModel(BaseModel):
+    passed: bool = False
+    best: float = Field(0.0, ge=0.0, le=1.0)
+    attempts: int = Field(0, ge=0, le=1000)
+
+
+class CourseSkillModel(BaseModel):
+    mmr: float = Field(0.0, ge=0.0, le=10_000.0)
+    history: List[float] = Field(default_factory=list, max_length=100)
+    correct: int = Field(0, ge=0, le=500_000)
+    answered: int = Field(0, ge=0, le=500_000)
+    questionHistory: Optional[Dict[str, bool]] = None
+
+    @field_validator("questionHistory")
+    @classmethod
+    def limit_question_history(cls, v: Optional[Dict[str, bool]]) -> Optional[Dict[str, bool]]:
+        if v and len(v) > 200:
+            return dict(list(v.items())[:200])
+        return v
+
+
+class LibraryEntryModel(BaseModel):
+    course: Dict[str, Any]
+    progress: Dict[str, TopicProgressModel] = Field(default_factory=dict)
+    modules: Dict[str, ModuleProgressModel] = Field(default_factory=dict)
+    skill: Optional[CourseSkillModel] = None
+    current: str = Field("", max_length=100)
+    updatedAt: float = Field(0.0)
+    completedAt: Optional[float] = None
+
+    @field_validator("course")
+    @classmethod
+    def validate_course(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(v, dict):
+            raise ValueError("course must be an object")
+        if "__proto__" in v or "constructor" in v:
+            raise ValueError("Forbidden prototype pollution keys")
+        if not v.get("id"):
+            raise ValueError("course must contain an id")
+        return v
+
+
+class CourseSyncModel(BaseModel):
+    activeId: Optional[str] = Field(None, max_length=100)
+    library: Dict[str, LibraryEntryModel] = Field(default_factory=dict)
+    stats: StatsSyncModel = Field(default_factory=StatsSyncModel)
+
+    @field_validator("library")
+    @classmethod
+    def limit_library_size(cls, v: Dict[str, LibraryEntryModel]) -> Dict[str, LibraryEntryModel]:
+        if len(v) > 60:
+            raise ValueError("Maximum 60 courses allowed in library")
+        return v
+
+
+class HubQuizModel(BaseModel):
+    id: str = Field(..., max_length=100)
+    courseId: str = Field(..., max_length=100)
+    formedAt: float
+    title: str = Field("", max_length=200)
+    questions: List[Any] = Field(default_factory=list, max_length=50)
+    limits: List[Optional[float]] = Field(default_factory=list, max_length=50)
+    seen: bool = False
+    result: Optional[Dict[str, Any]] = None
+
+
+class HubSyncModel(BaseModel):
+    quizzes: List[HubQuizModel] = Field(default_factory=list, max_length=100)
+    nextAt: Dict[str, float] = Field(default_factory=dict)
+
+    @field_validator("nextAt")
+    @classmethod
+    def limit_next_at(cls, v: Dict[str, float]) -> Dict[str, float]:
+        if len(v) > 60:
+            return dict(list(v.items())[:60])
+        return v
+
+
+class ProfileSyncModel(BaseModel):
+    callsign: str = Field("", max_length=50)
+    avatar: Optional[str] = Field("", max_length=600_000)
+    themeColor: str = Field("#06b6d4", max_length=25)
+    activeObjective: Optional[str] = Field(None, max_length=200)
+
+    @field_validator("callsign")
+    @classmethod
+    def sanitize_callsign(cls, v: str) -> str:
+        return re.sub(r"[\x00-\x1f\x7f<>&\"']", "", str(v or "")).strip()[:50]
+
+    @field_validator("avatar")
+    @classmethod
+    def validate_avatar(cls, v: Optional[str]) -> str:
+        if not v:
+            return ""
+        s = str(v).strip()
+        if len(s) > 600_000:
+            raise ValueError("Avatar data exceeds maximum size (600KB)")
+        if s.startswith("data:image/") or s.startswith("http://") or s.startswith("https://") or s.startswith("/"):
+            return s
+        raise ValueError("Invalid avatar URI format")
+
+    @field_validator("themeColor")
+    @classmethod
+    def validate_color(cls, v: str) -> str:
+        s = str(v or "#06b6d4").strip()
+        if not HEX_COLOR_REGEX.match(s):
+            return "#06b6d4"
+        return s
+
+    @field_validator("activeObjective")
+    @classmethod
+    def sanitize_objective(cls, v: Optional[str]) -> Optional[str]:
+        if not v:
+            return None
+        return re.sub(r"[\x00-\x1f\x7f<>&\"']", "", str(v)).strip()[:200]
+
+
+class ChatMsgModel(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(..., max_length=10_000)
+    offline: Optional[bool] = None
+
+    @field_validator("content")
+    @classmethod
+    def sanitize_content(cls, v: str) -> str:
+        return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", str(v or ""))[:10_000]
+
+
+class PilotSaveModel(BaseModel):
+    v: Literal[1] = 1
+    course: CourseSyncModel = Field(default_factory=CourseSyncModel)
+    hub: HubSyncModel = Field(default_factory=HubSyncModel)
+    profile: ProfileSyncModel = Field(default_factory=ProfileSyncModel)
+    tutor: Dict[str, List[ChatMsgModel]] = Field(default_factory=dict)
+
+    @field_validator("tutor")
+    @classmethod
+    def limit_tutor_threads(cls, v: Dict[str, List[ChatMsgModel]]) -> Dict[str, List[ChatMsgModel]]:
+        if len(v) > 50:
+            v = dict(list(v.items())[:50])
+        return {k: msgs[-40:] if len(msgs) > 40 else msgs for k, msgs in v.items()}
+
+
+class ProgressPayload(BaseModel):
+    savedAt: float
+    base: Optional[float] = None
+    save: PilotSaveModel
+
+
 @router.put("/api/progress")
-async def put_progress(request: Request):
+async def put_progress(payload: ProgressPayload, request: Request):
     _require_csrf(request)
     sub = _current_sub(request)
-    raw = await request.body()
-    if len(raw) > MAX_SAVE_BYTES:
-        raise HTTPException(413, "Save is too large")
-    try:
-        body = json.loads(raw)
-    except ValueError:
-        raise HTTPException(400, "Invalid JSON")
-    saved_at = body.get("savedAt") if isinstance(body, dict) else None
-    save = body.get("save") if isinstance(body, dict) else None
-    if not isinstance(saved_at, (int, float)) or not isinstance(save, dict):
-        raise HTTPException(400, "Expected {savedAt: number, save: object}")
+
     current = await _load_json(_save_key(sub))
-    if current and current.get("savedAt") != body.get("base"):
+    if current and current.get("savedAt") != payload.base:
         # This copy wasn't made from the latest save (another device saved since); the client downloads that one.
         raise HTTPException(409, "A newer save exists")
-    await _store().set(_save_key(sub), json.dumps({"savedAt": saved_at, "save": save}))
-    return {"savedAt": saved_at}
+
+    # Serialize validated and sanitized model
+    save_dict = payload.save.model_dump()
+    data = json.dumps({"savedAt": payload.savedAt, "save": save_dict})
+    if len(data.encode("utf-8")) > MAX_SAVE_BYTES:
+        raise HTTPException(413, "Save is too large")
+
+    await _store().set(_save_key(sub), data)
+    return {"savedAt": payload.savedAt}
+

@@ -1,4 +1,7 @@
-fastapi
-uvicorn
-python-multipart
-httpx
+# Core Project Nova Backend Dependencies (Strictly Pinned for Reproducible, Secure Builds)
+fastapi==0.116.2
+uvicorn[standard]==0.34.0
+pydantic==2.11.9
+httpx==0.28.1
+
+# Note: python-multipart was pruned in FIX-003 (attack surface reduction after removing dangling uploads)
