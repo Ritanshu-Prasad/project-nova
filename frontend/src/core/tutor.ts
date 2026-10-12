@@ -85,7 +85,11 @@ export const useTutor = create<TutorState>()((set, get) => {
         if (!hasTutorApi) throw new Error('offline');
         const res = await fetch(`${API}/api/tutor/chat`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Nova': '1',
+          },
           body: JSON.stringify({
             messages: history.map(({ role, content }) => ({ role, content })),
             context: { course: ctx.course, module: ctx.module, topic: ctx.topic.title, lesson: lessonText(ctx.topic), rank: ctx.rank, avoid: gradedStems(ctx.topic, ctx.courseRef).slice(0, 40) },
