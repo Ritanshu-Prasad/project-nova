@@ -3,12 +3,13 @@
 Project NOVA - Automated GitHub Issue Publisher
 Reads all structured markdown issue specifications in .github/issues/ and publishes
 them directly to https://github.com/Ritanshu-Prasad/project-nova/issues via the GitHub REST API.
+Automatically detects and skips issues that already exist on GitHub.
 
 Usage:
     # 1. Test/validate all issues without publishing (Dry Run):
     python scripts/publish_github_issues.py --dry-run
 
-    # 2. Publish all issues using an environment variable:
+    # 2. Publish new issues using an environment variable:
     set GITHUB_TOKEN=ghp_yourPersonalAccessToken
     python scripts/publish_github_issues.py
 
@@ -69,6 +70,26 @@ def parse_issue_file(path: Path) -> dict:
     }
 
 
+def get_existing_issue_titles(token: str) -> set[str]:
+    """Fetches all existing issue titles to ensure idempotency."""
+    req = urllib.request.Request(
+        f"{API_URL}?state=all&per_page=100",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "Project-Nova-Issue-Publisher"
+        }
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            issues = json.loads(resp.read().decode("utf-8"))
+            return {i["title"].strip().lower() for i in issues if "title" in i}
+    except Exception as e:
+        print(f"[WARN] Could not fetch existing issues: {e}. Will attempt publishing all.")
+        return set()
+
+
 def publish_issue(issue_data: dict, token: str) -> str:
     """Publishes a single issue to GitHub via the REST API."""
     payload = {
@@ -115,12 +136,12 @@ def main():
 
     parsed_issues = [parse_issue_file(f) for f in issue_files]
 
-    print(f"[INFO] Found {len(parsed_issues)} issue specifications:")
+    print(f"[INFO] Found {len(parsed_issues)} issue specifications in directory:")
     for idx, issue in enumerate(parsed_issues, 1):
         print(f"  {idx}. [{', '.join(issue['labels'])}] {issue['title']} ({issue['file']})")
 
     if dry_run:
-        print("\n[SUCCESS] DRY RUN COMPLETE: All 7 issue files are valid and ready to publish.")
+        print("\n[SUCCESS] DRY RUN COMPLETE: All issue files are valid and ready to publish.")
         print("[INFO] To publish to GitHub, run without --dry-run and provide a GitHub Personal Access Token.")
         sys.exit(0)
 
@@ -139,10 +160,21 @@ def main():
         print("[ERROR] GitHub Token cannot be empty.")
         sys.exit(1)
 
-    print("\n[INFO] Publishing issues to GitHub...\n")
+    # Check existing issues to avoid duplicates
+    print("\n[INFO] Checking existing issues on GitHub...")
+    existing_titles = get_existing_issue_titles(token)
+    print(f"[INFO] Found {len(existing_titles)} existing issues on repository.")
+
+    print("\n[INFO] Publishing new issues to GitHub...\n")
     success_count = 0
+    skipped_count = 0
 
     for idx, issue in enumerate(parsed_issues, 1):
+        if issue["title"].strip().lower() in existing_titles:
+            print(f"[SKIP] Issue already exists: {issue['title']}")
+            skipped_count += 1
+            continue
+
         print(f"Publishing {idx}/{len(parsed_issues)}: {issue['title']}...", end=" ", flush=True)
         try:
             url = publish_issue(issue, token)
@@ -152,7 +184,7 @@ def main():
         except Exception as e:
             print(f"[FAIL] Error: {e}")
 
-    print(f"\n[SUMMARY] Finished: Successfully published {success_count}/{len(parsed_issues)} issues to {REPO_OWNER}/{REPO_NAME}.")
+    print(f"\n[SUMMARY] Finished: Created {success_count} new issues ({skipped_count} skipped) out of {len(parsed_issues)} total on {REPO_OWNER}/{REPO_NAME}.")
 
 
 if __name__ == "__main__":
