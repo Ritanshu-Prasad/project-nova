@@ -1,4 +1,5 @@
-# Local development account store (production uses Upstash Redis)
+# Local development account store and avatar uploads (production uses Upstash Redis and cloud/data storage)
 .data/
+uploads/
 __pycache__/
 .env
