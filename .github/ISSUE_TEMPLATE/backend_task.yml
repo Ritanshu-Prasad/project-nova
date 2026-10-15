@@ -1,0 +1,46 @@
+name: "Backend Task"
+description: "File a backend feature, API endpoint, or refactor task for Project NOVA"
+title: "[BACKEND]: "
+labels: ["backend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking on a backend task! Please fill out the details below.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Task Goal & Context
+      description: What needs to be built or updated?
+      placeholder: E.g., Implement POST /api/courses/generate with Nemotron model integration...
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical (Blocks hackathon submission/demo)
+        - High (Core feature)
+        - Medium (Enhancement / Reliability)
+        - Low (Polish / Optional)
+    validations:
+      required: true
+  - type: input
+    id: target_files
+    attributes:
+      label: Target Files / Endpoints
+      placeholder: E.g., backend/main.py, backend/accounts.py
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: List specific criteria that define when this task is complete.
+      value: |
+        - [ ] Endpoint returns 200 with valid schema
+        - [ ] Upstream errors handled gracefully (no 500 crash)
+        - [ ] Unit tests or curl verification commands pass
+    validations:
+      required: true
