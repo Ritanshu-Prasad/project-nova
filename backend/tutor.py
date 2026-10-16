@@ -22,6 +22,7 @@ LESSON_CHARS = 8000
 GRADED_SHOWN = 40
 GRADED_CHARS = 200
 LABEL_CHARS = 200
+MIN_LESSON_CHARS = 20
 STREAM_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 CHUNK_CHARS = 24
 GUARD_ATTEMPTS = 2
@@ -58,6 +59,8 @@ async def tutor_chat(body: TutorRequest):
         raise HTTPException(503, "Tutor model is not configured")
     if not body.messages or body.messages[-1].role != "user":
         raise HTTPException(422, "The last message must come from the user")
+    if len(body.context.lesson.strip()) < MIN_LESSON_CHARS:
+        raise HTTPException(422, "The tutor needs the lesson it is helping with")
 
     messages = [{"role": "system", "content": _system_prompt(body.context)}] + _history(body)
     if body.context.avoid and is_quiz_chat([m.content for m in body.messages if m.role == "user"]):

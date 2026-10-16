@@ -53,6 +53,8 @@ def make_pdf(pages, bookmarks=None) -> bytes:
 
 def reply_for(system: str, call_number: int) -> dict:
     """A valid model answer for whichever prompt was sent; every question list has its own distinct questions."""
+    if "review learning goals" in system:
+        return {"allowed": True, "reason": ""}
     if "Turn one part of a document" in system:
         return module_json()
     if "curriculum architect" in system:
@@ -65,12 +67,13 @@ def reply_for(system: str, call_number: int) -> dict:
 
 @pytest.fixture(autouse=True)
 def fresh_limits(monkeypatch):
-    """Every test starts with empty rate limits and caches, and no waiting between model retries."""
+    """Every test starts with empty rate limits and caches, no waiting between model retries and no goal check."""
     for limit in limits.ALL_LIMITS:
         limit.clear()
     for stored in cache.ALL_CACHES:
         stored.clear()
     monkeypatch.setattr(llm, "RETRY_DELAYS", ())
+    monkeypatch.setenv("NOVA_MODERATION", "off")
 
 
 @pytest.fixture

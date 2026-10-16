@@ -1,5 +1,6 @@
 import asyncio
 import io
+import time
 
 import pytest
 from fastapi import HTTPException, UploadFile
@@ -145,3 +146,49 @@ def test_sections_without_text_are_dropped():
 def test_section_text_joins_its_pages():
     section = split_sections(Document("a.pdf", pages_of("one", "two"), bookmarks=[("All", 1), ("End", 3)]))[0]
     assert section.text == "one\ntwo"
+
+
+# --- Limits ---
+
+def test_a_pdf_with_too_many_pages_is_413(pdf, monkeypatch):
+    monkeypatch.setenv("PDF_MAX_TOTAL_PAGES", "2")
+    assert status_of(upload("long.pdf", pdf(["a", "b", "c"]))) == 413
+
+
+def test_pages_are_counted_across_all_files(pdf, monkeypatch):
+    monkeypatch.setenv("PDF_MAX_TOTAL_PAGES", "3")
+    assert status_of(upload("a.pdf", pdf(["a", "b"])), upload("b.pdf", pdf(["c", "d"]))) == 413
+
+
+def test_the_page_limit_defaults_to_one_hundred(monkeypatch):
+    monkeypatch.delenv("PDF_MAX_TOTAL_PAGES", raising=False)
+    assert pdf_parser.max_pages() == 100
+
+
+def test_a_very_long_page_is_cut(pdf, monkeypatch):
+    monkeypatch.setattr(pdf_parser, "MAX_PAGE_CHARS", 10)
+    assert read(upload("a.pdf", pdf("abcdefghijklmnopqrstuvwxyz")))[0].pages[0].text == "abcdefghij"
+
+
+def test_a_pdf_that_takes_too_long_is_422(pdf, monkeypatch):
+    monkeypatch.setattr(pdf_parser, "PARSE_SECONDS", 0.05)
+    monkeypatch.setattr(pdf_parser, "_read_pdf", lambda name, data: time.sleep(0.3))
+    assert status_of(upload("slow.pdf", pdf("text"))) == 422
+
+
+def test_reading_a_pdf_does_not_block_other_work(pdf, monkeypatch):
+    monkeypatch.setattr(pdf_parser, "_read_pdf", lambda name, data: time.sleep(0.2) or Document(name, [Page(name, 1, "text")]))
+    ticks = []
+
+    async def ticker():
+        while True:
+            ticks.append(1)
+            await asyncio.sleep(0.01)
+
+    async def run():
+        task = asyncio.create_task(ticker())
+        await read_documents([upload("slow.pdf", pdf("text"))])
+        task.cancel()
+
+    asyncio.run(run())
+    assert len(ticks) >= 5

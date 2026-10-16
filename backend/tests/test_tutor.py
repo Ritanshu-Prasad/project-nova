@@ -120,7 +120,7 @@ def test_the_model_can_be_changed_with_an_environment_variable(client, upstream,
 def test_only_the_latest_messages_are_sent_after_the_system_prompt(client, upstream):
     seen = upstream(streaming("Hi"))
     history = [{"role": "user" if n % 2 == 0 else "assistant", "content": f"message {n}"} for n in range(21)]
-    client.post("/api/tutor/chat", json={"messages": history, "context": {}})
+    client.post("/api/tutor/chat", json={"messages": history, "context": {"lesson": "Bridges connect containers."}})
     messages = json.loads(seen[0].content)["messages"]
     assert messages[0]["role"] == "system" and len(messages) == 1 + tutor.HISTORY_MESSAGES
     assert messages[-1]["content"] == "message 20"
@@ -251,7 +251,7 @@ def test_the_checked_answer_arrives_in_small_pieces():
 
 def test_a_follow_up_in_a_quiz_conversation_is_checked_too(client, upstream):
     upstream(lambda request: completion("Which flag publishes a container port to the host?"))
-    body = {"messages": [{"role": "user", "content": "Quiz me"}, {"role": "assistant", "content": "Ready?"}, {"role": "user", "content": "Yes"}], "context": {"avoid": GRADED}}
+    body = {"messages": [{"role": "user", "content": "Quiz me"}, {"role": "assistant", "content": "Ready?"}, {"role": "user", "content": "Yes"}], "context": {"avoid": GRADED, "lesson": "Bridges connect containers."}}
     assert client.post("/api/tutor/chat", json=body).text == tutor.NO_FRESH_QUESTION
 
 
@@ -270,3 +270,14 @@ def test_quiz_requests_without_graded_questions_are_streamed(client, upstream):
 def test_a_model_error_during_a_quiz_chat_is_passed_on(client, upstream):
     upstream(lambda request: httpx.Response(500, text="boom"))
     assert quiz(client).status_code == 502
+
+
+def test_a_chat_without_a_lesson_is_rejected(client, upstream):
+    seen = upstream(streaming("Hi"))
+    for context in ({}, {"lesson": "   "}, {"lesson": "short"}):
+        assert client.post("/api/tutor/chat", json={"messages": [{"role": "user", "content": "Tell me a story"}], "context": context}).status_code == 422
+    assert seen == []
+
+
+def test_the_prompt_tells_the_tutor_to_stay_on_the_lesson():
+    assert "do not answer it" in tutor_system("Topic", "Module", "Course", "Probe", "Lesson text", [])

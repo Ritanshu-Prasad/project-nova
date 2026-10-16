@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import logging
 from typing import List
 
@@ -12,6 +13,7 @@ from course_requests import CourseRequest, Mode, Structure, TopicRequest
 from limits import COURSE_LIMIT, TOPIC_LIMIT
 from pdf_parser import Document, read_documents, split_sections
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
+from safety import check_goal
 from writing import keep_written, write_all_topics, write_module_quiz, write_topic
 
 router = APIRouter()
@@ -65,9 +67,9 @@ async def _course_from_goal(request: CourseRequest) -> Course:
     key = (request.level, request.objective.casefold())
     cached = COURSES.get(key)
     if cached:
-        logger.info("Course for %r served from the cache", request.objective)
+        logger.info("Course %s served from the cache", _fingerprint(request.objective))
         return cached.model_copy(update={"id": new_course_id(), "objective": request.objective})
-    outline = fit_outline(await plan_outline(request))
+    outline = fit_outline(await _while_checking(request.objective, plan_outline(request)))
     quizzes = await asyncio.gather(*(write_module_quiz(module, request) for module in outline.modules))
     course = assemble_lazy_course(outline, quizzes, request)
     COURSES.set(key, course)
@@ -82,3 +84,19 @@ async def _course_from_documents(request: CourseRequest, documents: List[Documen
     contexts = [build_topic_context(group, terms) for group in groups]
     outline, contents = keep_written(outline, await write_all_topics(outline, request, contexts))
     return assemble_course(outline, verify_sources(contents, documents), request, documents)
+
+
+async def _while_checking(goal: str, work):
+    """Runs `work` while the goal is checked, so the check adds no waiting; a refused goal cancels the work."""
+    check, job = asyncio.create_task(check_goal(goal)), asyncio.ensure_future(work)
+    try:
+        await check
+    except BaseException:
+        job.cancel()
+        raise
+    return await job
+
+
+def _fingerprint(text: str) -> str:
+    """A short stand-in for a goal in logs, so what learners type is not written to them."""
+    return hashlib.sha1(text.casefold().encode()).hexdigest()[:8]

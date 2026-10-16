@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from course_models import Level
-from prompts import sanitise, wrap_goal
+from prompts import sanitise, wrap_documents, wrap_goal
 
 Mode = Literal["goal", "documents"]
 Structure = Literal["chapters", "topics"]
@@ -47,4 +47,4 @@ def describe_request(request: CourseRequest, context: str) -> str:
     lines = [f"Build the course from these documents. Structure by {request.structure}."]
     if request.focus:
         lines.append(f"Focus on: {request.focus}")
-    return "\n".join(lines) + f"\n\nDocuments:\n{context}"
+    return "\n".join(lines) + f"\n\nDocuments:\n{wrap_documents(context)}"

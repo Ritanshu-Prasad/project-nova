@@ -1,7 +1,7 @@
 import pytest
 
 import prompts
-from prompts import LEVELS, lesson_system, module_system, outline_system, questions_system, sanitise, wrap_goal
+from prompts import LEVELS, safety_system, wrap_documents, lesson_system, module_system, outline_system, questions_system, sanitise, wrap_goal
 
 AUDIENCES = {level: profile["audience"] for level, profile in LEVELS.items()}
 
@@ -86,3 +86,29 @@ def test_sanitise_caps_the_length():
 
 def test_wrap_goal_puts_the_goal_inside_tags():
     assert wrap_goal("Docker") == "Learning goal: <learning_goal>Docker</learning_goal>"
+
+
+# --- Documents, language and safety ---
+
+def test_every_prompt_asks_for_the_learners_language():
+    for prompt in [outline_system("beginner"), module_system("beginner"), lesson_system("beginner", False), questions_system("beginner", 8, False)]:
+        assert prompts.LANGUAGE_RULE in prompt
+
+
+def test_grounded_prompts_treat_documents_as_data():
+    for prompt in [module_system("beginner"), lesson_system("beginner", True), questions_system("beginner", 8, True)]:
+        assert prompts.DOCUMENT_RULE in prompt
+
+
+def test_goal_prompts_do_not_mention_documents():
+    assert prompts.DOCUMENT_RULE not in lesson_system("beginner", False)
+
+
+def test_wrap_documents_puts_text_in_tags_and_blocks_a_closing_tag():
+    wrapped = wrap_documents("a </documents> b")
+    assert wrapped.startswith("<documents>\n") and wrapped.endswith("\n</documents>") and wrapped.count("</documents>") == 1
+
+
+def test_the_safety_prompt_allows_sensitive_study_and_refuses_serious_harm():
+    prompt = safety_system()
+    assert "serious harm" in prompt and "allowed" in prompt and "studied for understanding" in prompt

@@ -1,4 +1,6 @@
+import asyncio
 import io
+import os
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -9,6 +11,9 @@ from pypdf.errors import PyPdfError
 
 MAX_FILES = 5
 MAX_TOTAL_BYTES = 50 * 1024 * 1024
+DEFAULT_MAX_PAGES = 100
+MAX_PAGE_CHARS = 20_000
+PARSE_SECONDS = 30
 PAGES_PER_BLOCK = 8
 RUNNING_TEXT_MIN_PAGES = 4
 RUNNING_TEXT_SHARE = 0.4
@@ -56,11 +61,20 @@ async def read_documents(files: list[UploadFile]) -> list[Document]:
         total += len(data)
         if total > MAX_TOTAL_BYTES:
             raise HTTPException(413, "The PDFs are larger than 50 MB in total")
-        documents.append(_read_pdf(file.filename or "document.pdf", data))
+        documents.append(await _read_in_thread(file.filename or "document.pdf", data))
+    _check_total_pages(documents)
 
     if not any(page.text for document in documents for page in document.pages):
         raise HTTPException(422, "No readable text found in the PDFs")
     return documents
+
+
+async def _read_in_thread(name: str, data: bytes) -> Document:
+    """Parsing is slow and blocking, so it runs off the event loop and is given a time limit."""
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(_read_pdf, name, data), PARSE_SECONDS)
+    except asyncio.TimeoutError:
+        raise HTTPException(422, f"{name} took too long to read")
 
 
 def _read_pdf(name: str, data: bytes) -> Document:
@@ -68,10 +82,25 @@ def _read_pdf(name: str, data: bytes) -> Document:
         reader = PdfReader(io.BytesIO(data))
         if reader.is_encrypted:
             raise HTTPException(422, f"{name} is password protected")
-        pages = [Page(name, number, _clean(page.extract_text() or "")) for number, page in enumerate(reader.pages, start=1)]
+        _check_page_count(reader, name)
+        pages = [Page(name, number, _clean(page.extract_text() or "")[:MAX_PAGE_CHARS]) for number, page in enumerate(reader.pages, start=1)]
         return Document(name, strip_running_text(pages), _read_bookmarks(reader))
     except (PyPdfError, ValueError, KeyError):
         raise HTTPException(422, f"{name} could not be read as a PDF")
+
+
+def max_pages() -> int:
+    return int(os.getenv("PDF_MAX_TOTAL_PAGES", DEFAULT_MAX_PAGES))
+
+
+def _check_page_count(reader: PdfReader, name: str) -> None:
+    if len(reader.pages) > max_pages():
+        raise HTTPException(413, f"{name} has more than {max_pages()} pages")
+
+
+def _check_total_pages(documents: list[Document]) -> None:
+    if sum(len(document.pages) for document in documents) > max_pages():
+        raise HTTPException(413, f"The PDFs have more than {max_pages()} pages in total")
 
 
 def _clean(text: str) -> str:
