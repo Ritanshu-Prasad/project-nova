@@ -5,7 +5,7 @@ A goal you type is sent to the AI provider (Nebius) to write your course and to 
 
 ## Uploaded documents
 - PDFs are read on the server and their text is sent to the AI provider to write lessons and questions.
-- The text is used while your course is built and is not stored by NOVA afterwards.
+- The text of your pages is kept for 30 days under a secret key so the tutor can answer questions from your documents, and then deleted automatically. Removing the course in the app deletes it straight away (`DELETE /api/courses/documents/{key}`). Without a configured Redis store (local development) it is kept in memory only and disappears when the server restarts.
 - Limits: 5 files, 50 MB and 100 pages in total.
 
 ## Progress and accounts

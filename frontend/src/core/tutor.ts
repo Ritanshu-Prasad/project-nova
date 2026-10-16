@@ -88,7 +88,7 @@ export const useTutor = create<TutorState>()((set, get) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: history.map(({ role, content }) => ({ role, content })),
-            context: { course: ctx.course, module: ctx.module, topic: ctx.topic.title, lesson: lessonText(ctx.topic), rank: ctx.rank, avoid: gradedStems(ctx.topic, ctx.courseRef).slice(0, 40) },
+            context: { course: ctx.course, module: ctx.module, topic: ctx.topic.title, lesson: lessonText(ctx.topic), rank: ctx.rank, avoid: gradedStems(ctx.topic, ctx.courseRef).slice(0, 40), documentsKey: ctx.courseRef?.meta?.documentsKey ?? '' },
           }),
         });
         if (!res.ok || !res.body) throw new Error(`tutor ${res.status}`);

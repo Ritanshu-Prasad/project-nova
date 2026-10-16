@@ -127,6 +127,11 @@ export async function fetchModuleQuiz(req: { level: Level; objective: string; mo
   return (Array.isArray(quiz) ? quiz : []).map(normQuestion).filter((q: Question | null): q is Question => q !== null);
 }
 
+/** Asks the backend to delete the page text it kept for a document course's tutor. Failing is fine: it expires anyway. */
+export async function forgetDocuments(key: string): Promise<void> {
+  await fetch(`${API}/api/courses/documents/${encodeURIComponent(key)}`, { method: 'DELETE' }).catch(() => undefined);
+}
+
 export async function generateCourse(req: GenerateRequest, progress: ProgressFn): Promise<GenerateResult> {
   if (hasCourseApi) {
     try {

@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import document_store  # noqa: E402
 import generator  # noqa: E402
 import llm  # noqa: E402
 import shared  # noqa: E402
@@ -38,6 +39,7 @@ def reply_for(system: str, call_number: int, user: str = "") -> dict:
 def fresh_limits(monkeypatch):
     """Every test starts with a fresh shared state (rate limits and caches), no waiting between model retries, no goal check and no answer check."""
     monkeypatch.setattr(shared, "state", shared.MemoryState())
+    document_store._indexes.clear()
     monkeypatch.setattr(llm, "RETRY_DELAYS", ())
     monkeypatch.setenv("NOVA_MODERATION", "off")
     monkeypatch.setenv("NOVA_VERIFY_ANSWERS", "off")

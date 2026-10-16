@@ -204,7 +204,7 @@ def safety_system() -> str:
 
 # --- Tutor ---
 
-def tutor_system(topic: str, module: str, course: str, rank: str, lesson: str, graded: list[str]) -> str:
+def tutor_system(topic: str, module: str, course: str, rank: str, lesson: str, graded: list[str], sources: list[str] | None = None) -> str:
     lines = [
         "You are NOVA, a friendly AI tutor inside a space-themed learning app.",
         f'The learner is studying "{topic}" (module "{module}" of the course "{course}"). Their rank is {rank}.',
@@ -213,6 +213,7 @@ def tutor_system(topic: str, module: str, course: str, rank: str, lesson: str, g
         "---",
         lesson,
         "---",
+        *_source_excerpts(sources or []),
         "",
         _rules(
             "Help the learner understand THIS lesson. Prefer the lesson's own terms, examples and formulas.",
@@ -222,6 +223,7 @@ def tutor_system(topic: str, module: str, course: str, rank: str, lesson: str, g
             "Ask one question at a time (multiple choice with options A to D, or a short answer), wait for their reply, "
             "then say whether it is right and explain why in a sentence or two. Practice answers earn no MMR, so it is a safe place to try.",
             "If a question is not about this lesson or its subject, do not answer it: politely say you can only help with this lesson and steer back.",
+            *([DOCUMENT_RULE, "When you use the document excerpts, say which page they come from."] if sources else []),
         ),
     ]
     if graded:
@@ -234,6 +236,12 @@ def tutor_system(topic: str, module: str, course: str, rank: str, lesson: str, g
             "such as a scenario, a comparison or a what-would-happen case.",
         ]
     return "\n".join(lines)
+
+
+def _source_excerpts(sources: list[str]) -> list[str]:
+    if not sources:
+        return []
+    return ["", "Excerpts from the learner's own documents (for questions about what the documents say):", wrap_documents("\n\n".join(sources))]
 
 
 GRADED_REMINDER = "(Reminder: do not test the same fact as any forbidden exam question.)"

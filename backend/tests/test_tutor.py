@@ -6,6 +6,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+import document_store
+import shared
 import tutor
 from prompts import GRADED_REMINDER, tutor_system
 
@@ -281,3 +283,69 @@ def test_a_chat_without_a_lesson_is_rejected(client, upstream):
 
 def test_the_prompt_tells_the_tutor_to_stay_on_the_lesson():
     assert "do not answer it" in tutor_system("Topic", "Module", "Course", "Probe", "Lesson text", [])
+
+
+# --- Answering from the learner's documents ---
+
+def kept_documents(*texts: str) -> str:
+    import asyncio
+
+    from pdf_parser import Document, Page
+
+    return asyncio.run(document_store.save_pages([Document("bio.pdf", [Page("bio.pdf", number, text) for number, text in enumerate(texts, start=1)])]))
+
+
+def system_prompt(seen) -> str:
+    return json.loads(seen[0].content)["messages"][0]["content"]
+
+
+def test_pages_that_match_the_question_are_given_to_the_tutor(client, upstream):
+    key = kept_documents("Intro page about plants.", "Rubisco fixes carbon dioxide in the stroma during the Calvin cycle.", "Glycolysis splits glucose.")
+    seen = upstream(streaming("Hi"))
+    client.post("/api/tutor/chat", json=chat("What does the book say about rubisco?", documentsKey=key))
+    prompt = system_prompt(seen)
+    assert "[bio.pdf p.2] Rubisco fixes carbon dioxide" in prompt and "Glycolysis" not in prompt
+    assert "<documents>" in prompt and "say which page" in prompt
+
+
+def test_without_a_documents_key_the_prompt_has_no_excerpts(client, upstream):
+    seen = upstream(streaming("Hi"))
+    client.post("/api/tutor/chat", json=chat("What about rubisco?"))
+    assert "<documents>" not in system_prompt(seen) and "own documents" not in system_prompt(seen)
+
+
+@pytest.mark.parametrize("key", ["not-a-key", "0" * 32, "../etc/passwd"])
+def test_an_unknown_or_malformed_key_just_means_no_excerpts(client, upstream, key):
+    seen = upstream(streaming("Hi"))
+    assert client.post("/api/tutor/chat", json=chat("What about rubisco?", documentsKey=key)).status_code == 200
+    assert "<documents>" not in system_prompt(seen)
+
+
+def test_the_excerpts_are_limited_in_size(client, upstream, monkeypatch):
+    monkeypatch.setattr(tutor, "SOURCE_CHARS", 1000)
+    key = kept_documents(*[f"rubisco fact number {n} " + "x" * 400 for n in range(10)])
+    seen = upstream(streaming("Hi"))
+    client.post("/api/tutor/chat", json=chat("rubisco facts", documentsKey=key))
+    assert system_prompt(seen).count("[bio.pdf p.") <= 2
+
+
+def test_an_unreachable_store_does_not_stop_the_tutor(client, upstream, monkeypatch):
+    class Down(shared.MemoryState):
+        async def get(self, key):
+            raise shared.StateError("down")
+
+    monkeypatch.setattr(shared, "state", Down())
+    upstream(streaming("Hi"))
+    assert client.post("/api/tutor/chat", json=chat("rubisco?", documentsKey="a" * 32)).text == "Hi"
+
+
+def test_quiz_chats_also_see_the_documents(client, upstream):
+    key = kept_documents("Rubisco fixes carbon dioxide in the stroma.")
+    seen = upstream(lambda request: completion("What does rubisco fix?"))
+    client.post("/api/tutor/chat", json=chat("Quiz me on rubisco", avoid=GRADED, documentsKey=key))
+    assert "[bio.pdf p.1]" in system_prompt(seen)
+
+
+def test_the_key_must_not_be_absurdly_long(client, upstream):
+    upstream(streaming("Hi"))
+    assert client.post("/api/tutor/chat", json=chat("hi", documentsKey="a" * 65)).status_code == 422

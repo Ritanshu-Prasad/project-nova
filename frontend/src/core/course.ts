@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
+import { forgetDocuments } from './courseApi';
 import { flatTopics, type Course, type Module, type PlacedTopic, type Question, type Topic } from './courseSchema';
 import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
 import { tidyCourse, tidyTopicContent } from './tidyCourse';
@@ -265,7 +266,8 @@ export const useCourse = create<CourseState>()((set, get) => {
 
     removeCourse: (id) => {
       const { [id]: _removed, ...rest } = get().library;
-      void _removed;
+      const documentsKey = _removed?.course.meta?.documentsKey;
+      if (documentsKey) void forgetDocuments(documentsKey);
       const nextActive = get().activeId === id ? (Object.values(rest).sort((a, b) => b.updatedAt - a.updatedAt)[0]?.course.id ?? null) : get().activeId;
       set({ library: rest, activeId: nextActive });
     },

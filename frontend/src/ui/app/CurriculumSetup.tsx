@@ -222,7 +222,7 @@ export default function CurriculumSetup() {
                       </div>
                       <input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="Anything to focus on? e.g. “chapter on thermodynamics” (optional)" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-[var(--user)]" />
                       <LevelPicker level={level} onChange={setLevel} />
-                      <p className="text-xs text-white/45">{hasCourseApi ? 'Your files are sent to the NOVA course service and its AI provider to build lessons and quizzes. Only upload material you are allowed to share.' : 'Your files stay on this device — NOVA reads them right here in your browser.'}</p>
+                      <p className="text-xs text-white/45">{hasCourseApi ? 'Your files are sent to the NOVA course service and its AI provider to build lessons and quizzes. Their text is kept for 30 days so the tutor can answer from them, and deleted when you remove the course. Only upload material you are allowed to share.' : 'Your files stay on this device — NOVA reads them right here in your browser.'}</p>
                     </div>
                   )}
 

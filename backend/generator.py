@@ -12,6 +12,7 @@ from cache import COURSES, TOPICS
 from chunking import build_topic_context, focus_terms, group_sections
 from course_models import Course, Level
 from course_requests import CourseRequest, Mode, ModuleQuizRequest, Structure, TopicRequest
+from document_store import delete_pages, is_valid_key, save_pages
 from limits import COURSE_LIMIT, TOPIC_LIMIT
 from pdf_parser import Document, read_documents, split_sections
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
@@ -99,6 +100,15 @@ async def generate_module_quiz(body: ModuleQuizRequest, fresh: bool = Query(Fals
     return result
 
 
+@router.delete("/api/courses/documents/{key}")
+async def forget_documents(key: str):
+    """Deletes the page text kept for a course's tutor; the key is the secret that came with the course."""
+    if not is_valid_key(key):
+        raise HTTPException(422, "That is not a document key")
+    await delete_pages(key)
+    return {"deleted": True}
+
+
 # --- Course flows ---
 
 async def _make_course(request: CourseRequest, documents: List[Document], fresh: bool, report: Report = ignore) -> dict:
@@ -157,7 +167,9 @@ async def _course_from_documents(request: CourseRequest, documents: List[Documen
     outline = await plan_document_outline(request, documents, groups, terms, report)
     contexts = [build_topic_context(group, terms) for group in groups]
     outline, contents = keep_written(outline, await write_all_topics(outline, request, contexts, report))
-    return assemble_course(outline, verify_sources(contents, documents), request, documents)
+    course = assemble_course(outline, verify_sources(contents, documents), request, documents)
+    key = await save_pages(documents)
+    return course.model_copy(update={"meta": course.meta.model_copy(update={"documentsKey": key})})
 
 
 def _dump(course: Course) -> dict:

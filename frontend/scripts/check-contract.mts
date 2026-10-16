@@ -37,6 +37,7 @@ for (const [m, module] of lazy.modules.entries()) {
 // A fully written course keeps everything and is not flagged.
 const docs = read('documents_course');
 const docsGot = normalizeCourse(docs);
+expect(docsGot.meta?.documentsKey === docs.meta.documentsKey && !!docsGot.meta?.promptVersion, 'documents: meta was not kept');
 expect(docsGot.source === 'documents' && docsGot.documents?.length === docs.documents.length, 'documents: source or document list changed');
 for (const [m, module] of docs.modules.entries()) {
   expect(docsGot.modules[m].topics.length === module.topics.length, `documents: topics of module ${m + 1} were dropped`);

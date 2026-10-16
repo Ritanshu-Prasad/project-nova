@@ -298,6 +298,7 @@ class CourseMeta(BaseModel):
     model: str
     promptVersion: str
     createdAt: int
+    documentsKey: Optional[str] = None
 
 
 class Course(BaseModel):

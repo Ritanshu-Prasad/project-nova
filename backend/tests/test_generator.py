@@ -495,3 +495,49 @@ def test_the_module_quiz_route_rejects_bad_requests(client, fake_model):
 def test_the_module_quiz_route_passes_model_errors_through(client, fake_model):
     fake_model.replies = [HTTPException(503, "busy")]
     assert client.post("/api/courses/module-quiz", json=quiz_request()).status_code == 503
+
+
+# --- Keeping the documents for the tutor ---
+
+def kept_key(response) -> str:
+    return response.json()["meta"]["documentsKey"]
+
+
+def test_a_document_course_carries_the_key_to_its_pages(client, fake_model):
+    import document_store
+
+    key = kept_key(generate_book(client))
+    assert document_store.is_valid_key(key)
+    assert asyncio.run(document_store.load_index(key)).search("roots water", 1)[0].page == 3
+
+
+def test_a_goal_course_has_no_documents_key(client, fake_model):
+    assert generate_goal(client).json()["meta"].get("documentsKey") is None
+
+
+def test_each_document_course_gets_its_own_key(client, fake_model):
+    assert kept_key(generate_book(client)) != kept_key(generate_book(client))
+
+
+def test_a_course_still_works_when_the_pages_cannot_be_kept(client, fake_model, monkeypatch):
+    import shared
+
+    class Down(shared.MemoryState):
+        async def put(self, key, value, ttl_seconds):
+            raise shared.StateError("down")
+
+    monkeypatch.setattr(shared, "state", Down())
+    response = generate_book(client)
+    assert response.status_code == 200 and response.json()["meta"].get("documentsKey") is None
+
+
+def test_the_kept_pages_can_be_deleted(client, fake_model):
+    import document_store
+
+    key = kept_key(generate_book(client))
+    assert client.delete(f"/api/courses/documents/{key}").json() == {"deleted": True}
+    assert asyncio.run(document_store.load_index(key)) is None
+
+
+def test_deleting_needs_a_proper_key(client, fake_model):
+    assert client.delete("/api/courses/documents/not-a-key").status_code == 422

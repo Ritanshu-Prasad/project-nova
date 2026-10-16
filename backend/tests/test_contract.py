@@ -19,6 +19,8 @@ def check(name: str, data: dict) -> None:
         data["id"] = "course-fixture"
     if "meta" in data:
         data["meta"]["createdAt"] = 0
+        if data["meta"].get("documentsKey"):
+            data["meta"]["documentsKey"] = "0" * 32
     text = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
     if UPDATE:
         FIXTURES.mkdir(exist_ok=True)
