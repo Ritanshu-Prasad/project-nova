@@ -40,6 +40,7 @@ import RankEmblem from '../RankEmblem';
 import { KIND_TEMPLATES } from './kinds';
 import LessonView from './LessonView';
 import ModuleQuiz from './ModuleQuiz';
+import TopicGate from './TopicGate';
 import TutorChat from './TutorChat';
 
 const LS_RAIL_W = 'nova.rail.width';
@@ -129,7 +130,11 @@ export default function StudyMode() {
         <main ref={mainRef} className="scroll-y min-w-0 flex-1">
           <div className="mx-auto w-full max-w-[820px] px-5 py-8 sm:px-10">
             <MobilePicker active={active} />
-            {item.kind === 'topic' ? <LessonView key={item.id} topic={item.topic} active={active} /> : <ModuleQuiz key={item.id} item={item} active={active} />}
+            {item.kind === 'topic' ? (
+              <TopicGate key={item.id} courseId={active.course.id} topic={item.topic}>
+                <LessonView topic={item.topic} active={active} />
+              </TopicGate>
+            ) : <ModuleQuiz key={item.id} item={item} active={active} />}
           </div>
         </main>
 

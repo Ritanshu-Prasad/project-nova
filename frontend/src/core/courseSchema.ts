@@ -66,6 +66,8 @@ export interface Topic {
   quiz: Question[];
   /** Extra practice questions — only the hub quiz draws on these, so it has a large pool of unique questions. */
   practice?: Question[];
+  /** False for an AI topic whose lesson and questions are written the first time it is opened. Absent means loaded. */
+  loaded?: false;
 }
 
 export interface Module {
@@ -187,6 +189,30 @@ function normQuestion(q: Record<string, unknown>): Question | null {
   }
 }
 
+/** Validates one untrusted topic. An outline-only topic keeps `loaded: false` and has no blocks yet. */
+export function normTopic(t: Record<string, unknown>): Topic {
+  const l = (t.lesson ?? {}) as Record<string, unknown>;
+  return {
+    id: str(t.id) || makeId('topic'),
+    title: str(t.title, 'Topic'),
+    planet: str(t.planet) || str(t.title, 'Planet').split(' ')[0],
+    kind: KINDS.includes(t.kind as TopicKind) ? (t.kind as TopicKind) : 'concept',
+    summary: str(t.summary),
+    ...(t.loaded === false ? { loaded: false as const } : {}),
+    lesson: {
+      minutes: typeof l.minutes === 'number' ? l.minutes : 5,
+      objectives: arr<unknown>(l.objectives).map((o) => str(o)).filter(Boolean),
+      simple: str(l.simple),
+      blocks: arr<Record<string, unknown>>(l.blocks).map(normBlock).filter((b): b is Block => b !== null),
+      panels: arr<Record<string, unknown>>(l.panels)
+        .map((x) => ({ title: str(x.title), items: arr<unknown>(x.items).map((i) => str(i)).filter(Boolean), body: str(x.body) }))
+        .filter((x) => x.title && (x.items.length || x.body)),
+    },
+    quiz: arr<Record<string, unknown>>(t.quiz).map(normQuestion).filter((q): q is Question => q !== null),
+    practice: arr<Record<string, unknown>>(t.practice).map(normQuestion).filter((q): q is Question => q !== null),
+  };
+}
+
 /** Validates an untrusted course (e.g. AI output); throws if nothing usable remains. */
 export function normalizeCourse(raw: unknown): Course {
   const c = (raw ?? {}) as Record<string, unknown>;
@@ -196,28 +222,8 @@ export function normalizeCourse(raw: unknown): Course {
       title: str(m.title, 'Module'),
       quiz: arr<Record<string, unknown>>(m.quiz).map(normQuestion).filter((q): q is Question => q !== null),
       topics: arr<Record<string, unknown>>(m.topics)
-        .map((t): Topic => {
-          const l = (t.lesson ?? {}) as Record<string, unknown>;
-          return {
-            id: str(t.id) || makeId('topic'),
-            title: str(t.title, 'Topic'),
-            planet: str(t.planet) || str(t.title, 'Planet').split(' ')[0],
-            kind: KINDS.includes(t.kind as TopicKind) ? (t.kind as TopicKind) : 'concept',
-            summary: str(t.summary),
-            lesson: {
-              minutes: typeof l.minutes === 'number' ? l.minutes : 5,
-              objectives: arr<unknown>(l.objectives).map((o) => str(o)).filter(Boolean),
-              simple: str(l.simple),
-              blocks: arr<Record<string, unknown>>(l.blocks).map(normBlock).filter((b): b is Block => b !== null),
-              panels: arr<Record<string, unknown>>(l.panels)
-                .map((x) => ({ title: str(x.title), items: arr<unknown>(x.items).map((i) => str(i)).filter(Boolean), body: str(x.body) }))
-                .filter((x) => x.title && (x.items.length || x.body)),
-            },
-            quiz: arr<Record<string, unknown>>(t.quiz).map(normQuestion).filter((q): q is Question => q !== null),
-            practice: arr<Record<string, unknown>>(t.practice).map(normQuestion).filter((q): q is Question => q !== null),
-          };
-        })
-        .filter((t) => t.lesson.blocks.length > 0),
+        .map(normTopic)
+        .filter((t) => t.loaded === false || t.lesson.blocks.length > 0),
     }))
     .filter((m) => m.topics.length > 0);
   if (!modules.length) throw new Error('The course has no usable topics.');

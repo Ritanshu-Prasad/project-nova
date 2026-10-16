@@ -2,3 +2,6 @@ fastapi
 uvicorn
 python-multipart
 httpx
+pydantic>=2.8
+pypdf>=5.0
+python-dotenv

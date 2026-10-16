@@ -1,5 +1,5 @@
-import type { Course, Level } from './courseSchema';
-import { normalizeCourse } from './courseSchema';
+import type { Course, Level, Topic } from './courseSchema';
+import { normalizeCourse, normTopic } from './courseSchema';
 import { courseFromObjective } from './courseTemplates';
 import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse';
 
@@ -47,6 +47,29 @@ async function viaBackend(req: GenerateRequest, progress: ProgressFn): Promise<C
   if (!res.ok) throw new Error(`Course API responded ${res.status}`);
   progress('topics', 'Structuring modules and topics');
   return normalizeCourse(await res.json());
+}
+
+/** What the backend needs to write one topic of a lazily generated AI course. */
+export interface TopicRequest {
+  level: Level;
+  objective: string;
+  course: string;
+  module: string;
+  topic: string;
+  summary: string;
+}
+
+/** Fetches the lesson and questions of one outline-only topic: POST {API}/api/courses/topic (JSON). */
+export async function fetchTopic(req: TopicRequest): Promise<Pick<Topic, 'lesson' | 'quiz' | 'practice'>> {
+  const res = await fetch(`${API}/api/courses/topic`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) throw new Error(`Course API responded ${res.status}`);
+  const { lesson, quiz, practice } = normTopic({ ...(await res.json()), title: req.topic });
+  if (!lesson.blocks.length) throw new Error('The topic came back empty.');
+  return { lesson, quiz, practice };
 }
 
 export async function generateCourse(req: GenerateRequest, progress: ProgressFn): Promise<GenerateResult> {

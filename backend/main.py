@@ -15,10 +15,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # sibling modules on serverless runtimes too
 from accounts import router as accounts_router  # noqa: E402
 from fleet import router as fleet_router  # noqa: E402
+from generator import router as generator_router  # noqa: E402
 
 app = FastAPI(title="Project Nova API")
 app.include_router(accounts_router)
 app.include_router(fleet_router)
+app.include_router(generator_router)
 
 # Allow requests from our Vite frontend
 app.add_middleware(
@@ -73,11 +75,11 @@ async def upload_doodle(file: UploadFile = File(...)):
 # AI tutor — the lesson assistant in the study screen's side panel.
 # Streams answers from an OpenAI-compatible endpoint (Nebius AI Studio by default).
 #   NEBIUS_API_KEY     required; without it the endpoint returns 503 and the app uses its offline tutor
-#   NEBIUS_BASE_URL    default https://api.studio.nebius.com/v1
+#   NEBIUS_BASE_URL    default https://api.tokenfactory.nebius.com/v1
 #   NOVA_TUTOR_MODEL   default meta-llama/Llama-3.3-70B-Instruct (any chat model on the endpoint works)
 # ---------------------------------------------------------------------------
 
-NEBIUS_BASE_URL = os.getenv("NEBIUS_BASE_URL", "https://api.studio.nebius.com/v1").rstrip("/")
+NEBIUS_BASE_URL = os.getenv("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1").rstrip("/")
 TUTOR_MODEL = os.getenv("NOVA_TUTOR_MODEL", "meta-llama/Llama-3.3-70B-Instruct")
 
 TUTOR_PROMPT = """You are NOVA, a friendly AI tutor inside a space-themed learning app.

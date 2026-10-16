@@ -11,6 +11,7 @@ import { goToLounge, holoBurst, useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
 import type { DocStructure } from '../../core/pdfCourse';
 import { useNova } from '../../core/store';
+import { ensureTopic } from '../../core/topicLoader';
 import { HudButton } from '../common/HudButton';
 
 type Stage = 'edit' | 'forge' | 'ready' | 'error';
@@ -75,6 +76,7 @@ export default function CurriculumSetup() {
         }),
       );
       useCourse.getState().addCourse(course);
+      ensureTopic(course.id, course.modules[0].topics[0].id).catch(() => undefined);
       useNova.getState().setActiveObjective(course.objective);
       setBuilt(course);
       setStage('ready');

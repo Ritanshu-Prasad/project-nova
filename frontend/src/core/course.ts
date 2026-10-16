@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { flatTopics, type Course, type Module, type PlacedTopic } from './courseSchema';
+import { flatTopics, type Course, type Module, type PlacedTopic, type Topic } from './courseSchema';
 import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
-import { tidyCourse } from './tidyCourse';
+import { tidyCourse, tidyTopicContent } from './tidyCourse';
 
 export type { RatedQuestion } from './quizBuilder';
 
@@ -181,6 +181,8 @@ interface CourseState {
   addCourse: (course: Course) => void;
   setActive: (id: string) => void;
   removeCourse: (id: string) => void;
+  /** Fills in an outline-only topic once its lesson and questions have been written. */
+  setTopicContent: (courseId: string, topicId: string, content: TopicContent) => void;
   /** Opens an outline item if it is unlocked. */
   open: (itemId: string) => boolean;
   setNotes: (topicId: string, notes: string) => void;
@@ -194,6 +196,8 @@ interface CourseState {
   graduation: string | null;
   showGraduation: (courseId: string | null) => void;
 }
+
+export type TopicContent = Pick<Topic, 'lesson' | 'quiz' | 'practice'>;
 
 type Saved = Pick<CourseState, 'activeId' | 'library' | 'stats'>;
 
@@ -264,6 +268,14 @@ export const useCourse = create<CourseState>()((set, get) => {
       set({ library: rest, activeId: nextActive });
     },
 
+    setTopicContent: (courseId, topicId, content) => {
+      const e = get().library[courseId];
+      if (!e) return;
+      const filled = tidyTopicContent(content);
+      const modules = e.course.modules.map((m) => ({ ...m, topics: m.topics.map((t) => (t.id === topicId ? { ...t, ...filled, loaded: undefined } : t)) }));
+      set({ library: { ...get().library, [courseId]: { ...e, course: { ...e.course, modules } } } });
+    },
+
     open: (itemId) => {
       const id = get().activeId;
       const e = id ? get().library[id] : undefined;
@@ -278,6 +290,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const id = get().activeId;
       const e = id ? get().library[id] : undefined;
       if (!e) return null;
+      if (e.course.modules.some((m) => m.topics.some((t) => t.id === topicId && t.loaded === false))) return null;
       const first = !e.progress[topicId]?.cleared;
       patchActive((x) => ({ ...x, progress: { ...x.progress, [topicId]: { ...(x.progress[topicId] ?? { notes: '' }), cleared: true } } }));
       if (first) set({ stats: { ...get().stats, xp: get().stats.xp + 30 } });
