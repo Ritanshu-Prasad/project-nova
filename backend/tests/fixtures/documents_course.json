@@ -1,0 +1,300 @@
+{
+  "id": "course-fixture",
+  "title": "Guide",
+  "subtitle": "Built from 1 document",
+  "objective": "Guide",
+  "level": "beginner",
+  "source": "documents",
+  "modules": [
+    {
+      "id": "mod-1",
+      "title": "Bridges",
+      "topics": [
+        {
+          "id": "top-1-1",
+          "title": "Bridges topic 1",
+          "planet": "Star 1",
+          "kind": "concept",
+          "summary": "About it.",
+          "lesson": {
+            "minutes": 7,
+            "objectives": [
+              "Explain bridges",
+              "Compare network types"
+            ],
+            "simple": "Bridges connect containers.",
+            "blocks": [
+              {
+                "type": "text",
+                "title": "Overview",
+                "body": "A **bridge** links containers."
+              },
+              {
+                "type": "analogy",
+                "body": "Like a switch in an office."
+              },
+              {
+                "type": "keyTerms",
+                "terms": [
+                  {
+                    "term": "Bridge",
+                    "def": "A virtual switch"
+                  },
+                  {
+                    "term": "Veth",
+                    "def": "A virtual cable"
+                  }
+                ]
+              },
+              {
+                "type": "steps",
+                "title": "Create one",
+                "steps": [
+                  "Run docker network create",
+                  "Attach a container"
+                ]
+              },
+              {
+                "type": "code",
+                "language": "bash",
+                "code": "docker network create demo",
+                "caption": "Create a network"
+              },
+              {
+                "type": "formula",
+                "expr": "capacity = ports x speed",
+                "caption": "Rough capacity"
+              },
+              {
+                "type": "compare",
+                "title": "Bridge vs host",
+                "columns": [
+                  "Bridge",
+                  "Host"
+                ],
+                "rows": [
+                  [
+                    "Isolation",
+                    "Yes",
+                    "No"
+                  ]
+                ]
+              },
+              {
+                "type": "example",
+                "title": "Two containers",
+                "body": "web and db share a bridge."
+              },
+              {
+                "type": "callout",
+                "tone": "warning",
+                "body": "The default bridge has no DNS."
+              },
+              {
+                "type": "source",
+                "doc": "guide.pdf",
+                "page": 1,
+                "excerpt": "Bridges connect containers."
+              },
+              {
+                "type": "summary",
+                "points": [
+                  "Bridges isolate",
+                  "Names resolve on user bridges"
+                ]
+              }
+            ]
+          },
+          "quiz": [
+            {
+              "q": "quiz: which network is the default?",
+              "why": "Bridge is the default.",
+              "difficulty": 1,
+              "type": "mcq",
+              "options": [
+                "bridge",
+                "host",
+                "none",
+                "overlay"
+              ],
+              "answer": 0
+            },
+            {
+              "q": "quiz: which are drivers?",
+              "why": "Three are real drivers.",
+              "difficulty": 2,
+              "type": "multi",
+              "options": [
+                "bridge",
+                "host",
+                "tractor",
+                "overlay"
+              ],
+              "answers": [
+                0,
+                1,
+                3
+              ]
+            },
+            {
+              "q": "quiz: bridges isolate containers.",
+              "why": "They form a private network.",
+              "difficulty": 1,
+              "type": "truefalse",
+              "answer": true
+            },
+            {
+              "q": "quiz: the default driver is ____.",
+              "why": "It is the default.",
+              "difficulty": 1,
+              "type": "fill",
+              "answer": "bridge",
+              "accept": [
+                "Bridge"
+              ]
+            },
+            {
+              "q": "quiz: create a network named demo.",
+              "why": "That is the command.",
+              "difficulty": 2,
+              "type": "code",
+              "language": "bash",
+              "starter": "docker ",
+              "solution": "docker network create demo",
+              "checks": [
+                {
+                  "label": "uses network create",
+                  "pattern": "network\\s+create"
+                }
+              ]
+            },
+            {
+              "q": "quiz: order the steps.",
+              "why": "Create first.",
+              "difficulty": 2,
+              "type": "order",
+              "items": [
+                "Create network",
+                "Start container",
+                "Attach container"
+              ]
+            },
+            {
+              "q": "quiz: match driver to use.",
+              "why": "Scope differs.",
+              "difficulty": 3,
+              "type": "match",
+              "pairs": [
+                [
+                  "bridge",
+                  "single host"
+                ],
+                [
+                  "overlay",
+                  "multi host"
+                ]
+              ]
+            }
+          ],
+          "practice": [
+            {
+              "q": "practice: which network is the default?",
+              "why": "Bridge is the default.",
+              "difficulty": 1,
+              "type": "mcq",
+              "options": [
+                "bridge",
+                "host",
+                "none",
+                "overlay"
+              ],
+              "answer": 0
+            },
+            {
+              "q": "practice: which are drivers?",
+              "why": "Three are real drivers.",
+              "difficulty": 2,
+              "type": "multi",
+              "options": [
+                "bridge",
+                "host",
+                "tractor",
+                "overlay"
+              ],
+              "answers": [
+                0,
+                1,
+                3
+              ]
+            },
+            {
+              "q": "practice: bridges isolate containers.",
+              "why": "They form a private network.",
+              "difficulty": 1,
+              "type": "truefalse",
+              "answer": true
+            },
+            {
+              "q": "practice: the default driver is ____.",
+              "why": "It is the default.",
+              "difficulty": 1,
+              "type": "fill",
+              "answer": "bridge",
+              "accept": [
+                "Bridge"
+              ]
+            },
+            {
+              "q": "practice: create a network named demo.",
+              "why": "That is the command.",
+              "difficulty": 2,
+              "type": "code",
+              "language": "bash",
+              "starter": "docker ",
+              "solution": "docker network create demo",
+              "checks": [
+                {
+                  "label": "uses network create",
+                  "pattern": "network\\s+create"
+                }
+              ]
+            },
+            {
+              "q": "practice: order the steps.",
+              "why": "Create first.",
+              "difficulty": 2,
+              "type": "order",
+              "items": [
+                "Create network",
+                "Start container",
+                "Attach container"
+              ]
+            },
+            {
+              "q": "practice: match driver to use.",
+              "why": "Scope differs.",
+              "difficulty": 3,
+              "type": "match",
+              "pairs": [
+                [
+                  "bridge",
+                  "single host"
+                ],
+                [
+                  "overlay",
+                  "multi host"
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "documents": [
+    {
+      "name": "guide.pdf",
+      "pages": 1
+    }
+  ]
+}

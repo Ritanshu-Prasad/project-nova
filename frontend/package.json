@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "check:contract": "node --experimental-strip-types --no-warnings scripts/check-contract.mts",
     "preview": "vite preview",
     "setup-hooks": "git config core.hooksPath ../.githooks"
   },

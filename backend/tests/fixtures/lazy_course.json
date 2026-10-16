@@ -1,0 +1,268 @@
+{
+  "id": "course-fixture",
+  "title": "Sample Course",
+  "subtitle": "A sample",
+  "objective": "Docker networking",
+  "level": "beginner",
+  "source": "ai",
+  "modules": [
+    {
+      "id": "mod-1",
+      "title": "Module 1",
+      "topics": [
+        {
+          "id": "top-1-1",
+          "title": "Topic 1.1",
+          "planet": "Planet 11",
+          "kind": "concept",
+          "summary": "About it.",
+          "loaded": false,
+          "lesson": {
+            "minutes": 5,
+            "objectives": [],
+            "simple": "",
+            "blocks": []
+          },
+          "quiz": [],
+          "practice": []
+        },
+        {
+          "id": "top-1-2",
+          "title": "Topic 1.2",
+          "planet": "Planet 12",
+          "kind": "concept",
+          "summary": "About it.",
+          "loaded": false,
+          "lesson": {
+            "minutes": 5,
+            "objectives": [],
+            "simple": "",
+            "blocks": []
+          },
+          "quiz": [],
+          "practice": []
+        }
+      ],
+      "quiz": [
+        {
+          "q": "m1: which network is the default?",
+          "why": "Bridge is the default.",
+          "difficulty": 1,
+          "type": "mcq",
+          "options": [
+            "bridge",
+            "host",
+            "none",
+            "overlay"
+          ],
+          "answer": 0
+        },
+        {
+          "q": "m1: which are drivers?",
+          "why": "Three are real drivers.",
+          "difficulty": 2,
+          "type": "multi",
+          "options": [
+            "bridge",
+            "host",
+            "tractor",
+            "overlay"
+          ],
+          "answers": [
+            0,
+            1,
+            3
+          ]
+        },
+        {
+          "q": "m1: bridges isolate containers.",
+          "why": "They form a private network.",
+          "difficulty": 1,
+          "type": "truefalse",
+          "answer": true
+        },
+        {
+          "q": "m1: the default driver is ____.",
+          "why": "It is the default.",
+          "difficulty": 1,
+          "type": "fill",
+          "answer": "bridge",
+          "accept": [
+            "Bridge"
+          ]
+        },
+        {
+          "q": "m1: create a network named demo.",
+          "why": "That is the command.",
+          "difficulty": 2,
+          "type": "code",
+          "language": "bash",
+          "starter": "docker ",
+          "solution": "docker network create demo",
+          "checks": [
+            {
+              "label": "uses network create",
+              "pattern": "network\\s+create"
+            }
+          ]
+        },
+        {
+          "q": "m1: order the steps.",
+          "why": "Create first.",
+          "difficulty": 2,
+          "type": "order",
+          "items": [
+            "Create network",
+            "Start container",
+            "Attach container"
+          ]
+        },
+        {
+          "q": "m1: match driver to use.",
+          "why": "Scope differs.",
+          "difficulty": 3,
+          "type": "match",
+          "pairs": [
+            [
+              "bridge",
+              "single host"
+            ],
+            [
+              "overlay",
+              "multi host"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod-2",
+      "title": "Module 2",
+      "topics": [
+        {
+          "id": "top-2-1",
+          "title": "Topic 2.1",
+          "planet": "Planet 21",
+          "kind": "concept",
+          "summary": "About it.",
+          "loaded": false,
+          "lesson": {
+            "minutes": 5,
+            "objectives": [],
+            "simple": "",
+            "blocks": []
+          },
+          "quiz": [],
+          "practice": []
+        },
+        {
+          "id": "top-2-2",
+          "title": "Topic 2.2",
+          "planet": "Planet 22",
+          "kind": "concept",
+          "summary": "About it.",
+          "loaded": false,
+          "lesson": {
+            "minutes": 5,
+            "objectives": [],
+            "simple": "",
+            "blocks": []
+          },
+          "quiz": [],
+          "practice": []
+        }
+      ],
+      "quiz": [
+        {
+          "q": "m2: which network is the default?",
+          "why": "Bridge is the default.",
+          "difficulty": 1,
+          "type": "mcq",
+          "options": [
+            "bridge",
+            "host",
+            "none",
+            "overlay"
+          ],
+          "answer": 0
+        },
+        {
+          "q": "m2: which are drivers?",
+          "why": "Three are real drivers.",
+          "difficulty": 2,
+          "type": "multi",
+          "options": [
+            "bridge",
+            "host",
+            "tractor",
+            "overlay"
+          ],
+          "answers": [
+            0,
+            1,
+            3
+          ]
+        },
+        {
+          "q": "m2: bridges isolate containers.",
+          "why": "They form a private network.",
+          "difficulty": 1,
+          "type": "truefalse",
+          "answer": true
+        },
+        {
+          "q": "m2: the default driver is ____.",
+          "why": "It is the default.",
+          "difficulty": 1,
+          "type": "fill",
+          "answer": "bridge",
+          "accept": [
+            "Bridge"
+          ]
+        },
+        {
+          "q": "m2: create a network named demo.",
+          "why": "That is the command.",
+          "difficulty": 2,
+          "type": "code",
+          "language": "bash",
+          "starter": "docker ",
+          "solution": "docker network create demo",
+          "checks": [
+            {
+              "label": "uses network create",
+              "pattern": "network\\s+create"
+            }
+          ]
+        },
+        {
+          "q": "m2: order the steps.",
+          "why": "Create first.",
+          "difficulty": 2,
+          "type": "order",
+          "items": [
+            "Create network",
+            "Start container",
+            "Attach container"
+          ]
+        },
+        {
+          "q": "m2: match driver to use.",
+          "why": "Scope differs.",
+          "difficulty": 3,
+          "type": "match",
+          "pairs": [
+            [
+              "bridge",
+              "single host"
+            ],
+            [
+              "overlay",
+              "multi host"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
