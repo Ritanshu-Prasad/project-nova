@@ -10,6 +10,8 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import generator  # noqa: E402
+import limits  # noqa: E402
+import llm  # noqa: E402
 from samples import lesson_json, module_json, outline_json, questions  # noqa: E402
 
 
@@ -58,6 +60,14 @@ def reply_for(system: str, call_number: int) -> dict:
         return lesson_json()
     count = int(re.search(r"exactly (\d+) questions", system).group(1))
     return {"questions": questions(count, start=call_number * 100)}
+
+
+@pytest.fixture(autouse=True)
+def fresh_limits(monkeypatch):
+    """Every test starts with empty rate limits and no waiting between model retries."""
+    for limit in limits.ALL_LIMITS:
+        limit.clear()
+    monkeypatch.setattr(llm, "RETRY_DELAYS", ())
 
 
 @pytest.fixture

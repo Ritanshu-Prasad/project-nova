@@ -1,6 +1,8 @@
+import asyncio
 import json
 import logging
 import os
+import random
 
 import httpx
 from fastapi import HTTPException
@@ -10,6 +12,10 @@ logger = logging.getLogger("nova.llm")
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 DEFAULT_MODEL = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
 TIMEOUT = httpx.Timeout(120.0, connect=10.0)
+MAX_PARALLEL_CALLS = 16
+RETRY_DELAYS = (1.0, 3.0)
+RETRY_STATUSES = {429, 500, 502, 503, 504}
+_gates: dict = {}
 
 
 # --- Settings ---
@@ -46,16 +52,7 @@ async def chat_json(system: str, user: str) -> dict:
         "temperature": 0.4,
         "max_tokens": 7000,
     }
-    try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.post(f"{base_url()}/chat/completions", headers={"Authorization": f"Bearer {key}"}, json=payload)
-    except httpx.TimeoutException:
-        logger.warning("Model request timed out")
-        raise HTTPException(503, "The course model timed out")
-    except httpx.HTTPError as error:
-        logger.warning("Model request failed: %s", error)
-        raise HTTPException(502, "Could not reach the course model")
-
+    response = await _post(payload, key)
     raise_for_upstream(response)
     choice = response.json()["choices"][0]
     try:
@@ -63,6 +60,33 @@ async def chat_json(system: str, user: str) -> dict:
     except ValueError:
         logger.warning("Unparseable model output (finish=%s): %.200s", choice.get("finish_reason"), choice["message"]["content"])
         raise
+
+
+async def _post(payload: dict, key: str) -> httpx.Response:
+    """One chat request, waiting for a free slot and retrying rate limits, server errors and timeouts."""
+    async with _gate():
+        for delay in (*RETRY_DELAYS, None):
+            try:
+                async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+                    response = await client.post(f"{base_url()}/chat/completions", headers={"Authorization": f"Bearer {key}"}, json=payload)
+                if response.status_code not in RETRY_STATUSES or delay is None:
+                    return response
+                logger.warning("Model endpoint responded %s, retrying", response.status_code)
+            except httpx.TimeoutException:
+                if delay is None:
+                    logger.warning("Model request timed out")
+                    raise HTTPException(503, "The model timed out")
+            except httpx.HTTPError as error:
+                if delay is None:
+                    logger.warning("Model request failed: %s", error)
+                    raise HTTPException(502, "Could not reach the model")
+            await asyncio.sleep(delay * random.uniform(0.8, 1.2))
+    raise AssertionError("unreachable")
+
+
+def _gate() -> asyncio.Semaphore:
+    """At most MAX_PARALLEL_CALLS model requests at once across all visitors."""
+    return _gates.setdefault(asyncio.get_running_loop(), asyncio.Semaphore(MAX_PARALLEL_CALLS))
 
 
 def raise_for_upstream(response: httpx.Response) -> None:

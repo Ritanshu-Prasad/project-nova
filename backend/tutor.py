@@ -4,11 +4,12 @@ import time
 from typing import AsyncIterator, List, Literal
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 import llm
+from limits import TUTOR_LIMIT
 from prompts import GRADED_REMINDER, sanitise, tutor_system
 
 router = APIRouter()
@@ -47,7 +48,7 @@ class TutorRequest(BaseModel):
 
 # --- Route ---
 
-@router.post("/api/tutor/chat")
+@router.post("/api/tutor/chat", dependencies=[Depends(TUTOR_LIMIT)])
 async def tutor_chat(body: TutorRequest):
     if not llm.api_key():
         raise HTTPException(503, "Tutor model is not configured")

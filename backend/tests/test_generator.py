@@ -236,6 +236,34 @@ def test_documents_mode_without_files_is_422(client, fake_model):
     assert generate_documents(client, []).status_code == 422
 
 
+# --- Failures that should not lose the course ---
+
+def test_a_failed_module_quiz_is_left_empty_instead_of_failing_the_course(client, fake_model):
+    fake_model.replies = [outline_json(modules=1, topics=1), HTTPException(502, "bad")]
+    response = generate_goal(client)
+    assert response.status_code == 200 and response.json()["modules"][0]["quiz"] == []
+
+
+def test_a_failed_topic_is_dropped_and_the_rest_of_the_course_is_kept(client, fake_model):
+    fake_model.replies = [module_json(topics=2)] * 3 + [HTTPException(502, "bad")]
+    response = generate_book(client)
+    assert response.status_code == 200
+    topics = [t["id"] for m in response.json()["modules"] for t in m["topics"]]
+    assert len(topics) == 5 and len(set(topics)) == 5
+
+
+def test_a_module_with_no_written_topics_is_removed(client, fake_model):
+    failing = [HTTPException(502, "bad")] * 3
+    fake_model.replies = [module_json(topics=1)] * 3 + failing
+    modules = generate_book(client).json()["modules"]
+    assert len(modules) == 2 and [m["id"] for m in modules] == ["mod-1", "mod-2"]
+
+
+def test_a_course_where_nothing_could_be_written_fails(client, fake_model):
+    fake_model.replies = [module_json(topics=1)] * 3 + [HTTPException(502, "bad")] * 9
+    assert generate_book(client).status_code == 502
+
+
 # --- Documents flow ---
 
 BOOK = ["Chapter 1 Light\nPlants absorb light", "More about light", "Chapter 2 Water\nRoots take up water", "More about water", "Chapter 3 Air\nLeaves exchange gases"]

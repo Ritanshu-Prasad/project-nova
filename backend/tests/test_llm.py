@@ -130,3 +130,67 @@ def test_unparseable_content_raises_value_error(api):
     api(lambda request: reply(content="not json at all"))
     with pytest.raises(ValueError):
         run(llm.chat_json("s", "u"))
+
+
+# --- Retries and the shared gate ---
+
+def test_a_rate_limited_request_is_retried_and_then_succeeds(api, monkeypatch):
+    monkeypatch.setattr(llm, "RETRY_DELAYS", (0, 0))
+    answers = iter([httpx.Response(429), httpx.Response(503), reply(content='{"ok": 1}')])
+    api(lambda request: next(answers))
+    assert run(llm.chat_json("s", "u")) == {"ok": 1}
+
+
+def test_retries_stop_after_the_last_delay(api, monkeypatch):
+    monkeypatch.setattr(llm, "RETRY_DELAYS", (0, 0))
+    calls = []
+    api(lambda request: calls.append(1) or httpx.Response(429))
+    with pytest.raises(HTTPException) as error:
+        run(llm.chat_json("s", "u"))
+    assert len(calls) == 3 and error.value.status_code == 503
+
+
+def test_a_timeout_is_retried(api, monkeypatch):
+    monkeypatch.setattr(llm, "RETRY_DELAYS", (0,))
+    attempts = []
+
+    def handler(request):
+        attempts.append(1)
+        if len(attempts) == 1:
+            raise httpx.ReadTimeout("slow")
+        return reply(content='{"ok": 2}')
+
+    api(handler)
+    assert run(llm.chat_json("s", "u")) == {"ok": 2}
+
+
+def test_client_errors_are_not_retried(api, monkeypatch):
+    monkeypatch.setattr(llm, "RETRY_DELAYS", (0, 0))
+    calls = []
+    api(lambda request: calls.append(1) or httpx.Response(400))
+    with pytest.raises(HTTPException):
+        run(llm.chat_json("s", "u"))
+    assert len(calls) == 1
+
+
+def test_only_a_limited_number_of_requests_run_at_once(api, monkeypatch):
+    monkeypatch.setattr(llm, "MAX_PARALLEL_CALLS", 2)
+    monkeypatch.setattr(llm, "_gates", {})
+    running, peak = [0], [0]
+    real_client = httpx.AsyncClient
+
+    class SlowTransport(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request):
+            running[0] += 1
+            peak[0] = max(peak[0], running[0])
+            await asyncio.sleep(0.01)
+            running[0] -= 1
+            return reply()
+
+    monkeypatch.setattr(llm.httpx, "AsyncClient", lambda **kw: real_client(transport=SlowTransport(), **kw))
+
+    async def many():
+        await asyncio.gather(*(llm.chat_json("s", "u") for _ in range(6)))
+
+    run(many())
+    assert peak[0] == 2

@@ -4,13 +4,14 @@ import re
 import uuid
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import List, Literal, Type, TypeVar
+from typing import List, Literal, Optional, Type, TypeVar
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from chunking import Group, build_overview, build_topic_context, focus_terms, group_sections
 from course_models import Course, CourseDocument, Lesson, LessonStub, Level, Module, Question, QuestionList, Topic, TopicKind, TopicStub
+from limits import COURSE_LIMIT, TOPIC_LIMIT
 from llm import chat_json
 from pdf_parser import Document, read_documents, split_sections
 from prompts import lesson_system, module_system, outline_system, questions_system, sanitise, wrap_goal
@@ -28,7 +29,6 @@ MAX_SUMMARY_CHARS = 500
 DOCUMENT_TOPICS_PER_MODULE = 3
 MODULE_OVERVIEW_CHARS = 8000
 OUTLINE_LIMITS = {"narrow": (3, 3), "broad": (6, 4)}
-MAX_PARALLEL_TOPICS = 12
 ATTEMPTS = 3
 QUIZ_SIZE = 8
 PRACTICE_SIZE = 12
@@ -90,7 +90,7 @@ class Outline(BaseModel):
 
 # --- Routes ---
 
-@router.post("/api/courses/generate")
+@router.post("/api/courses/generate", dependencies=[Depends(COURSE_LIMIT)])
 async def generate(
     mode: Mode = Form(...),
     level: Level = Form("beginner"),
@@ -124,7 +124,7 @@ class TopicRequest(BaseModel):
         return sanitise(text, MAX_SUMMARY_CHARS)
 
 
-@router.post("/api/courses/topic")
+@router.post("/api/courses/topic", dependencies=[Depends(TOPIC_LIMIT)])
 async def generate_topic(body: TopicRequest):
     request = CourseRequest(mode="goal", level=body.level, objective=body.objective)
     outline = OutlineTopic(title=body.topic, planet="", summary=body.summary)
@@ -152,7 +152,7 @@ async def _generate_full_course(request: CourseRequest, documents: List[Document
     groups = group_sections([section for document in documents for section in split_sections(document)], request.structure)
     outline = await _plan_document_outline(request, documents, groups, terms)
     contexts = [build_topic_context(group, terms) for group in groups]
-    contents = await _write_all_topics(outline, request, contexts)
+    outline, contents = _keep_written(outline, await _write_all_topics(outline, request, contexts))
     return _assemble_course(outline, _verify_sources(contents, documents), request, documents)
 
 
@@ -195,22 +195,43 @@ async def _write_topic(module_title: str, topic: OutlineTopic, request: CourseRe
 
 
 async def _write_module_quiz(module: OutlineModule, request: CourseRequest) -> List[Question]:
+    """The end-of-module quiz; if it cannot be written the module simply has none and the app builds one from its topics."""
     system = questions_system(request.level, MODULE_QUIZ_SIZE, grounded=False)
     topics = "\n".join(f"- {topic.title}: {topic.summary}" for topic in module.topics)
     user = f'{_describe_request(request, "")}\n\nEnd-of-module quiz for the module "{module.title}", covering all of its topics:\n{topics}'
-    return (await _ask_model(QuestionList, system, user)).questions
+    try:
+        return (await _ask_model(QuestionList, system, user)).questions
+    except HTTPException as error:
+        logger.warning("Module quiz for %r skipped: %s", module.title, error.detail)
+        return []
 
 
-async def _write_all_topics(outline: Outline, request: CourseRequest, contexts: List[str]) -> List[List[TopicContent]]:
-    limit = asyncio.Semaphore(MAX_PARALLEL_TOPICS)
+async def _write_all_topics(outline: Outline, request: CourseRequest, contexts: List[str]) -> List[List[Optional[TopicContent]]]:
+    """Every topic is written at once; a topic that fails comes back as None."""
 
-    async def write(module: OutlineModule, topic: OutlineTopic, context: str) -> TopicContent:
-        async with limit:
+    async def write(module: OutlineModule, topic: OutlineTopic, context: str) -> Optional[TopicContent]:
+        try:
             return await _write_topic(module.title, topic, request, context)
+        except HTTPException as error:
+            logger.warning("Topic %r skipped: %s", topic.title, error.detail)
+            return None
 
     jobs = [write(module, topic, context) for module, context in zip(outline.modules, contexts) for topic in module.topics]
     written = iter(await asyncio.gather(*jobs))
     return [[next(written) for _ in module.topics] for module in outline.modules]
+
+
+def _keep_written(outline: Outline, contents: List[List[Optional[TopicContent]]]) -> tuple[Outline, List[List[TopicContent]]]:
+    """Removes the topics that could not be written, and any module left empty; fails if nothing is left."""
+    modules, kept = [], []
+    for module, written in zip(outline.modules, contents):
+        pairs = [(topic, content) for topic, content in zip(module.topics, written) if content is not None]
+        if pairs:
+            modules.append(module.model_copy(update={"topics": [topic for topic, _ in pairs]}))
+            kept.append([content for _, content in pairs])
+    if not modules:
+        raise HTTPException(502, "The course model could not write any lesson")
+    return outline.model_copy(update={"modules": modules}), kept
 
 
 def _describe_request(request: CourseRequest, context: str) -> str:
