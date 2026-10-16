@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 import llm
 from limits import TUTOR_LIMIT
 from prompts import GRADED_REMINDER, sanitise, tutor_system
+from spoilers import find_clash, is_quiz_chat
 
 router = APIRouter()
 logger = logging.getLogger("nova.tutor")
@@ -22,6 +23,9 @@ GRADED_SHOWN = 40
 GRADED_CHARS = 200
 LABEL_CHARS = 200
 STREAM_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+CHUNK_CHARS = 24
+GUARD_ATTEMPTS = 2
+NO_FRESH_QUESTION = "I couldn't think of a fresh practice question just now. Ask me to explain a concept from the lesson instead, or try again in a moment."
 
 
 # --- Request ---
@@ -56,6 +60,9 @@ async def tutor_chat(body: TutorRequest):
         raise HTTPException(422, "The last message must come from the user")
 
     messages = [{"role": "system", "content": _system_prompt(body.context)}] + _history(body)
+    if body.context.avoid and is_quiz_chat([m.content for m in body.messages if m.role == "user"]):
+        reply = await _checked_reply(messages, body.context.avoid[:GRADED_SHOWN])
+        return StreamingResponse(_in_chunks(reply), media_type="text/plain; charset=utf-8", headers=STREAM_HEADERS)
     client = httpx.AsyncClient(timeout=TIMEOUT)
     upstream = await _open_stream(client, messages)
     return StreamingResponse(_relay(upstream, client), media_type="text/plain; charset=utf-8", headers=STREAM_HEADERS)
@@ -77,6 +84,28 @@ def _system_prompt(context: TutorContext) -> str:
         lesson=context.lesson[:LESSON_CHARS],
         graded=[question[:GRADED_CHARS] for question in context.avoid[:GRADED_SHOWN]],
     )
+
+
+# --- Quiz chats ---
+
+async def _checked_reply(messages: list, graded: List[str]) -> str:
+    """For quiz chats the whole answer is written first, so a question too close to a graded one is never shown."""
+    for _ in range(GUARD_ATTEMPTS):
+        reply = await llm.chat_text(messages, llm.tutor_model())
+        clash = find_clash(reply, graded)
+        if clash is None:
+            return reply
+        logger.info("Tutor question too close to a graded one, asking again")
+        messages = messages + [
+            {"role": "assistant", "content": reply},
+            {"role": "user", "content": f'That question is too close to the graded question "{clash}". Write a different practice question about another fact in the lesson.'},
+        ]
+    return NO_FRESH_QUESTION
+
+
+async def _in_chunks(text: str) -> AsyncIterator[str]:
+    for start in range(0, len(text), CHUNK_CHARS):
+        yield text[start : start + CHUNK_CHARS]
 
 
 # --- Streaming ---

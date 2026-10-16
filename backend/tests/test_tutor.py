@@ -15,7 +15,7 @@ def sse(*texts: str, done: bool = True) -> bytes:
     return ("".join(events) + ("data: [DONE]\n\n" if done else "")).encode()
 
 
-def chat(content: str = "Quiz me", **context) -> dict:
+def chat(content: str = "Explain this lesson", **context) -> dict:
     return {"messages": [{"role": "user", "content": content}], "context": {"topic": "Bridges", "lesson": "Bridges connect containers.", **context}}
 
 
@@ -137,10 +137,10 @@ def test_the_system_prompt_carries_the_lesson_and_the_graded_questions(client, u
 
 def test_the_last_message_gets_a_reminder_only_when_there_are_graded_questions(client, upstream):
     seen = upstream(streaming("Hi"))
-    client.post("/api/tutor/chat", json=chat("Quiz me", avoid=["A graded question?"]))
-    client.post("/api/tutor/chat", json=chat("Quiz me"))
+    client.post("/api/tutor/chat", json=chat("Explain it", avoid=["A graded question?"]))
+    client.post("/api/tutor/chat", json=chat("Explain it"))
     with_graded, without = (json.loads(request.content)["messages"][-1]["content"] for request in seen)
-    assert with_graded == f"Quiz me\n\n{GRADED_REMINDER}" and without == "Quiz me"
+    assert with_graded == f"Explain it\n\n{GRADED_REMINDER}" and without == "Explain it"
 
 
 def test_graded_questions_and_the_lesson_are_capped(client, upstream):
@@ -203,3 +203,70 @@ def test_an_unreachable_model_is_502(client, upstream):
 
     upstream(refuse)
     assert client.post("/api/tutor/chat", json=chat()).status_code == 502
+
+
+# --- Quiz chats are checked before they are shown ---
+
+GRADED = ["Which flag publishes a container port to the host?", "How do containers on a user-defined bridge reach each other?"]
+
+
+def completion(text: str) -> httpx.Response:
+    return httpx.Response(200, json={"choices": [{"message": {"content": text}, "finish_reason": "stop"}]})
+
+
+def quiz(client, message="Quiz me on this lesson"):
+    return client.post("/api/tutor/chat", json=chat(message, avoid=GRADED))
+
+
+def test_a_fresh_practice_question_is_sent_whole(client, upstream):
+    seen = upstream(lambda request: completion("What does the overlay driver connect across hosts?"))
+    response = quiz(client)
+    assert response.status_code == 200 and response.text == "What does the overlay driver connect across hosts?"
+    assert json.loads(seen[0].content).get("stream") is None
+
+
+def test_a_question_too_close_to_a_graded_one_is_asked_again(client, upstream):
+    answers = iter(["Which flag is used to publish a container port to the host?", "What does host networking remove?"])
+    seen = upstream(lambda request: completion(next(answers)))
+    assert quiz(client).text == "What does host networking remove?"
+    retry = json.loads(seen[1].content)["messages"]
+    assert retry[-2]["role"] == "assistant" and "too close to the graded question" in retry[-1]["content"]
+    assert GRADED[0] in retry[-1]["content"]
+
+
+def test_when_no_fresh_question_is_found_the_learner_gets_a_safe_message(client, upstream):
+    upstream(lambda request: completion("Which flag publishes a container port to the host?"))
+    assert quiz(client).text == tutor.NO_FRESH_QUESTION
+
+
+def test_the_checked_answer_arrives_in_small_pieces():
+    import asyncio
+
+    async def collect():
+        return [chunk async for chunk in tutor._in_chunks("A" * 100)]
+
+    chunks = asyncio.run(collect())
+    assert "".join(chunks) == "A" * 100 and all(len(chunk) <= tutor.CHUNK_CHARS for chunk in chunks) and len(chunks) > 1
+
+
+def test_a_follow_up_in_a_quiz_conversation_is_checked_too(client, upstream):
+    upstream(lambda request: completion("Which flag publishes a container port to the host?"))
+    body = {"messages": [{"role": "user", "content": "Quiz me"}, {"role": "assistant", "content": "Ready?"}, {"role": "user", "content": "Yes"}], "context": {"avoid": GRADED}}
+    assert client.post("/api/tutor/chat", json=body).text == tutor.NO_FRESH_QUESTION
+
+
+def test_ordinary_questions_are_still_streamed(client, upstream):
+    seen = upstream(streaming("Bridges", " connect"))
+    response = client.post("/api/tutor/chat", json=chat("How do bridges work?", avoid=GRADED))
+    assert response.text == "Bridges connect" and json.loads(seen[0].content)["stream"] is True
+
+
+def test_quiz_requests_without_graded_questions_are_streamed(client, upstream):
+    seen = upstream(streaming("Q", "1"))
+    assert client.post("/api/tutor/chat", json=chat("Quiz me")).text == "Q1"
+    assert json.loads(seen[0].content)["stream"] is True
+
+
+def test_a_model_error_during_a_quiz_chat_is_passed_on(client, upstream):
+    upstream(lambda request: httpx.Response(500, text="boom"))
+    assert quiz(client).status_code == 502

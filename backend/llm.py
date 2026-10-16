@@ -95,6 +95,17 @@ def _gate() -> asyncio.Semaphore:
     return _gates.setdefault(asyncio.get_running_loop(), asyncio.Semaphore(MAX_PARALLEL_CALLS))
 
 
+async def chat_text(messages: list, model: str, max_tokens: int = 700) -> str:
+    """One plain chat completion, returned whole."""
+    key = api_key()
+    if not key:
+        raise HTTPException(503, "Tutor model is not configured")
+    payload = {"model": model, "messages": messages, "temperature": 0.4, "max_tokens": max_tokens}
+    response = await _post(payload, key)
+    raise_for_upstream(response)
+    return response.json()["choices"][0]["message"]["content"] or ""
+
+
 async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS) -> T:
     """Asks for JSON and validates it, asking again when the answer is unusable."""
     for attempt in range(ATTEMPTS):
