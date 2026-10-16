@@ -28,8 +28,8 @@ export interface GenerateResult {
 }
 
 const API = (import.meta.env.VITE_COURSE_API as string | undefined)?.replace(/\/$/, '') || '';
-/** True when an AI backend is configured or running in Vercel production. */
-export const hasCourseApi = !!API || import.meta.env.PROD;
+/** True when an AI backend is configured, running in production, or running in dev (where the Vite proxy forwards /api). */
+export const hasCourseApi = !!API || import.meta.env.PROD || import.meta.env.DEV;
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function viaBackend(req: GenerateRequest, progress: ProgressFn): Promise<Course> {

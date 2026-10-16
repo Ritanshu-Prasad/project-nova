@@ -142,7 +142,7 @@ export default function StudyMode() {
           <aside className="relative hidden shrink-0 border-l border-white/[0.06] xl:flex xl:flex-col" style={{ width: railW }}>
             <Resizer onResize={(w) => setRailW(w)} onDone={(w) => writeLS(LS_RAIL_W, w)} />
             <div className="scroll-y min-h-0 flex-1 p-5">
-              <Rail key={item.id} topic={topic} />
+              <Rail key={item.id} topic={topic?.loaded === false ? null : topic} />
             </div>
             <TutorChat active={active} />
           </aside>

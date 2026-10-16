@@ -53,7 +53,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r backend/requirements.txt
-uvicorn backend.main:app --reload --port 8000
+uvicorn backend.main:app --reload --port 8000 --env-file .env
 ```
 
 ---
