@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import cache  # noqa: E402
 import generator  # noqa: E402
 import limits  # noqa: E402
 import llm  # noqa: E402
@@ -64,9 +65,11 @@ def reply_for(system: str, call_number: int) -> dict:
 
 @pytest.fixture(autouse=True)
 def fresh_limits(monkeypatch):
-    """Every test starts with empty rate limits and no waiting between model retries."""
+    """Every test starts with empty rate limits and caches, and no waiting between model retries."""
     for limit in limits.ALL_LIMITS:
         limit.clear()
+    for stored in cache.ALL_CACHES:
+        stored.clear()
     monkeypatch.setattr(llm, "RETRY_DELAYS", ())
 
 
@@ -78,11 +81,13 @@ def fake_model(monkeypatch):
         calls: list = []
         prompts: list = []
         replies: list = []
+        limits: list = []
 
     fake = Fake()
-    fake.calls, fake.prompts, fake.replies = [], [], []
+    fake.calls, fake.prompts, fake.replies, fake.limits = [], [], [], []
 
-    async def chat_json(system: str, user: str) -> dict:
+    async def chat_json(system: str, user: str, max_tokens: int = 0) -> dict:
+        fake.limits.append(max_tokens)
         fake.calls.append(system)
         fake.prompts.append((system, user))
         reply = fake.replies.pop(0) if fake.replies else reply_for(system, len(fake.calls))

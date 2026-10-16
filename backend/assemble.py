@@ -35,7 +35,7 @@ def assemble_course(outline: Outline, contents: List[List[TopicContent]], reques
         for m, module in enumerate(outline.modules, start=1)
     ]
     return Course(
-        id=_course_id(),
+        id=new_course_id(),
         title=outline.title,
         subtitle=outline.subtitle,
         objective=request.objective or request.focus or outline.title,
@@ -58,7 +58,7 @@ def assemble_lazy_course(outline: Outline, quizzes: List[List[Question]], reques
         for m, module in enumerate(outline.modules, start=1)
     ]
     return Course(
-        id=_course_id(),
+        id=new_course_id(),
         title=outline.title,
         subtitle=outline.subtitle,
         objective=request.objective,
@@ -68,7 +68,7 @@ def assemble_lazy_course(outline: Outline, quizzes: List[List[Question]], reques
     )
 
 
-def _course_id() -> str:
+def new_course_id() -> str:
     return f"course-{uuid.uuid4().hex[:8]}"
 
 

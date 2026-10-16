@@ -16,6 +16,7 @@ logger = logging.getLogger("nova.writing")
 QUIZ_SIZE = 8
 PRACTICE_SIZE = 12
 MODULE_QUIZ_SIZE = 10
+LESSON_TOKENS = 4500
 
 
 @dataclass
@@ -27,14 +28,18 @@ class TopicContent:
 
 # --- Writing ---
 
+def question_tokens(count: int) -> int:
+    return 500 + 450 * count
+
+
 async def write_topic(module_title: str, topic: OutlineTopic, request: CourseRequest, context: str) -> TopicContent:
     """A topic's lesson, quiz and practice questions, written at the same time."""
     grounded = bool(context)
     user = f'{describe_request(request, context)}\n\nTopic: "{topic.title}" ({topic.summary}) from the module "{module_title}".'
     lesson, quiz, practice = await asyncio.gather(
-        llm.ask(Lesson, lesson_system(request.level, grounded), user),
-        llm.ask(QuestionList, questions_system(request.level, QUIZ_SIZE, grounded), user),
-        llm.ask(QuestionList, questions_system(request.level, PRACTICE_SIZE, grounded), user),
+        llm.ask(Lesson, lesson_system(request.level, grounded), user, LESSON_TOKENS),
+        llm.ask(QuestionList, questions_system(request.level, QUIZ_SIZE, grounded), user, question_tokens(QUIZ_SIZE)),
+        llm.ask(QuestionList, questions_system(request.level, PRACTICE_SIZE, grounded), user, question_tokens(PRACTICE_SIZE)),
     )
     return TopicContent(lesson, quiz.questions, practice.questions)
 
@@ -45,7 +50,7 @@ async def write_module_quiz(module: OutlineModule, request: CourseRequest) -> Li
     topics = "\n".join(f"- {topic.title}: {topic.summary}" for topic in module.topics)
     user = f'{describe_request(request, "")}\n\nEnd-of-module quiz for the module "{module.title}", covering all of its topics:\n{topics}'
     try:
-        return (await llm.ask(QuestionList, system, user)).questions
+        return (await llm.ask(QuestionList, system, user, question_tokens(MODULE_QUIZ_SIZE))).questions
     except HTTPException as error:
         logger.warning("Module quiz for %r skipped: %s", module.title, error.detail)
         return []

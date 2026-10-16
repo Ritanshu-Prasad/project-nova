@@ -1,9 +1,11 @@
 import asyncio
+import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
-from assemble import assemble_course, assemble_lazy_course, dedupe_questions, verify_sources
+from assemble import assemble_course, assemble_lazy_course, dedupe_questions, new_course_id, verify_sources
+from cache import COURSES, TOPICS
 from chunking import build_topic_context, focus_terms, group_sections
 from course_models import Course, Level
 from course_requests import CourseRequest, Mode, Structure, TopicRequest
@@ -13,6 +15,7 @@ from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outl
 from writing import keep_written, write_all_topics, write_module_quiz, write_topic
 
 router = APIRouter()
+logger = logging.getLogger("nova.generator")
 
 
 # --- Routes ---
@@ -38,24 +41,37 @@ async def generate(
 
 @router.post("/api/courses/topic", dependencies=[Depends(TOPIC_LIMIT)])
 async def generate_topic(body: TopicRequest):
+    key = (body.level, body.objective.casefold(), body.module.casefold(), body.topic.casefold())
+    cached = TOPICS.get(key)
+    if cached:
+        return cached
     request = CourseRequest(mode="goal", level=body.level, objective=body.objective)
     outline = OutlineTopic(title=body.topic, planet="", summary=body.summary)
     content = await write_topic(body.module, outline, request, context="")
     seen: set = set()
-    return {
+    topic = {
         "lesson": content.lesson.model_dump(by_alias=True, exclude_none=True),
         "quiz": [q.model_dump(exclude_none=True) for q in dedupe_questions(content.quiz, seen)],
         "practice": [q.model_dump(exclude_none=True) for q in dedupe_questions(content.practice, seen)],
     }
+    TOPICS.set(key, topic)
+    return topic
 
 
 # --- Course flows ---
 
 async def _course_from_goal(request: CourseRequest) -> Course:
     """Outline and module quizzes now; each topic is written when the learner opens it."""
+    key = (request.level, request.objective.casefold())
+    cached = COURSES.get(key)
+    if cached:
+        logger.info("Course for %r served from the cache", request.objective)
+        return cached.model_copy(update={"id": new_course_id(), "objective": request.objective})
     outline = fit_outline(await plan_outline(request))
     quizzes = await asyncio.gather(*(write_module_quiz(module, request) for module in outline.modules))
-    return assemble_lazy_course(outline, quizzes, request)
+    course = assemble_lazy_course(outline, quizzes, request)
+    COURSES.set(key, course)
+    return course
 
 
 async def _course_from_documents(request: CourseRequest, documents: List[Document]) -> Course:

@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 
+import planning
 import writing
 from conftest import make_pdf
 from samples import lesson_json, module_json, outline_json, questions
@@ -238,3 +239,64 @@ def test_topic_route_rejects_an_oversized_field(client, fake_model):
 def test_topic_route_passes_model_errors_through(client, fake_model):
     fake_model.replies = [HTTPException(502, "bad")]
     assert client.post("/api/courses/topic", json=topic_request()).status_code == 502
+
+
+# --- Repeated requests ---
+
+def test_the_same_goal_is_not_written_twice(client, fake_model):
+    first = generate_goal(client).json()
+    calls = len(fake_model.calls)
+    second = generate_goal(client, objective="  DOCKER   networking ").json()
+    assert len(fake_model.calls) == calls
+    assert second["id"] != first["id"] and second["modules"] == first["modules"]
+
+
+def test_a_repeated_goal_keeps_the_wording_the_learner_typed(client, fake_model):
+    generate_goal(client)
+    assert generate_goal(client, objective="DOCKER networking").json()["objective"] == "DOCKER networking"
+
+
+def test_another_level_or_goal_is_written_again(client, fake_model):
+    generate_goal(client)
+    calls = len(fake_model.calls)
+    generate_goal(client, level="advanced")
+    generate_goal(client, objective="Kubernetes")
+    assert len(fake_model.calls) == calls * 3
+
+
+def test_a_failed_course_is_not_cached(client, fake_model):
+    fake_model.replies = [HTTPException(503, "busy")]
+    assert generate_goal(client).status_code == 503
+    assert generate_goal(client).status_code == 200
+
+
+def test_the_same_topic_is_not_written_twice(client, fake_model):
+    first = client.post("/api/courses/topic", json=topic_request()).json()
+    calls = len(fake_model.calls)
+    assert client.post("/api/courses/topic", json=topic_request(topic="BRIDGES")).json() == first
+    assert len(fake_model.calls) == calls
+
+
+def test_the_cache_can_be_switched_off(client, fake_model, monkeypatch):
+    monkeypatch.setenv("NOVA_CACHE", "off")
+    generate_goal(client)
+    calls = len(fake_model.calls)
+    generate_goal(client)
+    assert len(fake_model.calls) == calls * 2
+
+
+# --- Token limits per kind of call ---
+
+def test_each_kind_of_call_gets_its_own_token_limit(client, fake_model):
+    client.post("/api/courses/topic", json=topic_request())
+    assert sorted(fake_model.limits) == sorted([writing.LESSON_TOKENS, writing.question_tokens(writing.QUIZ_SIZE), writing.question_tokens(writing.PRACTICE_SIZE)])
+
+
+def test_goal_courses_use_the_outline_and_quiz_limits(client, fake_model):
+    generate_goal(client)
+    assert fake_model.limits[0] == planning.OUTLINE_TOKENS
+    assert set(fake_model.limits[1:]) == {writing.question_tokens(writing.MODULE_QUIZ_SIZE)}
+
+
+def test_more_questions_get_more_room():
+    assert writing.question_tokens(12) > writing.question_tokens(8) > writing.question_tokens(1) > 0

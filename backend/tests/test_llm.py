@@ -42,6 +42,19 @@ def test_parse_json_ignores_text_around_the_object():
     assert llm._parse_json('Here you go:\n```json\n{"a": 1}\n```') == {"a": 1}
 
 
+def test_parse_json_skips_reasoning_that_contains_braces():
+    text = 'I should answer with {"like": "this"} maybe.\nFinal: {"title": "Real", "items": [{"a": 1}, {"b": 2}]}'
+    assert llm._parse_json(text) == {"title": "Real", "items": [{"a": 1}, {"b": 2}]}
+
+
+def test_parse_json_takes_the_largest_object():
+    assert llm._parse_json('{"small": 1} {"big": {"nested": [1, 2, 3]}, "more": true}') == {"big": {"nested": [1, 2, 3]}, "more": True}
+
+
+def test_parse_json_keeps_braces_inside_strings():
+    assert llm._parse_json('{"code": "if (x) { y(); }"}') == {"code": "if (x) { y(); }"}
+
+
 @pytest.mark.parametrize("text", ["", "no json here", "{broken", "[1, 2]"])
 def test_parse_json_rejects_anything_else(text):
     with pytest.raises(ValueError):
@@ -223,3 +236,18 @@ def test_ask_does_not_hide_model_errors(fake_model):
     with pytest.raises(HTTPException) as error:
         run(llm.ask(QuestionList, "system", "user"))
     assert error.value.status_code == 503 and len(fake_model.calls) == 1
+
+
+# --- Token limits ---
+
+def test_the_token_limit_is_sent_to_the_model(api):
+    sent = []
+
+    def handler(request):
+        sent.append(json.loads(request.content)["max_tokens"])
+        return reply()
+
+    api(handler)
+    run(llm.chat_json("s", "u", max_tokens=1234))
+    run(llm.chat_json("s", "u"))
+    assert sent == [1234, llm.DEFAULT_MAX_TOKENS]

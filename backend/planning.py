@@ -16,6 +16,8 @@ Scope = Literal["narrow", "broad"]
 OUTLINE_LIMITS = {"narrow": (3, 3), "broad": (6, 4)}
 DOCUMENT_TOPICS_PER_MODULE = 3
 MODULE_OVERVIEW_CHARS = 8000
+OUTLINE_TOKENS = 3000
+MODULE_TOKENS = 2500
 
 
 # --- Outline ---
@@ -53,7 +55,7 @@ class Outline(BaseModel):
 # --- From a goal ---
 
 async def plan_outline(request: CourseRequest) -> Outline:
-    return await llm.ask(Outline, outline_system(request.level), describe_request(request, ""))
+    return await llm.ask(Outline, outline_system(request.level), describe_request(request, ""), OUTLINE_TOKENS)
 
 
 def fit_outline(outline: Outline) -> Outline:
@@ -75,5 +77,5 @@ async def plan_document_outline(request: CourseRequest, documents: List[Document
 
 async def _plan_module(request: CourseRequest, group: Group, terms: List[str]) -> OutlineModule:
     user = describe_request(request, build_overview([group], terms, MODULE_OVERVIEW_CHARS))
-    module = await llm.ask(OutlineModule, module_system(request.level), user)
+    module = await llm.ask(OutlineModule, module_system(request.level), user, MODULE_TOKENS)
     return module.model_copy(update={"topics": module.topics[:DOCUMENT_TOPICS_PER_MODULE]})

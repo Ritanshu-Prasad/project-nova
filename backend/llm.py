@@ -15,6 +15,7 @@ DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 DEFAULT_MODEL = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
 TIMEOUT = httpx.Timeout(120.0, connect=10.0)
 ATTEMPTS = 3
+DEFAULT_MAX_TOKENS = 5000
 MAX_PARALLEL_CALLS = 16
 RETRY_DELAYS = (1.0, 3.0)
 RETRY_STATUSES = {429, 500, 502, 503, 504}
@@ -44,7 +45,7 @@ def tutor_model() -> str:
 # --- Requests ---
 
 
-async def chat_json(system: str, user: str) -> dict:
+async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS) -> dict:
     """One chat completion that must come back as a JSON object."""
     key = api_key()
     if not key:
@@ -55,7 +56,7 @@ async def chat_json(system: str, user: str) -> dict:
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "response_format": {"type": "json_object"},
         "temperature": 0.4,
-        "max_tokens": 7000,
+        "max_tokens": max_tokens,
     }
     response = await _post(payload, key)
     raise_for_upstream(response)
@@ -94,11 +95,11 @@ def _gate() -> asyncio.Semaphore:
     return _gates.setdefault(asyncio.get_running_loop(), asyncio.Semaphore(MAX_PARALLEL_CALLS))
 
 
-async def ask(schema: Type[T], system: str, user: str) -> T:
+async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS) -> T:
     """Asks for JSON and validates it, asking again when the answer is unusable."""
     for attempt in range(ATTEMPTS):
         try:
-            return schema.model_validate(await chat_json(system, user))
+            return schema.model_validate(await chat_json(system, user, max_tokens))
         except (ValidationError, ValueError) as error:
             logger.warning("Unusable model answer (attempt %d): %s", attempt + 1, str(error)[:300])
     raise HTTPException(502, "The course model returned an unusable answer")
@@ -114,12 +115,18 @@ def raise_for_upstream(response: httpx.Response) -> None:
 
 
 def _parse_json(text: str) -> dict:
-    # Models sometimes wrap the object in prose or code fences
-    start, end = text.find("{"), text.rfind("}")
-    try:
-        data = json.loads(text[start : end + 1])
-    except ValueError:
-        raise ValueError("The model did not return JSON")
-    if not isinstance(data, dict):
+    """The largest JSON object in the text; models sometimes add reasoning or code fences around it."""
+    decoder = json.JSONDecoder()
+    found, position = [], text.find("{")
+    while position != -1:
+        try:
+            data, end = decoder.raw_decode(text, position)
+        except ValueError:
+            position = text.find("{", position + 1)
+            continue
+        if isinstance(data, dict):
+            found.append((end - position, data))
+        position = text.find("{", end)
+    if not found:
         raise ValueError("The model did not return a JSON object")
-    return data
+    return max(found, key=lambda item: item[0])[1]
