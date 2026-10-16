@@ -49,19 +49,35 @@ def test_parse_json_rejects_anything_else(text):
 # --- Upstream errors ---
 
 def test_success_response_passes():
-    llm._raise_for_upstream(httpx.Response(200))
+    llm.raise_for_upstream(httpx.Response(200))
 
 
 def test_rate_limit_becomes_503():
     with pytest.raises(HTTPException) as error:
-        llm._raise_for_upstream(httpx.Response(429))
+        llm.raise_for_upstream(httpx.Response(429))
     assert error.value.status_code == 503
 
 
 def test_other_errors_become_502():
     with pytest.raises(HTTPException) as error:
-        llm._raise_for_upstream(httpx.Response(500))
+        llm.raise_for_upstream(httpx.Response(500))
     assert error.value.status_code == 502
+
+
+# --- Settings ---
+
+def test_defaults_point_at_nebius_and_the_nano_model(monkeypatch):
+    for name in ("NEBIUS_BASE_URL", "NOVA_GENERATE_MODEL", "NOVA_TUTOR_MODEL"):
+        monkeypatch.delenv(name, raising=False)
+    assert llm.base_url() == "https://api.tokenfactory.nebius.com/v1"
+    assert llm.generate_model() == llm.tutor_model() == "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+
+
+def test_settings_follow_the_environment(monkeypatch):
+    monkeypatch.setenv("NEBIUS_BASE_URL", "https://other.test/v1/")
+    monkeypatch.setenv("NOVA_GENERATE_MODEL", "gen/model")
+    monkeypatch.setenv("NOVA_TUTOR_MODEL", "tutor/model")
+    assert (llm.base_url(), llm.generate_model(), llm.tutor_model()) == ("https://other.test/v1", "gen/model", "tutor/model")
 
 
 # --- chat_json ---

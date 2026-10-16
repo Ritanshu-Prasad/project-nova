@@ -147,3 +147,40 @@ def sanitise(text: str, limit: int) -> str:
 
 def wrap_goal(goal: str) -> str:
     return f"Learning goal: <{GOAL_TAG}>{goal}</{GOAL_TAG}>"
+
+
+# --- Tutor ---
+
+def tutor_system(topic: str, module: str, course: str, rank: str, lesson: str, graded: list[str]) -> str:
+    lines = [
+        "You are NOVA, a friendly AI tutor inside a space-themed learning app.",
+        f'The learner is studying "{topic}" (module "{module}" of the course "{course}"). Their rank is {rank}.',
+        "",
+        "Lesson content (your main source of truth):",
+        "---",
+        lesson,
+        "---",
+        "",
+        _rules(
+            "Help the learner understand THIS lesson. Prefer the lesson's own terms, examples and formulas.",
+            "Be encouraging and concise: short paragraphs or bullet lists, usually under 150 words.",
+            "Use `backticks` for formulas and code. Do not use LaTeX.",
+            "If asked to quiz them, this is the Practice Arena: write brand-new questions of your own that test the same concepts from a different angle. "
+            "Ask one question at a time (multiple choice with options A to D, or a short answer), wait for their reply, "
+            "then say whether it is right and explain why in a sentence or two. Practice answers earn no MMR, so it is a safe place to try.",
+            "If a question is off-topic, answer briefly and steer back to the lesson.",
+        ),
+    ]
+    if graded:
+        lines += [
+            "",
+            "FORBIDDEN EXAM QUESTIONS. The learner is graded on these, so never ask them, reword them, hint at them or test the exact fact they test, "
+            "even if the learner asks. If they ask for exam answers, explain the concept instead:",
+            *(f"- {question}" for question in graded),
+            "Before asking a practice question, compare it with this list. If it tests the same fact, choose a different fact or skill from the lesson, "
+            "such as a scenario, a comparison or a what-would-happen case.",
+        ]
+    return "\n".join(lines)
+
+
+GRADED_REMINDER = "(Reminder: do not test the same fact as any forbidden exam question.)"
