@@ -58,6 +58,24 @@ uvicorn backend.main:app --reload --port 8000 --env-file .env
 
 ---
 
+## 🧪 Testing
+
+```bash
+pip install -r backend/requirements-dev.txt
+python -m pytest backend/tests -q          # backend, no network or API key needed
+
+cd frontend
+npm run check:contract                      # backend sample outputs vs the app's validators (Node 22.6+)
+npm run test:e2e                            # browser tests with a mocked backend (npx playwright install chromium first)
+
+cd ../backend
+python -m evals.run_eval --cases smoke      # scores real generated courses (uses your NEBIUS_API_KEY and tokens)
+```
+
+`UPDATE_FIXTURES=1 python -m pytest backend/tests/test_contract.py` rewrites the sample outputs after an intentional change to the course format.
+
+---
+
 ## 🛡️ Git Workflow & Contributing
 
 Please review [`TEAM_GIT_WORKFLOW.md`](./TEAM_GIT_WORKFLOW.md) for contribution guidelines. 
