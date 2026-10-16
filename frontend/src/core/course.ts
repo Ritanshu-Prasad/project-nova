@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { flatTopics, type Course, type Module, type PlacedTopic, type Topic } from './courseSchema';
+import { flatTopics, type Course, type Module, type PlacedTopic, type Question, type Topic } from './courseSchema';
 import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
 import { tidyCourse, tidyTopicContent } from './tidyCourse';
 
@@ -183,6 +183,8 @@ interface CourseState {
   removeCourse: (id: string) => void;
   /** Fills in an outline-only topic once its lesson and questions have been written. */
   setTopicContent: (courseId: string, topicId: string, content: TopicContent) => void;
+  /** Replaces a module's end-of-module quiz. */
+  setModuleQuiz: (courseId: string, moduleId: string, quiz: Question[]) => void;
   /** Opens an outline item if it is unlocked. */
   open: (itemId: string) => boolean;
   setNotes: (topicId: string, notes: string) => void;
@@ -273,6 +275,13 @@ export const useCourse = create<CourseState>()((set, get) => {
       if (!e) return;
       const filled = tidyTopicContent(content);
       const modules = e.course.modules.map((m) => ({ ...m, topics: m.topics.map((t) => (t.id === topicId ? { ...t, ...filled, loaded: undefined } : t)) }));
+      set({ library: { ...get().library, [courseId]: { ...e, course: { ...e.course, modules } } } });
+    },
+
+    setModuleQuiz: (courseId, moduleId, quiz) => {
+      const e = get().library[courseId];
+      if (!e) return;
+      const modules = e.course.modules.map((m) => (m.id === moduleId ? { ...m, quiz } : m));
       set({ library: { ...get().library, [courseId]: { ...e, course: { ...e.course, modules } } } });
     },
 

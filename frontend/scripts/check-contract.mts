@@ -1,7 +1,7 @@
 // Checks that what the backend sends survives the app's own validators with nothing dropped.
 // Samples are written by backend/tests/test_contract.py. Needs Node 22.6+ (runs TypeScript directly).
 import { readFileSync } from 'node:fs';
-import { normalizeCourse, normTopic, type Block, type Question } from '../src/core/courseSchema.ts';
+import { normQuestion, normalizeCourse, normTopic, type Block, type Question } from '../src/core/courseSchema.ts';
 
 const read = (name: string) => JSON.parse(readFileSync(new URL(`../../backend/tests/fixtures/${name}.json`, import.meta.url), 'utf8'));
 const problems: string[] = [];
@@ -50,6 +50,11 @@ for (const [m, module] of docs.modules.entries()) {
 // A topic fetched on demand.
 const fetched = read('topic');
 sameTopic('topic', fetched, normTopic({ ...fetched, title: 'Bridges' }));
+
+// A module quiz written from the lessons.
+const moduleQuiz = read('module_quiz');
+const moduleQuizGot = moduleQuiz.quiz.map(normQuestion).filter((q: Question | null): q is Question => q !== null);
+expect(countBy(moduleQuiz.quiz) === countBy(moduleQuizGot), 'module quiz: questions changed');
 
 if (problems.length) {
   console.error(`Contract check failed:\n- ${problems.join('\n- ')}`);

@@ -11,13 +11,13 @@ from assemble import assemble_course, assemble_lazy_course, dedupe_questions, ne
 from cache import COURSES, TOPICS
 from chunking import build_topic_context, focus_terms, group_sections
 from course_models import Course, Level
-from course_requests import CourseRequest, Mode, Structure, TopicRequest
+from course_requests import CourseRequest, Mode, ModuleQuizRequest, Structure, TopicRequest
 from limits import COURSE_LIMIT, TOPIC_LIMIT
 from pdf_parser import Document, read_documents, split_sections
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
 from progress import Report, ignore
 from safety import check_goal
-from writing import keep_written, write_all_topics, write_module_quiz, write_topic
+from writing import keep_written, write_all_topics, write_module_quiz, write_module_quiz_from_lessons, write_topic
 
 router = APIRouter()
 STREAM_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
@@ -66,13 +66,13 @@ async def _read_request(mode, level, objective, focus, structure, files) -> tupl
 
 @router.post("/api/courses/topic", dependencies=[Depends(TOPIC_LIMIT)])
 async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
-    key = (body.level, body.objective.casefold(), body.module.casefold(), body.topic.casefold())
+    key = (body.level, body.objective.casefold(), body.module.casefold(), body.topic.casefold(), body.outline, body.previous)
     cached = None if fresh else await TOPICS.get(key)
     if cached:
         return cached
     request = CourseRequest(mode="goal", level=body.level, objective=body.objective)
     outline = OutlineTopic(title=body.topic, planet="", summary=body.summary)
-    content = await write_topic(body.module, outline, request, context="")
+    content = await write_topic(body.module, outline, request, "", body.outline, body.previous)
     seen: set = set()
     topic = {
         "lesson": content.lesson.model_dump(by_alias=True, exclude_none=True),
@@ -81,6 +81,20 @@ async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
     }
     await TOPICS.put(key, topic)
     return topic
+
+
+@router.post("/api/courses/module-quiz", dependencies=[Depends(TOPIC_LIMIT)])
+async def generate_module_quiz(body: ModuleQuizRequest, fresh: bool = Query(False)):
+    """The module's quiz written from what its lessons really taught."""
+    key = ("module-quiz", body.level, body.objective.casefold(), body.module.casefold(), body.model_dump_json(include={"topics"}))
+    cached = None if fresh else await TOPICS.get(key)
+    if cached:
+        return cached
+    request = CourseRequest(mode="goal", level=body.level, objective=body.objective)
+    quiz = await write_module_quiz_from_lessons(request, body.module, body.topics)
+    result = {"quiz": [q.model_dump(exclude_none=True) for q in dedupe_questions(quiz, set())]}
+    await TOPICS.put(key, result)
+    return result
 
 
 # --- Course flows ---

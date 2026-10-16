@@ -47,6 +47,12 @@ def test_topic_matches_the_frontend_sample(client, fake_model):
     check("topic", client.post("/api/courses/topic", json=body).json())
 
 
-@pytest.mark.parametrize("name", ["lazy_course", "documents_course", "topic"])
+def test_module_quiz_matches_the_frontend_sample(client, fake_model):
+    fake_model.replies = [{"questions": rich_questions("module")}]
+    body = {"level": "beginner", "objective": "Docker networking", "module": "Basics", "topics": [{"title": "Bridges", "objectives": ["Explain bridges"], "terms": ["Veth"], "points": ["Bridges isolate"]}]}
+    check("module_quiz", client.post("/api/courses/module-quiz", json=body).json())
+
+
+@pytest.mark.parametrize("name", ["lazy_course", "documents_course", "topic", "module_quiz"])
 def test_every_sample_exists(name):
     assert (FIXTURES / f"{name}.json").exists()

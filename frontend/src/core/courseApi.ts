@@ -1,5 +1,5 @@
-import type { Course, Level, Topic } from './courseSchema';
-import { normalizeCourse, normTopic } from './courseSchema';
+import type { Course, Level, Question, Topic } from './courseSchema';
+import { normQuestion, normalizeCourse, normTopic } from './courseSchema';
 import { courseFromObjective } from './courseTemplates';
 import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse';
 
@@ -89,6 +89,17 @@ export interface TopicRequest {
   module: string;
   topic: string;
   summary: string;
+  /** The titles of every topic in the course, in order, and what the topic before this one covered. */
+  outline: string[];
+  previous: string;
+}
+
+/** What a learner was taught in one topic. */
+export interface TaughtTopic {
+  title: string;
+  objectives: string[];
+  terms: string[];
+  points: string[];
 }
 
 /** Fetches the lesson and questions of one outline-only topic: POST {API}/api/courses/topic (JSON). */
@@ -102,6 +113,18 @@ export async function fetchTopic(req: TopicRequest): Promise<Pick<Topic, 'lesson
   const { lesson, quiz, practice } = normTopic({ ...(await res.json()), title: req.topic });
   if (!lesson.blocks.length) throw new Error('The topic came back empty.');
   return { lesson, quiz, practice };
+}
+
+/** Fetches a module quiz written from what its lessons really taught: POST {API}/api/courses/module-quiz (JSON). */
+export async function fetchModuleQuiz(req: { level: Level; objective: string; module: string; topics: TaughtTopic[] }): Promise<Question[]> {
+  const res = await fetch(`${API}/api/courses/module-quiz`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) throw new Error(`Course API responded ${res.status}`);
+  const { quiz } = await res.json();
+  return (Array.isArray(quiz) ? quiz : []).map(normQuestion).filter((q: Question | null): q is Question => q !== null);
 }
 
 export async function generateCourse(req: GenerateRequest, progress: ProgressFn): Promise<GenerateResult> {

@@ -438,3 +438,60 @@ def test_fresh_applies_to_topics_too(client, fake_model):
     calls = len(fake_model.calls)
     client.post("/api/courses/topic?fresh=true", json=topic_request())
     assert len(fake_model.calls) == calls * 2
+
+
+# --- Topics that know the course ---
+
+def test_the_topic_route_passes_the_outline_and_previous_topic_to_the_model(client, fake_model):
+    client.post("/api/courses/topic", json=topic_request(outline=["Bridges", "Overlay"], previous="Bridges isolate"))
+    lesson_users = user_prompts(fake_model, "textbook author")
+    assert "Course outline: 1. Bridges; 2. Overlay" in lesson_users[0] and "The previous topic covered: Bridges isolate" in lesson_users[0]
+
+
+def test_a_topic_in_another_position_is_written_again(client, fake_model):
+    client.post("/api/courses/topic", json=topic_request(previous="One"))
+    calls = len(fake_model.calls)
+    client.post("/api/courses/topic", json=topic_request(previous="Two"))
+    assert len(fake_model.calls) == calls * 2
+
+
+# --- POST /api/courses/module-quiz ---
+
+def quiz_request(**overrides) -> dict:
+    taught = [{"title": "Bridges", "objectives": ["Explain bridges"], "terms": ["Veth pair"], "points": ["Bridges isolate"]}]
+    return {"level": "beginner", "objective": "Docker", "module": "Basics", "topics": taught, **overrides}
+
+
+def test_the_module_quiz_route_returns_questions(client, fake_model):
+    response = client.post("/api/courses/module-quiz", json=quiz_request())
+    assert response.status_code == 200 and len(response.json()["quiz"]) == writing.MODULE_QUIZ_SIZE
+
+
+def test_the_module_quiz_is_written_from_the_taught_content(client, fake_model):
+    client.post("/api/courses/module-quiz", json=quiz_request())
+    assert "Veth pair" in fake_model.prompts[0][1]
+
+
+def test_the_same_taught_content_is_not_written_twice(client, fake_model):
+    client.post("/api/courses/module-quiz", json=quiz_request())
+    calls = len(fake_model.calls)
+    assert client.post("/api/courses/module-quiz", json=quiz_request()).status_code == 200
+    assert len(fake_model.calls) == calls
+
+
+def test_different_taught_content_is_written_again(client, fake_model):
+    client.post("/api/courses/module-quiz", json=quiz_request())
+    calls = len(fake_model.calls)
+    other = quiz_request(topics=[{"title": "Overlay", "points": ["Spans hosts"]}])
+    client.post("/api/courses/module-quiz", json=other)
+    assert len(fake_model.calls) == calls * 2
+
+
+def test_the_module_quiz_route_rejects_bad_requests(client, fake_model):
+    assert client.post("/api/courses/module-quiz", json=quiz_request(topics=[])).status_code == 422
+    assert client.post("/api/courses/module-quiz", json={"level": "beginner"}).status_code == 422
+
+
+def test_the_module_quiz_route_passes_model_errors_through(client, fake_model):
+    fake_model.replies = [HTTPException(503, "busy")]
+    assert client.post("/api/courses/module-quiz", json=quiz_request()).status_code == 503

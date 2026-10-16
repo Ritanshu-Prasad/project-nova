@@ -112,3 +112,8 @@ def test_wrap_documents_puts_text_in_tags_and_blocks_a_closing_tag():
 def test_the_safety_prompt_allows_sensitive_study_and_refuses_serious_harm():
     prompt = safety_system()
     assert "serious harm" in prompt and "allowed" in prompt and "studied for understanding" in prompt
+
+
+def test_the_course_rule_appears_only_for_topics_inside_a_course():
+    assert prompts.COURSE_RULE in lesson_system("beginner", False, in_course=True)
+    assert prompts.COURSE_RULE not in lesson_system("beginner", False)

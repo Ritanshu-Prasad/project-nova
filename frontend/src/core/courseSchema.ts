@@ -147,7 +147,7 @@ function normBlock(b: Record<string, unknown>): Block | null {
   }
 }
 
-function normQuestion(q: Record<string, unknown>): Question | null {
+export function normQuestion(q: Record<string, unknown>): Question | null {
   const base = { q: str(q.q), why: str(q.why), difficulty: typeof q.difficulty === 'number' ? q.difficulty : 1 };
   if (!base.q) return null;
   const options = arr<unknown>(q.options).map((o) => str(o)).filter(Boolean);
