@@ -1,5 +1,3 @@
-import pytest
-
 import chunking
 from chunking import build_overview, build_topic_context, focus_terms, group_sections, score_text
 from pdf_parser import Page, Section

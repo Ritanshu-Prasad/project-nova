@@ -6,6 +6,8 @@ import pytest
 from fastapi import HTTPException
 
 import llm
+from course_models import QuestionList
+from samples import questions
 
 
 def run(coro):
@@ -194,3 +196,30 @@ def test_only_a_limited_number_of_requests_run_at_once(api, monkeypatch):
 
     run(many())
     assert peak[0] == 2
+
+
+# --- ask ---
+
+def test_ask_returns_the_validated_answer(fake_model):
+    fake_model.replies = [{"questions": questions(8)}]
+    assert len(run(llm.ask(QuestionList, "system", "user")).questions) == 8
+
+
+def test_ask_tries_again_after_an_unusable_answer(fake_model):
+    fake_model.replies = [{"questions": questions(2)}, {"questions": questions(8)}]
+    assert len(run(llm.ask(QuestionList, "system", "user")).questions) == 8
+    assert len(fake_model.calls) == 2
+
+
+def test_ask_gives_up_with_502(fake_model):
+    fake_model.replies = [{"questions": []}] * llm.ATTEMPTS
+    with pytest.raises(HTTPException) as error:
+        run(llm.ask(QuestionList, "system", "user"))
+    assert error.value.status_code == 502 and len(fake_model.calls) == llm.ATTEMPTS
+
+
+def test_ask_does_not_hide_model_errors(fake_model):
+    fake_model.replies = [HTTPException(503, "busy")]
+    with pytest.raises(HTTPException) as error:
+        run(llm.ask(QuestionList, "system", "user"))
+    assert error.value.status_code == 503 and len(fake_model.calls) == 1

@@ -72,23 +72,25 @@ def fresh_limits(monkeypatch):
 
 @pytest.fixture
 def fake_model(monkeypatch):
-    """Replaces the model call. `calls` records every system prompt; set `replies` to script answers."""
+    """Replaces the model call. `calls` records every system prompt, `prompts` every (system, user) pair; set `replies` to script answers."""
 
     class Fake:
         calls: list = []
+        prompts: list = []
         replies: list = []
 
     fake = Fake()
-    fake.calls, fake.replies = [], []
+    fake.calls, fake.prompts, fake.replies = [], [], []
 
     async def chat_json(system: str, user: str) -> dict:
         fake.calls.append(system)
+        fake.prompts.append((system, user))
         reply = fake.replies.pop(0) if fake.replies else reply_for(system, len(fake.calls))
         if isinstance(reply, Exception):
             raise reply
         return reply
 
-    monkeypatch.setattr(generator, "chat_json", chat_json)
+    monkeypatch.setattr(llm, "chat_json", chat_json)
     return fake
 
 

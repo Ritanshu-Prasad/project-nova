@@ -3,19 +3,24 @@ import json
 import logging
 import os
 import random
+from typing import Type, TypeVar
 
 import httpx
 from fastapi import HTTPException
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger("nova.llm")
 
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 DEFAULT_MODEL = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
 TIMEOUT = httpx.Timeout(120.0, connect=10.0)
+ATTEMPTS = 3
 MAX_PARALLEL_CALLS = 16
 RETRY_DELAYS = (1.0, 3.0)
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 _gates: dict = {}
+
+T = TypeVar("T", bound=BaseModel)
 
 
 # --- Settings ---
@@ -87,6 +92,16 @@ async def _post(payload: dict, key: str) -> httpx.Response:
 def _gate() -> asyncio.Semaphore:
     """At most MAX_PARALLEL_CALLS model requests at once across all visitors."""
     return _gates.setdefault(asyncio.get_running_loop(), asyncio.Semaphore(MAX_PARALLEL_CALLS))
+
+
+async def ask(schema: Type[T], system: str, user: str) -> T:
+    """Asks for JSON and validates it, asking again when the answer is unusable."""
+    for attempt in range(ATTEMPTS):
+        try:
+            return schema.model_validate(await chat_json(system, user))
+        except (ValidationError, ValueError) as error:
+            logger.warning("Unusable model answer (attempt %d): %s", attempt + 1, str(error)[:300])
+    raise HTTPException(502, "The course model returned an unusable answer")
 
 
 def raise_for_upstream(response: httpx.Response) -> None:
