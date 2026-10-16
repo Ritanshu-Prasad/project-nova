@@ -3,11 +3,15 @@ import json
 import logging
 import os
 import random
+import time
+from functools import lru_cache
 from typing import Type, TypeVar
 
 import httpx
 from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
+
+import usage
 
 logger = logging.getLogger("nova.llm")
 
@@ -20,6 +24,7 @@ MAX_PARALLEL_CALLS = 16
 RETRY_DELAYS = (1.0, 3.0)
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 _gates: dict = {}
+_schema_supported = [True]
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -45,8 +50,8 @@ def tutor_model() -> str:
 # --- Requests ---
 
 
-async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS, thinking: bool = True) -> dict:
-    """One chat completion that must come back as a JSON object."""
+async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS, thinking: bool = False, schema: Type[BaseModel] | None = None, kind: str = "call") -> dict:
+    """One chat completion that must come back as a JSON object, shaped by `schema` when the endpoint allows it."""
     key = api_key()
     if not key:
         raise HTTPException(503, "Course model is not configured")
@@ -54,20 +59,38 @@ async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
     payload = {
         "model": generate_model(),
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        "response_format": {"type": "json_object"},
+        "response_format": _response_format(schema),
         "temperature": 0.4,
         "max_tokens": max_tokens,
     }
-    if not thinking:
+    if not (thinking or os.getenv("NOVA_THINKING") == "on"):
         payload["chat_template_kwargs"] = {"enable_thinking": False}
+    started = time.perf_counter()
     response = await _post(payload, key)
+    if response.status_code == 400 and payload["response_format"]["type"] == "json_schema":
+        logger.warning("Endpoint rejected the JSON schema for %s, using plain JSON from now on: %.200s", kind, response.text)
+        _schema_supported[0] = False
+        response = await _post({**payload, "response_format": {"type": "json_object"}}, key)
     raise_for_upstream(response)
-    choice = response.json()["choices"][0]
+    body = response.json()
+    await usage.record_call(kind, body.get("usage"), time.perf_counter() - started)
+    choice = body["choices"][0]
     try:
         return _parse_json(choice["message"]["content"] or "")
     except ValueError:
         logger.warning("Unparseable model output (finish=%s): %.200s", choice.get("finish_reason"), choice["message"]["content"])
         raise
+
+
+def _response_format(schema: Type[BaseModel] | None) -> dict:
+    if schema is None or not _schema_supported[0] or os.getenv("NOVA_JSON_SCHEMA") == "off":
+        return {"type": "json_object"}
+    return {"type": "json_schema", "json_schema": {"name": schema.__name__.lower(), "strict": False, "schema": _schema_of(schema)}}
+
+
+@lru_cache(maxsize=None)
+def _schema_of(schema: Type[BaseModel]) -> dict:
+    return schema.model_json_schema()
 
 
 async def _post(payload: dict, key: str) -> httpx.Response:
@@ -80,6 +103,7 @@ async def _post(payload: dict, key: str) -> httpx.Response:
                 if response.status_code not in RETRY_STATUSES or delay is None:
                     return response
                 logger.warning("Model endpoint responded %s, retrying", response.status_code)
+                usage.record_retry()
             except httpx.TimeoutException:
                 if delay is None:
                     logger.warning("Model request timed out")
@@ -103,22 +127,26 @@ async def chat_text(messages: list, model: str, max_tokens: int = 700) -> str:
     if not key:
         raise HTTPException(503, "Tutor model is not configured")
     payload = {"model": model, "messages": messages, "temperature": 0.4, "max_tokens": max_tokens}
+    started = time.perf_counter()
     response = await _post(payload, key)
     raise_for_upstream(response)
-    return response.json()["choices"][0]["message"]["content"] or ""
+    body = response.json()
+    await usage.record_call("tutor", body.get("usage"), time.perf_counter() - started)
+    return body["choices"][0]["message"]["content"] or ""
 
 
-async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS, thinking: bool = True) -> T:
+async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS, thinking: bool = False, kind: str = "call") -> T:
     """Asks for JSON and validates it, asking again when the answer is unusable.
 
-    With thinking off the model answers straight away instead of reasoning first: far fewer tokens, for tasks
-    that need no long reasoning.
+    The model answers straight away instead of reasoning first (thinking=True or NOVA_THINKING=on lets it
+    reason): on the Nano model reasoning often used up the whole token limit before the JSON began.
     """
     for attempt in range(ATTEMPTS):
         try:
-            return schema.model_validate(await chat_json(system, user, max_tokens, thinking))
+            return schema.model_validate(await chat_json(system, user, max_tokens, thinking, schema, kind))
         except (ValidationError, ValueError) as error:
             logger.warning("Unusable model answer (attempt %d): %s", attempt + 1, str(error)[:300])
+            usage.record_retry()
     raise HTTPException(502, "The course model returned an unusable answer")
 
 

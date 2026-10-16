@@ -17,6 +17,8 @@ from pdf_parser import Document, read_documents, split_sections
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
 from progress import Report, ignore
 from safety import check_goal
+import usage
+from usage import check_budget
 from writing import keep_written, write_all_topics, write_module_quiz, write_module_quiz_from_lessons, write_topic
 
 router = APIRouter()
@@ -26,7 +28,7 @@ logger = logging.getLogger("nova.generator")
 
 # --- Routes ---
 
-@router.post("/api/courses/generate", dependencies=[Depends(COURSE_LIMIT)])
+@router.post("/api/courses/generate", dependencies=[Depends(COURSE_LIMIT), Depends(check_budget)])
 async def generate(
     mode: Mode = Form(...),
     level: Level = Form("beginner"),
@@ -40,7 +42,7 @@ async def generate(
     return await _make_course(request, documents, fresh)
 
 
-@router.post("/api/courses/generate/stream", dependencies=[Depends(COURSE_LIMIT)])
+@router.post("/api/courses/generate/stream", dependencies=[Depends(COURSE_LIMIT), Depends(check_budget)])
 async def generate_stream(
     mode: Mode = Form(...),
     level: Level = Form("beginner"),
@@ -64,7 +66,7 @@ async def _read_request(mode, level, objective, focus, structure, files) -> tupl
     return request, await read_documents(files)
 
 
-@router.post("/api/courses/topic", dependencies=[Depends(TOPIC_LIMIT)])
+@router.post("/api/courses/topic", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
 async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
     key = (body.level, body.objective.casefold(), body.module.casefold(), body.topic.casefold(), body.outline, body.previous)
     cached = None if fresh else await TOPICS.get(key)
@@ -83,7 +85,7 @@ async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
     return topic
 
 
-@router.post("/api/courses/module-quiz", dependencies=[Depends(TOPIC_LIMIT)])
+@router.post("/api/courses/module-quiz", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
 async def generate_module_quiz(body: ModuleQuizRequest, fresh: bool = Query(False)):
     """The module's quiz written from what its lessons really taught."""
     key = ("module-quiz", body.level, body.objective.casefold(), body.module.casefold(), body.model_dump_json(include={"topics"}))
@@ -129,6 +131,8 @@ async def _course_events(request: CourseRequest, documents: List[Document], fres
             yield json.dumps(event) + "\n"
     finally:
         job.cancel()
+        if spent := usage.current():
+            logger.info("Course stream ended [%s]", spent.describe())
 
 
 async def _course_from_goal(request: CourseRequest, fresh: bool, report: Report) -> dict:

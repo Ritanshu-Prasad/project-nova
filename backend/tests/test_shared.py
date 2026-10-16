@@ -40,6 +40,13 @@ def test_the_window_does_not_move_with_later_hits(clock):
     assert run(state.ttl("k")) == 10
 
 
+def test_amounts_can_be_added_to_a_counter(clock):
+    state = MemoryState()
+    assert [run(state.add("k", amount, 60)) for amount in (500, 250, 1)] == [500, 750, 751]
+    clock[0] += 61
+    assert run(state.add("k", 5, 60)) == 5
+
+
 def test_counters_are_separate_per_key(clock):
     state = MemoryState()
     run(state.hit("a", 60))
@@ -88,8 +95,8 @@ class FakeRedis:
         command = json.loads(request.content)
         self.commands.append(command)
         name, key, *rest = command
-        if name == "INCR":
-            self.data[key] = int(self.data.get(key, 0)) + 1
+        if name == "INCRBY":
+            self.data[key] = int(self.data.get(key, 0)) + int(rest[0])
             return httpx.Response(200, json={"result": self.data[key]})
         if name == "GET":
             return httpx.Response(200, json={"result": self.data.get(key)})
@@ -116,6 +123,12 @@ def test_the_first_hit_sets_the_expiry(redis):
     state, fake = redis
     assert run(state.hit("k", 60)) == 1
     assert ["EXPIRE", "k", "60"] in fake.commands
+
+
+def test_amounts_are_added_and_the_expiry_is_set_once(redis):
+    state, fake = redis
+    assert run(state.add("k", 500, 3600)) == 500 and run(state.add("k", 250, 3600)) == 750
+    assert ["INCRBY", "k", "500"] in fake.commands and sum(command[0] == "EXPIRE" for command in fake.commands) == 1
 
 
 def test_later_hits_do_not_move_the_expiry(redis):

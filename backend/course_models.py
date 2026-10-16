@@ -293,6 +293,13 @@ class CourseDocument(BaseModel):
     pages: int
 
 
+class CourseMeta(BaseModel):
+    """How a course was written, so a bad one can be traced to its prompts and model."""
+    model: str
+    promptVersion: str
+    createdAt: int
+
+
 class Course(BaseModel):
     id: str
     title: str
@@ -302,3 +309,4 @@ class Course(BaseModel):
     source: Literal["ai", "documents"]
     modules: list[Module]
     documents: Optional[list[CourseDocument]] = None
+    meta: Optional[CourseMeta] = None

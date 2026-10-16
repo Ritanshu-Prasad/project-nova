@@ -101,7 +101,8 @@ def test_the_model_never_sees_the_key_or_the_explanation(fake_model):
     assert "Because." not in fake_model.prompts[0][1] and "answer" not in fake_model.prompts[0][1].lower().replace("answers", "")
 
 
-def test_document_excerpts_are_given_to_the_model(fake_model):
+def test_document_excerpts_are_given_to_the_model(fake_model, monkeypatch):
+    monkeypatch.setenv("NOVA_VERIFY_DOCUMENTS", "on")
     fake_model.replies = twice(answers(*[KEY] * 8))
     run(drop_disputed(quiz(), "beginner", context="[a.pdf p.1]\nBridges connect containers."))
     assert "Bridges connect containers." in fake_model.prompts[0][1]
@@ -152,3 +153,9 @@ def test_the_votes_are_asked_without_thinking_and_with_a_small_budget(fake_model
 def test_a_vote_that_does_not_answer_a_question_never_disputes_it(fake_model):
     fake_model.replies = [answers(KEY, [0], *[KEY] * 6), {"answers": [{"number": 1, "choice": KEY}]}]
     assert len(run(drop_disputed(quiz(), "beginner"))) == 8
+
+
+def test_questions_from_documents_are_not_checked_unless_asked(fake_model):
+    original = quiz()
+    assert run(drop_disputed(original, "beginner", context="[a.pdf p.1]\ntext")) == original
+    assert fake_model.calls == []

@@ -22,7 +22,7 @@ async def check_goal(goal: str) -> None:
     if os.getenv("NOVA_MODERATION") == "off":
         return
     try:
-        verdict = await llm.ask(Verdict, safety_system(), wrap_goal(goal), VERDICT_TOKENS)
+        verdict = await llm.ask(Verdict, safety_system(), wrap_goal(goal), VERDICT_TOKENS, kind="safety")
     except HTTPException as error:
         logger.warning("Goal check skipped: %s", error.detail)
         return

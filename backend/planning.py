@@ -57,7 +57,7 @@ class Outline(BaseModel):
 
 async def plan_outline(request: CourseRequest, report: Report = ignore) -> Outline:
     report("outline", "Planning your modules")
-    return await llm.ask(Outline, outline_system(request.level), describe_request(request, ""), OUTLINE_TOKENS)
+    return await llm.ask(Outline, outline_system(request.level), describe_request(request, ""), OUTLINE_TOKENS, kind="outline")
 
 
 def fit_outline(outline: Outline) -> Outline:
@@ -80,5 +80,5 @@ async def plan_document_outline(request: CourseRequest, documents: List[Document
 
 async def _plan_module(request: CourseRequest, group: Group, terms: List[str]) -> OutlineModule:
     user = describe_request(request, build_overview([group], terms, MODULE_OVERVIEW_CHARS))
-    module = await llm.ask(OutlineModule, module_system(request.level), user, MODULE_TOKENS)
+    module = await llm.ask(OutlineModule, module_system(request.level), user, MODULE_TOKENS, kind="module")
     return module.model_copy(update={"topics": module.topics[:DOCUMENT_TOPICS_PER_MODULE]})

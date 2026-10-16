@@ -32,9 +32,10 @@ async def drop_disputed(questions: List[Question], level: str, context: str = ""
 
     A key the model cannot reproduce is more likely wrong than the question is hard, and asking twice keeps one
     unlucky answer from removing a good question. Nothing is dropped if that would leave too few questions, and
-    a failing check leaves the questions as they were.
+    a failing check leaves the questions as they were. Questions written from documents are not checked unless
+    NOVA_VERIFY_DOCUMENTS=on, because every vote would have to read the document excerpts again.
     """
-    if os.getenv("NOVA_VERIFY_ANSWERS") == "off":
+    if os.getenv("NOVA_VERIFY_ANSWERS") == "off" or (context and os.getenv("NOVA_VERIFY_DOCUMENTS") != "on"):
         return questions
     checkable = [(position, question) for position, question in enumerate(questions) if question.type in CHECKABLE]
     if not checkable:
@@ -53,7 +54,7 @@ async def drop_disputed(questions: List[Question], level: str, context: str = ""
 
 async def _vote(level: str, checkable: list, context: str) -> dict:
     tokens = BASE_TOKENS + TOKENS_PER_QUESTION * len(checkable)
-    reply = await llm.ask(BlindAnswers, answer_system(level), _render(checkable, context), tokens, thinking=False)
+    reply = await llm.ask(BlindAnswers, answer_system(level), _render(checkable, context), tokens, kind="answers")
     return {answer.number: set(answer.choice) for answer in reply.answers}
 
 

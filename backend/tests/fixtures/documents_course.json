@@ -296,5 +296,10 @@
       "name": "guide.pdf",
       "pages": 1
     }
-  ]
+  ],
+  "meta": {
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "promptVersion": "2026-10-a",
+    "createdAt": 0
+  }
 }

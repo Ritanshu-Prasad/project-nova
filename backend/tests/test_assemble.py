@@ -1,5 +1,7 @@
 from pydantic import TypeAdapter
 
+import prompts
+
 from assemble import assemble_course, assemble_lazy_course, dedupe_questions, verify_sources, _verified_lesson
 from course_models import Lesson, Question
 from course_requests import CourseRequest
@@ -162,3 +164,16 @@ def test_verify_sources_checks_every_topic_against_the_uploaded_documents():
     topic = TopicContent(lesson_with({"doc": "x.pdf", "page": 1}), [], [])
     [[checked]] = verify_sources([[topic]], [A_BOOK])
     assert cited(checked.lesson) == [("a.pdf", 2)]
+
+
+# --- How a course was written ---
+
+def test_a_course_records_its_model_and_prompt_version(monkeypatch):
+    monkeypatch.setenv("NOVA_GENERATE_MODEL", "some/model")
+    course = assemble_lazy_course(outline(1, 1), [[]], request())
+    assert course.meta.model == "some/model" and course.meta.promptVersion == prompts.PROMPT_VERSION and course.meta.createdAt > 0
+
+
+def test_a_document_course_records_it_too():
+    contents = [[content(questions(8), questions(12, start=100))]]
+    assert assemble_course(outline(1, 1), contents, request(), documents()).meta.promptVersion == prompts.PROMPT_VERSION

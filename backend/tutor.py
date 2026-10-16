@@ -12,6 +12,7 @@ import llm
 from limits import TUTOR_LIMIT
 from prompts import GRADED_REMINDER, sanitise, tutor_system
 from spoilers import find_clash, is_quiz_chat
+from usage import check_budget
 
 router = APIRouter()
 logger = logging.getLogger("nova.tutor")
@@ -53,7 +54,7 @@ class TutorRequest(BaseModel):
 
 # --- Route ---
 
-@router.post("/api/tutor/chat", dependencies=[Depends(TUTOR_LIMIT)])
+@router.post("/api/tutor/chat", dependencies=[Depends(TUTOR_LIMIT), Depends(check_budget)])
 async def tutor_chat(body: TutorRequest):
     if not llm.api_key():
         raise HTTPException(503, "Tutor model is not configured")

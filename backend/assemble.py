@@ -1,12 +1,15 @@
 import re
+import time
 import uuid
 from dataclasses import replace
 from typing import List
 
-from course_models import Course, CourseDocument, Lesson, LessonStub, Module, Question, Topic, TopicStub
+import llm
+from course_models import Course, CourseDocument, CourseMeta, Lesson, LessonStub, Module, Question, Topic, TopicStub
 from course_requests import CourseRequest
 from pdf_parser import Document
 from planning import Outline, OutlineTopic
+from prompts import PROMPT_VERSION
 from writing import TopicContent
 
 
@@ -43,6 +46,7 @@ def assemble_course(outline: Outline, contents: List[List[TopicContent]], reques
         source="documents",
         modules=modules,
         documents=[CourseDocument(name=document.name, pages=len(document.pages)) for document in documents],
+        meta=_meta(),
     )
 
 
@@ -65,7 +69,12 @@ def assemble_lazy_course(outline: Outline, quizzes: List[List[Question]], reques
         level=request.level,
         source="ai",
         modules=modules,
+        meta=_meta(),
     )
+
+
+def _meta() -> CourseMeta:
+    return CourseMeta(model=llm.generate_model(), promptVersion=PROMPT_VERSION, createdAt=int(time.time() * 1000))
 
 
 def new_course_id() -> str:

@@ -39,16 +39,16 @@ async def write_topic(module_title: str, topic: OutlineTopic, request: CourseReq
     grounded = bool(context)
     user = f"{describe_request(request, context)}\n\n{describe_topic(module_title, topic.title, topic.summary, list(outline), previous)}"
     lesson, quiz, practice = await asyncio.gather(
-        llm.ask(Lesson, lesson_system(request.level, grounded, in_course=bool(outline or previous)), user, LESSON_TOKENS),
+        llm.ask(Lesson, lesson_system(request.level, grounded, in_course=bool(outline or previous)), user, LESSON_TOKENS, kind="lesson"),
         _graded_quiz(request, grounded, user, context),
-        llm.ask(QuestionList, questions_system(request.level, PRACTICE_SIZE, grounded), user, question_tokens(PRACTICE_SIZE)),
+        llm.ask(QuestionList, questions_system(request.level, PRACTICE_SIZE, grounded), user, question_tokens(PRACTICE_SIZE), kind="practice"),
     )
     return TopicContent(lesson, quiz, practice.questions)
 
 
 async def _graded_quiz(request: CourseRequest, grounded: bool, user: str, context: str) -> List[Question]:
     """The questions that count towards a module pass are also checked against an independent answer."""
-    written = await llm.ask(QuestionList, questions_system(request.level, QUIZ_SIZE, grounded), user, question_tokens(QUIZ_SIZE))
+    written = await llm.ask(QuestionList, questions_system(request.level, QUIZ_SIZE, grounded), user, question_tokens(QUIZ_SIZE), kind="quiz")
     return await drop_disputed(written.questions, request.level, context)
 
 
@@ -58,7 +58,7 @@ async def write_module_quiz(module: OutlineModule, request: CourseRequest) -> Li
     topics = "\n".join(f"- {topic.title}: {topic.summary}" for topic in module.topics)
     user = f'{describe_request(request, "")}\n\nEnd-of-module quiz for the module "{module.title}", covering all of its topics:\n{topics}'
     try:
-        return (await llm.ask(QuestionList, system, user, question_tokens(MODULE_QUIZ_SIZE))).questions
+        return (await llm.ask(QuestionList, system, user, question_tokens(MODULE_QUIZ_SIZE), kind="module quiz")).questions
     except HTTPException as error:
         logger.warning("Module quiz for %r skipped: %s", module.title, error.detail)
         return []
@@ -68,7 +68,7 @@ async def write_module_quiz_from_lessons(request: CourseRequest, module_title: s
     """The end-of-module quiz written from what the lessons really covered, so it never asks about anything untaught."""
     system = questions_system(request.level, MODULE_QUIZ_SIZE, grounded=False)
     user = f"{describe_request(request, '')}\n\n{describe_taught(module_title, taught)}"
-    written = await llm.ask(QuestionList, system, user, question_tokens(MODULE_QUIZ_SIZE))
+    written = await llm.ask(QuestionList, system, user, question_tokens(MODULE_QUIZ_SIZE), kind="module quiz")
     return await drop_disputed(written.questions, request.level)
 
 

@@ -21,14 +21,18 @@ class MemoryState:
 
     async def hit(self, key: str, window_seconds: int) -> int:
         """Counts a request in a fixed window and returns how many have been counted in it."""
+        return await self.add(key, 1, window_seconds)
+
+    async def add(self, key: str, amount: int, window_seconds: int) -> int:
+        """Adds to a counter that starts again when its window ends, and returns the new total."""
         now = time.monotonic()
         entry = self.entries.get(key)
         if entry is None or entry[0] <= now:
-            expires, count = now + window_seconds, 1
+            expires, total = now + window_seconds, amount
         else:
-            expires, count = entry[0], int(entry[1]) + 1
-        self._store(key, expires, str(count))
-        return count
+            expires, total = entry[0], int(entry[1]) + amount
+        self._store(key, expires, str(total))
+        return total
 
     async def ttl(self, key: str) -> int:
         entry = self.entries.get(key)
@@ -74,10 +78,13 @@ class RedisState:
         self.headers = {"Authorization": f"Bearer {token}"}
 
     async def hit(self, key: str, window_seconds: int) -> int:
-        count = int(await self._cmd("INCR", key))
-        if count == 1:
+        return await self.add(key, 1, window_seconds)
+
+    async def add(self, key: str, amount: int, window_seconds: int) -> int:
+        total = int(await self._cmd("INCRBY", key, str(amount)))
+        if total == amount:
             await self._cmd("EXPIRE", key, str(window_seconds))
-        return count
+        return total
 
     async def ttl(self, key: str) -> int:
         return max(0, int(await self._cmd("TTL", key)))

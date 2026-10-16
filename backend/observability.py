@@ -10,6 +10,7 @@ from fastapi import APIRouter, FastAPI, Request
 
 import accounts
 import llm
+import usage
 
 router = APIRouter()
 logger = logging.getLogger("nova.requests")
@@ -41,6 +42,7 @@ def add_request_logging(app: FastAPI) -> None:
         incoming = request.headers.get("x-request-id", "")
         request_id = incoming if VALID_REQUEST_ID.match(incoming) else uuid.uuid4().hex[:12]
         token = request_id_var.set(request_id)
+        spent = usage.begin()
         started = time.perf_counter()
         try:
             response = await call_next(request)
@@ -51,7 +53,8 @@ def add_request_logging(app: FastAPI) -> None:
             elapsed = (time.perf_counter() - started) * 1000
             response.headers["X-Request-ID"] = request_id
             response.headers["X-Response-Time"] = f"{elapsed:.0f}ms"
-            logger.info("%s %s -> %s (%.0f ms)", request.method, request.url.path, response.status_code, elapsed)
+            cost = f" [{spent.describe()}]" if spent.calls else ""
+            logger.info("%s %s -> %s (%.0f ms)%s", request.method, request.url.path, response.status_code, elapsed, cost)
             return response
         finally:
             request_id_var.reset(token)
