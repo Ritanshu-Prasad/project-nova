@@ -1,5 +1,10 @@
 from fastapi import HTTPException
 
+import asyncio
+import contextlib
+import json
+
+import generator
 import planning
 import writing
 from conftest import make_pdf
@@ -300,3 +305,128 @@ def test_goal_courses_use_the_outline_and_quiz_limits(client, fake_model):
 
 def test_more_questions_get_more_room():
     assert writing.question_tokens(12) > writing.question_tokens(8) > writing.question_tokens(1) > 0
+
+
+# --- The streamed route ---
+
+def stream_events(client, mode="goal", **fields) -> list:
+    data = {"mode": mode, "level": "beginner", "objective": "Docker networking", **fields}
+    response = client.post("/api/courses/generate/stream", data=data)
+    assert response.status_code == 200
+    return [json.loads(line) for line in response.text.splitlines()]
+
+
+def stream_book(client) -> list:
+    files = [("files", ("book.pdf", make_pdf(BOOK), "application/pdf"))]
+    response = client.post("/api/courses/generate/stream", data={"mode": "documents", "level": "beginner"}, files=files)
+    return [json.loads(line) for line in response.text.splitlines()]
+
+
+def test_the_stream_ends_with_the_course(client, fake_model):
+    events = stream_events(client)
+    assert events[-1]["type"] == "course" and events[-1]["course"]["modules"]
+    assert all(event["type"] == "progress" for event in events[:-1])
+
+
+def test_the_stream_reports_progress_in_order(client, fake_model):
+    stages = [event["stage"] for event in stream_events(client) if event["type"] == "progress"]
+    assert stages == ["outline", "quiz"]
+
+
+def test_the_stream_is_sent_as_ndjson_without_buffering(client, fake_model):
+    response = client.post("/api/courses/generate/stream", data={"mode": "goal", "level": "beginner", "objective": "Docker"})
+    assert response.headers["content-type"].startswith("application/x-ndjson")
+    assert response.headers["cache-control"] == "no-cache" and response.headers["x-accel-buffering"] == "no"
+
+
+def test_the_streamed_course_matches_the_plain_route(client, fake_model):
+    streamed = stream_events(client)[-1]["course"]
+    plain = generate_goal(client).json()
+    assert {**streamed, "id": ""} == {**plain, "id": ""}
+
+
+def test_document_progress_counts_finished_topics(client, fake_model):
+    details = [event["detail"] for event in stream_book(client) if event.get("stage") == "topics"]
+    assert len(details) == 6 and details[-1] == "Writing lessons (6 of 6)"
+
+
+def test_document_streams_announce_the_outline_first(client, fake_model):
+    events = stream_book(client)
+    assert events[0]["stage"] == "outline" and "3 modules" in events[0]["detail"] and events[-1]["course"]["source"] == "documents"
+
+
+def test_a_model_error_arrives_as_an_error_event(client, fake_model):
+    fake_model.replies = [HTTPException(503, "busy")]
+    events = stream_events(client)
+    assert events[-1] == {"type": "error", "status": 503, "detail": "busy"}
+
+
+def test_an_unexpected_failure_arrives_as_a_generic_error_event(client, fake_model, monkeypatch):
+    async def broken(*args, **kwargs):
+        raise RuntimeError("secret details")
+
+    monkeypatch.setattr(generator, "_make_course", broken)
+    event = stream_events(client)[-1]
+    assert event["status"] == 500 and "secret" not in event["detail"]
+
+
+def test_bad_requests_fail_before_the_stream_starts(client, fake_model):
+    assert client.post("/api/courses/generate/stream", data={"mode": "goal", "level": "beginner", "objective": "x"}).status_code == 422
+    bad = [("files", ("bad.pdf", b"nope", "application/pdf"))]
+    assert client.post("/api/courses/generate/stream", data={"mode": "documents", "level": "beginner"}, files=bad).status_code == 422
+
+
+def test_leaving_the_stream_stops_the_work():
+    cancelled = []
+
+    async def slow(*args, **kwargs):
+        try:
+            await asyncio.sleep(5)
+        except asyncio.CancelledError:
+            cancelled.append(1)
+            raise
+
+    async def run():
+        generator_make = generator._make_course
+        generator._make_course = slow
+        try:
+            events = generator._course_events(None, [], False)
+            task = asyncio.ensure_future(events.__anext__())
+            await asyncio.sleep(0.05)
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+            await asyncio.sleep(0.05)
+        finally:
+            generator._make_course = generator_make
+
+    asyncio.run(run())
+    assert cancelled == [1]
+
+
+def test_a_cached_course_streams_without_progress(client, fake_model):
+    stream_events(client)
+    assert [event["type"] for event in stream_events(client)] == ["course"]
+
+
+# --- Skipping the cache ---
+
+def test_fresh_asks_the_model_again(client, fake_model):
+    generate_goal(client)
+    calls = len(fake_model.calls)
+    client.post("/api/courses/generate?fresh=true", data={"mode": "goal", "level": "beginner", "objective": "Docker networking"})
+    assert len(fake_model.calls) == calls * 2
+
+
+def test_fresh_replaces_the_cached_course(client, fake_model):
+    generate_goal(client)
+    fake_model.replies = [outline_json(modules=1, topics=1)]
+    client.post("/api/courses/generate?fresh=true", data={"mode": "goal", "level": "beginner", "objective": "Docker networking"})
+    assert len(generate_goal(client).json()["modules"]) == 1
+
+
+def test_fresh_applies_to_topics_too(client, fake_model):
+    client.post("/api/courses/topic", json=topic_request())
+    calls = len(fake_model.calls)
+    client.post("/api/courses/topic?fresh=true", json=topic_request())
+    assert len(fake_model.calls) == calls * 2

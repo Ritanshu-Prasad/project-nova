@@ -9,10 +9,9 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import cache  # noqa: E402
 import generator  # noqa: E402
-import limits  # noqa: E402
 import llm  # noqa: E402
+import shared  # noqa: E402
 from samples import lesson_json, module_json, outline_json, questions  # noqa: E402
 
 
@@ -67,11 +66,8 @@ def reply_for(system: str, call_number: int) -> dict:
 
 @pytest.fixture(autouse=True)
 def fresh_limits(monkeypatch):
-    """Every test starts with empty rate limits and caches, no waiting between model retries and no goal check."""
-    for limit in limits.ALL_LIMITS:
-        limit.clear()
-    for stored in cache.ALL_CACHES:
-        stored.clear()
+    """Every test starts with a fresh shared state (rate limits and caches), no waiting between model retries and no goal check."""
+    monkeypatch.setattr(shared, "state", shared.MemoryState())
     monkeypatch.setattr(llm, "RETRY_DELAYS", ())
     monkeypatch.setenv("NOVA_MODERATION", "off")
 

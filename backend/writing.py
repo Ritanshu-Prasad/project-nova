@@ -9,6 +9,7 @@ import llm
 from course_models import Lesson, Question, QuestionList
 from course_requests import CourseRequest, describe_request
 from planning import Outline, OutlineModule, OutlineTopic
+from progress import Report, ignore
 from prompts import lesson_system, questions_system
 
 logger = logging.getLogger("nova.writing")
@@ -56,8 +57,9 @@ async def write_module_quiz(module: OutlineModule, request: CourseRequest) -> Li
         return []
 
 
-async def write_all_topics(outline: Outline, request: CourseRequest, contexts: List[str]) -> List[List[Optional[TopicContent]]]:
+async def write_all_topics(outline: Outline, request: CourseRequest, contexts: List[str], report: Report = ignore) -> List[List[Optional[TopicContent]]]:
     """Every topic is written at once; a topic that fails comes back as None."""
+    total, finished = sum(len(module.topics) for module in outline.modules), [0]
 
     async def write(module: OutlineModule, topic: OutlineTopic, context: str) -> Optional[TopicContent]:
         try:
@@ -65,6 +67,9 @@ async def write_all_topics(outline: Outline, request: CourseRequest, contexts: L
         except HTTPException as error:
             logger.warning("Topic %r skipped: %s", topic.title, error.detail)
             return None
+        finally:
+            finished[0] += 1
+            report("topics", f"Writing lessons ({finished[0]} of {total})")
 
     jobs = [write(module, topic, context) for module, context in zip(outline.modules, contexts) for topic in module.topics]
     written = iter(await asyncio.gather(*jobs))

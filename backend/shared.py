@@ -1,0 +1,113 @@
+import logging
+import os
+import time
+
+import httpx
+
+logger = logging.getLogger("nova.shared")
+
+MAX_LOCAL_KEYS = 10_000
+
+
+class StateError(Exception):
+    """The shared store could not be reached; callers carry on without it."""
+
+
+# --- In memory (local development, tests) ---
+
+class MemoryState:
+    def __init__(self):
+        self.entries: dict[str, tuple[float, str]] = {}
+
+    async def hit(self, key: str, window_seconds: int) -> int:
+        """Counts a request in a fixed window and returns how many have been counted in it."""
+        now = time.monotonic()
+        entry = self.entries.get(key)
+        if entry is None or entry[0] <= now:
+            expires, count = now + window_seconds, 1
+        else:
+            expires, count = entry[0], int(entry[1]) + 1
+        self._store(key, expires, str(count))
+        return count
+
+    async def ttl(self, key: str) -> int:
+        entry = self.entries.get(key)
+        return max(0, int(entry[0] - time.monotonic())) if entry else 0
+
+    async def get(self, key: str) -> str | None:
+        return self._live(key, time.monotonic())
+
+    async def put(self, key: str, value: str, ttl_seconds: int) -> None:
+        self._store(key, time.monotonic() + ttl_seconds, value)
+
+    async def delete(self, key: str) -> None:
+        self.entries.pop(key, None)
+
+    def clear(self) -> None:
+        self.entries.clear()
+
+    def _live(self, key: str, now: float) -> str | None:
+        entry = self.entries.get(key)
+        if entry is None:
+            return None
+        if entry[0] <= now:
+            del self.entries[key]
+            return None
+        return entry[1]
+
+    def _store(self, key: str, expires: float, value: str) -> None:
+        if len(self.entries) >= MAX_LOCAL_KEYS:
+            self._forget_expired()
+        self.entries[key] = (expires, value)
+
+    def _forget_expired(self) -> None:
+        now = time.monotonic()
+        for key in [key for key, (expires, _) in self.entries.items() if expires <= now]:
+            del self.entries[key]
+
+
+# --- Upstash Redis over its REST API (serverless deployments) ---
+
+class RedisState:
+    def __init__(self, url: str, token: str):
+        self.url = url.rstrip("/")
+        self.headers = {"Authorization": f"Bearer {token}"}
+
+    async def hit(self, key: str, window_seconds: int) -> int:
+        count = int(await self._cmd("INCR", key))
+        if count == 1:
+            await self._cmd("EXPIRE", key, str(window_seconds))
+        return count
+
+    async def ttl(self, key: str) -> int:
+        return max(0, int(await self._cmd("TTL", key)))
+
+    async def get(self, key: str) -> str | None:
+        return await self._cmd("GET", key)
+
+    async def put(self, key: str, value: str, ttl_seconds: int) -> None:
+        await self._cmd("SET", key, value, "EX", str(ttl_seconds))
+
+    async def delete(self, key: str) -> None:
+        await self._cmd("DEL", key)
+
+    async def _cmd(self, *args: str):
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                response = await client.post(self.url, headers=self.headers, json=list(args))
+        except httpx.HTTPError as error:
+            raise StateError(str(error))
+        if response.status_code != 200:
+            raise StateError(f"Redis answered {response.status_code}")
+        return response.json().get("result")
+
+
+# --- Which one ---
+
+def make_state() -> MemoryState | RedisState:
+    url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
+    token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
+    return RedisState(url, token) if url and token else MemoryState()
+
+
+state = make_state()

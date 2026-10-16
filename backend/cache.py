@@ -1,35 +1,47 @@
+import hashlib
+import json
+import logging
 import os
-import time
+
+import llm
+import shared
+from prompts import PROMPT_VERSION
+
+logger = logging.getLogger("nova.cache")
 
 
-class TtlCache:
-    """Remembers results for a while, so repeated requests do not pay for the model again."""
+class ResultCache:
+    """Remembers finished results for a while, so repeated requests do not pay for the model again.
 
-    def __init__(self, ttl_seconds: int, max_items: int):
+    Keys include the prompt version and the model, so a change to either never serves old content.
+    """
+
+    def __init__(self, name: str, ttl_seconds: int):
+        self.name = name
         self.ttl_seconds = ttl_seconds
-        self.max_items = max_items
-        self.items: dict = {}
 
-    def get(self, key):
+    async def get(self, parts: tuple) -> dict | None:
         if os.getenv("NOVA_CACHE") == "off":
             return None
-        expires, value = self.items.get(key, (0, None))
-        if expires > time.monotonic():
-            return value
-        self.items.pop(key, None)
-        return None
+        try:
+            stored = await shared.state.get(self._key(parts))
+        except shared.StateError as error:
+            logger.warning("Cache read skipped: %s", error)
+            return None
+        return json.loads(stored) if stored else None
 
-    def set(self, key, value) -> None:
-        if len(self.items) >= self.max_items:
-            self.items.pop(next(iter(self.items)))
-        self.items[key] = (time.monotonic() + self.ttl_seconds, value)
+    async def put(self, parts: tuple, value: dict) -> None:
+        try:
+            await shared.state.put(self._key(parts), json.dumps(value), self.ttl_seconds)
+        except shared.StateError as error:
+            logger.warning("Cache write skipped: %s", error)
 
-    def clear(self) -> None:
-        self.items.clear()
+    def _key(self, parts: tuple) -> str:
+        fingerprint = json.dumps([PROMPT_VERSION, llm.generate_model(), *parts])
+        return f"nova:cache:{self.name}:{hashlib.sha1(fingerprint.encode()).hexdigest()}"
 
 
 # --- Caches ---
 
-COURSES = TtlCache(ttl_seconds=3600, max_items=200)
-TOPICS = TtlCache(ttl_seconds=3600, max_items=1000)
-ALL_CACHES = [COURSES, TOPICS]
+COURSES = ResultCache("course", ttl_seconds=3600)
+TOPICS = ResultCache("topic", ttl_seconds=3600)

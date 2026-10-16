@@ -9,6 +9,7 @@ from chunking import Group, build_overview
 from course_models import TopicKind
 from course_requests import MAX_TITLE_CHARS, CourseRequest, describe_request
 from pdf_parser import Document
+from progress import Report, ignore
 from prompts import module_system, outline_system
 
 Scope = Literal["narrow", "broad"]
@@ -54,7 +55,8 @@ class Outline(BaseModel):
 
 # --- From a goal ---
 
-async def plan_outline(request: CourseRequest) -> Outline:
+async def plan_outline(request: CourseRequest, report: Report = ignore) -> Outline:
+    report("outline", "Planning your modules")
     return await llm.ask(Outline, outline_system(request.level), describe_request(request, ""), OUTLINE_TOKENS)
 
 
@@ -67,8 +69,9 @@ def fit_outline(outline: Outline) -> Outline:
 
 # --- From documents ---
 
-async def plan_document_outline(request: CourseRequest, documents: List[Document], groups: List[Group], terms: List[str]) -> Outline:
+async def plan_document_outline(request: CourseRequest, documents: List[Document], groups: List[Group], terms: List[str], report: Report = ignore) -> Outline:
     """One module per group of sections, planned in parallel; the course is named after its documents."""
+    report("outline", f"Planning {len(groups)} modules from your documents")
     modules = await asyncio.gather(*(_plan_module(request, group, terms) for group in groups))
     names = [Path(document.name).stem.replace("_", " ").replace("-", " ").strip().title() for document in documents]
     subtitle = f"Built from {len(documents)} document{'s' if len(documents) > 1 else ''}"

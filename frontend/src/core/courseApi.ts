@@ -6,15 +6,16 @@ import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse'
 /**
  * Course generation. When `VITE_COURSE_API` is set (e.g. http://localhost:8000), requests go to the AI backend:
  *
- *   POST {API}/api/courses/generate   multipart/form-data
+ *   POST {API}/api/courses/generate/stream   multipart/form-data   (POST .../generate answers with the course alone)
  *     mode       "goal" | "documents"
  *     objective  string          (goal mode)
  *     level      beginner | intermediate | advanced
  *     focus      string          (documents mode, optional)
  *     structure  chapters | topics
  *     files      PDF files       (documents mode, repeated field)
- *   → 200 application/json: a Course (see courseSchema.ts). Module and topic counts are not fixed — size them
- *     to the subject: broad subjects get more modules, dense modules more topics (the journey follows suit).
+ *   → 200 application/x-ndjson, one event per line: {type:'progress', stage, detail} ... then {type:'course', course}
+ *     or {type:'error', status, detail}. The course is a Course (see courseSchema.ts); module and topic counts are not
+ *     fixed — size them to the subject: broad subjects get more modules, dense modules more topics.
  *
  * Without the backend (or if it fails) NOVA falls back to built-in templates and in-browser PDF extraction.
  */
@@ -43,6 +44,37 @@ async function viaBackend(req: GenerateRequest, progress: ProgressFn): Promise<C
     for (const f of req.files) form.append('files', f, f.name);
   }
   progress('upload', req.mode === 'documents' ? `Uploading ${req.files.length} document(s)` : 'Sending your goal');
+  const res = await fetch(`${API}/api/courses/generate/stream`, { method: 'POST', body: form });
+  if (res.status === 404) return plainCourse(form, progress);
+  if (!res.ok) throw new Error(`Course API responded ${res.status}`);
+  return normalizeCourse(await readCourse(res, progress));
+}
+
+/** The streamed route sends one JSON event per line: progress steps, then the course (or an error). */
+async function readCourse(res: Response, progress: ProgressFn): Promise<unknown> {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let pending = '';
+  let course: unknown;
+  for (;;) {
+    const { done, value } = await reader.read();
+    pending += decoder.decode(value, { stream: !done });
+    const lines = pending.split('\n');
+    pending = done ? '' : lines.pop()!;
+    for (const line of lines.filter(Boolean)) {
+      const event = JSON.parse(line);
+      if (event.type === 'progress') progress(event.stage, event.detail);
+      else if (event.type === 'course') course = event.course;
+      else if (event.type === 'error') throw new Error(`Course API responded ${event.status}: ${event.detail}`);
+    }
+    if (done) break;
+  }
+  if (!course) throw new Error('The course stream ended without a course.');
+  return course;
+}
+
+/** For a backend without the streamed route. */
+async function plainCourse(form: FormData, progress: ProgressFn): Promise<Course> {
   const res = await fetch(`${API}/api/courses/generate`, { method: 'POST', body: form });
   if (!res.ok) throw new Error(`Course API responded ${res.status}`);
   progress('topics', 'Structuring modules and topics');

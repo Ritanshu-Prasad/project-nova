@@ -1,9 +1,11 @@
 import asyncio
 import hashlib
+import json
 import logging
-from typing import List
+from typing import AsyncIterator, List
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import StreamingResponse
 
 from assemble import assemble_course, assemble_lazy_course, dedupe_questions, new_course_id, verify_sources
 from cache import COURSES, TOPICS
@@ -13,10 +15,12 @@ from course_requests import CourseRequest, Mode, Structure, TopicRequest
 from limits import COURSE_LIMIT, TOPIC_LIMIT
 from pdf_parser import Document, read_documents, split_sections
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
+from progress import Report, ignore
 from safety import check_goal
 from writing import keep_written, write_all_topics, write_module_quiz, write_topic
 
 router = APIRouter()
+STREAM_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 logger = logging.getLogger("nova.generator")
 
 
@@ -30,21 +34,40 @@ async def generate(
     focus: str = Form(""),
     structure: Structure = Form("chapters"),
     files: List[UploadFile] = File(default=[]),
+    fresh: bool = Query(False),
 ):
+    request, documents = await _read_request(mode, level, objective, focus, structure, files)
+    return await _make_course(request, documents, fresh)
+
+
+@router.post("/api/courses/generate/stream", dependencies=[Depends(COURSE_LIMIT)])
+async def generate_stream(
+    mode: Mode = Form(...),
+    level: Level = Form("beginner"),
+    objective: str = Form(""),
+    focus: str = Form(""),
+    structure: Structure = Form("chapters"),
+    files: List[UploadFile] = File(default=[]),
+    fresh: bool = Query(False),
+):
+    """The same course, sent as one JSON event per line: progress steps, then the course (or an error)."""
+    request, documents = await _read_request(mode, level, objective, focus, structure, files)
+    return StreamingResponse(_course_events(request, documents, fresh), media_type="application/x-ndjson", headers=STREAM_HEADERS)
+
+
+async def _read_request(mode, level, objective, focus, structure, files) -> tuple[CourseRequest, List[Document]]:
     request = CourseRequest(mode=mode, level=level, objective=objective, focus=focus, structure=structure)
     if mode == "goal":
         if len(request.objective) < 3:
             raise HTTPException(422, "Describe what you want to learn")
-        course = await _course_from_goal(request)
-    else:
-        course = await _course_from_documents(request, await read_documents(files))
-    return course.model_dump(by_alias=True, exclude_none=True)
+        return request, []
+    return request, await read_documents(files)
 
 
 @router.post("/api/courses/topic", dependencies=[Depends(TOPIC_LIMIT)])
-async def generate_topic(body: TopicRequest):
+async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
     key = (body.level, body.objective.casefold(), body.module.casefold(), body.topic.casefold())
-    cached = TOPICS.get(key)
+    cached = None if fresh else await TOPICS.get(key)
     if cached:
         return cached
     request = CourseRequest(mode="goal", level=body.level, objective=body.objective)
@@ -56,34 +79,71 @@ async def generate_topic(body: TopicRequest):
         "quiz": [q.model_dump(exclude_none=True) for q in dedupe_questions(content.quiz, seen)],
         "practice": [q.model_dump(exclude_none=True) for q in dedupe_questions(content.practice, seen)],
     }
-    TOPICS.set(key, topic)
+    await TOPICS.put(key, topic)
     return topic
 
 
 # --- Course flows ---
 
-async def _course_from_goal(request: CourseRequest) -> Course:
+async def _make_course(request: CourseRequest, documents: List[Document], fresh: bool, report: Report = ignore) -> dict:
+    if request.mode == "goal":
+        return await _course_from_goal(request, fresh, report)
+    return _dump(await _course_from_documents(request, documents, report))
+
+
+async def _course_events(request: CourseRequest, documents: List[Document], fresh: bool) -> AsyncIterator[str]:
+    """Runs the course in the background and passes its progress on as it happens; leaving stops the work."""
+    events: asyncio.Queue = asyncio.Queue()
+
+    def report(stage: str, detail: str = "") -> None:
+        events.put_nowait({"type": "progress", "stage": stage, "detail": detail})
+
+    async def run() -> None:
+        try:
+            events.put_nowait({"type": "course", "course": await _make_course(request, documents, fresh, report)})
+        except HTTPException as error:
+            events.put_nowait({"type": "error", "status": error.status_code, "detail": error.detail})
+        except Exception:
+            logger.exception("Course generation failed")
+            events.put_nowait({"type": "error", "status": 500, "detail": "Something went wrong while writing the course"})
+        finally:
+            events.put_nowait(None)
+
+    job = asyncio.create_task(run())
+    try:
+        while (event := await events.get()) is not None:
+            yield json.dumps(event) + "\n"
+    finally:
+        job.cancel()
+
+
+async def _course_from_goal(request: CourseRequest, fresh: bool, report: Report) -> dict:
     """Outline and module quizzes now; each topic is written when the learner opens it."""
     key = (request.level, request.objective.casefold())
-    cached = COURSES.get(key)
+    cached = None if fresh else await COURSES.get(key)
     if cached:
         logger.info("Course %s served from the cache", _fingerprint(request.objective))
-        return cached.model_copy(update={"id": new_course_id(), "objective": request.objective})
-    outline = fit_outline(await _while_checking(request.objective, plan_outline(request)))
+        return {**cached, "id": new_course_id(), "objective": request.objective}
+    outline = fit_outline(await _while_checking(request.objective, plan_outline(request, report)))
+    report("quiz", "Writing the module quizzes")
     quizzes = await asyncio.gather(*(write_module_quiz(module, request) for module in outline.modules))
-    course = assemble_lazy_course(outline, quizzes, request)
-    COURSES.set(key, course)
+    course = _dump(assemble_lazy_course(outline, quizzes, request))
+    await COURSES.put(key, course)
     return course
 
 
-async def _course_from_documents(request: CourseRequest, documents: List[Document]) -> Course:
+async def _course_from_documents(request: CourseRequest, documents: List[Document], report: Report) -> Course:
     """Documents become a course in one go: one module per group of sections, written from those sections' pages."""
     terms = focus_terms(request.focus)
     groups = group_sections([section for document in documents for section in split_sections(document)], request.structure)
-    outline = await plan_document_outline(request, documents, groups, terms)
+    outline = await plan_document_outline(request, documents, groups, terms, report)
     contexts = [build_topic_context(group, terms) for group in groups]
-    outline, contents = keep_written(outline, await write_all_topics(outline, request, contexts))
+    outline, contents = keep_written(outline, await write_all_topics(outline, request, contexts, report))
     return assemble_course(outline, verify_sources(contents, documents), request, documents)
+
+
+def _dump(course: Course) -> dict:
+    return course.model_dump(by_alias=True, exclude_none=True)
 
 
 async def _while_checking(goal: str, work):

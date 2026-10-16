@@ -1,0 +1,180 @@
+import asyncio
+
+import httpx
+import pytest
+
+import shared
+from shared import MemoryState, RedisState, StateError
+
+
+def run(coro):
+    return asyncio.run(coro)
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    now = [1000.0]
+    monkeypatch.setattr(shared.time, "monotonic", lambda: now[0])
+    return now
+
+
+# --- In memory ---
+
+def test_hits_are_counted_within_a_window(clock):
+    state = MemoryState()
+    assert [run(state.hit("k", 60)) for _ in range(3)] == [1, 2, 3]
+
+
+def test_a_new_window_starts_counting_again(clock):
+    state = MemoryState()
+    run(state.hit("k", 60)), run(state.hit("k", 60))
+    clock[0] += 61
+    assert run(state.hit("k", 60)) == 1
+
+
+def test_the_window_does_not_move_with_later_hits(clock):
+    state = MemoryState()
+    run(state.hit("k", 60))
+    clock[0] += 50
+    run(state.hit("k", 60))
+    assert run(state.ttl("k")) == 10
+
+
+def test_counters_are_separate_per_key(clock):
+    state = MemoryState()
+    run(state.hit("a", 60))
+    assert run(state.hit("b", 60)) == 1
+
+
+def test_values_are_stored_until_they_expire(clock):
+    state = MemoryState()
+    run(state.put("k", "v", 30))
+    assert run(state.get("k")) == "v"
+    clock[0] += 31
+    assert run(state.get("k")) is None
+
+
+def test_a_value_can_be_deleted(clock):
+    state = MemoryState()
+    run(state.put("k", "v", 30))
+    run(state.delete("k"))
+    assert run(state.get("k")) is None
+
+
+def test_the_remaining_time_of_an_unknown_key_is_zero(clock):
+    assert run(MemoryState().ttl("nothing")) == 0
+
+
+def test_expired_entries_are_forgotten_when_too_many_are_kept(clock, monkeypatch):
+    monkeypatch.setattr(shared, "MAX_LOCAL_KEYS", 2)
+    state = MemoryState()
+    run(state.put("old1", "x", 10)), run(state.put("old2", "x", 10))
+    clock[0] += 20
+    run(state.put("new", "x", 10))
+    assert set(state.entries) == {"new"}
+
+
+# --- Redis ---
+
+class FakeRedis:
+    """Answers Upstash REST commands from a dictionary and records them."""
+
+    def __init__(self):
+        self.data, self.commands = {}, []
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        import json
+
+        command = json.loads(request.content)
+        self.commands.append(command)
+        name, key, *rest = command
+        if name == "INCR":
+            self.data[key] = int(self.data.get(key, 0)) + 1
+            return httpx.Response(200, json={"result": self.data[key]})
+        if name == "GET":
+            return httpx.Response(200, json={"result": self.data.get(key)})
+        if name == "SET":
+            self.data[key] = rest[0]
+            return httpx.Response(200, json={"result": "OK"})
+        if name == "DEL":
+            self.data.pop(key, None)
+            return httpx.Response(200, json={"result": 1})
+        if name == "TTL":
+            return httpx.Response(200, json={"result": 42})
+        return httpx.Response(200, json={"result": 1})
+
+
+@pytest.fixture
+def redis(monkeypatch):
+    fake = FakeRedis()
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(shared.httpx, "AsyncClient", lambda **kw: real_client(transport=httpx.MockTransport(fake), **kw))
+    return RedisState("https://redis.test/", "token"), fake
+
+
+def test_the_first_hit_sets_the_expiry(redis):
+    state, fake = redis
+    assert run(state.hit("k", 60)) == 1
+    assert ["EXPIRE", "k", "60"] in fake.commands
+
+
+def test_later_hits_do_not_move_the_expiry(redis):
+    state, fake = redis
+    run(state.hit("k", 60)), run(state.hit("k", 60))
+    assert sum(command[0] == "EXPIRE" for command in fake.commands) == 1
+
+
+def test_redis_values_round_trip(redis):
+    state, fake = redis
+    run(state.put("k", "v", 30))
+    assert ["SET", "k", "v", "EX", "30"] in fake.commands and run(state.get("k")) == "v"
+    run(state.delete("k"))
+    assert run(state.get("k")) is None
+
+
+def test_the_remaining_time_comes_from_redis(redis):
+    assert run(redis[0].ttl("k")) == 42
+
+
+def test_redis_requests_carry_the_token(monkeypatch):
+    seen = []
+    real_client = httpx.AsyncClient
+
+    def handler(request):
+        seen.append(request.headers["authorization"])
+        return httpx.Response(200, json={"result": None})
+
+    monkeypatch.setattr(shared.httpx, "AsyncClient", lambda **kw: real_client(transport=httpx.MockTransport(handler), **kw))
+    run(RedisState("https://redis.test", "secret").get("k"))
+    assert seen == ["Bearer secret"]
+
+
+def test_a_redis_error_status_becomes_a_state_error(monkeypatch):
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(shared.httpx, "AsyncClient", lambda **kw: real_client(transport=httpx.MockTransport(lambda request: httpx.Response(500)), **kw))
+    with pytest.raises(StateError):
+        run(RedisState("https://redis.test", "t").get("k"))
+
+
+def test_an_unreachable_redis_becomes_a_state_error(monkeypatch):
+    def refuse(request):
+        raise httpx.ConnectError("down")
+
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(shared.httpx, "AsyncClient", lambda **kw: real_client(transport=httpx.MockTransport(refuse), **kw))
+    with pytest.raises(StateError):
+        run(RedisState("https://redis.test", "t").hit("k", 60))
+
+
+# --- Choosing the store ---
+
+def test_memory_is_used_without_redis_settings(monkeypatch):
+    for name in ("KV_REST_API_URL", "KV_REST_API_TOKEN", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+    assert isinstance(shared.make_state(), MemoryState)
+
+
+def test_redis_is_used_when_configured_either_way(monkeypatch):
+    monkeypatch.setenv("UPSTASH_REDIS_REST_URL", "https://redis.test")
+    monkeypatch.setenv("UPSTASH_REDIS_REST_TOKEN", "t")
+    assert isinstance(shared.make_state(), RedisState)

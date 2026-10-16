@@ -1,5 +1,7 @@
 import re
 
+PROMPT_VERSION = "2026-10-a"
+
 # --- Level profiles ---
 
 LEVELS = {
