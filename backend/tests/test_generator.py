@@ -176,11 +176,19 @@ def test_the_course_is_named_after_its_documents(client, fake_model):
 
 def test_course_citations_point_at_real_pages(client, fake_model):
     lesson = lesson_json()
-    lesson["blocks"].append({"type": "source", "doc": "invented.pdf", "page": 40, "excerpt": "quote"})
+    lesson["blocks"].append({"type": "source", "doc": "invented.pdf", "page": 40, "excerpt": "Chapter 1 Light Plants absorb light"})
     fake_model.replies = [module_json(topics=1), lesson]
     topic = generate_book(client, bookmarks=[("Whole book", 1)]).json()["modules"][0]["topics"][0]
-    sources = [b for b in topic["lesson"]["blocks"] if b["type"] == "source"]
-    assert sources == [{"type": "source", "doc": "book.pdf", "excerpt": "quote"}]
+    sources = [(b["doc"], b["page"]) for b in topic["lesson"]["blocks"] if b["type"] == "source"]
+    assert sources == [("book.pdf", 1)]
+
+
+def test_a_citation_that_quotes_nothing_in_the_documents_is_removed(client, fake_model):
+    lesson = lesson_json()
+    lesson["blocks"].append({"type": "source", "doc": "book.pdf", "page": 1, "excerpt": "A sentence the book never contained at all"})
+    fake_model.replies = [module_json(topics=1), lesson]
+    topic = generate_book(client, bookmarks=[("Whole book", 1)]).json()["modules"][0]["topics"][0]
+    assert [b for b in topic["lesson"]["blocks"] if b["type"] == "source"] == []
 
 
 def test_a_failed_topic_is_dropped_and_the_rest_of_the_course_is_kept(client, fake_model):

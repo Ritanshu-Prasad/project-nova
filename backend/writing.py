@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import HTTPException
 
 import llm
+from answer_check import drop_disputed
 from course_models import Lesson, Question, QuestionList
 from course_requests import CourseRequest, describe_request
 from planning import Outline, OutlineModule, OutlineTopic
@@ -39,10 +40,16 @@ async def write_topic(module_title: str, topic: OutlineTopic, request: CourseReq
     user = f'{describe_request(request, context)}\n\nTopic: "{topic.title}" ({topic.summary}) from the module "{module_title}".'
     lesson, quiz, practice = await asyncio.gather(
         llm.ask(Lesson, lesson_system(request.level, grounded), user, LESSON_TOKENS),
-        llm.ask(QuestionList, questions_system(request.level, QUIZ_SIZE, grounded), user, question_tokens(QUIZ_SIZE)),
+        _graded_quiz(request, grounded, user, context),
         llm.ask(QuestionList, questions_system(request.level, PRACTICE_SIZE, grounded), user, question_tokens(PRACTICE_SIZE)),
     )
-    return TopicContent(lesson, quiz.questions, practice.questions)
+    return TopicContent(lesson, quiz, practice.questions)
+
+
+async def _graded_quiz(request: CourseRequest, grounded: bool, user: str, context: str) -> List[Question]:
+    """The questions that count towards a module pass are also checked against an independent answer."""
+    written = await llm.ask(QuestionList, questions_system(request.level, QUIZ_SIZE, grounded), user, question_tokens(QUIZ_SIZE))
+    return await drop_disputed(written.questions, request.level, context)
 
 
 async def write_module_quiz(module: OutlineModule, request: CourseRequest) -> List[Question]:

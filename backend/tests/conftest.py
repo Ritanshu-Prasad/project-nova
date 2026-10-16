@@ -1,3 +1,4 @@
+import asyncio
 import io
 import os
 import re
@@ -66,10 +67,11 @@ def reply_for(system: str, call_number: int) -> dict:
 
 @pytest.fixture(autouse=True)
 def fresh_limits(monkeypatch):
-    """Every test starts with a fresh shared state (rate limits and caches), no waiting between model retries and no goal check."""
+    """Every test starts with a fresh shared state (rate limits and caches), no waiting between model retries, no goal check and no answer check."""
     monkeypatch.setattr(shared, "state", shared.MemoryState())
     monkeypatch.setattr(llm, "RETRY_DELAYS", ())
     monkeypatch.setenv("NOVA_MODERATION", "off")
+    monkeypatch.setenv("NOVA_VERIFY_ANSWERS", "off")
 
 
 @pytest.fixture
@@ -81,12 +83,15 @@ def fake_model(monkeypatch):
         prompts: list = []
         replies: list = []
         limits: list = []
+        thinking: list = []
 
     fake = Fake()
-    fake.calls, fake.prompts, fake.replies, fake.limits = [], [], [], []
+    fake.calls, fake.prompts, fake.replies, fake.limits, fake.thinking = [], [], [], [], []
 
-    async def chat_json(system: str, user: str, max_tokens: int = 0) -> dict:
+    async def chat_json(system: str, user: str, max_tokens: int = 0, thinking: bool = True) -> dict:
+        await asyncio.sleep(0)  # like a real request, other calls get to start while this one waits
         fake.limits.append(max_tokens)
+        fake.thinking.append(thinking)
         fake.calls.append(system)
         fake.prompts.append((system, user))
         reply = fake.replies.pop(0) if fake.replies else reply_for(system, len(fake.calls))

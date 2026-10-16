@@ -87,8 +87,15 @@ def test_lazy_topics_keep_the_planned_minutes():
 
 # --- Citations ---
 
+QUOTE = "Chlorophyll absorbs red and blue light in the thylakoid membrane"
+
+
+def book(*texts: str, name: str = "a.pdf") -> Document:
+    return Document(name, [Page(name, number, text) for number, text in enumerate(texts, start=1)])
+
+
 def lesson_with(*sources) -> Lesson:
-    blocks = [{"type": "text", "body": "Body"}, *({"type": "source", "excerpt": "quote", **source} for source in sources)]
+    blocks = [{"type": "text", "body": "Body"}, *({"type": "source", "excerpt": QUOTE, **source} for source in sources)]
     return Lesson.model_validate({"blocks": blocks})
 
 
@@ -96,24 +103,62 @@ def cited(lesson) -> list:
     return [(b.doc, b.page) for b in lesson.blocks if b.type == "source"]
 
 
-def test_a_valid_citation_is_kept():
-    assert cited(_verified_lesson(lesson_with({"doc": "a.pdf", "page": 2}), {"a.pdf": 5, "b.pdf": 3})) == [("a.pdf", 2)]
+def check(lesson, *documents) -> Lesson:
+    return _verified_lesson(lesson, {document.name: document for document in documents})
 
 
-def test_a_page_that_does_not_exist_is_removed_from_the_citation():
-    assert cited(_verified_lesson(lesson_with({"doc": "a.pdf", "page": 99}), {"a.pdf": 5})) == [("a.pdf", None)]
+A_BOOK = book("Intro to biology.", f"Notes: {QUOTE}, then more.", "Other things.")
+
+
+def test_a_citation_that_is_on_the_cited_page_is_kept():
+    assert cited(check(lesson_with({"doc": "a.pdf", "page": 2}), A_BOOK)) == [("a.pdf", 2)]
+
+
+def test_a_wrong_page_is_repaired_to_the_page_that_holds_the_quote():
+    assert cited(check(lesson_with({"doc": "a.pdf", "page": 1}), A_BOOK)) == [("a.pdf", 2)]
+
+
+def test_a_missing_page_is_repaired_too():
+    assert cited(check(lesson_with({"doc": "a.pdf", "page": None}), A_BOOK)) == [("a.pdf", 2)]
+    assert cited(check(lesson_with({"doc": "a.pdf", "page": 99}), A_BOOK)) == [("a.pdf", 2)]
+
+
+def test_a_quote_that_is_not_in_the_document_is_dropped():
+    lesson = check(lesson_with({"doc": "a.pdf", "page": 2}), book("Nothing about plants here.", "Or here either."))
+    assert cited(lesson) == [] and [b.type for b in lesson.blocks] == ["text"]
+
+
+def test_a_small_difference_in_wording_still_matches():
+    lesson = lesson_with({"doc": "a.pdf", "page": 2})
+    assert cited(check(lesson, book("x", "chlorophyll absorbs RED and blue light in the thylakoid membrane!!"))) == [("a.pdf", 2)]
 
 
 def test_an_unknown_document_is_corrected_when_there_is_only_one():
-    assert cited(_verified_lesson(lesson_with({"doc": "made-up.pdf", "page": 1}), {"a.pdf": 5})) == [("a.pdf", 1)]
+    assert cited(check(lesson_with({"doc": "made-up.pdf", "page": 2}), A_BOOK)) == [("a.pdf", 2)]
 
 
 def test_an_unknown_document_is_dropped_when_there_are_several():
-    lesson = _verified_lesson(lesson_with({"doc": "made-up.pdf", "page": 1}), {"a.pdf": 5, "b.pdf": 3})
-    assert cited(lesson) == [] and [b.type for b in lesson.blocks] == ["text"]
+    lesson = check(lesson_with({"doc": "made-up.pdf", "page": 2}), A_BOOK, book("other", name="b.pdf"))
+    assert cited(lesson) == []
+
+
+def test_the_quote_is_found_in_the_right_one_of_several_documents():
+    other = book("Different text entirely.", name="b.pdf")
+    assert cited(check(lesson_with({"doc": "b.pdf", "page": 1}), A_BOOK, other)) == []
+    assert cited(check(lesson_with({"doc": "a.pdf", "page": 2}), A_BOOK, other)) == [("a.pdf", 2)]
+
+
+def test_a_very_short_quote_must_appear_word_for_word():
+    short = Lesson.model_validate({"blocks": [{"type": "source", "doc": "a.pdf", "page": 1, "excerpt": "Mitosis"}]})
+    assert cited(check(short, book("Cells divide by Mitosis."))) == [("a.pdf", 1)]
+    assert cited(check(short, book("Cells divide."))) == []
+
+
+def test_other_blocks_are_left_alone():
+    assert [b.type for b in check(lesson_with(), A_BOOK).blocks] == ["text"]
 
 
 def test_verify_sources_checks_every_topic_against_the_uploaded_documents():
     topic = TopicContent(lesson_with({"doc": "x.pdf", "page": 1}), [], [])
-    [[checked]] = verify_sources([[topic]], documents())
-    assert cited(checked.lesson) == [("book.pdf", 1)]
+    [[checked]] = verify_sources([[topic]], [A_BOOK])
+    assert cited(checked.lesson) == [("a.pdf", 2)]

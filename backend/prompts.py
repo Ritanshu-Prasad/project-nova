@@ -143,6 +143,23 @@ def _source_rule(grounded: bool) -> str:
     return "Do not include source blocks."
 
 
+def answer_system(level: str) -> str:
+    profile = LEVELS[level]
+    return "\n".join([
+        "You answer quiz questions as a careful student and reply as JSON:",
+        '{"answers": [{"number": int, "choice": [option index, ...]}]}',
+        "",
+        _rules(
+            f"The student is {profile['audience']}.",
+            'Option indexes start at 0. Give one index for single-answer questions and every correct index for "select all" questions.',
+            "Answer every question using only the question text and any document excerpts given.",
+            LANGUAGE_RULE,
+            DOCUMENT_RULE,
+        ),
+        "Reply with JSON only.",
+    ])
+
+
 # --- User input ---
 
 CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]+")

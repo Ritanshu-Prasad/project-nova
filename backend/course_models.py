@@ -8,6 +8,9 @@ TopicKind = Literal["concept", "programming", "math", "science", "humanities", "
 
 MIN_QUESTIONS = 6
 
+# Regex syntax that Python accepts but the app's JavaScript does not read the same way.
+PYTHON_ONLY_PATTERN = re.compile(r"\(\?P|\(\?>|\(\?[aiLmsux-]+[:)]|\\[AZzh]|(?<!\\)[*+?}]\+")
+
 
 # --- Lenient lists: invalid items are dropped instead of failing the whole object ---
 
@@ -116,15 +119,22 @@ class QuestionBase(BaseModel):
     difficulty: int = Field(default=1, ge=1, le=3)
 
 
+def _unique(items: list[str]) -> bool:
+    cleaned = [" ".join(item.casefold().split()) for item in items]
+    return len(set(cleaned)) == len(cleaned)
+
+
 class Mcq(QuestionBase):
     type: Literal["mcq"]
     options: list[str] = Field(min_length=2)
     answer: int
 
     @model_validator(mode="after")
-    def answer_in_range(self):
+    def sound(self):
         if not 0 <= self.answer < len(self.options):
             raise ValueError("answer is outside the options")
+        if not _unique(self.options):
+            raise ValueError("options repeat")
         return self
 
 
@@ -134,9 +144,13 @@ class Multi(QuestionBase):
     answers: list[int] = Field(min_length=1)
 
     @model_validator(mode="after")
-    def answers_in_range(self):
+    def sound(self):
         if any(not 0 <= a < len(self.options) for a in self.answers):
             raise ValueError("an answer is outside the options")
+        if len(set(self.answers)) != len(self.answers) or len(self.answers) == len(self.options):
+            raise ValueError("answers repeat or include every option")
+        if not _unique(self.options):
+            raise ValueError("options repeat")
         return self
 
 
@@ -157,11 +171,14 @@ class CodeCheck(BaseModel):
 
     @field_validator("pattern")
     @classmethod
-    def compiles(cls, pattern: str) -> str:
+    def portable(cls, pattern: str) -> str:
+        """Must compile, and mean the same in the app, which runs patterns as JavaScript."""
         try:
             re.compile(pattern)
         except re.error as error:
             raise ValueError(f"invalid pattern: {error}")
+        if PYTHON_ONLY_PATTERN.search(pattern):
+            raise ValueError("pattern uses syntax JavaScript does not share")
         return pattern
 
 
@@ -172,15 +189,35 @@ class CodeQuestion(QuestionBase):
     solution: str = Field(min_length=1)
     checks: list[CodeCheck] = Field(min_length=1)
 
+    @model_validator(mode="after")
+    def checks_accept_the_solution(self):
+        """The app runs each pattern as multi-line JavaScript; the model's own solution must pass every one."""
+        failing = [check.label for check in self.checks if not re.search(check.pattern, self.solution, re.MULTILINE)]
+        if failing:
+            raise ValueError(f"the solution does not pass its own checks: {failing}")
+        return self
+
 
 class Order(QuestionBase):
     type: Literal["order"]
     items: list[str] = Field(min_length=3)
 
+    @model_validator(mode="after")
+    def distinct_items(self):
+        if not _unique(self.items):
+            raise ValueError("items repeat")
+        return self
+
 
 class Match(QuestionBase):
     type: Literal["match"]
     pairs: list[tuple[str, str]] = Field(min_length=2)
+
+    @model_validator(mode="after")
+    def distinct_sides(self):
+        if not _unique([left for left, _ in self.pairs]) or not _unique([right for _, right in self.pairs]):
+            raise ValueError("a side repeats")
+        return self
 
 
 Question = Annotated[

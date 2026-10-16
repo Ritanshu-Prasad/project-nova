@@ -251,3 +251,16 @@ def test_the_token_limit_is_sent_to_the_model(api):
     run(llm.chat_json("s", "u", max_tokens=1234))
     run(llm.chat_json("s", "u"))
     assert sent == [1234, llm.DEFAULT_MAX_TOKENS]
+
+
+def test_thinking_can_be_switched_off_for_a_request(api):
+    bodies = []
+
+    def handler(request):
+        bodies.append(json.loads(request.content))
+        return reply()
+
+    api(handler)
+    run(llm.chat_json("s", "u"))
+    run(llm.chat_json("s", "u", thinking=False))
+    assert "chat_template_kwargs" not in bodies[0] and bodies[1]["chat_template_kwargs"] == {"enable_thinking": False}

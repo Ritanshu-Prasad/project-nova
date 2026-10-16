@@ -45,7 +45,7 @@ def tutor_model() -> str:
 # --- Requests ---
 
 
-async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS) -> dict:
+async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS, thinking: bool = True) -> dict:
     """One chat completion that must come back as a JSON object."""
     key = api_key()
     if not key:
@@ -58,6 +58,8 @@ async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
         "temperature": 0.4,
         "max_tokens": max_tokens,
     }
+    if not thinking:
+        payload["chat_template_kwargs"] = {"enable_thinking": False}
     response = await _post(payload, key)
     raise_for_upstream(response)
     choice = response.json()["choices"][0]
@@ -106,11 +108,15 @@ async def chat_text(messages: list, model: str, max_tokens: int = 700) -> str:
     return response.json()["choices"][0]["message"]["content"] or ""
 
 
-async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS) -> T:
-    """Asks for JSON and validates it, asking again when the answer is unusable."""
+async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS, thinking: bool = True) -> T:
+    """Asks for JSON and validates it, asking again when the answer is unusable.
+
+    With thinking off the model answers straight away instead of reasoning first: far fewer tokens, for tasks
+    that need no long reasoning.
+    """
     for attempt in range(ATTEMPTS):
         try:
-            return schema.model_validate(await chat_json(system, user, max_tokens))
+            return schema.model_validate(await chat_json(system, user, max_tokens, thinking))
         except (ValidationError, ValueError) as error:
             logger.warning("Unusable model answer (attempt %d): %s", attempt + 1, str(error)[:300])
     raise HTTPException(502, "The course model returned an unusable answer")
