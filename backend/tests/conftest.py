@@ -9,18 +9,21 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import calibration  # noqa: E402
 import document_store  # noqa: E402
 import generator  # noqa: E402
 import llm  # noqa: E402
 import shared  # noqa: E402
 from evals.pdfs import make_pdf  # noqa: E402,F401
-from samples import lesson_json, module_json, outline_json, questions  # noqa: E402
+from samples import lesson_json, mcq, module_json, outline_json, questions  # noqa: E402
 
 
 def reply_for(system: str, call_number: int, user: str = "") -> dict:
     """A valid model answer for whichever prompt was sent; every question list has its own distinct questions."""
     if "review learning goals" in system:
         return {"allowed": True, "reason": ""}
+    if "placement quiz" in system:
+        return {"questions": [{**mcq(n), "difficulty": difficulty} for n, difficulty in enumerate([3, 1, 2, 1, 2])]}
     if "careful student" in system:
         return {"answers": [{"number": int(number), "choice": [1]} for number in re.findall(r"^Question (\d+)", user, re.MULTILINE)]}
     if "strict teaching reviewer" in system:
@@ -82,6 +85,7 @@ def fake_model(monkeypatch):
 def client():
     app = FastAPI()
     app.include_router(generator.router)
+    app.include_router(calibration.router)
     return TestClient(app)
 
 

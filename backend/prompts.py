@@ -163,6 +163,22 @@ def answer_system(level: str) -> str:
     ])
 
 
+def placement_system() -> str:
+    return "\n".join([
+        "You write a short placement quiz that tells how much a learner already knows about a subject, as JSON:",
+        '{"questions": [{"type":"mcq","q":str,"options":[4 strs],"answer":index,"why":str,"difficulty":int}]}',
+        "",
+        _rules(
+            "Write exactly 5 multiple-choice questions in order from easiest to hardest: two on core vocabulary and ideas, two on applying the ideas, and one on a subtle case or trade-off.",
+            "Each question must have exactly one clearly correct option, and the wrong options must be plausible.",
+            "Do not mention levels or the words beginner, intermediate or advanced.",
+            LANGUAGE_RULE,
+            GOAL_RULE,
+        ),
+        "Reply with JSON only.",
+    ])
+
+
 # --- User input ---
 
 CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]+")

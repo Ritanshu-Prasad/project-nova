@@ -10,5 +10,9 @@ A goal you type is sent to the AI provider (Nebius) to write your course and to 
 
 ## Progress and accounts
 Your courses, progress and profile are stored under your account by the existing account service. 
+## Statistics and abuse protection
+- To check how hard questions really are, the app sends, after a quiz, a short hash of each question, the level and whether the answer was right. These counts contain no account or device identifier.
+- To limit abuse the server counts requests per network address for up to an hour; these counters are not linked to anything else and expire on their own.
+
 ## Your responsibility
 Only upload material you are allowed to share with a third-party service. Do not upload personal or confidential documents.

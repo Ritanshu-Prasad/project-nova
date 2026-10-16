@@ -57,6 +57,10 @@ def test_module_quiz_matches_the_frontend_sample(client, fake_model):
     check("module_quiz", client.post("/api/courses/module-quiz", json=body).json())
 
 
-@pytest.mark.parametrize("name", ["lazy_course", "documents_course", "topic", "module_quiz"])
+def test_placement_matches_the_frontend_sample(client, fake_model):
+    check("placement", client.post("/api/courses/placement", json={"objective": "Docker networking"}).json())
+
+
+@pytest.mark.parametrize("name", ["lazy_course", "documents_course", "topic", "module_quiz", "placement"])
 def test_every_sample_exists(name):
     assert (FIXTURES / f"{name}.json").exists()

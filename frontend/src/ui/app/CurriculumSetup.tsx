@@ -13,6 +13,7 @@ import type { DocStructure } from '../../core/pdfCourse';
 import { useNova } from '../../core/store';
 import { ensureTopic } from '../../core/topicLoader';
 import { HudButton } from '../common/HudButton';
+import PlacementCheck from './PlacementCheck';
 
 type Stage = 'edit' | 'forge' | 'ready' | 'error';
 const LEVELS: { id: Level; label: string }[] = [
@@ -170,6 +171,7 @@ export default function CurriculumSetup() {
                         </div>
                       </div>
                       <LevelPicker level={level} onChange={setLevel} />
+                      {hasCourseApi && objective.trim().length >= 3 && <PlacementCheck objective={objective.trim()} onLevel={setLevel} />}
                     </div>
                   ) : (
                     <div className="mt-5 space-y-5">

@@ -27,7 +27,7 @@ class BlindAnswers(BaseModel):
     answers: List[BlindAnswer]
 
 
-async def drop_disputed(questions: List[Question], level: str, context: str = "") -> List[Question]:
+async def drop_disputed(questions: List[Question], level: str, context: str = "", minimum: int = MIN_QUESTIONS) -> List[Question]:
     """Has the model answer the questions without seeing the key, and drops those where every attempt disagrees.
 
     A key the model cannot reproduce is more likely wrong than the question is hard, and asking twice keeps one
@@ -49,7 +49,7 @@ async def drop_disputed(questions: List[Question], level: str, context: str = ""
     kept = [question for position, question in enumerate(questions) if position not in disputed]
     if disputed:
         logger.info("Answer check dropped %d of %d questions", len(disputed), len(questions))
-    return kept if len(kept) >= MIN_QUESTIONS else questions
+    return kept if len(kept) >= minimum else questions
 
 
 async def _vote(level: str, checkable: list, context: str) -> dict:

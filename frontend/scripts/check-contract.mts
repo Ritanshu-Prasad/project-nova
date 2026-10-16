@@ -57,6 +57,11 @@ const moduleQuiz = read('module_quiz');
 const moduleQuizGot = moduleQuiz.quiz.map(normQuestion).filter((q: Question | null): q is Question => q !== null);
 expect(countBy(moduleQuiz.quiz) === countBy(moduleQuizGot), 'module quiz: questions changed');
 
+// A placement quiz: multiple choice only, with its difficulty.
+const placement = read('placement');
+const placementGot = placement.questions.map(normQuestion).filter((q: Question | null): q is Question => q !== null);
+expect(placementGot.length === placement.questions.length && placementGot.every((q: Question) => q.type === 'mcq' && !!q.difficulty), 'placement: questions changed');
+
 if (problems.length) {
   console.error(`Contract check failed:\n- ${problems.join('\n- ')}`);
   process.exit(1);

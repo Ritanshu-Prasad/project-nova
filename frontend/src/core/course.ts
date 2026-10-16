@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import { forgetDocuments } from './courseApi';
+import { flushAnswers, noteAnswer } from './feedback';
 import { flatTopics, type Course, type Module, type PlacedTopic, type Question, type Topic } from './courseSchema';
 import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
 import { tidyCourse, tidyTopicContent } from './tidyCourse';
@@ -315,6 +316,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const id = get().activeId;
       const e = id ? get().library[id] : undefined;
       if (!e) return 0;
+      if (opts.qId) noteAnswer(opts.qId, e.course.level, correct);
       const sk = e.skill;
       const K = kFactor(e.course);
       const expected = 1 / (1 + Math.pow(10, (questionRating(opts.progress, opts.difficulty) - sk.mmr) / 400));
@@ -363,13 +365,17 @@ export const useCourse = create<CourseState>()((set, get) => {
       const passed = score >= PASS_MARK;
       patchActive((x) => ({ ...x, modules: { ...x.modules, [moduleId]: { passed: prev.passed || passed, best: Math.max(prev.best, score), attempts: prev.attempts + 1 } } }));
       bumpDay(passed && !prev.passed ? 80 : 0);
+      flushAnswers();
       markGraduation();
       const outline = outlineOf(e.course);
       const i = outline.findIndex((it) => it.id === `quiz:${moduleId}`);
       return { passed, nextId: outline[i + 1]?.id ?? null };
     },
 
-    finishHubQuiz: (correct) => bumpDay(correct * 15),
+    finishHubQuiz: (correct) => {
+      bumpDay(correct * 15);
+      flushAnswers();
+    },
   };
 });
 

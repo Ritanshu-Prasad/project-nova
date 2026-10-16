@@ -40,3 +40,4 @@ def client_ip(request: Request) -> str:
 COURSE_LIMIT = RateLimiter("course", calls=20, seconds=3600)
 TOPIC_LIMIT = RateLimiter("topic", calls=200, seconds=3600)
 TUTOR_LIMIT = RateLimiter("tutor", calls=60, seconds=60)
+FEEDBACK_LIMIT = RateLimiter("feedback", calls=60, seconds=3600)

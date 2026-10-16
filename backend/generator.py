@@ -15,6 +15,7 @@ from course_requests import CourseRequest, Mode, ModuleQuizRequest, Structure, T
 from document_store import delete_pages, is_valid_key, save_pages
 from limits import COURSE_LIMIT, TOPIC_LIMIT
 from pdf_parser import Document, read_documents, split_sections
+from placement import PlacementRequest, PlacementResult, recommend_level, write_placement
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
 from progress import Report, ignore
 from safety import check_goal
@@ -98,6 +99,26 @@ async def generate_module_quiz(body: ModuleQuizRequest, fresh: bool = Query(Fals
     result = {"quiz": [q.model_dump(exclude_none=True) for q in dedupe_questions(quiz, set())]}
     await TOPICS.put(key, result)
     return result
+
+
+@router.post("/api/courses/placement", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
+async def generate_placement(body: PlacementRequest, fresh: bool = Query(False)):
+    """Five multiple-choice questions, easy to hard, for a learner who is unsure which level to pick."""
+    if len(body.objective) < 3:
+        raise HTTPException(422, "Describe what you want to learn")
+    key = ("placement", body.objective.casefold())
+    cached = None if fresh else await TOPICS.get(key)
+    if cached:
+        return cached
+    questions = await _while_checking(body.objective, write_placement(body.objective))
+    result = {"questions": [question.model_dump(exclude_none=True) for question in questions]}
+    await TOPICS.put(key, result)
+    return result
+
+
+@router.post("/api/courses/placement/level", dependencies=[Depends(TOPIC_LIMIT)])
+async def placement_level(body: PlacementResult):
+    return {"level": recommend_level(body.answers)}
 
 
 @router.delete("/api/courses/documents/{key}")
