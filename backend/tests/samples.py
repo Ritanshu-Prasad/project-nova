@@ -19,10 +19,11 @@ def lesson_json() -> dict:
     }
 
 
-def outline_json(modules: int = 2, topics: int = 2) -> dict:
+def outline_json(modules: int = 2, topics: int = 2, scope: str = "broad") -> dict:
     return {
         "title": "Sample Course",
         "subtitle": "A sample",
+        "scope": scope,
         "modules": [
             {
                 "title": f"Module {m}",

@@ -11,75 +11,24 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from course_models import Course, CourseDocument, Lesson, LessonStub, Level, Module, Question, QuestionList, Topic, TopicKind, TopicStub
 from llm import chat_json
 from pdf_parser import Page, build_context, extract_pages
+from prompts import lesson_system, outline_system, questions_system, sanitise, wrap_goal
 
 router = APIRouter()
 logger = logging.getLogger("nova.generator")
 
 Mode = Literal["goal", "documents"]
 Structure = Literal["chapters", "topics"]
+Scope = Literal["narrow", "broad"]
 
 MAX_OBJECTIVE_CHARS = 500
+MAX_TITLE_CHARS = 200
+MAX_SUMMARY_CHARS = 500
+OUTLINE_LIMITS = {"narrow": (3, 3), "broad": (6, 4)}
 MAX_PARALLEL_TOPICS = 12
 ATTEMPTS = 3
 QUIZ_SIZE = 8
 PRACTICE_SIZE = 12
 MODULE_QUIZ_SIZE = 10
-
-# --- Prompts ---
-
-LEVEL_HINTS = {
-    "beginner": "The learner is a complete novice. Use plain language and everyday analogies, avoid heavy math, and test core intuition.",
-    "intermediate": "The learner knows the basics. Be applied and mechanism-oriented, use standard equations and realistic code, and test edge cases.",
-    "advanced": "The learner is a specialist. Be rigorous, cover internals and failure modes, and test subtle trade-offs and multi-step reasoning.",
-}
-
-OUTLINE_PROMPT = """You are a senior curriculum architect. Design a course as JSON:
-{"title": str, "subtitle": str, "modules": [{"title": str, "topics": [
-  {"title": str, "planet": str, "kind": "concept|programming|math|science|humanities|language|document", "summary": str, "minutes": int}]}]}
-
-Rules:
-- Size the course to the subject: 3 to 6 modules of 2 to 4 topics each. Modules follow a learning arc from foundations to advanced use.
-- "planet" is a short, unique, star-like name for the topic on a journey map (for example Vega, Lyra, Mira).
-- Module titles carry no numbering. "summary" is one sentence. "minutes" is 5 to 8.
-- {level_hint}
-Reply with JSON only."""
-
-LESSON_PROMPT = """You are a master textbook author. Write the lesson for one course topic as JSON:
-{"minutes": int, "objectives": [str], "simple": str, "blocks": [Block]}
-
-Block is one of:
-{"type":"text","title":str,"body":str} {"type":"analogy","body":str}
-{"type":"keyTerms","terms":[{"term":str,"def":str}]} {"type":"steps","title":str,"steps":[str]}
-{"type":"code","language":str,"code":str,"caption":str} {"type":"formula","expr":str,"caption":str}
-{"type":"compare","title":str,"columns":[str,str],"rows":[[label,colA,colB]]} {"type":"example","title":str,"body":str}
-{"type":"callout","tone":"tip|warning|fact","body":str} {"type":"source","doc":str,"page":int,"excerpt":str}
-{"type":"summary","points":[str]}
-
-Rules:
-- 4 objectives starting with a verb, a one-paragraph "simple" summary, and 8 to 10 blocks that include text, an example, keyTerms (at least 4) and a closing summary.
-- Write like a textbook, not a chatbot: concrete, specific, no filler. Keep each block under 120 words and code under 25 lines. Use **bold** for key terms, plain unicode for math, no LaTeX.
-- {level_hint}
-- {source_hint}
-Reply with JSON only."""
-
-QUESTIONS_PROMPT = """You are an expert assessment writer. Write {count} questions for one course topic as JSON:
-{"questions": [Question]}
-
-Question is one of (every question has "q", "why" explaining the answer, "difficulty" 1 to 3):
-{"type":"mcq","options":[4 strs],"answer":index} {"type":"multi","options":[4 strs],"answers":[indexes]}
-{"type":"truefalse","answer":bool} {"type":"fill","answer":str,"accept":[str]} with the blank written as ____ in "q"
-{"type":"code","language":str,"starter":str,"solution":str,"checks":[{"label":str,"pattern":JavaScript regex}]}
-{"type":"order","items":[strs in correct order]} {"type":"match","pairs":[[left,right]]}
-
-Rules:
-- Write exactly {count} questions. Mix question types and difficulties, favour real scenarios over memorised definitions, keep "why" to one sentence, keep code questions under 15 lines, and never repeat a question.
-- {level_hint}
-- {source_hint}
-Reply with JSON only."""
-
-GOAL_SOURCE_HINT = "Do not include source blocks."
-DOCUMENT_SOURCE_HINT = "Ground the content in the provided document excerpts and include source blocks quoting them with the exact doc name and page."
-
 
 # --- Request ---
 
@@ -93,7 +42,7 @@ class CourseRequest(BaseModel):
     @field_validator("objective", "focus")
     @classmethod
     def clean(cls, text: str) -> str:
-        return re.sub(r"[\x00-\x1f\x7f]+", " ", text).strip()[:MAX_OBJECTIVE_CHARS]
+        return sanitise(text, MAX_OBJECTIVE_CHARS)
 
 
 @dataclass
@@ -126,7 +75,13 @@ class OutlineModule(BaseModel):
 class Outline(BaseModel):
     title: str
     subtitle: str = ""
+    scope: Scope = "broad"
     modules: List[OutlineModule] = Field(min_length=1)
+
+    @field_validator("scope", mode="before")
+    @classmethod
+    def known_scope(cls, scope: object) -> object:
+        return scope if scope in OUTLINE_LIMITS else "broad"
 
 
 # --- Routes ---
@@ -154,10 +109,15 @@ async def generate(
 class TopicRequest(BaseModel):
     level: Level
     objective: str = Field(max_length=MAX_OBJECTIVE_CHARS)
-    course: str = Field(max_length=200)
-    module: str = Field(max_length=200)
-    topic: str = Field(max_length=200)
-    summary: str = Field(default="", max_length=500)
+    course: str = Field(max_length=MAX_TITLE_CHARS)
+    module: str = Field(max_length=MAX_TITLE_CHARS)
+    topic: str = Field(max_length=MAX_TITLE_CHARS)
+    summary: str = Field(default="", max_length=MAX_SUMMARY_CHARS)
+
+    @field_validator("objective", "course", "module", "topic", "summary")
+    @classmethod
+    def clean(cls, text: str) -> str:
+        return sanitise(text, MAX_SUMMARY_CHARS)
 
 
 @router.post("/api/courses/topic")
@@ -177,7 +137,7 @@ async def generate_topic(body: TopicRequest):
 
 async def _generate_lazy_course(request: CourseRequest) -> Course:
     """Outline and module quizzes now; each topic is written when the learner opens it."""
-    outline = await _plan_outline(request, context="")
+    outline = _fit_outline(await _plan_outline(request, context=""))
     quizzes = await asyncio.gather(*(_write_module_quiz(module, request) for module in outline.modules))
     return _assemble_lazy_course(outline, quizzes, request)
 
@@ -207,35 +167,28 @@ async def _ask_model(schema: Type[T], system: str, user: str) -> T:
 
 
 async def _plan_outline(request: CourseRequest, context: str) -> Outline:
-    system = OUTLINE_PROMPT.replace("{level_hint}", LEVEL_HINTS[request.level])
-    return await _ask_model(Outline, system, _describe_request(request, context))
+    return await _ask_model(Outline, outline_system(request.level), _describe_request(request, context))
+
+
+def _fit_outline(outline: Outline) -> Outline:
+    max_modules, max_topics = OUTLINE_LIMITS[outline.scope]
+    modules = [module.model_copy(update={"topics": module.topics[:max_topics]}) for module in outline.modules[:max_modules]]
+    return outline.model_copy(update={"modules": modules})
 
 
 async def _write_topic(module_title: str, topic: OutlineTopic, request: CourseRequest, context: str) -> TopicContent:
-    source_hint = DOCUMENT_SOURCE_HINT if context else GOAL_SOURCE_HINT
+    grounded = bool(context)
     user = f'{_describe_request(request, context)}\n\nTopic: "{topic.title}" ({topic.summary}) from the module "{module_title}".'
-
-    def system(prompt: str, count: int = 0) -> str:
-        return (
-            prompt.replace("{level_hint}", LEVEL_HINTS[request.level])
-            .replace("{source_hint}", source_hint)
-            .replace("{count}", str(count))
-        )
-
     lesson, quiz, practice = await asyncio.gather(
-        _ask_model(Lesson, system(LESSON_PROMPT), user),
-        _ask_model(QuestionList, system(QUESTIONS_PROMPT, QUIZ_SIZE), user),
-        _ask_model(QuestionList, system(QUESTIONS_PROMPT, PRACTICE_SIZE), user),
+        _ask_model(Lesson, lesson_system(request.level, grounded), user),
+        _ask_model(QuestionList, questions_system(request.level, QUIZ_SIZE, grounded), user),
+        _ask_model(QuestionList, questions_system(request.level, PRACTICE_SIZE, grounded), user),
     )
     return TopicContent(lesson, quiz.questions, practice.questions)
 
 
 async def _write_module_quiz(module: OutlineModule, request: CourseRequest) -> List[Question]:
-    system = (
-        QUESTIONS_PROMPT.replace("{level_hint}", LEVEL_HINTS[request.level])
-        .replace("{source_hint}", GOAL_SOURCE_HINT)
-        .replace("{count}", str(MODULE_QUIZ_SIZE))
-    )
+    system = questions_system(request.level, MODULE_QUIZ_SIZE, grounded=False)
     topics = "\n".join(f"- {topic.title}: {topic.summary}" for topic in module.topics)
     user = f'{_describe_request(request, "")}\n\nEnd-of-module quiz for the module "{module.title}", covering all of its topics:\n{topics}'
     return (await _ask_model(QuestionList, system, user)).questions
@@ -255,7 +208,7 @@ async def _write_all_topics(outline: Outline, request: CourseRequest, context: s
 
 def _describe_request(request: CourseRequest, context: str) -> str:
     if request.mode == "goal":
-        return f"Learning goal: {request.objective}"
+        return wrap_goal(request.objective)
     lines = [f"Build the course from these documents. Structure by {request.structure}."]
     if request.focus:
         lines.append(f"Focus on: {request.focus}")
