@@ -76,3 +76,13 @@ def _key(question: Question) -> set:
     if question.type == "multi":
         return set(question.answers)
     return {0 if question.answer else 1}
+
+
+async def agreement(questions: List[Question], level: str, context: str = "") -> float:
+    """The share of checkable questions whose key the model reproduces blind; 1.0 when none can be checked."""
+    checkable = [(position, question) for position, question in enumerate(questions) if question.type in CHECKABLE]
+    if not checkable:
+        return 1.0
+    vote = await _vote(level, checkable, context)
+    agreeing = sum(1 for number, (_, question) in enumerate(checkable, start=1) if vote.get(number) == _key(question))
+    return agreeing / len(checkable)

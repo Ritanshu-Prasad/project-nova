@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "date": "2026-10-16",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "promptVersion": "2026-10-a",
+    "cases": "smoke"
+  },
+  "summary": {
+    "levels": {
+      "beginner": {
+        "runs": 2,
+        "ok": 1.0,
+        "seconds": 21.0,
+        "tokens": 8022.5,
+        "retry_rate": 0.0,
+        "grade": 11.228,
+        "duplicates": 0.0,
+        "agreement": 1.0,
+        "judge": 4.125
+      },
+      "intermediate": {
+        "runs": 2,
+        "ok": 1.0,
+        "seconds": 19.4,
+        "tokens": 8064,
+        "retry_rate": 0.0,
+        "grade": 10.905,
+        "duplicates": 0.0,
+        "agreement": 0.667,
+        "judge": 4.375
+      },
+      "advanced": {
+        "runs": 2,
+        "ok": 1.0,
+        "seconds": 26.6,
+        "tokens": 9301.5,
+        "retry_rate": 0.0,
+        "grade": 12.862,
+        "duplicates": 0.0,
+        "agreement": 0.575,
+        "judge": 3.5
+      }
+    },
+    "level_gap": 1.634,
+    "documents": [
+      {
+        "case": "plants",
+        "ok": true,
+        "modules": 2,
+        "topics": 6,
+        "seconds": 18.3,
+        "tokens": 29547,
+        "retry_rate": 0.0,
+        "citations": 1.0,
+        "duplicates": 0.008403361344537815
+      }
+    ]
+  },
+  "rows": [
+    {
+      "kind": "goal",
+      "case": "docker",
+      "level": "beginner",
+      "ok": true,
+      "text": "Containers are isolated processes that need a way to talk to each other and the outside world. They achieve this by creating their own private network space (a virtual interface) that connects to the host machine's network stack. By default, containers use a basic bridge network that lets them communicate with the host but requires manual setup for direct container-to-container communication. This lesson covers the core concepts of how Docker handles networking at this fundamental level. Containers run in isolated environments but need to exchange data. Docker solves this by creating virtual network interfaces that connect containers to the host system's network. Think of it like giving each container its own private phone line that plugs into the main office switch (the host). Imagine apartment buildings (containers) in a city (host). Each apartment has its own address (IP address) but shares the same street (network infrastructure). The city's postal system (Docker networking) routes mail between apartments without needing to build new roads for each building. When a container starts, Docker creates a virtual network interface (veth pair) that connects it to the host's network. This interface gets an IP address from a private range (like 172.17.0.0/16). The container can then send/receive data through this interface, which routes traffic to the host's physical network interface. A container named 'web-app' might get IP 172.17.0.2. Another container 'db' gets 172.17.0.3. They can communicate directly using these IPs, but only if they're on the same network. The host machine can also access them via their IPs. The default bridge network lets containers talk to the host but doesn't automatically resolve container names to IPs. This means you must manually assign static IPs or use host networking for simple cases. It's like having a phone directory that only works if you memorize everyone's number. When you publish a port (e.g., -p 8080:80), Docker forwards traffic arriving at the host's port 8080 to the container's port 80. This allows external users to access a web server running inside the container through the host's IP address. Containers use network namespaces and virtual interfaces for isolation The host's network stack routes traffic between containers and external systems Default bridge networks provide basic connectivity but require manual configuration Port mapping enables external access to containerized applications",
+      "grade": 10.078259574468085,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 17,
+        "truefalse": 1
+      },
+      "questions": 18,
+      "agreement": 1.0,
+      "judge": 4.5,
+      "judge_notes": "none",
+      "seconds": 18.6,
+      "calls": 8,
+      "tokens": 7724,
+      "retries": 0,
+      "retry_rate": 0.0
+    },
+    {
+      "kind": "goal",
+      "case": "docker",
+      "level": "intermediate",
+      "ok": true,
+      "text": "The default bridge network provides isolated containers with automatic IP assignment and port mapping, but lacks DNS and custom connectivity features. When a container starts without explicit network configuration, Docker attaches it to the **default bridge network**. This network isolates containers from the host and other networks by default, assigning each container a unique **IP address** from a private subnet (e.g., 172.17.0.0/16). Containers can communicate only with others on the same bridge network, ensuring **isolation**. The network acts as a virtual Ethernet switch, forwarding packets between attached containers. Think of the default bridge network as a locked conference room: each attendee (container) gets a numbered seat (IP), can only talk to others in the room, and must use a shared microphone (port mapping) to speak to the outside world. Each container receives a **unique IP address** from the bridge subnet upon startup. For example, container A might get 172.17.0.2 and container B 172.17.0.3. These addresses are reachable only within the bridge network; attempts to ping 172.17.0.2 from a container on a custom network will fail. This isolation prevents accidental interference between unrelated services, enhancing security and stability in production deployments. Run `docker network inspect bridge` to view the bridge network's configuration. The output shows the subnet (e.g., 172.17.0.0/16), connected containers, and their assigned IPs. Example output snippet: `Containers: {my-app: {IPv4Address: 172.17.0.2}}`. This confirms isolation and IP assignment without requiring custom network setup. To expose a service on the host, map the container's port to a host port using `-p`. For example, `docker run -d -p 8080:80 nginx` maps host port 8080 to container port 80. The host forwards incoming requests to the container's IP on the bridge network. This works because the bridge network isolates the container but allows host-to-container port forwarding via Docker's networking stack. Default bridge network provides automatic isolation and IP assignment Port mapping enables external access to container services Lacks built-in DNS and advanced connectivity features Use custom networks for multi-container applications requiring service discovery",
+      "grade": 10.893658536585367,
+      "duplicates": 0.0,
+      "mix": {
+        "fill": 1,
+        "mcq": 18,
+        "truefalse": 2
+      },
+      "questions": 21,
+      "agreement": 1.0,
+      "judge": 4.0,
+      "judge_notes": "none",
+      "seconds": 18.8,
+      "calls": 8,
+      "tokens": 8419,
+      "retries": 0,
+      "retry_rate": 0.0
+    },
+    {
+      "kind": "goal",
+      "case": "docker",
+      "level": "advanced",
+      "ok": true,
+      "text": "Linux bridges forward Ethernet frames between ports using kernel-level forwarding tables, while VLAN tagging adds 802.1Q identifiers to frames before forwarding. IP assignment on bridge interfaces enables routing of layer 3 traffic across connected containers, and VLAN filtering restricts traffic at the bridge level using kernel networking primitives. A Linux bridge operates as a layer 2 switch in software. It maintains a forwarding database (FDB) mapping MAC addresses to ports. When a frame arrives on a port, the bridge looks up the destination MAC in the FDB. If unknown, it floods the frame to all ports except the ingress port. Bridge ports can be physical NICs, VLAN interfaces, or other bridges. VLAN tagging modifies frame headers before forwarding, enabling traffic segregation without separate physical interfaces. Think of a bridge as a smart Ethernet switch in a data center. Each port is like a server rack connection. When a server sends a packet, the switch checks which rack the destination server is in (via FDB). If unsure, it broadcasts to all racks. VLANs are like creating virtual rack partitions\u2014traffic from one partition never crosses into another unless explicitly allowed. When a container in VLAN 100 sends a frame to a container in VLAN 200, the bridge strips the VLAN tag upon ingress, forwards the frame to the target VLAN interface, then reinstates the VLAN tag before egress. This ensures traffic isolation while maintaining a single physical bridge. Without VLAN filtering, frames would be forwarded across all VLANs, breaking network segmentation. Bridges forward frames using FDB lookups, not routing logic VLAN tagging adds 802.1Q identifiers without altering payload IP assignment on bridge interfaces enables layer 3 connectivity VLAN filtering restricts inter-VLAN traffic at wire speed",
+      "grade": 10.208499719048511,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 15,
+        "order": 1,
+        "truefalse": 2
+      },
+      "questions": 18,
+      "agreement": 0.75,
+      "judge": 2.5,
+      "judge_notes": "major inaccuracies in VLAN tagging flow and IP assignment mechanics",
+      "seconds": 23.1,
+      "calls": 8,
+      "tokens": 10116,
+      "retries": 0,
+      "retry_rate": 0.0
+    },
+    {
+      "kind": "goal",
+      "case": "attention",
+      "level": "beginner",
+      "ok": true,
+      "text": "This lesson explains why recurrent networks struggle with remembering information that is far apart in a sequence and how attention provides a more direct way to link distant elements, setting the stage for transformer models. When a model processes a sentence, the meaning of a word at the end often depends on a word at the beginning. In a sentence like \u201cThe cat that chased the mouse **was** small,\u201d the verb \u201cwas\u201d must refer back to \u201ccat,\u201d even though many tokens lie between them. Traditional recurrent networks (RNNs) process tokens one\u2011by\u2011one and maintain a hidden state that is updated sequentially. If the dependency is long, the hidden state can lose information about the earlier word, leading to poor predictions. Think of reading a mystery novel: you keep flipping back to earlier clues to understand the current twist. An RNN is like reading the book straight through without bookmarking important clues, while attention is like having a set of bookmarks that let you jump directly to the relevant earlier clue. Two main issues arise: (1) **vanishing gradients** make it difficult for the hidden state to retain information from many steps ago, and (2) the sequential nature forces the model to compress all prior information into a single vector. As the sequence length grows, the effective memory shrinks, so the model cannot reliably answer questions that require recalling distant words. Consider the sentence: \u201cI **visited** the museum **because** it was **open**.\u201d The word \u201copen\u201d (at position 5) determines why the museum was visited, but the verb \u201cvisited\u201d (position 2) must be linked to it. An RNN might forget \u201cvisited\u201d by the time it reaches \u201copen,\u201d especially in longer sentences. Attention mechanisms replace the single hidden\u2011state bottleneck with a set of **weights** that score how much each input token should influence the current output. Instead of forcing all past information into one vector, the model computes a weighted sum of all previous representations, giving more weight to the most relevant tokens. This provides a flexible, direct pathway for the model to retrieve distant information. Imagine you are a teacher grading essays. Rather than trying to remember every detail of every student's writing, you focus your attention on the parts that are most relevant to the grading rubric\u2014perhaps the thesis statement or the supporting evidence\u2014while ignoring unrelated filler. The motivation behind attention is simple: **make the model\u2019s focus explicit**. By learning to assign higher weights to tokens that carry the most useful context, the model can bypass the need to store everything in a single hidden state. This shift enables transformers to handle much longer sequences and to model relationships that are not strictly sequential. RNNs compress all prior information into a single hidden state, which degrades for long dependencies. Attention replaces this bottleneck with a dynamic set of weights that directly link any token to any other token. The key concepts\u2014long\u2011range dependency, hidden state, vanishing gradient, and contextual focus\u2014are the foundation for the attention mechanism.",
+      "grade": 12.377431545796522,
+      "duplicates": 0.0,
+      "mix": {
+        "code": 1,
+        "fill": 2,
+        "match": 1,
+        "mcq": 11,
+        "order": 1,
+        "truefalse": 3
+      },
+      "questions": 19,
+      "agreement": 1.0,
+      "judge": 3.75,
+      "judge_notes": "vocabulary and concepts like \"vanishing gradients\" and \"contextual focus\" exceed beginner expectations",
+      "seconds": 23.4,
+      "calls": 8,
+      "tokens": 8321,
+      "retries": 0,
+      "retry_rate": 0.0
+    },
+    {
+      "kind": "goal",
+      "case": "attention",
+      "level": "intermediate",
+      "ok": true,
+      "text": "Scaled dot\u2011product attention computes a weighted sum of values where the weights are softmax\u2011scaled dot products between queries and keys, scaled by the square root of the key dimension to stabilize gradients. For a single head, attention maps a query **q** to a key **k** via a dot product, divides by \u221ad_k, applies softmax, and multiplies by the corresponding value **v**:  attention(q,k,v) = softmax(q\u00b7k\u1d40 / \u221ad_k) v. This produces a context vector that aggregates information from all keys, weighted by similarity to the query. Think of queries as questions, keys as stored answers, and values as the answer details. The dot product measures how well a question matches each answer; scaling prevents large numbers from pushing softmax into saturated regions, ensuring stable probability distributions. Let q = [1, 0], k = [[1, 1], [0, 1]], v = [[2, 2], [3, 3]], d_k = 2. Scores = [1, 0]; scaled = [0.707, 0]; softmax \u2248 [0.73, 0.27]; output \u2248 0.73\u00b7[2,2] + 0.27\u00b7[3,3] = [2.2, 2.2]. When implementing attention, always subtract the max before exponentiation to avoid overflow; the scaling factor \u221ad_k is essential for maintaining gradient magnitude across layers. Scaled dot\u2011product attention combines query\u2011key similarity with value aggregation. Division by \u221ad_k stabilizes softmax and gradient flow. Implementation uses matrix multiplication and softmax over scaled scores. Key, query, and value shapes dictate batch\u2011wise computation.",
+      "grade": 10.916386554621848,
+      "duplicates": 0.0,
+      "mix": {
+        "code": 1,
+        "fill": 2,
+        "match": 2,
+        "mcq": 7,
+        "order": 2,
+        "truefalse": 3
+      },
+      "questions": 17,
+      "agreement": 0.3333333333333333,
+      "judge": 4.75,
+      "judge_notes": "none",
+      "seconds": 20.0,
+      "calls": 8,
+      "tokens": 7709,
+      "retries": 0,
+      "retry_rate": 0.0
+    },
+    {
+      "kind": "goal",
+      "case": "attention",
+      "level": "advanced",
+      "ok": true,
+      "text": "Scaled dot-product attention computes weighted value sums using query-key similarity normalized by sqrt(d_k), enabling efficient parallel computation while maintaining gradient stability through scaling. Given queries Q \u2208 \u211d^(n\u00d7d_k), keys K \u2208 \u211d^(m\u00d7d_k), values V \u2208 \u211d^(m\u00d7d_v), attention computes: attn = softmax(QK^T / \u221ad_k)V. The scaling factor \u221ad_k prevents large dot products from saturating softmax gradients during backpropagation. For batch size b=1, sequence length n=4 (queries), m=5 (keys/values), d_k=8, d_v=16: QK^T yields 4\u00d75 matrix. Scaling divides each element by \u221a8 \u2248 2.828. Softmax applies per query row before multiplying by V (4\u00d75 \u00d7 5\u00d716 = 4\u00d716 output). Like normalizing a similarity score between two vectors to prevent extreme values from dominating the distribution\u2014similar to how temperature scaling adjusts probability distributions in reinforcement learning. Scaling factor \u221ad_k is critical for gradient stability in deep attention layers Matrix multiplication dominates computational complexity (O(n\u00b2d_k)) Numerical stability requires fused softmax to avoid intermediate overflow All operations are fully parallelizable across sequence length",
+      "grade": 15.515321856287429,
+      "duplicates": 0.0,
+      "mix": {
+        "fill": 4,
+        "mcq": 3,
+        "multi": 2,
+        "order": 2,
+        "truefalse": 5
+      },
+      "questions": 16,
+      "agreement": 0.4,
+      "judge": 4.5,
+      "judge_notes": "none",
+      "seconds": 30.1,
+      "calls": 8,
+      "tokens": 8487,
+      "retries": 0,
+      "retry_rate": 0.0
+    },
+    {
+      "kind": "document",
+      "case": "plants",
+      "level": "intermediate",
+      "ok": true,
+      "modules": 2,
+      "topics": 6,
+      "grade": 10.957553555914114,
+      "duplicates": 0.008403361344537815,
+      "mix": {
+        "fill": 8,
+        "match": 3,
+        "mcq": 87,
+        "order": 8,
+        "truefalse": 13
+      },
+      "citations": 1.0,
+      "seconds": 18.3,
+      "calls": 20,
+      "tokens": 29547,
+      "retries": 0,
+      "retry_rate": 0.0
+    }
+  ]
+}

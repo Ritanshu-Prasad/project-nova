@@ -1,0 +1,62 @@
+name: Evaluate Course Generation
+
+# Writes a few real courses with the configured model and scores them (see backend/evals/run_eval.py).
+# It spends model tokens, so it only runs by hand or once a week, and needs the NEBIUS_API_KEY secret.
+on:
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: Which cases to run
+        type: choice
+        options: [smoke, full]
+        default: smoke
+      model:
+        description: Model id to generate with (empty uses the default)
+        type: string
+        default: ''
+      judge:
+        description: Also have the model review each lesson
+        type: boolean
+        default: false
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  evaluate:
+    name: Score generated courses
+    runs-on: ubuntu-latest
+    env:
+      NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+      NEBIUS_BASE_URL: https://api.tokenfactory.nebius.com/v1
+      NOVA_RATE_LIMIT: 'off'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Backend Dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Check The API Key Is Set
+        run: test -n "$NEBIUS_API_KEY" || { echo "Add the NEBIUS_API_KEY repository secret first."; exit 1; }
+
+      - name: Run The Evaluation
+        working-directory: backend
+        run: |
+          python -m evals.run_eval \
+            --cases "${{ inputs.cases || 'smoke' }}" \
+            ${{ inputs.model && format('--model "{0}"', inputs.model) || '' }} \
+            ${{ inputs.judge && '--judge' || '' }} | tee "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep The Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: evals-results
+          path: backend/evals/results

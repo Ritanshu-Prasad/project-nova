@@ -1,0 +1,24 @@
+{
+  "levels": ["beginner", "intermediate", "advanced"],
+  "goals": [
+    {"id": "docker", "goal": "Docker container networking", "smoke": true},
+    {"id": "attention", "goal": "Attention mechanisms in transformers", "smoke": true},
+    {"id": "sql", "goal": "SQL joins and window functions"},
+    {"id": "photosynthesis", "goal": "How photosynthesis works"},
+    {"id": "rust", "goal": "Rust ownership and borrowing"},
+    {"id": "statistics", "goal": "Hypothesis testing and p-values"}
+  ],
+  "documents": [
+    {
+      "id": "plants",
+      "smoke": true,
+      "name": "plants.pdf",
+      "pages": [
+        "Chapter 1 Light reactions\nChlorophyll in the thylakoid membrane absorbs red and blue light. Photosystem II splits water and releases oxygen.\nElectrons move along a transport chain and pump protons into the lumen. ATP synthase uses that gradient to make ATP.",
+        "Photosystem I re-energises the electrons and reduces NADP to NADPH. Together ATP and NADPH carry the captured energy to the next stage.\nLight intensity, wavelength and temperature all change how fast the light reactions run.",
+        "Chapter 2 The Calvin cycle\nThe Calvin cycle runs in the stroma. Rubisco fixes carbon dioxide onto RuBP, a five carbon sugar.\nThree turns of the cycle produce one molecule of G3P that the plant can turn into glucose.",
+        "ATP and NADPH from the light reactions power the reduction phase. RuBP is regenerated so that the cycle can continue.\nRubisco also reacts with oxygen, which is called photorespiration and wastes energy."
+      ]
+    }
+  ]
+}
