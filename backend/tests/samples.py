@@ -35,3 +35,13 @@ def outline_json(modules: int = 2, topics: int = 2, scope: str = "broad") -> dic
             for m in range(1, modules + 1)
         ],
     }
+
+
+def module_json(topics: int = 2, title: str = "Sample Module") -> dict:
+    return {
+        "title": title,
+        "topics": [
+            {"title": f"{title} topic {t}", "planet": f"Star {t}", "kind": "concept", "summary": "About it.", "minutes": 5}
+            for t in range(1, topics + 1)
+        ],
+    }

@@ -4,8 +4,9 @@ import pytest
 from fastapi import HTTPException
 
 import generator
+from conftest import make_pdf
 from course_models import QuestionList
-from samples import lesson_json, mcq, outline_json, questions
+from samples import lesson_json, mcq, module_json, outline_json, questions
 
 
 def lesson_json_reply() -> dict:
@@ -233,6 +234,130 @@ def test_documents_mode_rejects_a_corrupt_pdf(client, fake_model):
 
 def test_documents_mode_without_files_is_422(client, fake_model):
     assert generate_documents(client, []).status_code == 422
+
+
+# --- Documents flow ---
+
+BOOK = ["Chapter 1 Light\nPlants absorb light", "More about light", "Chapter 2 Water\nRoots take up water", "More about water", "Chapter 3 Air\nLeaves exchange gases"]
+
+
+def generate_book(client, structure="chapters", focus="", bookmarks=None):
+    data = {"mode": "documents", "level": "beginner", "structure": structure, "focus": focus}
+    pdf_bytes = make_pdf(BOOK, bookmarks=bookmarks)
+    return client.post("/api/courses/generate", data=data, files=[("files", ("book.pdf", pdf_bytes, "application/pdf"))])
+
+
+def spy_on_prompts(fake_model):
+    sent = []
+    original = generator.chat_json
+
+    async def spy(system, user):
+        sent.append((system, user))
+        return await original(system, user)
+
+    generator.chat_json = spy
+    return sent, lambda: setattr(generator, "chat_json", original)
+
+
+def module_prompts(sent) -> list:
+    return [user for system, user in sent if "Turn one part of a document" in system]
+
+
+def test_chapter_headings_decide_the_modules(client, fake_model):
+    assert len(generate_book(client).json()["modules"]) == 3
+
+
+def test_bookmarks_decide_the_modules(client, fake_model):
+    assert len(generate_book(client, bookmarks=[("Part A", 1), ("Part B", 4)]).json()["modules"]) == 2
+
+
+def test_each_module_is_planned_from_its_own_group(client, fake_model):
+    sent, restore = spy_on_prompts(fake_model)
+    try:
+        generate_book(client)
+    finally:
+        restore()
+    prompts = module_prompts(sent)
+    assert len(prompts) == 3
+    assert all(sum(chapter in user for chapter in ("Chapter 1 Light", "Chapter 2 Water", "Chapter 3 Air")) == 1 for user in prompts)
+
+
+def test_each_module_is_written_from_its_own_pages(client, fake_model):
+    sent, restore = spy_on_prompts(fake_model)
+    try:
+        generate_book(client)
+    finally:
+        restore()
+    lesson_prompts = [user for system, user in sent if "textbook author" in system]
+    water = [user for user in lesson_prompts if "Roots take up water" in user]
+    assert water and all("Plants absorb light" not in user and "Leaves exchange gases" not in user for user in water)
+
+
+def test_the_focus_reaches_the_prompts_and_marks_matching_sections(client, fake_model):
+    sent, restore = spy_on_prompts(fake_model)
+    try:
+        generate_book(client, focus="water")
+    finally:
+        restore()
+    prompts = module_prompts(sent)
+    assert all("Focus on: water" in user for user in prompts)
+    assert sum("[matches the focus]" in user for user in prompts) == 1
+
+
+def test_topics_structure_groups_by_size(client, fake_model):
+    assert 1 <= len(generate_book(client, structure="topics").json()["modules"]) <= 2
+
+
+def test_document_modules_never_have_more_than_three_topics(client, fake_model):
+    fake_model.replies = [module_json(topics=6)] * 3
+    modules = generate_book(client).json()["modules"]
+    assert all(len(m["topics"]) == 3 for m in modules)
+
+
+def test_the_course_is_named_after_its_documents(client, fake_model):
+    course = generate_book(client).json()
+    assert course["title"] == "Book" and course["subtitle"] == "Built from 1 document"
+
+
+# --- Citations ---
+
+def lesson_with(*sources) -> generator.Lesson:
+    blocks = [{"type": "text", "body": "Body"}, *({"type": "source", "excerpt": "quote", **source} for source in sources)]
+    return generator.Lesson.model_validate({"blocks": blocks})
+
+
+def cited(lesson) -> list:
+    return [(b.doc, b.page) for b in lesson.blocks if b.type == "source"]
+
+
+def test_a_valid_citation_is_kept():
+    lesson = generator._verified_lesson(lesson_with({"doc": "a.pdf", "page": 2}), {"a.pdf": 5, "b.pdf": 3})
+    assert cited(lesson) == [("a.pdf", 2)]
+
+
+def test_a_page_that_does_not_exist_is_removed_from_the_citation():
+    lesson = generator._verified_lesson(lesson_with({"doc": "a.pdf", "page": 99}), {"a.pdf": 5})
+    assert cited(lesson) == [("a.pdf", None)]
+
+
+def test_an_unknown_document_is_corrected_when_there_is_only_one():
+    lesson = generator._verified_lesson(lesson_with({"doc": "made-up.pdf", "page": 1}), {"a.pdf": 5})
+    assert cited(lesson) == [("a.pdf", 1)]
+
+
+def test_an_unknown_document_is_dropped_when_there_are_several():
+    lesson = generator._verified_lesson(lesson_with({"doc": "made-up.pdf", "page": 1}), {"a.pdf": 5, "b.pdf": 3})
+    assert cited(lesson) == []
+    assert [b.type for b in lesson.blocks] == ["text"]
+
+
+def test_course_citations_point_at_real_pages(client, fake_model):
+    lesson = lesson_json()
+    lesson["blocks"].append({"type": "source", "doc": "invented.pdf", "page": 40, "excerpt": "quote"})
+    fake_model.replies = [module_json(topics=1), lesson]
+    topic = generate_book(client, bookmarks=[("Whole book", 1)]).json()["modules"][0]["topics"][0]
+    sources = [b for b in topic["lesson"]["blocks"] if b["type"] == "source"]
+    assert sources == [{"type": "source", "doc": "book.pdf", "excerpt": "quote"}]
 
 
 # --- POST /api/courses/topic ---

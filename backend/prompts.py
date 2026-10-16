@@ -53,6 +53,21 @@ def outline_system(level: str) -> str:
     ])
 
 
+def module_system(level: str) -> str:
+    profile = LEVELS[level]
+    return "\n".join([
+        "You are a senior curriculum architect. Turn one part of a document into a course module as JSON:",
+        '{"title": str, "topics": [{"title": str, "planet": str, "kind": "concept|programming|math|science|humanities|language|document", "summary": str, "minutes": int}]}',
+        "",
+        _rules(
+            f"The learner is {profile['audience']}. {profile['tone']}",
+            "Name the module after what this part teaches, with no numbering, and give it 2 to 3 topics that follow the order of the material.",
+            '"planet" is a short, unique, star-like name for the topic on a journey map (for example Vega, Lyra, Mira). "summary" is one sentence. "minutes" is 5 to 8.',
+        ),
+        "Reply with JSON only.",
+    ])
+
+
 def lesson_system(level: str, grounded: bool) -> str:
     profile = LEVELS[level]
     return "\n".join([
@@ -87,17 +102,20 @@ def questions_system(level: str, count: int, grounded: bool) -> str:
         f"You are an expert assessment writer. Write {count} questions for one course topic as JSON:",
         '{"questions": [Question]}',
         "",
-        'Question is one of (every question has "q", "why" explaining the answer, "difficulty" 1 to 3):',
-        '{"type":"mcq","options":[4 strs],"answer":index} {"type":"multi","options":[4 strs],"answers":[indexes]}',
-        '{"type":"truefalse","answer":bool} {"type":"fill","answer":str,"accept":[str]} with the blank written as ____ in "q"',
-        '{"type":"code","language":str,"starter":str,"solution":str,"checks":[{"label":str,"pattern":JavaScript regex}]}',
-        '{"type":"order","items":[strs in correct order]} {"type":"match","pairs":[[left,right]]}',
+        'Question is one of (every question needs "q", "why" explaining the answer, and "difficulty" 1 to 3):',
+        '{"type":"mcq","q":str,"options":[4 strs],"answer":index,"why":str,"difficulty":int}',
+        '{"type":"multi","q":str,"options":[4 strs],"answers":[indexes],"why":str,"difficulty":int}',
+        '{"type":"truefalse","q":str,"answer":bool,"why":str,"difficulty":int}',
+        '{"type":"fill","q":str with the blank written as ____,"answer":str,"accept":[str],"why":str,"difficulty":int}',
+        '{"type":"code","q":str,"language":str,"starter":str,"solution":str,"checks":[{"label":str,"pattern":JavaScript regex}],"why":str,"difficulty":int}',
+        '{"type":"order","q":str,"items":[strs in correct order],"why":str,"difficulty":int}',
+        '{"type":"match","q":str,"pairs":[[left,right]],"why":str,"difficulty":int}',
         "",
         _rules(
             f"Write exactly {count} questions for {profile['audience']}.",
             profile["questions"],
             'Mix question types and difficulties, favour real scenarios over memorised definitions, keep "why" to one sentence, keep code questions under 15 lines, and never repeat a question.',
-            _source_rule(grounded),
+            "Base every question on the provided document excerpts." if grounded else "Make each question stand on its own.",
             GOAL_RULE,
         ),
         "Reply with JSON only.",

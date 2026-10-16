@@ -2,16 +2,18 @@ import asyncio
 import logging
 import re
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import List, Literal, Type, TypeVar
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
+from chunking import Group, build_overview, build_topic_context, focus_terms, group_sections
 from course_models import Course, CourseDocument, Lesson, LessonStub, Level, Module, Question, QuestionList, Topic, TopicKind, TopicStub
 from llm import chat_json
-from pdf_parser import Page, build_context, extract_pages
-from prompts import lesson_system, outline_system, questions_system, sanitise, wrap_goal
+from pdf_parser import Document, read_documents, split_sections
+from prompts import lesson_system, module_system, outline_system, questions_system, sanitise, wrap_goal
 
 router = APIRouter()
 logger = logging.getLogger("nova.generator")
@@ -23,6 +25,8 @@ Scope = Literal["narrow", "broad"]
 MAX_OBJECTIVE_CHARS = 500
 MAX_TITLE_CHARS = 200
 MAX_SUMMARY_CHARS = 500
+DOCUMENT_TOPICS_PER_MODULE = 3
+MODULE_OVERVIEW_CHARS = 8000
 OUTLINE_LIMITS = {"narrow": (3, 3), "broad": (6, 4)}
 MAX_PARALLEL_TOPICS = 12
 ATTEMPTS = 3
@@ -101,8 +105,8 @@ async def generate(
             raise HTTPException(422, "Describe what you want to learn")
         course = await _generate_lazy_course(request)
     else:
-        pages = await extract_pages(files)
-        course = await _generate_full_course(request, pages)
+        documents = await read_documents(files)
+        course = await _generate_full_course(request, documents)
     return course.model_dump(by_alias=True, exclude_none=True)
 
 
@@ -142,11 +146,14 @@ async def _generate_lazy_course(request: CourseRequest) -> Course:
     return _assemble_lazy_course(outline, quizzes, request)
 
 
-async def _generate_full_course(request: CourseRequest, pages: List[Page]) -> Course:
-    context = build_context(pages)
-    outline = await _plan_outline(request, context)
-    topics = await _write_all_topics(outline, request, context)
-    return _assemble_course(outline, topics, request, pages)
+async def _generate_full_course(request: CourseRequest, documents: List[Document]) -> Course:
+    """Documents become a course in one go: one module per group of sections, written from those sections' pages."""
+    terms = focus_terms(request.focus)
+    groups = group_sections([section for document in documents for section in split_sections(document)], request.structure)
+    outline = await _plan_document_outline(request, documents, groups, terms)
+    contexts = [build_topic_context(group, terms) for group in groups]
+    contents = await _write_all_topics(outline, request, contexts)
+    return _assemble_course(outline, _verify_sources(contents, documents), request, documents)
 
 
 # --- Model calls ---
@@ -194,14 +201,14 @@ async def _write_module_quiz(module: OutlineModule, request: CourseRequest) -> L
     return (await _ask_model(QuestionList, system, user)).questions
 
 
-async def _write_all_topics(outline: Outline, request: CourseRequest, context: str) -> List[List[TopicContent]]:
+async def _write_all_topics(outline: Outline, request: CourseRequest, contexts: List[str]) -> List[List[TopicContent]]:
     limit = asyncio.Semaphore(MAX_PARALLEL_TOPICS)
 
-    async def write(module: OutlineModule, topic: OutlineTopic) -> TopicContent:
+    async def write(module: OutlineModule, topic: OutlineTopic, context: str) -> TopicContent:
         async with limit:
             return await _write_topic(module.title, topic, request, context)
 
-    jobs = [write(module, topic) for module in outline.modules for topic in module.topics]
+    jobs = [write(module, topic, context) for module, context in zip(outline.modules, contexts) for topic in module.topics]
     written = iter(await asyncio.gather(*jobs))
     return [[next(written) for _ in module.topics] for module in outline.modules]
 
@@ -213,6 +220,42 @@ def _describe_request(request: CourseRequest, context: str) -> str:
     if request.focus:
         lines.append(f"Focus on: {request.focus}")
     return "\n".join(lines) + f"\n\nDocuments:\n{context}"
+
+
+# --- Documents ---
+
+async def _plan_document_outline(request: CourseRequest, documents: List[Document], groups: List[Group], terms: List[str]) -> Outline:
+    """One module per group of sections, planned in parallel; the course is named after its documents."""
+    modules = await asyncio.gather(*(_plan_module(request, group, terms) for group in groups))
+    names = [Path(document.name).stem.replace("_", " ").replace("-", " ").strip().title() for document in documents]
+    return Outline(title=" & ".join(names)[:MAX_TITLE_CHARS], subtitle=f"Built from {len(documents)} document{'s' if len(documents) > 1 else ''}", modules=modules)
+
+
+async def _plan_module(request: CourseRequest, group: Group, terms: List[str]) -> OutlineModule:
+    user = _describe_request(request, build_overview([group], terms, MODULE_OVERVIEW_CHARS))
+    module = await _ask_model(OutlineModule, module_system(request.level), user)
+    return module.model_copy(update={"topics": module.topics[:DOCUMENT_TOPICS_PER_MODULE]})
+
+
+def _verify_sources(contents: List[List[TopicContent]], documents: List[Document]) -> List[List[TopicContent]]:
+    pages = {document.name: len(document.pages) for document in documents}
+    return [[replace(content, lesson=_verified_lesson(content.lesson, pages)) for content in module] for module in contents]
+
+
+def _verified_lesson(lesson: Lesson, pages: dict) -> Lesson:
+    """Keeps citations honest: a source block must name an uploaded document and an existing page."""
+    blocks = [block for block in (_verified_block(block, pages) for block in lesson.blocks) if block is not None]
+    return lesson.model_copy(update={"blocks": blocks})
+
+
+def _verified_block(block, pages: dict):
+    if block.type != "source":
+        return block
+    doc = block.doc if block.doc in pages else next(iter(pages)) if len(pages) == 1 else None
+    if doc is None:
+        return None
+    page = block.page if block.page and block.page <= pages[doc] else None
+    return block.model_copy(update={"doc": doc, "page": page})
 
 
 # --- Assembly ---
@@ -245,7 +288,7 @@ def _assemble_topic(module_number: int, topic_number: int, outline: OutlineTopic
     )
 
 
-def _assemble_course(outline: Outline, contents: List[List[TopicContent]], request: CourseRequest, pages: List[Page]) -> Course:
+def _assemble_course(outline: Outline, contents: List[List[TopicContent]], request: CourseRequest, documents: List[Document]) -> Course:
     modules = [
         Module(
             id=f"mod-{m}",
@@ -260,9 +303,9 @@ def _assemble_course(outline: Outline, contents: List[List[TopicContent]], reque
         subtitle=outline.subtitle,
         objective=request.objective or request.focus or outline.title,
         level=request.level,
-        source="documents" if pages else "ai",
+        source="documents",
         modules=modules,
-        documents=_document_summary(pages) if pages else None,
+        documents=[CourseDocument(name=document.name, pages=len(document.pages)) for document in documents],
     )
 
 
@@ -296,10 +339,3 @@ def _assemble_lazy_course(outline: Outline, quizzes: List[List[Question]], reque
         source="ai",
         modules=modules,
     )
-
-
-def _document_summary(pages: List[Page]) -> List[CourseDocument]:
-    counts: dict = {}
-    for page in pages:
-        counts[page.doc] = counts.get(page.doc, 0) + 1
-    return [CourseDocument(name=name, pages=count) for name, count in counts.items()]

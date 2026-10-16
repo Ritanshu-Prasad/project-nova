@@ -1,7 +1,7 @@
 import pytest
 
 import prompts
-from prompts import LEVELS, lesson_system, outline_system, questions_system, sanitise, wrap_goal
+from prompts import LEVELS, lesson_system, module_system, outline_system, questions_system, sanitise, wrap_goal
 
 AUDIENCES = {level: profile["audience"] for level, profile in LEVELS.items()}
 
@@ -10,6 +10,7 @@ AUDIENCES = {level: profile["audience"] for level, profile in LEVELS.items()}
 
 @pytest.mark.parametrize("build", [
     outline_system,
+    module_system,
     lambda level: lesson_system(level, grounded=False),
     lambda level: questions_system(level, 8, grounded=False),
 ])

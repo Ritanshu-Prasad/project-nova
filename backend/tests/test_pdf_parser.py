@@ -5,33 +5,52 @@ import pytest
 from fastapi import HTTPException, UploadFile
 
 import pdf_parser
-from pdf_parser import Page, build_context, extract_pages
+from pdf_parser import Document, Page, read_documents, split_sections, strip_running_text
 
 
 def upload(name: str, data: bytes) -> UploadFile:
     return UploadFile(file=io.BytesIO(data), filename=name)
 
 
-def extract(*files: UploadFile):
-    return asyncio.run(extract_pages(list(files)))
+def read(*files: UploadFile) -> list[Document]:
+    return asyncio.run(read_documents(list(files)))
 
 
 def status_of(*files: UploadFile) -> int:
     with pytest.raises(HTTPException) as error:
-        extract(*files)
+        read(*files)
     return error.value.status_code
 
 
-# --- extract_pages ---
+def pages_of(*texts: str, doc: str = "a.pdf") -> list[Page]:
+    return [Page(doc, number, text) for number, text in enumerate(texts, start=1)]
+
+
+# --- read_documents ---
 
 def test_reads_text_with_document_and_page_number(pdf):
-    pages = extract(upload("bio.pdf", pdf("Plants use light")))
-    assert [(p.doc, p.number, p.text) for p in pages] == [("bio.pdf", 1, "Plants use light")]
+    document = read(upload("bio.pdf", pdf("Plants use light")))[0]
+    assert document.name == "bio.pdf"
+    assert [(p.doc, p.number, p.text) for p in document.pages] == [("bio.pdf", 1, "Plants use light")]
 
 
 def test_reads_several_files_in_order(pdf):
-    pages = extract(upload("a.pdf", pdf("First")), upload("b.pdf", pdf("Second")))
-    assert [p.doc for p in pages] == ["a.pdf", "b.pdf"]
+    documents = read(upload("a.pdf", pdf("First")), upload("b.pdf", pdf("Second")))
+    assert [d.name for d in documents] == ["a.pdf", "b.pdf"]
+
+
+def test_reads_every_page_of_a_long_pdf(pdf):
+    document = read(upload("long.pdf", pdf(["one", "two", "three"])))[0]
+    assert [p.text for p in document.pages] == ["one", "two", "three"]
+
+
+def test_reads_bookmarks(pdf):
+    data = pdf(["Alpha", "Beta", "Gamma"], bookmarks=[("Intro", 1), ("Methods", 3)])
+    assert read(upload("b.pdf", data))[0].bookmarks == [("Intro", 1), ("Methods", 3)]
+
+
+def test_a_pdf_without_bookmarks_has_none(pdf):
+    assert read(upload("plain.pdf", pdf("text")))[0].bookmarks == []
 
 
 def test_corrupt_file_is_422():
@@ -55,20 +74,74 @@ def test_files_over_the_size_limit_are_413(pdf, monkeypatch):
     assert status_of(upload("big.pdf", pdf("some text"))) == 413
 
 
-# --- build_context ---
-
-def test_context_tags_each_page_with_document_and_page():
-    context = build_context([Page("a.pdf", 1, "alpha"), Page("a.pdf", 2, "beta")])
-    assert context == "[a.pdf p.1]\nalpha\n\n[a.pdf p.2]\nbeta"
-
-
-def test_context_stops_at_the_limit():
-    pages = [Page("a.pdf", n, "x" * 100) for n in range(1, 6)]
-    context = build_context(pages, limit=250)
-    assert context.count("[a.pdf") == 2
-
-
-# --- _clean ---
-
 def test_clean_drops_blank_lines_and_collapses_spaces():
     assert pdf_parser._clean("one   two\n\n   \nthree\t four") == "one two\nthree four"
+
+
+# --- strip_running_text ---
+
+def test_running_headers_and_footers_are_removed():
+    bodies = ["Atoms", "Bonds", "Charge", "Energy", "Fields", "Gases"]
+    pages = pages_of(*[f"ACME Handbook\n{body}\nConfidential" for body in bodies])
+    assert [p.text for p in strip_running_text(pages)] == bodies
+
+
+def test_headers_with_changing_page_numbers_are_removed():
+    bodies = ["Atoms", "Bonds", "Charge", "Energy", "Fields", "Gases"]
+    pages = pages_of(*[f"Handbook - page {n}\n{body}" for n, body in enumerate(bodies, start=1)])
+    assert [p.text for p in strip_running_text(pages)] == bodies
+
+
+def test_bare_page_numbers_are_removed():
+    pages = pages_of("Real text\n12", "More text\nPage 13 of 40", "Other text\n14", "Last text\n15")
+    assert [p.text for p in strip_running_text(pages)] == ["Real text", "More text", "Other text", "Last text"]
+
+
+def test_lines_that_appear_on_few_pages_are_kept():
+    pages = pages_of("Shared line\nA", "Shared line\nB", "C", "D", "E", "F")
+    assert strip_running_text(pages)[0].text == "Shared line\nA"
+
+
+def test_short_documents_keep_every_line():
+    pages = pages_of("Same\nA", "Same\nB")
+    assert [p.text for p in strip_running_text(pages)] == ["Same\nA", "Same\nB"]
+
+
+# --- split_sections ---
+
+def test_sections_follow_the_bookmarks():
+    document = Document("a.pdf", pages_of("one", "two", "three", "four"), bookmarks=[("Intro", 1), ("Methods", 3)])
+    sections = split_sections(document)
+    assert [(s.title, [p.number for p in s.pages]) for s in sections] == [("Intro", [1, 2]), ("Methods", [3, 4])]
+
+
+def test_text_before_the_first_bookmark_becomes_an_introduction():
+    document = Document("a.pdf", pages_of("cover", "one", "two", "three"), bookmarks=[("Chapter A", 2), ("Chapter B", 4)])
+    assert [s.title for s in split_sections(document)] == ["Introduction", "Chapter A", "Chapter B"]
+
+
+def test_sections_fall_back_to_chapter_headings():
+    pages = pages_of("Chapter 1 Basics\ntext", "more text", "Chapter 2 Advanced\ntext", "more")
+    sections = split_sections(Document("a.pdf", pages))
+    assert [(s.title, [p.number for p in s.pages]) for s in sections] == [("Chapter 1 Basics", [1, 2]), ("Chapter 2 Advanced", [3, 4])]
+
+
+def test_a_chapter_mentioned_inside_a_page_is_not_a_heading():
+    pages = pages_of("Intro\nWe cover many things\nin detail\nChapter 2 discusses more", "text", "text")
+    assert [s.title for s in split_sections(Document("a.pdf", pages))] == ["Pages 1 to 3"]
+
+
+def test_without_bookmarks_or_headings_pages_are_split_into_blocks(monkeypatch):
+    monkeypatch.setattr(pdf_parser, "PAGES_PER_BLOCK", 2)
+    sections = split_sections(Document("a.pdf", pages_of("a", "b", "c", "d", "e")))
+    assert [(s.title, [p.number for p in s.pages]) for s in sections] == [("Pages 1 to 2", [1, 2]), ("Pages 3 to 4", [3, 4]), ("Pages 5 to 5", [5])]
+
+
+def test_sections_without_text_are_dropped():
+    document = Document("a.pdf", pages_of("text", "", ""), bookmarks=[("Real", 1), ("Blank", 2)])
+    assert [s.title for s in split_sections(document)] == ["Real"]
+
+
+def test_section_text_joins_its_pages():
+    section = split_sections(Document("a.pdf", pages_of("one", "two"), bookmarks=[("All", 1), ("End", 3)]))[0]
+    assert section.text == "one\ntwo"
