@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 import accounts
+import llm
 import observability
 
 
@@ -117,3 +118,45 @@ def test_health_is_degraded_when_redis_is_unreachable(client, monkeypatch):
     monkeypatch.setattr(accounts, "store", Redis("https://redis.test", "token"))
     body = client.get("/api/health").json()
     assert body["status"] == "degraded" and body["services"]["storage"] == "unreachable"
+
+
+# --- Models and the startup line ---
+
+def test_health_names_the_models_in_use(client, monkeypatch):
+    monkeypatch.delenv("NOVA_GENERATE_MODEL", raising=False)
+    monkeypatch.delenv("NOVA_TUTOR_MODEL", raising=False)
+    models = client.get("/api/health").json()["models"]
+    assert models == {"generate": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", "tutor": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", "refused_settings": []}
+
+
+def test_health_shows_a_refused_model_setting(client, monkeypatch):
+    monkeypatch.setenv("NOVA_GENERATE_MODEL", "nvidia/Nemotron-3-Ultra-550b-a55b")
+    models = client.get("/api/health").json()["models"]
+    assert models["generate"].endswith("Nano-30B-A3B") and models["refused_settings"] == ["NOVA_GENERATE_MODEL"]
+
+
+def startup_lines(caplog) -> list:
+    with caplog.at_level(logging.INFO, logger="nova.requests"):
+        observability.log_startup()
+    return [record.getMessage() for record in caplog.records]
+
+
+def test_the_startup_line_lists_models_and_features(caplog, monkeypatch):
+    monkeypatch.delenv("NOVA_GENERATE_MODEL", raising=False)
+    monkeypatch.setenv("NOVA_CACHE", "off")
+    line = startup_lines(caplog)[0]
+    assert "generate=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B" in line and "cache=False" in line and "store=memory" in line
+    assert "json_schema=True" in line and "daily_token_budget=none" in line
+
+
+def test_the_startup_line_shows_the_budget(caplog, monkeypatch):
+    monkeypatch.setenv("NOVA_DAILY_TOKEN_BUDGET", "1000")
+    assert "daily_token_budget=1000" in startup_lines(caplog)[0]
+
+
+def test_a_refused_model_setting_is_reported_at_startup(caplog, monkeypatch):
+    monkeypatch.setattr(llm, "_warned_settings", set())
+    monkeypatch.setenv("NOVA_TUTOR_MODEL", "nvidia/Nemotron-3-Ultra-550b-a55b")
+    with caplog.at_level(logging.ERROR):
+        observability.log_startup()
+    assert any("NOVA_TUTOR_MODEL" in record.getMessage() and "not an allowed model" in record.getMessage() for record in caplog.records)

@@ -3,14 +3,12 @@
 Run from the backend folder:
     python -m evals.run_eval --cases smoke            # a few goals and one document
     python -m evals.run_eval --cases full --judge     # every goal, with a model-written review
-    python -m evals.run_eval --model some/model       # try another model
     python -m evals.run_eval --compare old.json new.json
 """
 import argparse
 import asyncio
 import io
 import json
-import os
 import statistics
 import time
 from datetime import date
@@ -190,7 +188,6 @@ def compare_summaries(old: dict, new: dict) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cases", choices=["smoke", "full"], default="smoke")
-    parser.add_argument("--model", help="model id to generate with (default NOVA_GENERATE_MODEL)")
     parser.add_argument("--judge", action="store_true", help="also have the model review each lesson")
     parser.add_argument("--out", default=str(HERE / "results"))
     parser.add_argument("--compare", nargs=2, metavar=("OLD", "NEW"))
@@ -200,8 +197,6 @@ def main() -> None:
         old, new = (json.loads(Path(path).read_text())["summary"] for path in args.compare)
         print(compare_summaries(old, new))
         return
-    if args.model:
-        os.environ["NOVA_GENERATE_MODEL"] = args.model
     cases = json.loads((HERE / "cases.json").read_text())
     rows = asyncio.run(run_all(cases, args.cases, args.judge))
     meta = {"date": date.today().isoformat(), "model": llm.generate_model(), "promptVersion": PROMPT_VERSION, "cases": args.cases}

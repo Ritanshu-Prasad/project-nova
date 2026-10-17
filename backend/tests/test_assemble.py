@@ -169,6 +169,7 @@ def test_verify_sources_checks_every_topic_against_the_uploaded_documents():
 # --- How a course was written ---
 
 def test_a_course_records_its_model_and_prompt_version(monkeypatch):
+    monkeypatch.setenv("NOVA_ALLOWED_MODELS", "some/model")
     monkeypatch.setenv("NOVA_GENERATE_MODEL", "some/model")
     course = assemble_lazy_course(outline(1, 1), [[]], request())
     assert course.meta.model == "some/model" and course.meta.promptVersion == prompts.PROMPT_VERSION and course.meta.createdAt > 0

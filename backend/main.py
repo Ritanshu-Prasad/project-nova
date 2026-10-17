@@ -12,10 +12,11 @@ from accounts import router as accounts_router  # noqa: E402
 from calibration import router as calibration_router  # noqa: E402
 from fleet import router as fleet_router  # noqa: E402
 from generator import router as generator_router  # noqa: E402
-from observability import add_request_logging, configure_logging, router as health_router  # noqa: E402
+from observability import add_request_logging, configure_logging, log_startup, router as health_router  # noqa: E402
 from tutor import router as tutor_router  # noqa: E402
 
 configure_logging()
+log_startup()
 app = FastAPI(title="Project Nova API")
 add_request_logging(app)
 app.include_router(health_router)

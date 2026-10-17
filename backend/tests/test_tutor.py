@@ -113,6 +113,7 @@ def test_the_request_uses_the_tutor_model_key_and_streaming(client, upstream):
 
 
 def test_the_model_can_be_changed_with_an_environment_variable(client, upstream, monkeypatch):
+    monkeypatch.setenv("NOVA_ALLOWED_MODELS", "another/model")
     monkeypatch.setenv("NOVA_TUTOR_MODEL", "another/model")
     seen = upstream(streaming("Hi"))
     client.post("/api/tutor/chat", json=chat())

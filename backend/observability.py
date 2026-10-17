@@ -10,6 +10,7 @@ from fastapi import APIRouter, FastAPI, Request
 
 import accounts
 import llm
+import shared
 import usage
 
 router = APIRouter()
@@ -60,6 +61,22 @@ def add_request_logging(app: FastAPI) -> None:
             request_id_var.reset(token)
 
 
+def log_startup() -> None:
+    """One line at boot saying which models and features this server runs with."""
+    models = llm.models_in_use()
+    features = {
+        "moderation": os.getenv("NOVA_MODERATION") != "off",
+        "answer_check": os.getenv("NOVA_VERIFY_ANSWERS") != "off",
+        "json_schema": os.getenv("NOVA_JSON_SCHEMA") != "off",
+        "thinking": os.getenv("NOVA_THINKING") == "on",
+        "cache": os.getenv("NOVA_CACHE") != "off",
+        "rate_limits": os.getenv("NOVA_RATE_LIMIT") != "off",
+        "store": "redis" if isinstance(shared.state, shared.RedisState) else "memory",
+        "daily_token_budget": usage.daily_limit() or "none",
+    }
+    logger.info("Models: generate=%s tutor=%s | %s", models["generate"], models["tutor"], " ".join(f"{name}={value}" for name, value in features.items()))
+
+
 # --- Health ---
 
 @router.get("/api/health")
@@ -69,6 +86,7 @@ async def health():
         "status": "healthy" if storage_state != "unreachable" else "degraded",
         "timestamp": int(time.time() * 1000),
         "uptime_seconds": round(time.time() - STARTED, 1),
+        "models": llm.models_in_use(),
         "services": {
             "storage": storage_state,
             "storage_mode": storage_mode,

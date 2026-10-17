@@ -25,6 +25,7 @@ RETRY_DELAYS = (1.0, 3.0)
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 _gates: dict = {}
 _schema_supported = [True]
+_warned_settings: set = set()
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -40,11 +41,29 @@ def base_url() -> str:
 
 
 def generate_model() -> str:
-    return os.getenv("NOVA_GENERATE_MODEL", DEFAULT_MODEL)
+    return _allowed(os.getenv("NOVA_GENERATE_MODEL", DEFAULT_MODEL), "NOVA_GENERATE_MODEL")
 
 
 def tutor_model() -> str:
-    return os.getenv("NOVA_TUTOR_MODEL", DEFAULT_MODEL)
+    return _allowed(os.getenv("NOVA_TUTOR_MODEL", DEFAULT_MODEL), "NOVA_TUTOR_MODEL")
+
+
+def models_in_use() -> dict:
+    """The models requests really use, and which settings asked for a model that is not allowed."""
+    settings = {"NOVA_GENERATE_MODEL": generate_model(), "NOVA_TUTOR_MODEL": tutor_model()}
+    refused = [name for name, used in settings.items() if os.getenv(name, DEFAULT_MODEL) != used]
+    return {"generate": settings["NOVA_GENERATE_MODEL"], "tutor": settings["NOVA_TUTOR_MODEL"], "refused_settings": refused}
+
+
+def _allowed(configured: str, setting: str) -> str:
+    """Only the Nano model is used unless NOVA_ALLOWED_MODELS names others on purpose, so a wrong setting cannot cost more."""
+    allowed = {DEFAULT_MODEL, *(name.strip() for name in os.getenv("NOVA_ALLOWED_MODELS", "").split(",") if name.strip())}
+    if configured in allowed:
+        return configured
+    if setting not in _warned_settings:
+        _warned_settings.add(setting)
+        logger.error("%s=%s is not an allowed model, using %s instead (NOVA_ALLOWED_MODELS widens the list)", setting, configured, DEFAULT_MODEL)
+    return DEFAULT_MODEL
 
 
 # --- Requests ---

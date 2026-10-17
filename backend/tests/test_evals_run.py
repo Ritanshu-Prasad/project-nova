@@ -127,3 +127,14 @@ def test_a_comparison_shows_the_change_in_each_metric():
 def test_a_comparison_skips_metrics_missing_on_one_side():
     old, new = summarise(rows(), LEVELS), summarise(rows(), LEVELS)
     assert "| beginner | judge |" not in compare_summaries(old, new)
+
+
+# --- Nano only ---
+
+def test_the_command_line_has_no_model_switch(monkeypatch, capsys):
+    import pytest
+
+    monkeypatch.setattr("sys.argv", ["run_eval", "--model", "other/model"])
+    with pytest.raises(SystemExit):
+        run_eval.main()
+    assert "unrecognized arguments: --model" in capsys.readouterr().err

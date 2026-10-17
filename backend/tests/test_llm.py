@@ -25,6 +25,7 @@ def api(monkeypatch):
     """Routes the client's requests to a handler instead of the network."""
     monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
     monkeypatch.setenv("NEBIUS_BASE_URL", "https://example.test/v1/")
+    monkeypatch.setenv("NOVA_ALLOWED_MODELS", "test-model")
     monkeypatch.setenv("NOVA_GENERATE_MODEL", "test-model")
     real_client = httpx.AsyncClient
 
@@ -92,9 +93,61 @@ def test_defaults_point_at_nebius_and_the_nano_model(monkeypatch):
 
 def test_settings_follow_the_environment(monkeypatch):
     monkeypatch.setenv("NEBIUS_BASE_URL", "https://other.test/v1/")
+    monkeypatch.setenv("NOVA_ALLOWED_MODELS", "gen/model, tutor/model")
     monkeypatch.setenv("NOVA_GENERATE_MODEL", "gen/model")
     monkeypatch.setenv("NOVA_TUTOR_MODEL", "tutor/model")
     assert (llm.base_url(), llm.generate_model(), llm.tutor_model()) == ("https://other.test/v1", "gen/model", "tutor/model")
+
+
+# --- Nano only ---
+
+ULTRA = "nvidia/Nemotron-3-Ultra-550b-a55b"
+
+
+@pytest.fixture(autouse=True)
+def fresh_warnings(monkeypatch):
+    monkeypatch.setattr(llm, "_warned_settings", set())
+    monkeypatch.delenv("NOVA_ALLOWED_MODELS", raising=False)
+
+
+def test_a_model_that_is_not_allowed_is_replaced_by_nano(monkeypatch):
+    monkeypatch.setenv("NOVA_GENERATE_MODEL", ULTRA)
+    monkeypatch.setenv("NOVA_TUTOR_MODEL", ULTRA)
+    assert llm.generate_model() == llm.tutor_model() == llm.DEFAULT_MODEL
+
+
+def test_the_replacement_is_reported_once_per_setting(monkeypatch, caplog):
+    monkeypatch.setenv("NOVA_GENERATE_MODEL", ULTRA)
+    for _ in range(3):
+        llm.generate_model()
+    messages = [record.getMessage() for record in caplog.records if "not an allowed model" in record.getMessage()]
+    assert len(messages) == 1 and "NOVA_GENERATE_MODEL" in messages[0] and ULTRA in messages[0]
+
+
+def test_a_model_can_be_allowed_on_purpose(monkeypatch):
+    monkeypatch.setenv("NOVA_GENERATE_MODEL", ULTRA)
+    monkeypatch.setenv("NOVA_ALLOWED_MODELS", ULTRA)
+    assert llm.generate_model() == ULTRA and llm.tutor_model() == llm.DEFAULT_MODEL
+
+
+def test_requests_carry_the_nano_model_even_when_the_setting_is_wrong(api, monkeypatch):
+    monkeypatch.setenv("NOVA_GENERATE_MODEL", ULTRA)
+    bodies = []
+    api(lambda request: bodies.append(json.loads(request.content)) or reply())
+    run(llm.chat_json("s", "u"))
+    assert bodies[0]["model"] == llm.DEFAULT_MODEL
+
+
+def test_models_in_use_lists_the_settings_that_were_refused(monkeypatch):
+    monkeypatch.setenv("NOVA_TUTOR_MODEL", ULTRA)
+    monkeypatch.delenv("NOVA_GENERATE_MODEL", raising=False)
+    assert llm.models_in_use() == {"generate": llm.DEFAULT_MODEL, "tutor": llm.DEFAULT_MODEL, "refused_settings": ["NOVA_TUTOR_MODEL"]}
+
+
+def test_models_in_use_is_clean_by_default(monkeypatch):
+    monkeypatch.delenv("NOVA_TUTOR_MODEL", raising=False)
+    monkeypatch.delenv("NOVA_GENERATE_MODEL", raising=False)
+    assert llm.models_in_use()["refused_settings"] == []
 
 
 # --- chat_json ---

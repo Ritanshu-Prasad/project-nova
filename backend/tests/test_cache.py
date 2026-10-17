@@ -49,6 +49,7 @@ def test_a_new_prompt_version_does_not_see_old_results(store, monkeypatch):
 
 def test_a_different_model_does_not_see_old_results(store, monkeypatch):
     run(store.put(("a",), {"x": 1}))
+    monkeypatch.setenv("NOVA_ALLOWED_MODELS", "another/model")
     monkeypatch.setenv("NOVA_GENERATE_MODEL", "another/model")
     assert run(store.get(("a",))) is None and llm.generate_model() == "another/model"
 
