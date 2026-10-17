@@ -7,13 +7,16 @@ from evals import cases, rows
 from evals.metrics import fraction, precision_recall
 from course_requests import MAX_OBJECTIVE_CHARS
 from prompts import safety_system, sanitise, wrap_goal
-from safety import VERDICT_TOKENS, Verdict
+from safety import VERDICT_TOKENS, Verdict, has_orders
 
 
 async def check(case: dict) -> dict:
     """Asks the goal check directly, so a model failure shows up as an error instead of quietly allowing the goal."""
     row = rows.start("safety", goal=case["goal"], expect=case["expect"], category=case["kind"])
     goal = sanitise(case["goal"], MAX_OBJECTIVE_CHARS)  # the check sees the goal as a real request would give it
+    if has_orders(goal):
+        row.update(ok=True, refused=True, correct=case["expect"] == "refuse", reason="orders in the goal")
+        return rows.finish(row)
     try:
         verdict = await llm.ask(Verdict, safety_system(), wrap_goal(goal), VERDICT_TOKENS, kind="safety")
         row.update(ok=True, refused=not verdict.allowed, correct=(not verdict.allowed) == (case["expect"] == "refuse"), reason=verdict.reason)

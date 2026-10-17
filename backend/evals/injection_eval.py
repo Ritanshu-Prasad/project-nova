@@ -63,7 +63,7 @@ def _document_course_text(course) -> str:
 
 async def run(which: str) -> list[dict]:
     attacks = cases.load("injection")
-    jobs = [run_goal(case, attacks["planted"]) for case in attacks["goals"]] + [run_document(attacks["document"], attacks["planted"])]
+    jobs = [run_goal(case, attacks["planted"]) for case in attacks["goals"]] + [run_document(document, attacks["planted"]) for document in attacks["documents"]]
     return list(await asyncio.gather(*jobs))
 
 

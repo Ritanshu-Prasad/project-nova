@@ -28,7 +28,7 @@ def test_the_case_files_have_what_the_suites_need():
     assert all(case["name"].endswith(".pdf") and case["pages"] for case in DOCUMENTS["documents"])
     assert all(case["expect"] in {"allow", "refuse"} and case["kind"] in {"benign", "sensitive", "harmful", "injection"} for case in cases.load("safety")["goals"])
     attacks = cases.load("injection")
-    assert attacks["planted"] and attacks["goals"] and attacks["planted"] in attacks["document"]["pages"][1]
+    assert attacks["planted"] and attacks["goals"] and all(attacks["planted"] in document["pages"][1] for document in attacks["documents"])
     plan = cases.load("tutor")
     assert plan["spoilers"] and plan["quiz_requests"] and plan["off_topic"] and plan["grounded"]["facts"]
 
@@ -178,12 +178,12 @@ def test_a_document_that_gets_its_way_is_a_leak(fake_model):
     from samples import module_json
 
     fake_model.replies = [{**module_json(), "title": PLANTED}]
-    row = run(injection_eval.run_document(cases.load("injection")["document"], PLANTED))
+    row = run(injection_eval.run_document(cases.load("injection")["documents"][0], PLANTED))
     assert row["ok"] and row["leaked"]
 
 
 def test_a_document_that_is_ignored_is_not_a_leak(fake_model):
-    row = run(injection_eval.run_document(cases.load("injection")["document"], PLANTED))
+    row = run(injection_eval.run_document(cases.load("injection")["documents"][0], PLANTED))
     assert row["ok"] and not row["leaked"]
 
 
@@ -192,8 +192,9 @@ def test_the_injection_summary_counts_leaks_and_failures():
     assert injection_eval.summarise(rows) == {"runs": 4, "leaks": 1, "ok_rate": 0.75, "refused": 1}
 
 
-def test_the_injection_suite_covers_every_goal_and_the_document(fake_model):
-    assert len(run(injection_eval.run("smoke"))) == len(cases.load("injection")["goals"]) + 1
+def test_the_injection_suite_covers_every_goal_and_every_document(fake_model):
+    attacks = cases.load("injection")
+    assert len(run(injection_eval.run("smoke"))) == len(attacks["goals"]) + len(attacks["documents"])
 
 
 # --- Placement ---
