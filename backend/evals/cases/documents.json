@@ -1,13 +1,4 @@
 {
-  "levels": ["beginner", "intermediate", "advanced"],
-  "goals": [
-    {"id": "docker", "goal": "Docker container networking", "smoke": true},
-    {"id": "attention", "goal": "Attention mechanisms in transformers", "smoke": true},
-    {"id": "sql", "goal": "SQL joins and window functions"},
-    {"id": "photosynthesis", "goal": "How photosynthesis works"},
-    {"id": "rust", "goal": "Rust ownership and borrowing"},
-    {"id": "statistics", "goal": "Hypothesis testing and p-values"}
-  ],
   "documents": [
     {
       "id": "plants",

@@ -27,6 +27,7 @@ class RequestUsage:
         self.completion_tokens = 0
         self.retries = 0
         self.failures = 0
+        self.seconds_by_kind: dict[str, list[float]] = {}
 
     @property
     def tokens(self) -> int:
@@ -94,6 +95,7 @@ async def record_call(kind: str, model: str, tokens_used: dict | None, seconds: 
         spent.calls += 1
         spent.prompt_tokens += prompt
         spent.completion_tokens += completion
+        spent.seconds_by_kind.setdefault(kind, []).append(seconds)
     logger.debug("model call %s: %d tokens in %.1f s", kind, prompt + completion, seconds)
     amounts = {"calls": 1, "prompt": prompt, "completion": completion, "millis": round(seconds * 1000), _bucket(seconds): 1}
     await asyncio.gather(_add(ledger_key(_day(), model), {f"{kind}:{name}": amount for name, amount in amounts.items()}), _charge(prompt + completion))

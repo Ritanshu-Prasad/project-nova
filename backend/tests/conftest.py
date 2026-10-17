@@ -26,6 +26,10 @@ def reply_for(system: str, call_number: int, user: str = "") -> dict:
         return {"questions": [{**mcq(n), "difficulty": difficulty} for n, difficulty in enumerate([3, 1, 2, 1, 2])]}
     if "careful student" in system:
         return {"answers": [{"number": int(number), "choice": [1]} for number in re.findall(r"^Question (\d+)", user, re.MULTILINE)]}
+    if "strict assessment reviewer" in system:
+        return {"clarity": 4, "key_correct": 5, "difficulty_fit": 4, "notes": "none"}
+    if "stayed on a lesson" in system:
+        return {"answered": False}
     if "strict teaching reviewer" in system:
         return {"accuracy": 4, "clarity": 5, "level_fit": 4, "alignment": 5, "notes": "none"}
     if "Turn one part of a document" in system:

@@ -1,5 +1,7 @@
+import math
 import re
 from collections import Counter
+from typing import Callable, Iterable
 
 from course_models import Question
 
@@ -45,6 +47,42 @@ def type_mix(questions: list[Question]) -> dict[str, int]:
 
 def retry_rate(calls: int, retries: int) -> float:
     return retries / calls if calls else 0.0
+
+
+def first_try_rate(calls: int, retries: int) -> float:
+    """The share of model calls whose answer was usable the first time."""
+    return max(0.0, 1 - retry_rate(calls, retries)) if calls else 1.0
+
+
+def percentile(values: list[float], share: float) -> float | None:
+    """The value below which `share` percent of the values fall (nearest rank); None without values."""
+    if not values:
+        return None
+    ordered = sorted(values)
+    return ordered[max(0, math.ceil(share / 100 * len(ordered)) - 1)]
+
+
+def fraction(items: Iterable, predicate: Callable) -> float | None:
+    """The share of items for which `predicate` holds; None when there are no items."""
+    items = list(items)
+    return sum(1 for item in items if predicate(item)) / len(items) if items else None
+
+
+def precision_recall(expected: list[bool], predicted: list[bool]) -> tuple[float | None, float | None]:
+    """Of what was flagged, how much should have been (precision), and of what should be, how much was (recall)."""
+    flagged = sum(predicted)
+    wanted = sum(expected)
+    true_positives = sum(1 for want, got in zip(expected, predicted) if want and got)
+    return (true_positives / flagged if flagged else None), (true_positives / wanted if wanted else None)
+
+
+# Reading grades that suit each level; reported, and not yet a gate.
+GRADE_RANGES = {"beginner": (0.0, 9.0), "intermediate": (9.0, 12.0), "advanced": (12.0, 99.0)}
+
+
+def grade_in_range(grade: float, level: str) -> bool:
+    low, high = GRADE_RANGES[level]
+    return low <= grade < high
 
 
 def citation_survival(before: int, after: int) -> float:

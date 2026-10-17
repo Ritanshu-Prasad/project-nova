@@ -1,6 +1,7 @@
 name: Evaluate Course Generation
 
-# Writes a few real courses with the configured model and scores them (see backend/evals/run_eval.py).
+# Writes a few real courses and tutor answers with the Nano model and scores them (see backend/evals/run_eval.py),
+# then compares the numbers with backend/evals/baselines/nano.json and fails when a threshold is broken.
 # It spends model tokens, so it only runs by hand or once a week, and needs the NEBIUS_API_KEY secret.
 on:
   workflow_dispatch:
@@ -10,10 +11,11 @@ on:
         type: choice
         options: [smoke, full]
         default: smoke
-      model:
-        description: Model id to generate with (empty uses the default)
-        type: string
-        default: ''
+      suite:
+        description: Which suite to run
+        type: choice
+        options: [all, goals, safety, injection, tutor, placement]
+        default: all
       judge:
         description: Also have the model review each lesson
         type: boolean
@@ -51,9 +53,10 @@ jobs:
         working-directory: backend
         run: |
           python -m evals.run_eval \
+            --suite "${{ inputs.suite || 'all' }}" \
             --cases "${{ inputs.cases || 'smoke' }}" \
-            ${{ inputs.model && format('--model "{0}"', inputs.model) || '' }} \
-            ${{ inputs.judge && '--judge' || '' }} | tee "$GITHUB_STEP_SUMMARY"
+            ${{ inputs.judge && '--judge' || '' }} \
+            --baseline evals/baselines/nano.json --fail-on-regression | tee "$GITHUB_STEP_SUMMARY"
 
       - name: Keep The Results
         uses: actions/upload-artifact@v4

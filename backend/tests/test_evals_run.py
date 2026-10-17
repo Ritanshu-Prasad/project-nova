@@ -1,140 +1,151 @@
-import asyncio
 import json
 
-from fastapi import HTTPException
+import pytest
 
-import generator
-from course_models import Lesson
 from evals import run_eval
-from evals.run_eval import chosen, compare_summaries, lesson_text, render_markdown, run_document, run_goal, summarise
-from samples import lesson_json
-
-CASES = json.loads((run_eval.HERE / "cases.json").read_text())
+from evals.run_eval import main, parse_args
 
 
-def run(coro):
-    return asyncio.run(coro)
+@pytest.fixture(autouse=True)
+def keep_environment(monkeypatch):
+    """A run changes two settings for itself; the other tests must get theirs back."""
+    monkeypatch.setenv("NOVA_RATE_LIMIT", "restored-by-monkeypatch")
+    monkeypatch.setenv("NOVA_MODERATION", "off")
 
 
-# --- The cases ---
-
-def test_the_smoke_set_is_smaller_than_the_full_set():
-    smoke_goals, smoke_docs = chosen(CASES, "smoke")
-    full_goals, full_docs = chosen(CASES, "full")
-    assert 0 < len(smoke_goals) < len(full_goals) and smoke_docs and len(full_docs) >= len(smoke_docs)
+@pytest.fixture
+def results(tmp_path):
+    return tmp_path / "results"
 
 
-def test_every_case_has_what_a_run_needs():
-    assert all(case["id"] and case["goal"] for case in CASES["goals"])
-    assert all(case["id"] and case["name"].endswith(".pdf") and case["pages"] for case in CASES["documents"])
-    assert CASES["levels"] == ["beginner", "intermediate", "advanced"]
+def eval_args(results, *extra) -> list:
+    return ["--out", str(results), *extra]
 
 
-# --- One goal run ---
+# --- Arguments ---
 
-def test_a_goal_run_reports_quality_and_cost(fake_model):
-    row = run(run_goal(CASES["goals"][0], "beginner", judge=False))
-    assert row["ok"] and row["kind"] == "goal" and row["level"] == "beginner"
-    assert row["questions"] == 20 and row["duplicates"] == 0.0 and row["agreement"] == 1.0 and row["grade"] > 0
-    assert {"seconds", "calls", "tokens", "retries", "retry_rate", "mix"} <= set(row)
+def test_the_defaults_run_every_suite_on_the_smoke_cases_once():
+    args = parse_args([])
+    assert (args.suite, args.cases, args.repeat, args.judge, args.baseline, args.fail_on_regression) == ("all", "smoke", 1, False, None, False)
 
-
-def test_a_goal_run_can_include_a_review(fake_model):
-    row = run(run_goal(CASES["goals"][0], "advanced", judge=True))
-    assert row["judge"] == 4.5 and row["judge_notes"] == "none"
-
-
-def test_a_failing_run_is_reported_not_raised(fake_model):
-    fake_model.replies = [HTTPException(503, "busy")]
-    row = run(run_goal(CASES["goals"][0], "beginner", judge=False))
-    assert row["ok"] is False and row["error"] == "busy"
-
-
-# --- One document run ---
-
-def test_a_document_run_builds_a_course_and_checks_its_quotes(fake_model):
-    row = run(run_document(CASES["documents"][0], "intermediate"))
-    assert row["ok"] and row["modules"] >= 1 and row["topics"] >= 1 and row["citations"] == 1.0
-
-
-def test_a_document_run_restores_the_verifier(fake_model):
-    original = generator.verify_sources
-    run(run_document(CASES["documents"][0], "intermediate"))
-    assert generator.verify_sources is original
-
-
-def test_a_failing_document_run_is_reported_and_still_restores_the_verifier(fake_model):
-    original = generator.verify_sources
-    fake_model.replies = [HTTPException(503, "busy")] * 10
-    row = run(run_document(CASES["documents"][0], "intermediate"))
-    assert row["ok"] is False and generator.verify_sources is original
-
-
-def test_the_lesson_text_gathers_the_prose_and_summary_points():
-    text = lesson_text(Lesson.model_validate(lesson_json()))
-    assert "A short version." in text and "Some body text." in text and "One point" in text
-
-
-# --- Summaries ---
-
-def goal_row(level, text, ok=True, **extra):
-    return {"kind": "goal", "case": "docker", "level": level, "ok": ok, "text": text, "seconds": 10.0, "tokens": 5000, "retry_rate": 0.0, "grade": 8.0, "duplicates": 0.0, "agreement": 1.0, **extra}
-
-
-LEVELS = ["beginner", "intermediate", "advanced"]
-
-
-def rows():
-    return [goal_row("beginner", "The cat sat. We like to play."), goal_row("intermediate", "mid"), goal_row("advanced", "Quantization-aware optimization necessitates comprehensive reconsideration of heterogeneous architectures.", judge=4.0)]
-
-
-def test_the_summary_averages_each_level():
-    summary = summarise(rows(), LEVELS)
-    assert summary["levels"]["beginner"]["runs"] == 1 and summary["levels"]["beginner"]["tokens"] == 5000
-    assert summary["levels"]["advanced"]["judge"] == 4.0 and summary["levels"]["beginner"]["judge"] is None
-
-
-def test_failed_runs_lower_the_ok_rate_and_are_left_out_of_other_averages():
-    summary = summarise([goal_row("beginner", "a"), goal_row("beginner", "b", ok=False, tokens=None)], LEVELS)
-    assert summary["levels"]["beginner"]["ok"] == 0.5 and summary["levels"]["beginner"]["tokens"] == 5000
-
-
-def test_the_level_gap_compares_the_easiest_and_hardest_texts():
-    assert summarise(rows(), LEVELS)["level_gap"] > 5
-
-
-def test_there_is_no_level_gap_without_both_ends():
-    assert summarise(rows()[:2], LEVELS)["level_gap"] is None
-
-
-def test_document_runs_are_listed_separately():
-    document = {"kind": "document", "case": "plants", "ok": True, "modules": 2, "topics": 4, "seconds": 30.0, "tokens": 9000, "retry_rate": 0.0, "citations": 1.0, "duplicates": 0.0}
-    assert summarise([document], LEVELS)["documents"][0]["citations"] == 1.0
-
-
-def test_the_report_has_a_row_per_level_and_the_run_details():
-    report = render_markdown(summarise(rows(), LEVELS), {"date": "2026-10-16", "model": "m", "promptVersion": "v1", "cases": "smoke"})
-    assert "# Evaluation 2026-10-16" in report and "`m`" in report and "`v1`" in report
-    assert all(f"| {level} |" in report for level in LEVELS) and "Grade gap" in report
-
-
-def test_a_comparison_shows_the_change_in_each_metric():
-    old, new = summarise(rows(), LEVELS), summarise([{**row, "tokens": 2500} for row in rows()], LEVELS)
-    table = compare_summaries(old, new)
-    assert "| beginner | tokens | 5000 | 2500 | -2500.000 |" in table
-
-
-def test_a_comparison_skips_metrics_missing_on_one_side():
-    old, new = summarise(rows(), LEVELS), summarise(rows(), LEVELS)
-    assert "| beginner | judge |" not in compare_summaries(old, new)
-
-
-# --- Nano only ---
 
 def test_the_command_line_has_no_model_switch(monkeypatch, capsys):
-    import pytest
-
     monkeypatch.setattr("sys.argv", ["run_eval", "--model", "other/model"])
     with pytest.raises(SystemExit):
-        run_eval.main()
+        parse_args()
     assert "unrecognized arguments: --model" in capsys.readouterr().err
+
+
+def test_every_suite_can_be_chosen():
+    assert {parse_args(["--suite", name]).suite for name in ("goals", "safety", "injection", "tutor", "placement", "all")} == {"goals", "safety", "injection", "tutor", "placement", "all"}
+
+
+def test_an_unknown_suite_is_refused():
+    with pytest.raises(SystemExit):
+        parse_args(["--suite", "everything"])
+
+
+# --- A run ---
+
+def test_a_run_writes_the_results_and_a_report(fake_model, results, capsys):
+    assert main(eval_args(results, "--suite", "goals")) == 0
+    files = sorted(path.name for path in results.iterdir())
+    assert len(files) == 2 and files[0].endswith("-smoke-goals.json") and files[1].endswith("-smoke-goals.md")
+    assert "# Evaluation" in capsys.readouterr().out
+
+
+def test_the_saved_results_name_the_nano_model_and_prompt_version_without_lesson_text(fake_model, results):
+    main(eval_args(results, "--suite", "goals"))
+    saved = json.loads(next(results.glob("*.json")).read_text())
+    assert saved["meta"]["model"] == "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B" and saved["meta"]["promptVersion"] and saved["meta"]["suites"] == "goals"
+    assert saved["rows"] and all("text" not in row for row in saved["rows"]) and "goals" in saved["summary"] and "cost" in saved["summary"]
+
+
+def test_repeating_runs_each_course_case_again(fake_model, results):
+    main(eval_args(results, "--suite", "goals", "--repeat", "2"))
+    rows = json.loads(next(results.glob("*.json")).read_text())["rows"]
+    assert len([row for row in rows if row["kind"] == "goal"]) == 2 * 2 * 3
+
+
+def test_a_run_turns_off_rate_limits_and_turns_on_the_goal_check(fake_model, results):
+    main(eval_args(results, "--suite", "safety"))
+    import os
+
+    assert os.environ["NOVA_RATE_LIMIT"] == "off" and os.environ["NOVA_MODERATION"] == "on"
+
+
+def test_the_judge_adds_scores(fake_model, results):
+    main(eval_args(results, "--suite", "goals", "--judge"))
+    rows = json.loads(next(results.glob("*.json")).read_text())["rows"]
+    assert all("judge" in row and "questions_judge" in row for row in rows if row["kind"] == "goal")
+
+
+# --- The gate ---
+
+def write_baseline(results, tmp_path, **goal_metrics):
+    main(eval_args(results, "--suite", "goals"))
+    baseline = json.loads(next(results.glob("*.json")).read_text())
+    for level in baseline["summary"]["goals"]["levels"].values():
+        level.update(goal_metrics)
+    path = tmp_path / "baseline.json"
+    path.write_text(json.dumps(baseline))
+    for file in results.iterdir():
+        file.unlink()
+    return path
+
+
+def write_rules(tmp_path, rules):
+    path = tmp_path / "rules.json"
+    path.write_text(json.dumps({"rules": rules}))
+    return str(path)
+
+
+def test_without_a_baseline_the_fixed_thresholds_still_apply(fake_model, results, tmp_path, capsys):
+    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.ok", "at_least": 1.5}])
+    assert main(eval_args(results, "--suite", "goals", "--thresholds", rules)) == 0
+    assert "thresholds broken" in capsys.readouterr().out
+
+
+def test_a_broken_threshold_fails_the_run_only_when_asked(fake_model, results, tmp_path):
+    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.ok", "at_least": 1.5}])
+    assert main(eval_args(results, "--suite", "goals", "--thresholds", rules, "--fail-on-regression")) == 1
+
+
+def test_a_run_that_holds_every_threshold_passes(fake_model, results, tmp_path, capsys):
+    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.ok", "at_least": 0.5}])
+    assert main(eval_args(results, "--suite", "goals", "--thresholds", rules, "--fail-on-regression")) == 0
+    assert "every threshold holds" in capsys.readouterr().out
+
+
+def test_a_run_that_matches_its_baseline_passes_the_relative_rules(fake_model, results, tmp_path):
+    baseline = write_baseline(results, tmp_path, agreement=1.0, duplicates=0.0, first_try=1.0)
+    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.duplicates", "rise_at_most_share": 0.1}, {"metric": "goals.levels.*.agreement", "drop_at_most": 0.1}])
+    assert main(eval_args(results, "--suite", "goals", "--baseline", str(baseline), "--thresholds", rules, "--fail-on-regression")) == 0
+
+
+def test_a_baseline_that_is_better_than_the_run_makes_the_gate_fail(fake_model, results, tmp_path, capsys):
+    baseline = write_baseline(results, tmp_path, grade=20.0, seconds=100.0, questions_judge=5.0, judge=5.0)
+    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.judge", "drop_at_most": 0.3}])
+    code = main(eval_args(results, "--suite", "goals", "--judge", "--baseline", str(baseline), "--thresholds", rules, "--fail-on-regression"))
+    assert code == 1 and "may fall at most" in capsys.readouterr().out
+
+
+# --- Other commands ---
+
+def test_the_history_lists_saved_runs(fake_model, results, capsys):
+    main(eval_args(results, "--suite", "goals"))
+    capsys.readouterr()
+    assert main(eval_args(results, "--history")) == 0
+    assert "| date | model |" in capsys.readouterr().out
+
+
+def test_two_saved_runs_can_be_compared(fake_model, results, capsys):
+    main(eval_args(results, "--suite", "goals"))
+    first = next(results.glob("*.json"))
+    capsys.readouterr()
+    assert main(["--compare", str(first), str(first)]) == 0
+    assert "| metric | before | after | change |" in capsys.readouterr().out
+
+
+def test_the_runner_never_mentions_a_model_option():
+    assert "--model" not in run_eval.__doc__
