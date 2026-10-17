@@ -1,6 +1,6 @@
 import re
 
-PROMPT_VERSION = "2026-10-a"
+PROMPT_VERSION = "2026-10-b"
 
 # --- Level profiles ---
 
@@ -10,6 +10,7 @@ LEVELS = {
         "tone": "Intuitive and welcoming, grounded in relatable real-world analogies.",
         "math": "Mostly qualitative. Introduce any formula with a plain-English walk through each variable.",
         "code": "Short, heavily commented scripts or pseudocode.",
+        "reading": "Write for a 12-year-old reader: sentences under 15 words, everyday words, one idea per sentence, and explain each technical term the first time it appears.",
         "questions": "Test core intuition, concept recognition, matching terms to ideas and common misconceptions.",
     },
     "intermediate": {
@@ -97,6 +98,7 @@ def lesson_system(level: str, grounded: bool, in_course: bool = False) -> str:
             f"The learner is {profile['audience']}. {profile['tone']}",
             f"Math: {profile['math']}",
             f"Code: {profile['code']}",
+            *([f"Reading level: {profile['reading']}"] if "reading" in profile else []),
             '4 objectives starting with a verb, a one-paragraph "simple" summary, and 8 to 10 blocks that include text, an example, keyTerms (at least 4) and a closing summary.',
             "Write like a textbook, not a chatbot: concrete, specific, no filler. Keep each block under 120 words and code under 25 lines.",
             "Use **bold** for key terms and plain unicode for math. Never use LaTeX.",

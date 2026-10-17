@@ -2,7 +2,7 @@
   "meta": {
     "date": "2026-10-17",
     "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
-    "promptVersion": "2026-10-a",
+    "promptVersion": "2026-10-b",
     "cases": "smoke",
     "suites": "all",
     "repeat": 2
@@ -14,95 +14,95 @@
           "runs": 4,
           "ok": 1.0,
           "first_try": 1.0,
-          "seconds": 14.05,
-          "tokens": 8047,
+          "seconds": 16.6,
+          "tokens": 7718.75,
           "cost_usd": 0.001,
-          "grade": 10.686,
-          "duplicates": 0.026,
-          "agreement": 1.0,
-          "judge": 3.438,
-          "questions_judge": 3.083,
-          "grade_in_range": 0.0,
-          "seconds_sd": 1.212,
-          "tokens_sd": 346.328,
-          "grade_sd": 0.705,
-          "judge_sd": 0.315
+          "grade": 7.792,
+          "duplicates": 0.013,
+          "agreement": 0.7,
+          "judge": 3.875,
+          "questions_judge": 3.0,
+          "grade_in_range": 1.0,
+          "seconds_sd": 1.944,
+          "tokens_sd": 307.51,
+          "grade_sd": 0.486,
+          "judge_sd": 0.433
         },
         "intermediate": {
           "runs": 4,
           "ok": 1.0,
-          "first_try": 1.0,
-          "seconds": 15.75,
-          "tokens": 7945.75,
-          "cost_usd": 0.001,
-          "grade": 13.303,
+          "first_try": 0.975,
+          "seconds": 26.025,
+          "tokens": 10121,
+          "cost_usd": 0.002,
+          "grade": 12.438,
           "duplicates": 0.0,
-          "agreement": 0.792,
-          "judge": 4.062,
-          "questions_judge": 3.167,
+          "agreement": 0.889,
+          "judge": 4.625,
+          "questions_judge": 3.5,
           "grade_in_range": 0.25,
-          "seconds_sd": 2.541,
-          "tokens_sd": 243.177,
-          "grade_sd": 1.827,
-          "judge_sd": 0.826
+          "seconds_sd": 18.095,
+          "tokens_sd": 2536.045,
+          "grade_sd": 1.667,
+          "judge_sd": 0.479
         },
         "advanced": {
           "runs": 4,
           "ok": 1.0,
           "first_try": 1.0,
-          "seconds": 15.775,
-          "tokens": 9320,
+          "seconds": 20.25,
+          "tokens": 9682.5,
           "cost_usd": 0.001,
-          "grade": 11.971,
+          "grade": 12.451,
           "duplicates": 0.0,
-          "agreement": 0.714,
-          "judge": 4.5,
-          "questions_judge": 4.083,
-          "grade_in_range": 0.75,
-          "seconds_sd": 3.485,
-          "tokens_sd": 1724.426,
-          "grade_sd": 1.4,
-          "judge_sd": 0.204
+          "agreement": 0.406,
+          "judge": 3.688,
+          "questions_judge": 3.583,
+          "grade_in_range": 0.5,
+          "seconds_sd": 3.979,
+          "tokens_sd": 429.746,
+          "grade_sd": 2.946,
+          "judge_sd": 0.826
         }
       },
-      "level_gap": 1.028,
+      "level_gap": 2.958,
       "documents": {
         "plants": {
           "ok": 1.0,
           "modules": 2,
-          "topics": 5,
-          "seconds": 12.2,
-          "tokens": 24572,
-          "cost_usd": 0.003861,
+          "topics": 6,
+          "seconds": 23.3,
+          "tokens": 30416,
+          "cost_usd": 0.004812,
           "retry_rate": 0.0,
           "citations": 1.0,
-          "duplicates": 0.010416666666666666
+          "duplicates": 0.008333333333333333
         }
       },
       "latency": {
         "answers": {
-          "p50": 1.35,
-          "p95": 5.27
+          "p50": 1.5,
+          "p95": 6.85
         },
         "judge": {
-          "p50": 0.91,
-          "p95": 1.06
+          "p50": 1.04,
+          "p95": 1.36
         },
         "lesson": {
-          "p50": 7.07,
-          "p95": 8.92
+          "p50": 7.64,
+          "p95": 11.62
         },
         "outline": {
-          "p50": 3.09,
-          "p95": 5.48
+          "p50": 4.02,
+          "p95": 7.32
         },
         "practice": {
-          "p50": 7.95,
-          "p95": 10.54
+          "p50": 8.7,
+          "p95": 12.32
         },
         "quiz": {
-          "p50": 5.73,
-          "p95": 7.27
+          "p50": 7.29,
+          "p95": 27.59
         }
       }
     },
@@ -132,13 +132,13 @@
     "placement": {
       "runs": 2,
       "valid_rate": 1.0,
-      "agreement": 0.9
+      "agreement": 0.5
     },
     "cost": {
-      "total_usd": 0.02149,
-      "per_run_usd": 0.000457,
-      "tokens": 151316,
-      "calls": 166,
+      "total_usd": 0.02387,
+      "per_run_usd": 0.000508,
+      "tokens": 164536,
+      "calls": 170,
       "runs": 47
     }
   }
