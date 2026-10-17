@@ -1,10 +1,10 @@
 import asyncio
+import json
 import logging
 import os
 import re
 import time
 import uuid
-from contextvars import ContextVar
 
 from fastapi import APIRouter, FastAPI, Request
 
@@ -13,11 +13,11 @@ import llm
 import pricing
 import shared
 import usage
+from request_context import request_id_var
 
 router = APIRouter()
 logger = logging.getLogger("nova.requests")
 
-request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
 VALID_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 STARTED = time.time()
 STORAGE_PROBE_SECONDS = 3
@@ -31,11 +31,31 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
+class JsonFormatter(logging.Formatter):
+    """One JSON object per line, for log services; a request's cost rides along as `usage`."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        line = {
+            "time": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(record.created)) + f".{int(record.msecs):03d}Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "request_id": getattr(record, "request_id", "-"),
+            "message": record.getMessage(),
+        }
+        if hasattr(record, "usage"):
+            line["usage"] = record.usage
+        if record.exc_info:
+            line["exception"] = self.formatException(record.exc_info)
+        return json.dumps(line, ensure_ascii=False)
+
+
 def configure_logging() -> None:
     level = os.getenv("LOG_LEVEL", "INFO").upper()
     logging.basicConfig(level=level, format="%(asctime)s [%(levelname)s] [%(name)s] [%(request_id)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     for handler in logging.getLogger().handlers:
         handler.addFilter(RequestIdFilter())
+        if os.getenv("LOG_FORMAT") == "json":
+            handler.setFormatter(JsonFormatter())
 
 
 def add_request_logging(app: FastAPI) -> None:
@@ -56,7 +76,7 @@ def add_request_logging(app: FastAPI) -> None:
             response.headers["X-Request-ID"] = request_id
             response.headers["X-Response-Time"] = f"{elapsed:.0f}ms"
             cost = f" [{spent.describe()}]" if spent.calls else ""
-            logger.info("%s %s -> %s (%.0f ms)%s", request.method, request.url.path, response.status_code, elapsed, cost)
+            logger.info("%s %s -> %s (%.0f ms)%s", request.method, request.url.path, response.status_code, elapsed, cost, extra={"usage": spent.as_dict()} if spent.calls else {})
             return response
         finally:
             request_id_var.reset(token)

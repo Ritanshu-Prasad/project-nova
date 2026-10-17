@@ -36,6 +36,9 @@ class RequestUsage:
     def cost_usd(self) -> float:
         return pricing.cost_usd(self.prompt_tokens, self.completion_tokens)
 
+    def as_dict(self) -> dict:
+        return {"calls": self.calls, "prompt_tokens": self.prompt_tokens, "completion_tokens": self.completion_tokens, "cost_usd": round(self.cost_usd, 6), "retries": self.retries, "failures": self.failures}
+
     def describe(self) -> str:
         return f"calls={self.calls} tokens={self.tokens} ~${self.cost_usd:.4f} retries={self.retries}"
 

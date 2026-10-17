@@ -11,6 +11,7 @@ import httpx
 from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
 
+import capture
 import usage
 
 logger = logging.getLogger("nova.llm")
@@ -94,6 +95,7 @@ async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
     body = response.json()
     await usage.record_call(kind, payload["model"], body.get("usage"), time.perf_counter() - started)
     choice = body["choices"][0]
+    capture.save_exchange(kind, system, user, choice["message"]["content"] or "", body.get("usage"))
     try:
         return _parse_json(choice["message"]["content"] or "")
     except ValueError:
@@ -155,7 +157,9 @@ async def chat_text(messages: list, model: str, max_tokens: int = 700) -> str:
     await _raise_for_upstream(response, "tutor", model)
     body = response.json()
     await usage.record_call("tutor", model, body.get("usage"), time.perf_counter() - started)
-    return body["choices"][0]["message"]["content"] or ""
+    reply = body["choices"][0]["message"]["content"] or ""
+    capture.save_exchange("tutor", messages[0]["content"], messages[-1]["content"], reply, body.get("usage"))
+    return reply
 
 
 async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS, thinking: bool = False, kind: str = "call") -> T:

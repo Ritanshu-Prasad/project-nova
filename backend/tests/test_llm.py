@@ -490,3 +490,29 @@ def test_tutor_calls_are_in_the_ledger_under_tutor(api):
     api(lambda request: httpx.Response(200, json={"choices": [{"message": {"content": "Hi"}}], "usage": {"prompt_tokens": 50, "completion_tokens": 5}}))
     run(llm.chat_text([{"role": "user", "content": "hi"}], llm.tutor_model()))
     assert ledger("tutor", llm.tutor_model())["calls"] == 1
+
+
+# --- Saving prompts ---
+
+def test_a_model_call_saves_its_prompt_and_reply_when_asked(api, monkeypatch, tmp_path):
+    import capture
+
+    monkeypatch.setattr(capture, "FILE", tmp_path / "prompts.jsonl")
+    monkeypatch.setenv("NOVA_LOG_PROMPTS", "on")
+    monkeypatch.delenv("VERCEL", raising=False)
+    api(lambda request: httpx.Response(200, json={"choices": [{"message": {"content": '{"ok": true}'}}], "usage": {"prompt_tokens": 5, "completion_tokens": 2}}))
+    run(llm.chat_json("the system", "the user", kind="lesson"))
+    saved = json.loads((tmp_path / "prompts.jsonl").read_text())
+    assert (saved["kind"], saved["system"], saved["user"], saved["reply"]) == ("lesson", "the system", "the user", '{"ok": true}')
+
+
+def test_a_tutor_call_saves_its_exchange_too(api, monkeypatch, tmp_path):
+    import capture
+
+    monkeypatch.setattr(capture, "FILE", tmp_path / "prompts.jsonl")
+    monkeypatch.setenv("NOVA_LOG_PROMPTS", "on")
+    monkeypatch.delenv("VERCEL", raising=False)
+    api(lambda request: httpx.Response(200, json={"choices": [{"message": {"content": "Hello"}}], "usage": {}}))
+    run(llm.chat_text([{"role": "system", "content": "be kind"}, {"role": "user", "content": "hi"}], llm.tutor_model()))
+    saved = json.loads((tmp_path / "prompts.jsonl").read_text())
+    assert (saved["kind"], saved["system"], saved["user"], saved["reply"]) == ("tutor", "be kind", "hi", "Hello")

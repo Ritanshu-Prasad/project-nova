@@ -1,12 +1,16 @@
+import json
 import logging
+import re
 
 import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 import accounts
+import capture
 import llm
 import observability
+import usage
 
 
 @pytest.fixture
@@ -165,3 +169,128 @@ def test_a_refused_model_setting_is_reported_at_startup(caplog, monkeypatch):
     with caplog.at_level(logging.ERROR):
         observability.log_startup()
     assert any("NOVA_TUTOR_MODEL" in record.getMessage() and "not an allowed model" in record.getMessage() for record in caplog.records)
+
+
+# --- JSON logs ---
+
+def record(message="hello", **extra) -> logging.LogRecord:
+    made = logging.LogRecord("nova.test", logging.INFO, __file__, 1, message, None, None)
+    made.request_id = "abc123"
+    for name, value in extra.items():
+        setattr(made, name, value)
+    return made
+
+
+def test_a_json_log_line_is_one_parseable_object():
+    line = json.loads(observability.JsonFormatter().format(record("GET /x -> 200")))
+    assert line["message"] == "GET /x -> 200" and line["level"] == "INFO" and line["logger"] == "nova.test" and line["request_id"] == "abc123"
+    assert re.match(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$", line["time"])
+
+
+def test_the_cost_of_a_request_rides_along_as_data():
+    line = json.loads(observability.JsonFormatter().format(record(usage={"calls": 5, "cost_usd": 0.0008})))
+    assert line["usage"] == {"calls": 5, "cost_usd": 0.0008}
+
+
+def test_a_line_without_usage_has_no_usage_field():
+    assert "usage" not in json.loads(observability.JsonFormatter().format(record()))
+
+
+def test_non_ascii_text_is_kept_readable():
+    assert "Écran" in observability.JsonFormatter().format(record("Écran"))
+
+
+def test_json_logging_is_chosen_by_the_environment(monkeypatch):
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    root = logging.getLogger()
+    saved = list(root.handlers)
+    handler = logging.StreamHandler()
+    root.handlers = [handler]
+    try:
+        observability.configure_logging()
+        assert isinstance(handler.formatter, observability.JsonFormatter)
+    finally:
+        root.handlers = saved
+
+
+def test_a_request_that_used_the_model_logs_its_usage_as_data(caplog):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    app = FastAPI()
+    observability.add_request_logging(app)
+
+    @app.get("/work")
+    async def work():
+        await usage.record_call("lesson", "m", {"prompt_tokens": 100, "completion_tokens": 20}, 1.0)
+        return "ok"
+
+    with caplog.at_level(logging.INFO, logger="nova.requests"):
+        TestClient(app).get("/work")
+    last = caplog.records[-1]
+    assert last.usage["calls"] == 1 and last.usage["prompt_tokens"] == 100 and "calls=1 tokens=120" in last.getMessage()
+
+
+def test_a_request_without_model_calls_has_no_usage_data(client, caplog):
+    with caplog.at_level(logging.INFO, logger="nova.requests"):
+        client.get("/ping")
+    assert not hasattr(caplog.records[-1], "usage")
+
+
+def test_usage_is_available_as_plain_data():
+    spent = usage.begin()
+    import asyncio
+
+    asyncio.run(usage.record_call("lesson", "m", {"prompt_tokens": 100, "completion_tokens": 20}, 1.0))
+    assert spent.as_dict() == {"calls": 1, "prompt_tokens": 100, "completion_tokens": 20, "cost_usd": round(spent.cost_usd, 6), "retries": 0, "failures": 0}
+
+
+# --- Saving prompts for debugging ---
+
+@pytest.fixture
+def prompt_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(capture, "FILE", tmp_path / "prompts.jsonl")
+    monkeypatch.delenv("VERCEL", raising=False)
+    return tmp_path / "prompts.jsonl"
+
+
+def test_nothing_is_saved_unless_asked(prompt_file):
+    capture.save_exchange("lesson", "s", "u", "r", None)
+    assert not prompt_file.exists()
+
+
+def test_an_exchange_is_saved_when_asked(prompt_file, monkeypatch):
+    monkeypatch.setenv("NOVA_LOG_PROMPTS", "on")
+    token = observability.request_id_var.set("req-1")
+    try:
+        capture.save_exchange("lesson", "system text", "user text", "reply text", {"total_tokens": 9})
+    finally:
+        observability.request_id_var.reset(token)
+    saved = json.loads(prompt_file.read_text())
+    assert (saved["kind"], saved["request_id"], saved["system"], saved["user"], saved["reply"], saved["tokens"]) == ("lesson", "req-1", "system text", "user text", "reply text", {"total_tokens": 9})
+
+
+def test_long_prompts_are_cut(prompt_file, monkeypatch):
+    monkeypatch.setenv("NOVA_LOG_PROMPTS", "on")
+    capture.save_exchange("lesson", "s" * 5000, "u", "r", None)
+    assert len(json.loads(prompt_file.read_text())["system"]) == capture.MAX_CHARS
+
+
+def test_each_exchange_is_a_line(prompt_file, monkeypatch):
+    monkeypatch.setenv("NOVA_LOG_PROMPTS", "on")
+    capture.save_exchange("lesson", "s", "u", "r", None), capture.save_exchange("quiz", "s", "u", "r", None)
+    assert [json.loads(line)["kind"] for line in prompt_file.read_text().splitlines()] == ["lesson", "quiz"]
+
+
+def test_prompts_are_never_saved_on_a_hosted_deployment(prompt_file, monkeypatch):
+    monkeypatch.setenv("NOVA_LOG_PROMPTS", "on")
+    monkeypatch.setenv("VERCEL", "1")
+    capture.save_exchange("lesson", "s", "u", "r", None)
+    assert not prompt_file.exists()
+
+
+def test_a_file_that_cannot_be_written_does_not_stop_the_request(tmp_path, monkeypatch):
+    monkeypatch.setenv("NOVA_LOG_PROMPTS", "on")
+    monkeypatch.delenv("VERCEL", raising=False)
+    monkeypatch.setattr(capture, "FILE", tmp_path)
+    capture.save_exchange("lesson", "s", "u", "r", None)
