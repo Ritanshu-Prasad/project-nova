@@ -99,7 +99,7 @@ jobs:
 
   sync-stable:
     name: Promote to Stable Deployment Branch
-    needs: verify
+    needs: [verify, e2e]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
