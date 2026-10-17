@@ -11,6 +11,7 @@ Pilot accounts: Google sign-in and a progress save per account.
 Environment
   GOOGLE_CLIENT_ID      OAuth 2.0 web client ID — the same value the frontend gets as VITE_GOOGLE_CLIENT_ID
   SESSION_SECRET        long random string that signs session cookies (required in production)
+  DATABASE_URL          Postgres (Neon) connection string: accounts live in users and saves tables; used before Redis
   KV_REST_API_URL, KV_REST_API_TOKEN            Upstash Redis (Vercel Storage → Upstash for Redis sets these);
   or UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
                         without them accounts live in backend/.data/accounts.json — fine locally, not on Vercel
@@ -29,6 +30,8 @@ from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request, Response
+
+from store_sql import SqlStore
 
 router = APIRouter()
 
@@ -62,6 +65,14 @@ class RedisStore:
     async def set(self, key: str, value: str) -> None:
         await self._cmd("SET", key, value)
 
+    async def keys(self, prefix: str) -> list[str]:
+        found, cursor = [], "0"
+        while True:
+            cursor, batch = await self._cmd("SCAN", cursor, "MATCH", prefix + "*", "COUNT", "200")
+            found += batch
+            if cursor == "0":
+                return found
+
 
 class FileStore:
     """A JSON file for local development."""
@@ -80,6 +91,10 @@ class FileStore:
         async with self.lock:
             return self._read().get(key)
 
+    async def keys(self, prefix: str) -> list[str]:
+        async with self.lock:
+            return [key for key in self._read() if key.startswith(prefix)]
+
     async def set(self, key: str, value: str) -> None:
         async with self.lock:
             data = self._read()
@@ -91,6 +106,9 @@ class FileStore:
 
 
 def _make_store():
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return SqlStore(database_url)
     url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
     token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
     if url and token:
@@ -105,7 +123,7 @@ store = _make_store()
 
 def _store():
     if store is None:
-        raise HTTPException(503, "Account storage is not configured (add Upstash Redis to the Vercel project)")
+        raise HTTPException(503, "Account storage is not configured (set DATABASE_URL, or add Upstash Redis to the Vercel project)")
     return store
 
 
