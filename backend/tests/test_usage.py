@@ -242,3 +242,33 @@ def test_the_budget_works_as_a_dependency(monkeypatch):
     assert client.get("/work").status_code == 200
     run(shared.state.add(usage._budget_key(), 5000, 60))
     assert client.get("/work").status_code == 503
+
+
+def test_crossing_eighty_percent_posts_to_the_alert_webhook(monkeypatch):
+    budget(monkeypatch)
+    monkeypatch.setenv("NOVA_ALERT_WEBHOOK", "https://hooks.example/alert")
+    posted = []
+
+    class FakeClient:
+        def __init__(self, **_): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *_): return False
+        async def post(self, url, json): posted.append((url, json))
+
+    monkeypatch.setattr(usage.httpx, "AsyncClient", FakeClient)
+    call(prompt=700, completion=0), call(prompt=150, completion=0), call(prompt=50, completion=0)
+    assert len(posted) == 1 and posted[0][0] == "https://hooks.example/alert" and "80% used" in posted[0][1]["text"]
+
+
+def test_a_failing_webhook_does_not_break_the_call(monkeypatch):
+    budget(monkeypatch)
+    monkeypatch.setenv("NOVA_ALERT_WEBHOOK", "https://hooks.example/alert")
+
+    class BrokenClient:
+        def __init__(self, **_): pass
+        async def __aenter__(self): raise usage.httpx.ConnectError("down")
+        async def __aexit__(self, *_): return False
+
+    monkeypatch.setattr(usage.httpx, "AsyncClient", BrokenClient)
+    call(prompt=900, completion=0)
+    assert run(usage.used_today()) == 900

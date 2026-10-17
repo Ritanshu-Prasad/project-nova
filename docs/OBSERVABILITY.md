@@ -33,5 +33,5 @@ Every model call adds to a counter for its day, model and kind: calls, prompt to
 
 ## Warnings worth watching for
 - `... is not an allowed model, using ... Nano instead`: a setting asked for another model.
-- `Daily token budget is 80% used`: logged once when the day's tokens cross 80% of `NOVA_DAILY_TOKEN_BUDGET`; at 100% new work is refused with a 503 until the next UTC day.
+- `Daily token budget is 80% used`: logged once (and posted to `NOVA_ALERT_WEBHOOK`, a Slack-style webhook, when set) when the day's tokens cross 80% of `NOVA_DAILY_TOKEN_BUDGET`; at 100% new work is refused with a 503 until the next UTC day.
 - `Unusable model answer`: the model's JSON failed validation and was asked for again; a high count means a prompt or model problem (the eval suite measures it as the first-try rate).

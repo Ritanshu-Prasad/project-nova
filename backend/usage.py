@@ -4,6 +4,7 @@ import os
 import time
 from contextvars import ContextVar
 
+import httpx
 from fastapi import HTTPException
 
 import pricing
@@ -217,7 +218,21 @@ async def _warn_near_budget(before: int, after: int) -> None:
     """Logs once, when the day's tokens first cross 80% of the budget."""
     line = daily_limit() * BUDGET_WARNING_SHARE
     if before < line <= after:
-        logger.warning("Daily token budget is %d%% used (%d of %d tokens)", BUDGET_WARNING_SHARE * 100, after, daily_limit())
+        message = f"NOVA daily token budget is {BUDGET_WARNING_SHARE:.0%} used ({after} of {daily_limit()} tokens)"
+        logger.warning(message)
+        await _send_alert(message)
+
+
+async def _send_alert(message: str) -> None:
+    """Posts the message to NOVA_ALERT_WEBHOOK (a Slack-style incoming webhook) when one is set."""
+    url = os.getenv("NOVA_ALERT_WEBHOOK")
+    if not url:
+        return
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            await client.post(url, json={"text": message})
+    except httpx.HTTPError as error:
+        logger.warning("Alert not sent: %s", error)
 
 
 async def check_budget() -> None:

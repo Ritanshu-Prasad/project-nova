@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
+import accounts
 import limits
 import shared
 import usage
@@ -77,7 +78,7 @@ def test_limits_with_different_names_count_separately():
 # --- Wired into the routes ---
 
 def test_the_course_route_is_limited(client, fake_model, monkeypatch):
-    monkeypatch.setattr(limits.COURSE_LIMIT, "calls", 1)
+    monkeypatch.setattr(limits.COURSE_LIMIT, "anonymous_calls", 1)
     first = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker"})
     second = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker"})
     assert (first.status_code, second.status_code) == (200, 429)
@@ -90,3 +91,34 @@ def test_every_denied_request_is_counted_for_the_ledger():
     import asyncio
 
     assert asyncio.run(usage.daily_report(1, []))[0]["events"] == {"limit_denied:test": 2}
+
+
+# --- Signed-in pilots and anonymous visitors ---
+
+def signed_in(client: TestClient, sub: str) -> None:
+    client.cookies.set(accounts.COOKIE, accounts._sign(sub))
+
+
+def test_anonymous_visitors_get_the_smaller_limit():
+    client = app_with(RateLimiter("test", calls=5, seconds=60, anonymous_calls=1))
+    assert [client.get("/ping").status_code for _ in range(2)] == [200, 429]
+
+
+def test_a_signed_in_pilot_gets_the_full_limit():
+    client = app_with(RateLimiter("test", calls=3, seconds=60, anonymous_calls=1))
+    signed_in(client, "google:1")
+    assert [client.get("/ping").status_code for _ in range(4)] == [200, 200, 200, 429]
+
+
+def test_pilots_on_the_same_address_are_counted_separately():
+    limiter = RateLimiter("test", calls=1, seconds=60, anonymous_calls=1)
+    first, second = app_with(limiter), app_with(limiter)
+    signed_in(first, "google:1")
+    signed_in(second, "google:2")
+    assert first.get("/ping").status_code == 200 and second.get("/ping").status_code == 200
+
+
+def test_a_forged_cookie_counts_as_anonymous():
+    client = app_with(RateLimiter("test", calls=5, seconds=60, anonymous_calls=1))
+    client.cookies.set(accounts.COOKIE, "forged.cookie")
+    assert [client.get("/ping").status_code for _ in range(2)] == [200, 429]

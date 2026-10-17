@@ -92,7 +92,7 @@ def test_the_batch_cannot_carry_extra_identifying_fields(client):
 # --- Limits and failures ---
 
 def test_the_route_is_rate_limited(client, monkeypatch):
-    monkeypatch.setattr(limits.FEEDBACK_LIMIT, "calls", 1)
+    monkeypatch.setattr(limits.FEEDBACK_LIMIT, "anonymous_calls", 1)
     assert post(client, answer()).status_code == 200 and post(client, answer()).status_code == 429
 
 
