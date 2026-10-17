@@ -18,6 +18,7 @@ class StateError(Exception):
 class MemoryState:
     def __init__(self):
         self.entries: dict[str, tuple[float, str]] = {}
+        self.hashes: dict[str, tuple[float, dict[str, int]]] = {}
 
     async def hit(self, key: str, window_seconds: int) -> int:
         """Counts a request in a fixed window and returns how many have been counted in it."""
@@ -47,8 +48,23 @@ class MemoryState:
     async def delete(self, key: str) -> None:
         self.entries.pop(key, None)
 
+    async def hincr_many(self, key: str, amounts: dict[str, int], ttl_seconds: int) -> None:
+        """Adds to several named counters kept together under one key, which expires `ttl_seconds` after the first write."""
+        now = time.monotonic()
+        expires, fields = self.hashes.get(key, (0.0, {}))
+        if expires <= now:
+            expires, fields = now + ttl_seconds, {}
+        for name, amount in amounts.items():
+            fields[name] = fields.get(name, 0) + amount
+        self.hashes[key] = (expires, fields)
+
+    async def hgetall(self, key: str) -> dict[str, int]:
+        expires, fields = self.hashes.get(key, (0.0, {}))
+        return dict(fields) if expires > time.monotonic() else {}
+
     def clear(self) -> None:
         self.entries.clear()
+        self.hashes.clear()
 
     def _live(self, key: str, now: float) -> str | None:
         entry = self.entries.get(key)
@@ -98,15 +114,26 @@ class RedisState:
     async def delete(self, key: str) -> None:
         await self._cmd("DEL", key)
 
+    async def hincr_many(self, key: str, amounts: dict[str, int], ttl_seconds: int) -> None:
+        commands = [["HINCRBY", key, name, str(amount)] for name, amount in amounts.items()] + [["EXPIRE", key, str(ttl_seconds), "NX"]]
+        await self._post(f"{self.url}/pipeline", commands)
+
+    async def hgetall(self, key: str) -> dict[str, int]:
+        flat = await self._cmd("HGETALL", key) or []
+        return {name: int(value) for name, value in zip(flat[::2], flat[1::2])}
+
     async def _cmd(self, *args: str):
+        return (await self._post(self.url, list(args))).get("result")
+
+    async def _post(self, url: str, body: list):
         try:
             async with httpx.AsyncClient(timeout=5) as client:
-                response = await client.post(self.url, headers=self.headers, json=list(args))
+                response = await client.post(url, headers=self.headers, json=body)
         except httpx.HTTPError as error:
             raise StateError(str(error))
         if response.status_code != 200:
             raise StateError(f"Redis answered {response.status_code}")
-        return response.json().get("result")
+        return response.json()
 
 
 # --- Which one ---

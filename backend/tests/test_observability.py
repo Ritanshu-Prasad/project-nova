@@ -149,6 +149,11 @@ def test_the_startup_line_lists_models_and_features(caplog, monkeypatch):
     assert "json_schema=True" in line and "daily_token_budget=none" in line
 
 
+def test_the_startup_line_shows_the_price_in_use(caplog, monkeypatch):
+    monkeypatch.setenv("NOVA_PRICE_INPUT_PER_M", "0.1")
+    assert "price_per_million_in_out=0.1/0.24" in startup_lines(caplog)[0]
+
+
 def test_the_startup_line_shows_the_budget(caplog, monkeypatch):
     monkeypatch.setenv("NOVA_DAILY_TOKEN_BUDGET", "1000")
     assert "daily_token_budget=1000" in startup_lines(caplog)[0]

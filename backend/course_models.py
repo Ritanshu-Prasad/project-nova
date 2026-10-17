@@ -299,6 +299,9 @@ class CourseMeta(BaseModel):
     promptVersion: str
     createdAt: int
     documentsKey: Optional[str] = None
+    calls: int = 0
+    tokens: int = 0
+    costUsd: float = 0.0
 
 
 class Course(BaseModel):

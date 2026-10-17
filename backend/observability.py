@@ -10,6 +10,7 @@ from fastapi import APIRouter, FastAPI, Request
 
 import accounts
 import llm
+import pricing
 import shared
 import usage
 
@@ -73,6 +74,7 @@ def log_startup() -> None:
         "rate_limits": os.getenv("NOVA_RATE_LIMIT") != "off",
         "store": "redis" if isinstance(shared.state, shared.RedisState) else "memory",
         "daily_token_budget": usage.daily_limit() or "none",
+        "price_per_million_in_out": f"{pricing.current_price().input_per_million}/{pricing.current_price().output_per_million}",
     }
     logger.info("Models: generate=%s tutor=%s | %s", models["generate"], models["tutor"], " ".join(f"{name}={value}" for name, value in features.items()))
 

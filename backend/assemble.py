@@ -5,6 +5,7 @@ from dataclasses import replace
 from typing import List
 
 import llm
+import usage
 from course_models import Course, CourseDocument, CourseMeta, Lesson, LessonStub, Module, Question, Topic, TopicStub
 from course_requests import CourseRequest
 from pdf_parser import Document
@@ -74,7 +75,9 @@ def assemble_lazy_course(outline: Outline, quizzes: List[List[Question]], reques
 
 
 def _meta() -> CourseMeta:
-    return CourseMeta(model=llm.generate_model(), promptVersion=PROMPT_VERSION, createdAt=int(time.time() * 1000))
+    spent = usage.current()
+    cost = {"calls": spent.calls, "tokens": spent.tokens, "costUsd": round(spent.cost_usd, 6)} if spent else {}
+    return CourseMeta(model=llm.generate_model(), promptVersion=PROMPT_VERSION, createdAt=int(time.time() * 1000), **cost)
 
 
 def new_course_id() -> str:

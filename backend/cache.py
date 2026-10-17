@@ -5,6 +5,7 @@ import os
 
 import llm
 import shared
+import usage
 from prompts import PROMPT_VERSION
 
 logger = logging.getLogger("nova.cache")
@@ -28,6 +29,7 @@ class ResultCache:
         except shared.StateError as error:
             logger.warning("Cache read skipped: %s", error)
             return None
+        await usage.record_event(f"cache:{self.name}:{'hit' if stored else 'miss'}")
         return json.loads(stored) if stored else None
 
     async def put(self, parts: tuple, value: dict) -> None:

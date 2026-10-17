@@ -409,13 +409,13 @@ def test_schemas_can_be_switched_off(api, monkeypatch):
 def test_every_call_reports_its_tokens_and_kind(api, monkeypatch):
     seen = []
 
-    async def record(kind, tokens_used, seconds):
-        seen.append((kind, tokens_used))
+    async def record(kind, model, tokens_used, seconds):
+        seen.append((kind, model, tokens_used))
 
     monkeypatch.setattr(usage, "record_call", record)
-    api(lambda request: httpx.Response(200, json={"choices": [{"message": {"content": "{}"}}], "usage": {"total_tokens": 321}}))
+    api(lambda request: httpx.Response(200, json={"choices": [{"message": {"content": "{}"}}], "usage": {"prompt_tokens": 300, "completion_tokens": 21}}))
     run(llm.chat_json("s", "u", kind="lesson"))
-    assert seen == [("lesson", {"total_tokens": 321})]
+    assert seen == [("lesson", llm.generate_model(), {"prompt_tokens": 300, "completion_tokens": 21})]
 
 
 def test_retries_are_counted_for_the_request(api, monkeypatch):
@@ -437,3 +437,56 @@ def test_unusable_answers_are_counted_as_retries(fake_model):
 def test_ask_passes_its_kind_on(fake_model):
     run(llm.ask(QuestionList, prompts.questions_system("beginner", 8, False), "u", kind="quiz"))
     assert fake_model.kinds == ["quiz"] and fake_model.schemas == [QuestionList]
+
+
+# --- The ledger sees what happens ---
+
+def ledger(kind="lesson", model=None):
+    day = run(usage.daily_report(1, [model or llm.generate_model()]))[0]
+    return day["kinds"].get(kind)
+
+
+def test_a_finished_call_is_in_the_ledger(api):
+    api(lambda request: httpx.Response(200, json={"choices": [{"message": {"content": "{}"}}], "usage": {"prompt_tokens": 400, "completion_tokens": 60}}))
+    run(llm.chat_json("s", "u", kind="lesson"))
+    assert (ledger()["calls"], ledger()["prompt_tokens"], ledger()["completion_tokens"]) == (1, 400, 60)
+
+
+def test_a_failed_call_is_in_the_ledger_as_a_failure(api):
+    api(lambda request: httpx.Response(400))
+    with pytest.raises(HTTPException):
+        run(llm.chat_json("s", "u", kind="lesson"))
+    assert ledger()["failures"] == 1 and ledger()["calls"] == 0
+
+
+def test_retried_requests_are_in_the_ledger_as_retries(api, monkeypatch):
+    monkeypatch.setattr(llm, "RETRY_DELAYS", (0, 0))
+    answers = iter([httpx.Response(429), httpx.Response(503), reply()])
+    api(lambda request: next(answers))
+    run(llm.chat_json("s", "u", kind="lesson"))
+    assert ledger()["retries"] == 2 and ledger()["calls"] == 1
+
+
+def test_a_timeout_that_never_recovers_is_a_retry_then_a_failure(api, monkeypatch):
+    monkeypatch.setattr(llm, "RETRY_DELAYS", (0,))
+
+    def slow(request):
+        raise httpx.ReadTimeout("slow")
+
+    api(slow)
+    with pytest.raises(HTTPException):
+        run(llm.chat_json("s", "u", kind="quiz"))
+    assert ledger("quiz")["retries"] == 1 and ledger("quiz")["failures"] == 1
+
+
+def test_an_answer_that_stays_unusable_is_a_failure_of_its_kind(fake_model):
+    fake_model.replies = [{"questions": []}] * llm.ATTEMPTS
+    with pytest.raises(HTTPException):
+        run(llm.ask(QuestionList, prompts.questions_system("beginner", 8, False), "u", kind="quiz"))
+    assert ledger("quiz")["retries"] == llm.ATTEMPTS and ledger("quiz")["failures"] == 1
+
+
+def test_tutor_calls_are_in_the_ledger_under_tutor(api):
+    api(lambda request: httpx.Response(200, json={"choices": [{"message": {"content": "Hi"}}], "usage": {"prompt_tokens": 50, "completion_tokens": 5}}))
+    run(llm.chat_text([{"role": "user", "content": "hi"}], llm.tutor_model()))
+    assert ledger("tutor", llm.tutor_model())["calls"] == 1

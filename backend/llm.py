@@ -85,14 +85,14 @@ async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
     if not (thinking or os.getenv("NOVA_THINKING") == "on"):
         payload["chat_template_kwargs"] = {"enable_thinking": False}
     started = time.perf_counter()
-    response = await _post(payload, key)
+    response = await _post(payload, key, kind)
     if response.status_code == 400 and payload["response_format"]["type"] == "json_schema":
         logger.warning("Endpoint rejected the JSON schema for %s, using plain JSON from now on: %.200s", kind, response.text)
         _schema_supported[0] = False
-        response = await _post({**payload, "response_format": {"type": "json_object"}}, key)
-    raise_for_upstream(response)
+        response = await _post({**payload, "response_format": {"type": "json_object"}}, key, kind)
+    await _raise_for_upstream(response, kind, payload["model"])
     body = response.json()
-    await usage.record_call(kind, body.get("usage"), time.perf_counter() - started)
+    await usage.record_call(kind, payload["model"], body.get("usage"), time.perf_counter() - started)
     choice = body["choices"][0]
     try:
         return _parse_json(choice["message"]["content"] or "")
@@ -112,7 +112,7 @@ def _schema_of(schema: Type[BaseModel]) -> dict:
     return schema.model_json_schema()
 
 
-async def _post(payload: dict, key: str) -> httpx.Response:
+async def _post(payload: dict, key: str, kind: str) -> httpx.Response:
     """One chat request, waiting for a free slot and retrying rate limits, server errors and timeouts."""
     async with _gate():
         for delay in (*RETRY_DELAYS, None):
@@ -122,15 +122,19 @@ async def _post(payload: dict, key: str) -> httpx.Response:
                 if response.status_code not in RETRY_STATUSES or delay is None:
                     return response
                 logger.warning("Model endpoint responded %s, retrying", response.status_code)
-                usage.record_retry()
+                await usage.record_retry(kind, payload["model"])
             except httpx.TimeoutException:
                 if delay is None:
                     logger.warning("Model request timed out")
+                    await usage.record_failure(kind, payload["model"])
                     raise HTTPException(503, "The model timed out")
+                await usage.record_retry(kind, payload["model"])
             except httpx.HTTPError as error:
                 if delay is None:
                     logger.warning("Model request failed: %s", error)
+                    await usage.record_failure(kind, payload["model"])
                     raise HTTPException(502, "Could not reach the model")
+                await usage.record_retry(kind, payload["model"])
             await asyncio.sleep(delay * random.uniform(0.8, 1.2))
     raise AssertionError("unreachable")
 
@@ -147,10 +151,10 @@ async def chat_text(messages: list, model: str, max_tokens: int = 700) -> str:
         raise HTTPException(503, "Tutor model is not configured")
     payload = {"model": model, "messages": messages, "temperature": 0.4, "max_tokens": max_tokens}
     started = time.perf_counter()
-    response = await _post(payload, key)
-    raise_for_upstream(response)
+    response = await _post(payload, key, "tutor")
+    await _raise_for_upstream(response, "tutor", model)
     body = response.json()
-    await usage.record_call("tutor", body.get("usage"), time.perf_counter() - started)
+    await usage.record_call("tutor", model, body.get("usage"), time.perf_counter() - started)
     return body["choices"][0]["message"]["content"] or ""
 
 
@@ -165,8 +169,18 @@ async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT
             return schema.model_validate(await chat_json(system, user, max_tokens, thinking, schema, kind))
         except (ValidationError, ValueError) as error:
             logger.warning("Unusable model answer (attempt %d): %s", attempt + 1, str(error)[:300])
-            usage.record_retry()
+            await usage.record_retry(kind, generate_model())
+    await usage.record_failure(kind, generate_model())
     raise HTTPException(502, "The course model returned an unusable answer")
+
+
+async def _raise_for_upstream(response: httpx.Response, kind: str, model: str) -> None:
+    """Like raise_for_upstream, and counts the failure in the usage ledger."""
+    try:
+        raise_for_upstream(response)
+    except HTTPException:
+        await usage.record_failure(kind, model)
+        raise
 
 
 def raise_for_upstream(response: httpx.Response) -> None:

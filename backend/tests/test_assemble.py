@@ -1,6 +1,7 @@
 from pydantic import TypeAdapter
 
 import prompts
+import usage
 
 from assemble import assemble_course, assemble_lazy_course, dedupe_questions, verify_sources, _verified_lesson
 from course_models import Lesson, Question
@@ -178,3 +179,18 @@ def test_a_course_records_its_model_and_prompt_version(monkeypatch):
 def test_a_document_course_records_it_too():
     contents = [[content(questions(8), questions(12, start=100))]]
     assert assemble_course(outline(1, 1), contents, request(), documents()).meta.promptVersion == prompts.PROMPT_VERSION
+
+
+def test_a_course_records_what_it_cost_to_write():
+    import asyncio
+
+    spent = usage.begin()
+    asyncio.run(usage.record_call("outline", "m", {"prompt_tokens": 4000, "completion_tokens": 1000}, 1.0))
+    meta = assemble_lazy_course(outline(1, 1), [[]], request()).meta
+    assert (meta.calls, meta.tokens) == (1, 5000) and meta.costUsd == round(spent.cost_usd, 6) > 0
+
+
+def test_a_course_made_outside_a_request_has_no_cost():
+    usage._current.set(None)
+    meta = assemble_lazy_course(outline(1, 1), [[]], request()).meta
+    assert (meta.calls, meta.tokens, meta.costUsd) == (0, 0, 0.0)

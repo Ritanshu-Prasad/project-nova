@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 import limits
 import shared
+import usage
 from limits import RateLimiter
 
 
@@ -80,3 +81,12 @@ def test_the_course_route_is_limited(client, fake_model, monkeypatch):
     first = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker"})
     second = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker"})
     assert (first.status_code, second.status_code) == (200, 429)
+
+
+def test_every_denied_request_is_counted_for_the_ledger():
+    client = app_with(RateLimiter("test", calls=1, seconds=60))
+    for _ in range(3):
+        client.get("/ping")
+    import asyncio
+
+    assert asyncio.run(usage.daily_report(1, []))[0]["events"] == {"limit_denied:test": 2}

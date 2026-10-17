@@ -301,6 +301,9 @@
     "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "promptVersion": "2026-10-a",
     "createdAt": 0,
-    "documentsKey": "00000000000000000000000000000000"
+    "documentsKey": "00000000000000000000000000000000",
+    "calls": 0,
+    "tokens": 0,
+    "costUsd": 0.0
   }
 }

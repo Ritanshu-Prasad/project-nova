@@ -4,6 +4,7 @@ import os
 from fastapi import HTTPException, Request
 
 import shared
+import usage
 
 logger = logging.getLogger("nova.limits")
 
@@ -23,6 +24,7 @@ class RateLimiter:
         try:
             count = await shared.state.hit(key, self.seconds)
             if count > self.calls:
+                await usage.record_event(f"limit_denied:{self.name}")
                 raise HTTPException(429, "Too many requests, try again later", headers={"Retry-After": str(await shared.state.ttl(key) or self.seconds)})
         except shared.StateError as error:
             logger.warning("Rate limit skipped, shared state unavailable: %s", error)

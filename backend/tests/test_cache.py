@@ -5,6 +5,7 @@ import pytest
 import cache
 import llm
 import shared
+import usage
 from cache import ResultCache
 
 
@@ -77,3 +78,11 @@ def test_an_unreachable_store_means_a_miss_not_an_error(store, monkeypatch):
     monkeypatch.setattr(shared, "state", Down())
     run(store.put(("a",), {"x": 1}))
     assert run(store.get(("a",))) is None
+
+
+def test_hits_and_misses_are_counted_for_the_ledger(store):
+    run(store.get(("a",)))
+    run(store.put(("a",), {"x": 1}))
+    run(store.get(("a",))), run(store.get(("a",)))
+    events = run(usage.daily_report(1, []))[0]["events"]
+    assert events == {"cache:test:miss": 1, "cache:test:hit": 2}

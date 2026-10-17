@@ -81,18 +81,48 @@ def test_expired_entries_are_forgotten_when_too_many_are_kept(clock, monkeypatch
     assert set(state.entries) == {"new"}
 
 
+def test_named_counters_are_added_together_under_one_key(clock):
+    state = MemoryState()
+    run(state.hincr_many("day", {"lesson:calls": 1, "lesson:prompt": 500}, 60))
+    run(state.hincr_many("day", {"lesson:calls": 1, "quiz:calls": 1}, 60))
+    assert run(state.hgetall("day")) == {"lesson:calls": 2, "lesson:prompt": 500, "quiz:calls": 1}
+
+
+def test_a_key_of_counters_expires_after_its_first_write(clock):
+    state = MemoryState()
+    run(state.hincr_many("day", {"a": 1}, 60))
+    clock[0] += 30
+    run(state.hincr_many("day", {"a": 1}, 60))
+    clock[0] += 31
+    assert run(state.hgetall("day")) == {}
+
+
+def test_an_unknown_key_of_counters_is_empty(clock):
+    assert run(MemoryState().hgetall("nothing")) == {}
+
+
+def test_clearing_forgets_counters_too(clock):
+    state = MemoryState()
+    run(state.hincr_many("day", {"a": 1}, 60))
+    state.clear()
+    assert run(state.hgetall("day")) == {}
+
+
 # --- Redis ---
 
 class FakeRedis:
     """Answers Upstash REST commands from a dictionary and records them."""
 
     def __init__(self):
-        self.data, self.commands = {}, []
+        self.data, self.commands, self.hashes = {}, [], {}
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         import json
 
         command = json.loads(request.content)
+        if request.url.path.endswith("/pipeline"):
+            self.commands.append(["PIPELINE", len(command)])
+            return httpx.Response(200, json=[self(self._single(request, step)).json() for step in command])
         self.commands.append(command)
         name, key, *rest = command
         if name == "INCRBY":
@@ -106,9 +136,23 @@ class FakeRedis:
         if name == "DEL":
             self.data.pop(key, None)
             return httpx.Response(200, json={"result": 1})
+        if name == "HINCRBY":
+            self.hashes.setdefault(key, {})
+            self.hashes[key][rest[0]] = self.hashes[key].get(rest[0], 0) + int(rest[1])
+            return httpx.Response(200, json={"result": self.hashes[key][rest[0]]})
+        if name == "HGETALL":
+            flat = [item for pair in self.hashes.get(key, {}).items() for item in (pair[0], str(pair[1]))]
+            return httpx.Response(200, json={"result": flat})
         if name == "TTL":
             return httpx.Response(200, json={"result": 42})
         return httpx.Response(200, json={"result": 1})
+
+
+def _single(self, request: httpx.Request, step: list) -> httpx.Request:
+    return httpx.Request("POST", "https://redis.test/", content=__import__("json").dumps(step).encode())
+
+
+FakeRedis._single = _single
 
 
 @pytest.fixture
@@ -143,6 +187,18 @@ def test_redis_values_round_trip(redis):
     assert ["SET", "k", "v", "EX", "30"] in fake.commands and run(state.get("k")) == "v"
     run(state.delete("k"))
     assert run(state.get("k")) is None
+
+
+def test_named_counters_go_to_redis_in_one_request_with_an_expiry_that_is_not_moved(redis):
+    state, fake = redis
+    run(state.hincr_many("day", {"lesson:calls": 1, "lesson:prompt": 500}, 3600))
+    assert fake.commands[0] == ["PIPELINE", 3] and fake.hashes["day"] == {"lesson:calls": 1, "lesson:prompt": 500}
+
+
+def test_counters_read_back_as_numbers(redis):
+    state, fake = redis
+    run(state.hincr_many("day", {"a": 2, "b": 3}, 60))
+    assert run(state.hgetall("day")) == {"a": 2, "b": 3} and run(state.hgetall("nothing")) == {}
 
 
 def test_the_remaining_time_comes_from_redis(redis):
