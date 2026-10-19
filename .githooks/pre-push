@@ -2,6 +2,9 @@
 # Project NOVA Pre-Push Guard
 # Automatically verifies frontend build and backend syntax before pushing.
 
+echo "🚀 [Pre-Push Guard] Looking for committed secrets..."
+sh scripts/check_secrets.sh || exit 1
+
 echo "🚀 [Pre-Push Guard] Verifying frontend build..."
 
 cd frontend || exit 1
@@ -26,6 +29,15 @@ if [ $PY_STATUS -ne 0 ]; then
   echo "❌ [Pre-Push Guard] PUSH REJECTED: Backend Python syntax check failed!"
   echo "👉 Please fix Python syntax errors before pushing to main."
   exit 1
+fi
+
+echo "🚀 [Pre-Push Guard] Running backend tests..."
+PY=python3
+[ -x .venv/bin/python ] && PY=.venv/bin/python
+if $PY -c "import pytest, fastapi, pypdf" 2>/dev/null; then
+  $PY -m pytest backend/tests -q || { echo "❌ [Pre-Push Guard] PUSH REJECTED: backend tests failed!"; exit 1; }
+else
+  echo "⚠️  Backend dependencies are not installed here (pip install -r backend/requirements-dev.txt); skipping backend tests."
 fi
 
 echo "✅ [Pre-Push Guard] Verification passed! Pushing to remote..."

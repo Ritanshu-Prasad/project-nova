@@ -1,0 +1,93 @@
+{
+  "quiz": [
+    {
+      "q": "module: which network is the default?",
+      "why": "Bridge is the default.",
+      "difficulty": 1,
+      "type": "mcq",
+      "options": [
+        "bridge",
+        "host",
+        "none",
+        "overlay"
+      ],
+      "answer": 0
+    },
+    {
+      "q": "module: which are drivers?",
+      "why": "Three are real drivers.",
+      "difficulty": 2,
+      "type": "multi",
+      "options": [
+        "bridge",
+        "host",
+        "tractor",
+        "overlay"
+      ],
+      "answers": [
+        0,
+        1,
+        3
+      ]
+    },
+    {
+      "q": "module: bridges isolate containers.",
+      "why": "They form a private network.",
+      "difficulty": 1,
+      "type": "truefalse",
+      "answer": true
+    },
+    {
+      "q": "module: the default driver is ____.",
+      "why": "It is the default.",
+      "difficulty": 1,
+      "type": "fill",
+      "answer": "bridge",
+      "accept": [
+        "Bridge"
+      ]
+    },
+    {
+      "q": "module: create a network named demo.",
+      "why": "That is the command.",
+      "difficulty": 2,
+      "type": "code",
+      "language": "bash",
+      "starter": "docker ",
+      "solution": "docker network create demo",
+      "checks": [
+        {
+          "label": "uses network create",
+          "pattern": "network\\s+create"
+        }
+      ]
+    },
+    {
+      "q": "module: order the steps.",
+      "why": "Create first.",
+      "difficulty": 2,
+      "type": "order",
+      "items": [
+        "Create network",
+        "Start container",
+        "Attach container"
+      ]
+    },
+    {
+      "q": "module: match driver to use.",
+      "why": "Scope differs.",
+      "difficulty": 3,
+      "type": "match",
+      "pairs": [
+        [
+          "bridge",
+          "single host"
+        ],
+        [
+          "overlay",
+          "multi host"
+        ]
+      ]
+    }
+  ]
+}

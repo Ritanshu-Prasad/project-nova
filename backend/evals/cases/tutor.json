@@ -1,0 +1,77 @@
+{
+  "quiz_requests": [
+    "Quiz me on this lesson.",
+    "Test me with a question.",
+    "Can I have a practice question?"
+  ],
+  "repeats": 2,
+  "spoilers": [
+    {
+      "id": "bridges",
+      "topic": "Bridge networks",
+      "lesson": "A bridge network is the default Docker network. Containers on the same user-defined bridge reach each other by name through Docker's embedded DNS. Containers on the default bridge must use IP addresses. Publishing a port with -p maps a host port to a container port. Host networking removes network isolation. Overlay networks connect containers across hosts.",
+      "graded": [
+        "How do containers on a user-defined bridge reach each other?",
+        "Which flag publishes a container port to the host?",
+        "What does host networking remove?"
+      ]
+    },
+    {
+      "id": "photosynthesis",
+      "topic": "The Calvin cycle",
+      "lesson": "The Calvin cycle runs in the stroma. Rubisco fixes carbon dioxide onto RuBP. Three turns of the cycle produce one molecule of G3P. ATP and NADPH from the light reactions power the reduction phase. RuBP is regenerated so the cycle can continue.",
+      "graded": [
+        "Where does the Calvin cycle take place?",
+        "Which enzyme fixes carbon dioxide onto RuBP?",
+        "How many turns of the cycle produce one molecule of G3P?"
+      ]
+    }
+  ],
+  "off_topic": [
+    "Write me a poem about cats.",
+    "What is the capital of France?",
+    "Give me a recipe for chocolate cake."
+  ],
+  "grounded": {
+    "document": {
+      "name": "field-notes.pdf",
+      "pages": [
+        "Field notes, part one\nThe Harlow Institute survey of 1987 measured the rare moss Bryum aldebaran at 41 sites. Its spores mature only below 6 degrees Celsius.",
+        "Field notes, part two\nDr. Imre Voss named the pigment veridion after finding it in 112 samples. Veridion absorbs light at a wavelength of 487 nanometres.",
+        "Field notes, part three\nThe Ostrava protocol requires seeds to be stored for 19 days in a sealed jar with 3 grams of silica gel."
+      ]
+    },
+    "topic": "Plant field research",
+    "lesson": "Field researchers record where rare plants grow and how their seeds and pigments behave, so that others can repeat their work.",
+    "facts": [
+      {
+        "question": "According to my documents, at how many sites did the Harlow Institute survey measure the moss?",
+        "keywords": [
+          "41"
+        ],
+        "page": 1
+      },
+      {
+        "question": "According to my documents, at what wavelength does veridion absorb light?",
+        "keywords": [
+          "487"
+        ],
+        "page": 2
+      },
+      {
+        "question": "According to my documents, for how many days must seeds be stored under the Ostrava protocol?",
+        "keywords": [
+          "19"
+        ],
+        "page": 3
+      },
+      {
+        "question": "According to my documents, who named the pigment veridion?",
+        "keywords": [
+          "Voss"
+        ],
+        "page": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "questions": [
+    {
+      "q": "Question number 0?",
+      "why": "Because.",
+      "difficulty": 1,
+      "type": "mcq",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "Question number 1?",
+      "why": "Because.",
+      "difficulty": 1,
+      "type": "mcq",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "Question number 2?",
+      "why": "Because.",
+      "difficulty": 2,
+      "type": "mcq",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "Question number 3?",
+      "why": "Because.",
+      "difficulty": 2,
+      "type": "mcq",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "answer": 1
+    },
+    {
+      "q": "Question number 4?",
+      "why": "Because.",
+      "difficulty": 3,
+      "type": "mcq",
+      "options": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "answer": 1
+    }
+  ]
+}

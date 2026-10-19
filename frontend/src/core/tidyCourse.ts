@@ -1,4 +1,4 @@
-import type { Block, Course, Question } from './courseSchema';
+import type { Block, Course, Question, Topic } from './courseSchema';
 
 /**
  * Light clean-up for any course before it enters the library (templates, AI output, PDFs, older saves).
@@ -54,6 +54,12 @@ export function tidyCourse(course: Course): Course {
         }),
       })),
   };
+}
+
+/** The same clean-up for one topic's content, as it arrives from a lazy fetch. */
+export function tidyTopicContent(c: Pick<Topic, 'lesson' | 'quiz' | 'practice'>): Pick<Topic, 'lesson' | 'quiz' | 'practice'> {
+  const blocks = c.lesson.blocks.map(cleanBlock).filter((b): b is Block => b !== null);
+  return { lesson: { ...c.lesson, blocks }, quiz: c.quiz.map(cleanQuestion), practice: c.practice?.map(cleanQuestion) };
 }
 
 function cleanBlock(b: Block): Block | null {

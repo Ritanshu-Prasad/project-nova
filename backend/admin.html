@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOVA usage</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f6f7f9; --card: #fff; --text: #111827; --muted: #6b7280; --line: #e5e7eb; --accent: #0891b2; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0b0f19; --card: #131a2a; --text: #e5e7eb; --muted: #9ca3af; --line: #243049; --accent: #22d3ee; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 16px; margin: 28px 0 8px; }
+  p.note { color: var(--muted); margin: 0 0 16px; }
+  form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  input, select, button { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); }
+  input { flex: 1; min-width: 220px; } button { background: var(--accent); color: #fff; border: 0; cursor: pointer; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .card b { display: block; font-size: 22px; } .card span { color: var(--muted); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; } th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; margin-top: 8px; overflow: hidden; } .bar i { display: block; height: 100%; background: var(--accent); }
+  #error { color: #dc2626; min-height: 1.5em; }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Model usage</h1>
+  <p class="note">Estimated from token counts and the configured price. The invoice is in the Nebius console (Billing, Usage).</p>
+  <form id="form">
+    <input id="token" type="password" placeholder="Admin token" autocomplete="off" aria-label="Admin token">
+    <select id="days" aria-label="Days"><option value="1">Today</option><option value="7" selected>7 days</option><option value="30">30 days</option></select>
+    <button>Show</button>
+  </form>
+  <div id="error" role="alert"></div>
+  <div id="out"></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const money = (n) => '$' + (n < 0.01 ? n.toFixed(5) : n.toFixed(3));
+const num = (n) => Math.round(n).toLocaleString();
+const esc = (text) => String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const saved = sessionStorage.getItem('nova-admin-token');
+if (saved) $('token').value = saved;
+
+$('form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  $('error').textContent = '';
+  sessionStorage.setItem('nova-admin-token', $('token').value);
+  const response = await fetch('/api/admin/usage?days=' + $('days').value, { headers: { Authorization: 'Bearer ' + $('token').value } });
+  if (!response.ok) { $('error').textContent = response.status === 401 ? 'Wrong token.' : 'Could not load usage (' + response.status + ').'; return; }
+  render(await response.json());
+});
+
+function render(report) {
+  const today = report.days[0];
+  const budget = report.budget;
+  const limit = budget.daily_token_limit;
+  const price = report.price_per_million;
+  $('out').innerHTML = `
+    <div class="cards">
+      <div class="card"><b>${num(today.totals.calls)}</b><span>model calls today</span></div>
+      <div class="card"><b>${num(today.totals.prompt_tokens + today.totals.completion_tokens)}</b><span>tokens today (${num(today.totals.prompt_tokens)} in, ${num(today.totals.completion_tokens)} out)</span></div>
+      <div class="card"><b>${money(today.totals.cost_usd)}</b><span>estimated cost today</span></div>
+      <div class="card"><b>${num(today.totals.retries)} / ${num(today.totals.failures)}</b><span>retries / failures today</span></div>
+      ${limit ? `<div class="card"><b>${Math.round(budget.used_today / limit * 100)}%</b><span>of ${num(limit)} token budget</span><div class="bar"><i style="width:${Math.min(100, budget.used_today / limit * 100)}%"></i></div></div>` : ''}
+    </div>
+    <p class="note">Models: ${esc(report.models.generate)} (courses), ${esc(report.models.tutor)} (tutor). Price used: ${price.input_per_million} in / ${price.output_per_million} out per million tokens.</p>
+    <h2>Today by kind</h2>
+    <div class="scroll"><table><tr><th>kind</th><th>calls</th><th>in</th><th>out</th><th>cost</th><th>avg s</th><th>retries</th><th>failures</th></tr>
+      ${Object.entries(today.kinds).map(([kind, row]) => `<tr><td>${esc(kind)}</td><td>${num(row.calls)}</td><td>${num(row.prompt_tokens)}</td><td>${num(row.completion_tokens)}</td><td>${money(row.cost_usd)}</td><td>${row.average_seconds.toFixed(1)}</td><td>${row.retries}</td><td>${row.failures}</td></tr>`).join('') || '<tr><td colspan="8">No model calls yet today.</td></tr>'}
+    </table></div>
+    <h2>By day</h2>
+    <div class="scroll"><table><tr><th>day (UTC)</th><th>calls</th><th>tokens</th><th>cost</th><th>retries</th><th>failures</th><th>cache hits</th><th>turned away</th></tr>
+      ${report.days.map((day) => `<tr><td>${day.day}</td><td>${num(day.totals.calls)}</td><td>${num(day.totals.prompt_tokens + day.totals.completion_tokens)}</td><td>${money(day.totals.cost_usd)}</td><td>${day.totals.retries}</td><td>${day.totals.failures}</td><td>${sumEvents(day.events, 'cache:', ':hit')}</td><td>${sumEvents(day.events, 'limit_denied:', '')}</td></tr>`).join('')}
+    </table></div>`;
+}
+
+function sumEvents(events, start, end) {
+  return Object.entries(events).filter(([name]) => name.startsWith(start) && name.endsWith(end)).reduce((total, [, count]) => total + count, 0);
+}
+</script>
+</body>
+</html>

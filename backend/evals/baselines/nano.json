@@ -1,0 +1,145 @@
+{
+  "meta": {
+    "date": "2026-10-17",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "promptVersion": "2026-10-c",
+    "cases": "smoke",
+    "suites": "all",
+    "repeat": 2
+  },
+  "summary": {
+    "goals": {
+      "levels": {
+        "beginner": {
+          "runs": 4,
+          "ok": 1.0,
+          "first_try": 1.0,
+          "seconds": 19.55,
+          "tokens": 7890.5,
+          "cost_usd": 0.001,
+          "grade": 7.633,
+          "duplicates": 0.0,
+          "agreement": 0.562,
+          "judge": 3.938,
+          "questions_judge": 3.917,
+          "grade_in_range": 1.0,
+          "seconds_sd": 3.667,
+          "tokens_sd": 73.269,
+          "grade_sd": 0.571,
+          "judge_sd": 0.591
+        },
+        "intermediate": {
+          "runs": 4,
+          "ok": 1.0,
+          "first_try": 0.975,
+          "seconds": 29.8,
+          "tokens": 9522,
+          "cost_usd": 0.001,
+          "grade": 11.423,
+          "duplicates": 0.0,
+          "agreement": 0.865,
+          "judge": 4.188,
+          "questions_judge": 4.083,
+          "grade_in_range": 0.25,
+          "seconds_sd": 19.335,
+          "tokens_sd": 2337.727,
+          "grade_sd": 3.654,
+          "judge_sd": 0.554
+        },
+        "advanced": {
+          "runs": 4,
+          "ok": 1.0,
+          "first_try": 0.975,
+          "seconds": 39.6,
+          "tokens": 11046.75,
+          "cost_usd": 0.002,
+          "grade": 10.27,
+          "duplicates": 0.0,
+          "agreement": 0.854,
+          "judge": 4.0,
+          "questions_judge": 3.583,
+          "grade_in_range": 0.25,
+          "seconds_sd": 26.822,
+          "tokens_sd": 4059.291,
+          "grade_sd": 3.059,
+          "judge_sd": 1.08
+        }
+      },
+      "level_gap": 1.352,
+      "documents": {
+        "plants": {
+          "ok": 1.0,
+          "modules": 2,
+          "topics": 6,
+          "seconds": 55.4,
+          "tokens": 34490,
+          "cost_usd": 0.005696,
+          "retry_rate": 0.047619047619047616,
+          "citations": 1.0,
+          "duplicates": 0.02564102564102564
+        }
+      },
+      "latency": {
+        "answers": {
+          "p50": 1.79,
+          "p95": 11.96
+        },
+        "judge": {
+          "p50": 1.02,
+          "p95": 1.74
+        },
+        "lesson": {
+          "p50": 8.65,
+          "p95": 23.79
+        },
+        "outline": {
+          "p50": 4.84,
+          "p95": 6.74
+        },
+        "practice": {
+          "p50": 12.2,
+          "p95": 59.31
+        },
+        "quiz": {
+          "p50": 8.57,
+          "p95": 45.25
+        }
+      }
+    },
+    "safety": {
+      "runs": 40,
+      "errors": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_refusal_rate": 0.0,
+      "sensitive_allowed_rate": 1.0,
+      "injection_refused_rate": 1.0
+    },
+    "injection": {
+      "runs": 13,
+      "leaks": 0,
+      "ok_rate": 1.0,
+      "refused": 9
+    },
+    "tutor": {
+      "runs": 12,
+      "spoiler_rate": 0.0,
+      "off_topic_refusal_rate": 1.0,
+      "grounded_rate": 1.0,
+      "grounded_page_rate": 1.0,
+      "ungrounded_rate": 0.0
+    },
+    "placement": {
+      "runs": 2,
+      "valid_rate": 1.0,
+      "agreement": 1.0
+    },
+    "cost": {
+      "total_usd": 0.0312,
+      "per_run_usd": 0.00039,
+      "tokens": 211588,
+      "calls": 217,
+      "runs": 80
+    }
+  }
+}

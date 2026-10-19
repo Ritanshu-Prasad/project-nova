@@ -67,7 +67,7 @@ export default function TutorChat({ active, variant = 'dock', onClose }: { activ
   }
 
   const send = (q: string) => {
-    if (!q.trim() || busy) return;
+    if (!q.trim() || busy || item.topic.loaded === false) return;
     if (!open && variant === 'dock') toggle();
     setText('');
     void useTutor.getState().send(key, q, { course: active.course.title, module: active.course.modules[item.moduleIndex].title, topic: item.topic, rank: rankOf(mmr).label, courseRef: active.course });
@@ -94,7 +94,11 @@ export default function TutorChat({ active, variant = 'dock', onClose }: { activ
               {msgs.length === 0 ? (
                 <div className="pt-2">
                   <p className="text-sm leading-relaxed text-white/75">
-                    Hi {callsign}! Ask me anything about <span className="font-semibold text-white">{item.topic.title}</span> — or try one of these:
+                    {item.topic.loaded === false ? (
+                      <>I can help as soon as the lesson on <span className="font-semibold text-white">{item.topic.title}</span> has loaded.</>
+                    ) : (
+                      <>Hi {callsign}! Ask me anything about <span className="font-semibold text-white">{item.topic.title}</span> — or try one of these:</>
+                    )}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {SUGGESTIONS.map((s) => (

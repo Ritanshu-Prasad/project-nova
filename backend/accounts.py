@@ -3,13 +3,15 @@ Pilot accounts: Google sign-in and a progress save per account.
 
   POST /api/auth/google   {"accessToken"}       verifies a Google access token and starts a session (HttpOnly cookie)
   GET  /api/auth/me                             the signed-in pilot and when their save was last written
-  POST /api/auth/logout                         ends the session
+  POST /api/auth/logout                         ends the session on this device
+  POST /api/auth/logout-all                     ends every session of the pilot, on all devices
   GET  /api/progress                            the pilot's saved progress
   PUT  /api/progress      {"savedAt", "base", "save"}  replaces it; "base" must be the savedAt it was made from (else 409)
 
 Environment
   GOOGLE_CLIENT_ID      OAuth 2.0 web client ID — the same value the frontend gets as VITE_GOOGLE_CLIENT_ID
   SESSION_SECRET        long random string that signs session cookies (required in production)
+  DATABASE_URL          Postgres (Neon) connection string: accounts live in users and saves tables; used before Redis
   KV_REST_API_URL, KV_REST_API_TOKEN            Upstash Redis (Vercel Storage → Upstash for Redis sets these);
   or UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
                         without them accounts live in backend/.data/accounts.json — fine locally, not on Vercel
@@ -28,6 +30,8 @@ from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request, Response
+
+from store_sql import SqlStore
 
 router = APIRouter()
 
@@ -61,6 +65,14 @@ class RedisStore:
     async def set(self, key: str, value: str) -> None:
         await self._cmd("SET", key, value)
 
+    async def keys(self, prefix: str) -> list[str]:
+        found, cursor = [], "0"
+        while True:
+            cursor, batch = await self._cmd("SCAN", cursor, "MATCH", prefix + "*", "COUNT", "200")
+            found += batch
+            if cursor == "0":
+                return found
+
 
 class FileStore:
     """A JSON file for local development."""
@@ -79,6 +91,10 @@ class FileStore:
         async with self.lock:
             return self._read().get(key)
 
+    async def keys(self, prefix: str) -> list[str]:
+        async with self.lock:
+            return [key for key in self._read() if key.startswith(prefix)]
+
     async def set(self, key: str, value: str) -> None:
         async with self.lock:
             data = self._read()
@@ -90,6 +106,9 @@ class FileStore:
 
 
 def _make_store():
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return SqlStore(database_url)
     url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
     token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
     if url and token:
@@ -104,7 +123,7 @@ store = _make_store()
 
 def _store():
     if store is None:
-        raise HTTPException(503, "Account storage is not configured (add Upstash Redis to the Vercel project)")
+        raise HTTPException(503, "Account storage is not configured (set DATABASE_URL, or add Upstash Redis to the Vercel project)")
     return store
 
 
@@ -139,12 +158,17 @@ def _unb64(s: str) -> bytes:
 
 
 def _sign(sub: str) -> str:
-    payload = _b64(json.dumps({"sub": sub, "exp": int(time.time()) + SESSION_DAYS * 86400}).encode())
+    payload = _b64(json.dumps({"sub": sub, "iat": _now_ms(), "exp": int(time.time()) + SESSION_DAYS * 86400}).encode())
     sig = _b64(hmac.new(_secret(), payload.encode(), hashlib.sha256).digest())
     return f"{payload}.{sig}"
 
 
-def _verify(token: str | None) -> str | None:
+def _now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def _session(token: str | None) -> dict | None:
+    """The signed contents of a session cookie, or None when it is missing, forged or expired."""
     if not token or "." not in token:
         return None
     payload, sig = token.rsplit(".", 1)
@@ -157,7 +181,7 @@ def _verify(token: str | None) -> str | None:
         return None
     if data.get("exp", 0) < time.time():
         return None
-    return data.get("sub")
+    return data
 
 
 def _set_session(response: Response, request: Request, sub: str) -> None:
@@ -178,11 +202,23 @@ def _require_csrf(request: Request) -> None:
         raise HTTPException(403, "Missing X-Nova header")
 
 
-def _current_sub(request: Request) -> str:
-    sub = _verify(request.cookies.get(COOKIE))
-    if not sub:
+def signed_in_sub(request: Request) -> str | None:
+    """Who the cookie says is signed in, without checking the account (for rate limits, which only need a name)."""
+    try:
+        session = _session(request.cookies.get(COOKIE))
+    except HTTPException:
+        return None
+    return session["sub"] if session else None
+
+
+async def _current_sub(request: Request) -> str:
+    session = _session(request.cookies.get(COOKIE))
+    if not session:
         raise HTTPException(401, "Not signed in")
-    return sub
+    user = await _load_json(_user_key(session["sub"]))
+    if user and session.get("iat", 0) < user.get("sessionsValidFrom", 0):
+        raise HTTPException(401, "This session was ended")
+    return session["sub"]
 
 
 async def _load_json(key: str) -> dict | None:
@@ -277,7 +313,7 @@ async def auth_dev(request: Request, response: Response):
 
 @router.get("/api/auth/me")
 async def auth_me(request: Request):
-    return await _account_reply(_current_sub(request))
+    return await _account_reply(await _current_sub(request))
 
 
 @router.post("/api/auth/logout")
@@ -287,9 +323,19 @@ async def auth_logout(request: Request, response: Response):
     return {"ok": True}
 
 
+@router.post("/api/auth/logout-all")
+async def auth_logout_all(request: Request, response: Response):
+    _require_csrf(request)
+    sub = await _current_sub(request)
+    user = await _load_json(_user_key(sub))
+    await _store().set(_user_key(sub), json.dumps({**user, "sessionsValidFrom": _now_ms()}))
+    response.delete_cookie(COOKIE, path="/")
+    return {"ok": True}
+
+
 @router.get("/api/progress")
 async def get_progress(request: Request):
-    sub = _current_sub(request)
+    sub = await _current_sub(request)
     save = await _load_json(_save_key(sub))
     return save or {"savedAt": None, "save": None}
 
@@ -297,7 +343,7 @@ async def get_progress(request: Request):
 @router.put("/api/progress")
 async def put_progress(request: Request):
     _require_csrf(request)
-    sub = _current_sub(request)
+    sub = await _current_sub(request)
     raw = await request.body()
     if len(raw) > MAX_SAVE_BYTES:
         raise HTTPException(413, "Save is too large")

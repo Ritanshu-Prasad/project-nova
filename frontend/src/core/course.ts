@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { flatTopics, type Course, type Module, type PlacedTopic } from './courseSchema';
+import { forgetDocuments } from './courseApi';
+import { flushAnswers, noteAnswer } from './feedback';
+import { flatTopics, type Course, type Module, type PlacedTopic, type Question, type Topic } from './courseSchema';
 import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
-import { tidyCourse } from './tidyCourse';
+import { tidyCourse, tidyTopicContent } from './tidyCourse';
 
 export type { RatedQuestion } from './quizBuilder';
 
@@ -181,6 +183,10 @@ interface CourseState {
   addCourse: (course: Course) => void;
   setActive: (id: string) => void;
   removeCourse: (id: string) => void;
+  /** Fills in an outline-only topic once its lesson and questions have been written. */
+  setTopicContent: (courseId: string, topicId: string, content: TopicContent) => void;
+  /** Replaces a module's end-of-module quiz. */
+  setModuleQuiz: (courseId: string, moduleId: string, quiz: Question[]) => void;
   /** Opens an outline item if it is unlocked. */
   open: (itemId: string) => boolean;
   setNotes: (topicId: string, notes: string) => void;
@@ -194,6 +200,8 @@ interface CourseState {
   graduation: string | null;
   showGraduation: (courseId: string | null) => void;
 }
+
+export type TopicContent = Pick<Topic, 'lesson' | 'quiz' | 'practice'>;
 
 type Saved = Pick<CourseState, 'activeId' | 'library' | 'stats'>;
 
@@ -259,9 +267,25 @@ export const useCourse = create<CourseState>()((set, get) => {
 
     removeCourse: (id) => {
       const { [id]: _removed, ...rest } = get().library;
-      void _removed;
+      const documentsKey = _removed?.course.meta?.documentsKey;
+      if (documentsKey) void forgetDocuments(documentsKey);
       const nextActive = get().activeId === id ? (Object.values(rest).sort((a, b) => b.updatedAt - a.updatedAt)[0]?.course.id ?? null) : get().activeId;
       set({ library: rest, activeId: nextActive });
+    },
+
+    setTopicContent: (courseId, topicId, content) => {
+      const e = get().library[courseId];
+      if (!e) return;
+      const filled = tidyTopicContent(content);
+      const modules = e.course.modules.map((m) => ({ ...m, topics: m.topics.map((t) => (t.id === topicId ? { ...t, ...filled, loaded: undefined } : t)) }));
+      set({ library: { ...get().library, [courseId]: { ...e, course: { ...e.course, modules } } } });
+    },
+
+    setModuleQuiz: (courseId, moduleId, quiz) => {
+      const e = get().library[courseId];
+      if (!e) return;
+      const modules = e.course.modules.map((m) => (m.id === moduleId ? { ...m, quiz } : m));
+      set({ library: { ...get().library, [courseId]: { ...e, course: { ...e.course, modules } } } });
     },
 
     open: (itemId) => {
@@ -278,6 +302,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const id = get().activeId;
       const e = id ? get().library[id] : undefined;
       if (!e) return null;
+      if (e.course.modules.some((m) => m.topics.some((t) => t.id === topicId && t.loaded === false))) return null;
       const first = !e.progress[topicId]?.cleared;
       patchActive((x) => ({ ...x, progress: { ...x.progress, [topicId]: { ...(x.progress[topicId] ?? { notes: '' }), cleared: true } } }));
       if (first) set({ stats: { ...get().stats, xp: get().stats.xp + 30 } });
@@ -291,6 +316,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const id = get().activeId;
       const e = id ? get().library[id] : undefined;
       if (!e) return 0;
+      if (opts.qId) noteAnswer(opts.qId, e.course.level, correct);
       const sk = e.skill;
       const K = kFactor(e.course);
       const expected = 1 / (1 + Math.pow(10, (questionRating(opts.progress, opts.difficulty) - sk.mmr) / 400));
@@ -339,13 +365,17 @@ export const useCourse = create<CourseState>()((set, get) => {
       const passed = score >= PASS_MARK;
       patchActive((x) => ({ ...x, modules: { ...x.modules, [moduleId]: { passed: prev.passed || passed, best: Math.max(prev.best, score), attempts: prev.attempts + 1 } } }));
       bumpDay(passed && !prev.passed ? 80 : 0);
+      flushAnswers();
       markGraduation();
       const outline = outlineOf(e.course);
       const i = outline.findIndex((it) => it.id === `quiz:${moduleId}`);
       return { passed, nextId: outline[i + 1]?.id ?? null };
     },
 
-    finishHubQuiz: (correct) => bumpDay(correct * 15),
+    finishHubQuiz: (correct) => {
+      bumpDay(correct * 15);
+      flushAnswers();
+    },
   };
 });
 

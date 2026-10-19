@@ -1,0 +1,76 @@
+from typing import List
+
+from pydantic import BaseModel, Field
+
+import llm
+
+JUDGE_TOKENS = 600
+JUDGE_PROMPT = """You are a strict teaching reviewer. Score one lesson for a course on the stated goal and level, as JSON:
+{"accuracy": 1-5, "clarity": 1-5, "level_fit": 1-5, "alignment": 1-5, "notes": str}
+
+Rules:
+- accuracy: are the statements and examples correct? 1 means serious errors.
+- clarity: is it well organised and easy to follow for the stated level?
+- level_fit: does depth, vocabulary and math match the stated level?
+- alignment: do the lesson's own objectives match what the lesson actually teaches?
+- "notes" is one sentence naming the biggest problem, or "none".
+Reply with JSON only."""
+
+
+class Scores(BaseModel):
+    accuracy: int = Field(ge=1, le=5)
+    clarity: int = Field(ge=1, le=5)
+    level_fit: int = Field(ge=1, le=5)
+    alignment: int = Field(ge=1, le=5)
+    notes: str = ""
+
+    @property
+    def average(self) -> float:
+        return (self.accuracy + self.clarity + self.level_fit + self.alignment) / 4
+
+
+async def judge_lesson(goal: str, level: str, objectives: List[str], text: str) -> Scores:
+    user = f"Goal: {goal}\nLevel: {level}\nObjectives: {'; '.join(objectives)}\n\nLesson:\n{text[:6000]}"
+    return await llm.ask(Scores, JUDGE_PROMPT, user, JUDGE_TOKENS, kind="judge")
+
+
+QUESTION_PROMPT = """You are a strict assessment reviewer. Score a set of quiz questions for a course on the stated goal and level, as JSON:
+{"clarity": 1-5, "key_correct": 1-5, "difficulty_fit": 1-5, "notes": str}
+
+Rules:
+- clarity: is each question unambiguous, with exactly one defensible answer where one is expected?
+- key_correct: are the marked answers actually right? 1 means several are wrong.
+- difficulty_fit: do the questions suit the stated level?
+- "notes" is one sentence naming the biggest problem, or "none".
+Reply with JSON only."""
+
+
+class QuestionScores(BaseModel):
+    clarity: int = Field(ge=1, le=5)
+    key_correct: int = Field(ge=1, le=5)
+    difficulty_fit: int = Field(ge=1, le=5)
+    notes: str = ""
+
+    @property
+    def average(self) -> float:
+        return (self.clarity + self.key_correct + self.difficulty_fit) / 3
+
+
+async def judge_questions(goal: str, level: str, questions: List[str]) -> QuestionScores:
+    listed = "\n".join(f"{number}. {text}" for number, text in enumerate(questions[:12], start=1))
+    return await llm.ask(QuestionScores, QUESTION_PROMPT, f"Goal: {goal}\nLevel: {level}\n\nQuestions:\n{listed[:6000]}", JUDGE_TOKENS, kind="judge")
+
+
+ON_TOPIC_PROMPT = """You check whether a tutor stayed on a lesson. Given a question that has nothing to do with the lesson and the tutor's reply, answer as JSON:
+{"answered": bool}
+"answered" is true only if the reply actually gives the requested poem, fact, recipe or other content. A polite refusal that steers back to the lesson is false.
+Reply with JSON only."""
+
+
+class OffTopicVerdict(BaseModel):
+    answered: bool
+
+
+async def answered_off_topic(question: str, reply: str) -> bool:
+    verdict = await llm.ask(OffTopicVerdict, ON_TOPIC_PROMPT, f"Question: {question}\n\nReply: {reply[:1500]}", 100, kind="judge")
+    return verdict.answered
