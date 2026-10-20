@@ -30,8 +30,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request, Response
-
-from store_sql import SqlStore
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -108,6 +107,7 @@ class FileStore:
 def _make_store():
     database_url = os.getenv("DATABASE_URL")
     if database_url:
+        from store_sql import SqlStore
         return SqlStore(database_url)
     url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
     token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
@@ -137,7 +137,30 @@ def _save_key(sub: str) -> str:
 
 # ── Sessions ───────────────────────────────────────────────────────────────
 
-_dev_secret = secrets.token_urlsafe(32)
+DEV_SECRET_FILE = Path(__file__).parent / ".data" / "dev_session_secret.txt"
+_dev_secret: str | None = None
+
+
+def _get_dev_secret() -> str:
+    global _dev_secret
+    if _dev_secret:
+        return _dev_secret
+    try:
+        if DEV_SECRET_FILE.is_file():
+            val = DEV_SECRET_FILE.read_text("utf-8").strip()
+            if val:
+                _dev_secret = val
+                return val
+    except OSError:
+        pass
+    val = secrets.token_urlsafe(32)
+    try:
+        DEV_SECRET_FILE.parent.mkdir(parents=True, exist_ok=True)
+        DEV_SECRET_FILE.write_text(val, "utf-8")
+    except OSError:
+        pass
+    _dev_secret = val
+    return val
 
 
 def _secret() -> bytes:
@@ -146,7 +169,7 @@ def _secret() -> bytes:
         return s.encode()
     if ON_VERCEL:
         raise HTTPException(503, "SESSION_SECRET is not configured")
-    return _dev_secret.encode()  # local only: sessions end when the server restarts
+    return _get_dev_secret().encode()
 
 
 def _b64(b: bytes) -> str:
@@ -340,24 +363,22 @@ async def get_progress(request: Request):
     return save or {"savedAt": None, "save": None}
 
 
+class ProgressPayload(BaseModel):
+    savedAt: int | float
+    save: dict
+    base: int | float | None = None
+
+
 @router.put("/api/progress")
-async def put_progress(request: Request):
+async def put_progress(payload: ProgressPayload, request: Request):
     _require_csrf(request)
     sub = await _current_sub(request)
     raw = await request.body()
     if len(raw) > MAX_SAVE_BYTES:
         raise HTTPException(413, "Save is too large")
-    try:
-        body = json.loads(raw)
-    except ValueError:
-        raise HTTPException(400, "Invalid JSON")
-    saved_at = body.get("savedAt") if isinstance(body, dict) else None
-    save = body.get("save") if isinstance(body, dict) else None
-    if not isinstance(saved_at, (int, float)) or not isinstance(save, dict):
-        raise HTTPException(400, "Expected {savedAt: number, save: object}")
     current = await _load_json(_save_key(sub))
-    if current and current.get("savedAt") != body.get("base"):
+    if current and current.get("savedAt") != payload.base:
         # This copy wasn't made from the latest save (another device saved since); the client downloads that one.
         raise HTTPException(409, "A newer save exists")
-    await _store().set(_save_key(sub), json.dumps({"savedAt": saved_at, "save": save}))
-    return {"savedAt": saved_at}
+    await _store().set(_save_key(sub), json.dumps({"savedAt": payload.savedAt, "save": payload.save}))
+    return {"savedAt": payload.savedAt}
