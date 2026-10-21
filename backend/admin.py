@@ -54,9 +54,10 @@ async def metrics(request: Request):
     return render_metrics(today, daily_limit=usage.daily_limit(), used_today=await usage.used_today())
 
 
+@router.get("/api/admin", response_class=HTMLResponse)
 @router.get("/admin", response_class=HTMLResponse)
-async def admin_page(request: Request):
-    """A page that shows the usage report; it asks for the token itself, so the token never travels in a URL."""
+async def admin_page():
+    """A page that shows the usage report; it asks for the token itself, so the token never travels in a URL. /api/admin also works behind the dev proxy and on Vercel, which only send /api to the backend."""
     if not os.getenv("NOVA_ADMIN_TOKEN"):
         raise HTTPException(404, "Not found")
     return PAGE.read_text(encoding="utf-8")

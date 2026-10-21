@@ -33,7 +33,7 @@ def call(kind="lesson", prompt=1000, completion=200, seconds=2.0):
     run(usage.record_call(kind, MODEL, {"prompt_tokens": prompt, "completion_tokens": completion}, seconds))
 
 
-ROUTES = ["/api/admin/usage", "/api/admin/metrics", "/admin"]
+ROUTES = ["/api/admin/usage", "/api/admin/metrics", "/admin", "/api/admin"]
 
 
 # --- Who may look ---
@@ -154,3 +154,13 @@ def test_the_page_is_served_with_the_token_configured(client):
 
 def test_the_page_never_puts_the_token_in_a_url(client):
     assert "?token=" not in client.get("/admin").text and "Authorization" in client.get("/admin").text
+
+
+@pytest.mark.parametrize("path", ["/admin", "/api/admin"])
+def test_the_page_is_served_at_both_paths(client, path):
+    assert client.get(path).status_code == 200 and "Model usage" in client.get(path).text
+
+
+def test_the_page_explains_a_wrong_host_and_an_unreachable_backend(client):
+    page = client.get("/api/admin").text
+    assert "Could not reach the backend" in page and "not the NOVA backend" in page

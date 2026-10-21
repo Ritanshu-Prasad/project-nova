@@ -7,7 +7,7 @@ NOVA uses one model, **NVIDIA Nemotron 3 Nano 30B-A3B on Nebius Token Factory**.
 | You want to know | Look here |
 |---|---|
 | What was actually charged, balance, budgets | Nebius console: **Billing → Usage** (filter by service and product) and **Budgets** for email alerts. See Nebius's [usage](https://docs.nebius.com/signup-billing/usage/view.md) and [budgets](https://docs.nebius.com/signup-billing/budgets.md) pages. A per-API-key or per-model breakdown for Token Factory is not documented; ask Nebius support if you need one. |
-| When the model was used, tokens in and out, estimated cost, per kind of call and per day | **`/admin`** on the backend (needs `NOVA_ADMIN_TOKEN`), or `GET /api/admin/usage?days=7` with `Authorization: Bearer <token>` |
+| When the model was used, tokens in and out, estimated cost, per kind of call and per day | **`/api/admin`** (also `/admin` on the backend directly; needs `NOVA_ADMIN_TOKEN`), or `GET /api/admin/usage?days=7` with `Authorization: Bearer <token>` |
 | The same numbers for Grafana or any scraper | `GET /api/admin/metrics` (Prometheus text, same token) |
 | What one request cost | The backend log line: `POST /api/courses/generate -> 200 (8009 ms) [calls=5 tokens=4959 ~$0.0008 retries=0]` |
 | What one course cost to write | `course.meta`: `calls`, `tokens`, `costUsd`, plus the `model` and `promptVersion` that wrote it |
@@ -18,7 +18,7 @@ NOVA uses one model, **NVIDIA Nemotron 3 Nano 30B-A3B on Nebius Token Factory**.
 Cost = input tokens × input price + output tokens × output price. The defaults, **$0.06 and $0.24 per million tokens**, are the public listing for Nemotron 3 Nano on Nebius as shown by third-party directories ([example](https://custom.typingmind.com/tools/estimate-llm-usage-costs/nebius/nvidia-nemotron-3-nano-30b-a3b)); I found no Nebius page that confirms them. Set `NOVA_PRICE_INPUT_PER_M` and `NOVA_PRICE_OUTPUT_PER_M` to the numbers in your Nebius console. Compare the admin page with Billing → Usage after a day of use to see how close it is.
 
 ## The admin page
-Set `NOVA_ADMIN_TOKEN` to any long random string (for example `openssl rand -hex 24`), restart, open `http://localhost:8000/admin` and paste the token. It is kept in your browser tab only and sent as a header; it is never put in a URL. Without the token setting the three admin routes answer 404.
+Set `NOVA_ADMIN_TOKEN` to any long random string (for example `openssl rand -hex 24`), restart, open `http://localhost:5173/api/admin` (or `http://localhost:8000/admin`) and paste the token. It is kept in your browser tab only and sent as a header; it is never put in a URL. Without the token setting the three admin routes answer 404.
 
 It shows today's calls, tokens, estimated cost, retries and failures, the budget bar when `NOVA_DAILY_TOKEN_BUDGET` is set, a table per kind of call (outline, lesson, quiz, answers, safety, tutor, ...), and a table per day with cache hits and turned-away requests.
 

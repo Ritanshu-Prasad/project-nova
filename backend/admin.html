@@ -49,8 +49,15 @@ $('form').addEventListener('submit', async (event) => {
   event.preventDefault();
   $('error').textContent = '';
   sessionStorage.setItem('nova-admin-token', $('token').value);
-  const response = await fetch('/api/admin/usage?days=' + $('days').value, { headers: { Authorization: 'Bearer ' + $('token').value } });
+  let response;
+  try {
+    response = await fetch('/api/admin/usage?days=' + $('days').value, { headers: { Authorization: 'Bearer ' + $('token').value } });
+  } catch {
+    $('error').textContent = 'Could not reach the backend. Is it running?';
+    return;
+  }
   if (!response.ok) { $('error').textContent = response.status === 401 ? 'Wrong token.' : 'Could not load usage (' + response.status + ').'; return; }
+  if (!(response.headers.get('content-type') || '').includes('json')) { $('error').textContent = 'This address is not the NOVA backend. Open /api/admin on the backend or the app.'; return; }
   render(await response.json());
 });
 
