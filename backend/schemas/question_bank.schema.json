@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "QuestionBank",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "questions"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^q[0-9]{1,2}$"
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "properties": {
+    "questions": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 10,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "question_id",
+              "type",
+              "question_text",
+              "explanation",
+              "evidence",
+              "section_index",
+              "options",
+              "correct_answer"
+            ],
+            "properties": {
+              "question_id": {
+                "$ref": "#/$defs/id"
+              },
+              "type": {
+                "const": "mcq"
+              },
+              "question_text": {
+                "type": "string",
+                "minLength": 10
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 10
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 15
+              },
+              "section_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "options": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "$ref": "#/$defs/option"
+                }
+              },
+              "correct_answer": {
+                "enum": [
+                  "a",
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "question_id",
+              "type",
+              "question_text",
+              "explanation",
+              "evidence",
+              "section_index",
+              "options",
+              "correct_answer"
+            ],
+            "properties": {
+              "question_id": {
+                "$ref": "#/$defs/id"
+              },
+              "type": {
+                "const": "msq"
+              },
+              "question_text": {
+                "type": "string",
+                "minLength": 10
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 10
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 15
+              },
+              "section_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "options": {
+                "type": "array",
+                "minItems": 5,
+                "maxItems": 5,
+                "items": {
+                  "$ref": "#/$defs/option"
+                }
+              },
+              "correct_answer": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 3,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "a",
+                    "b",
+                    "c",
+                    "d",
+                    "e"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "question_id",
+              "type",
+              "question_text",
+              "explanation",
+              "evidence",
+              "section_index",
+              "correct_answer"
+            ],
+            "properties": {
+              "question_id": {
+                "$ref": "#/$defs/id"
+              },
+              "type": {
+                "const": "true_false"
+              },
+              "question_text": {
+                "type": "string",
+                "minLength": 10
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 10
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 15
+              },
+              "section_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "correct_answer": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "question_id",
+              "type",
+              "question_text",
+              "explanation",
+              "evidence",
+              "section_index",
+              "items"
+            ],
+            "properties": {
+              "question_id": {
+                "$ref": "#/$defs/id"
+              },
+              "type": {
+                "const": "order"
+              },
+              "question_text": {
+                "type": "string",
+                "minLength": 10
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 10
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 15
+              },
+              "section_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "items": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 6,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "the steps in the correct order; the app scrambles them"
+              },
+              "shown": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "the same items scrambled, added when a quiz is picked"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

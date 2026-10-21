@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ModuleContent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "overview",
+    "requires_code",
+    "code_reason",
+    "key_terms",
+    "sections"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 90
+    },
+    "overview": {
+      "type": "string",
+      "minLength": 40,
+      "maxLength": 600
+    },
+    "requires_code": {
+      "type": "boolean"
+    },
+    "code_reason": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+    },
+    "key_terms": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "term",
+          "definition"
+        ],
+        "properties": {
+          "term": {
+            "type": "string",
+            "minLength": 1
+          },
+          "definition": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "heading",
+          "explanation"
+        ],
+        "properties": {
+          "heading": {
+            "type": "string",
+            "minLength": 3
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 200
+          },
+          "analogy": {
+            "type": "string"
+          },
+          "action_steps": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "minLength": 5
+            }
+          },
+          "code": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "language",
+              "snippet",
+              "explanation"
+            ],
+            "properties": {
+              "language": {
+                "type": "string"
+              },
+              "snippet": {
+                "type": "string",
+                "minLength": 1
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 10
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
