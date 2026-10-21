@@ -10,6 +10,9 @@ A goal you type is sent to the AI provider (Nebius) to write your course and to 
 
 ## Progress and accounts
 Your courses, progress and profile are stored under your account by the existing account service. 
+## Tracing (only if switched on)
+If the operator sets up Langfuse tracing, each model call is recorded there with its model, token counts, cost and timing. What you typed and what the model answered is sent only if the operator also sets `NOVA_TRACE_CONTENT=on`. Tracing is off unless configured.
+
 ## Statistics and abuse protection
 - To check how hard questions really are, the app sends, after a quiz, a short hash of each question, the level and whether the answer was right. These counts contain no account or device identifier.
 - To limit abuse the server counts requests per network address for up to an hour; these counters are not linked to anything else and expire on their own.

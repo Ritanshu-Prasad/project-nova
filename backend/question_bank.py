@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, model_validator
 from fastapi import HTTPException
 
 import llm
+import tracing
 from module_content import ModuleContent
 
 logger = logging.getLogger("nova.question_bank")
@@ -299,6 +300,7 @@ async def write_bank(content: ModuleContent, first_pass: dict | None = None) -> 
         if not problems:
             return with_found_sections(bank, content, sections)
         logger.warning("Question bank problems (attempt %d): %s", attempt + 1, problems)
+        tracing.score("bank_problems", len(problems), "; ".join(sorted(set(problems.values())))[:200])
         await _fill(content, plan, sections, questions, [number for number, question in enumerate(bank.questions) if question.question_id in problems] or list(range(len(plan))))
     raise HTTPException(502, "The model could not write a reliable question bank")
 

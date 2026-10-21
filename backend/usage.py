@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 import pricing
 import shared
+import tracing
 
 logger = logging.getLogger("nova.usage")
 
@@ -114,6 +115,7 @@ async def record_failure(kind: str, model: str) -> None:
     spent = current()
     if spent:
         spent.failures += 1
+    tracing.record_failure(kind, model)
     await _add(ledger_key(_day(), model), {f"{kind}:failures": 1})
 
 

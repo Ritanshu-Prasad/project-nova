@@ -6,3 +6,4 @@ pydantic>=2.8
 pypdf>=5.0
 python-dotenv
 psycopg[binary]>=3.2
+langfuse
