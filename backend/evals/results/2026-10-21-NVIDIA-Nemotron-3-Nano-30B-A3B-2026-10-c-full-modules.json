@@ -1,0 +1,365 @@
+{
+  "meta": {
+    "date": "2026-10-21",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "promptVersion": "2026-10-c",
+    "cases": "full",
+    "suites": "modules",
+    "repeat": 1
+  },
+  "summary": {
+    "modules": {
+      "runs": 12,
+      "ok_rate": 1.0,
+      "decision_accuracy": 0.9166666666666666,
+      "code_when_needed": 1.0,
+      "no_code_when_not_needed": 0.8571428571428571,
+      "average_sections": 4.833333333333333
+    },
+    "cost": {
+      "total_usd": 0.00368,
+      "per_run_usd": 0.000306,
+      "tokens": 22860,
+      "calls": 36,
+      "runs": 12
+    }
+  },
+  "rows": [
+    {
+      "suite": "modules",
+      "case": "cooking",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 5,
+      "code_sections": 0,
+      "seconds": 11.7,
+      "calls": 3,
+      "prompt_tokens": 843,
+      "completion_tokens": 1601,
+      "tokens": 2444,
+      "cost_usd": 0.000435,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.39,
+          1.02
+        ],
+        "lesson": [
+          9.23
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "speaking",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 5,
+      "code_sections": 0,
+      "seconds": 9.7,
+      "calls": 3,
+      "prompt_tokens": 837,
+      "completion_tokens": 1032,
+      "tokens": 1869,
+      "cost_usd": 0.000298,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.15,
+          1.2
+        ],
+        "lesson": [
+          7.32
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "budgeting",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 5,
+      "code_sections": 0,
+      "seconds": 9.8,
+      "calls": 3,
+      "prompt_tokens": 831,
+      "completion_tokens": 1083,
+      "tokens": 1914,
+      "cost_usd": 0.00031,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.26,
+          1.09
+        ],
+        "lesson": [
+          7.33
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "history",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 5,
+      "code_sections": 0,
+      "seconds": 10.1,
+      "calls": 3,
+      "prompt_tokens": 843,
+      "completion_tokens": 1141,
+      "tokens": 1984,
+      "cost_usd": 0.000324,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.16,
+          1.18
+        ],
+        "lesson": [
+          7.7
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "fitness",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 5,
+      "code_sections": 0,
+      "seconds": 9.8,
+      "calls": 3,
+      "prompt_tokens": 843,
+      "completion_tokens": 1064,
+      "tokens": 1907,
+      "cost_usd": 0.000306,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.17,
+          1.16
+        ],
+        "lesson": [
+          7.47
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "languages",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 4,
+      "code_sections": 0,
+      "seconds": 9.5,
+      "calls": 3,
+      "prompt_tokens": 831,
+      "completion_tokens": 994,
+      "tokens": 1825,
+      "cost_usd": 0.000288,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.17,
+          1.16
+        ],
+        "lesson": [
+          7.11
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "sql",
+      "expected": true,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 5,
+      "code_sections": 5,
+      "seconds": 9.5,
+      "calls": 3,
+      "prompt_tokens": 845,
+      "completion_tokens": 983,
+      "tokens": 1828,
+      "cost_usd": 0.000287,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.1,
+          1.23
+        ],
+        "lesson": [
+          7.13
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "python",
+      "expected": true,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 5,
+      "code_sections": 5,
+      "seconds": 9.0,
+      "calls": 3,
+      "prompt_tokens": 839,
+      "completion_tokens": 933,
+      "tokens": 1772,
+      "cost_usd": 0.000274,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.14,
+          1.18
+        ],
+        "lesson": [
+          6.64
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "git",
+      "expected": true,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 4,
+      "code_sections": 4,
+      "seconds": 8.4,
+      "calls": 3,
+      "prompt_tokens": 830,
+      "completion_tokens": 834,
+      "tokens": 1664,
+      "cost_usd": 0.00025,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.16,
+          1.17
+        ],
+        "lesson": [
+          6.01
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "docker",
+      "expected": true,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 4,
+      "code_sections": 4,
+      "seconds": 9.8,
+      "calls": 3,
+      "prompt_tokens": 836,
+      "completion_tokens": 1047,
+      "tokens": 1883,
+      "cost_usd": 0.000301,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.11,
+          1.22
+        ],
+        "lesson": [
+          7.38
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "regex",
+      "expected": true,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 5,
+      "code_sections": 5,
+      "seconds": 9.7,
+      "calls": 3,
+      "prompt_tokens": 836,
+      "completion_tokens": 1046,
+      "tokens": 1882,
+      "cost_usd": 0.000301,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.17,
+          1.15
+        ],
+        "lesson": [
+          7.3
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "spreadsheet",
+      "expected": false,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 6,
+      "code_sections": 6,
+      "seconds": 9.7,
+      "calls": 3,
+      "prompt_tokens": 839,
+      "completion_tokens": 1049,
+      "tokens": 1888,
+      "cost_usd": 0.000302,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.12,
+          1.19
+        ],
+        "lesson": [
+          7.37
+        ]
+      }
+    }
+  ]
+}

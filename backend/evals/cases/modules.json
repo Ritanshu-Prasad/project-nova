@@ -1,0 +1,83 @@
+{
+  "modules": [
+    {
+      "id": "cooking",
+      "topic": "Sourdough bread baking",
+      "expectations": "home baker, step by step",
+      "requires_code": false,
+      "smoke": true
+    },
+    {
+      "id": "speaking",
+      "topic": "Public speaking",
+      "expectations": "nervous presenter, short practical lessons",
+      "requires_code": false,
+      "smoke": true
+    },
+    {
+      "id": "budgeting",
+      "topic": "Basic personal budgeting",
+      "expectations": "just the essentials",
+      "requires_code": false,
+      "smoke": true
+    },
+    {
+      "id": "history",
+      "topic": "The causes of the First World War",
+      "expectations": "a curious reader, no exam",
+      "requires_code": false
+    },
+    {
+      "id": "fitness",
+      "topic": "Starting a running routine",
+      "expectations": "busy beginner, three days a week",
+      "requires_code": false
+    },
+    {
+      "id": "languages",
+      "topic": "Learning Spanish verb tenses",
+      "expectations": "some vocabulary already",
+      "requires_code": false
+    },
+    {
+      "id": "sql",
+      "topic": "SQL joins",
+      "expectations": "know basic SELECT, want to combine tables",
+      "requires_code": true,
+      "smoke": true
+    },
+    {
+      "id": "python",
+      "topic": "Python list comprehensions",
+      "expectations": "comfortable with loops",
+      "requires_code": true,
+      "smoke": true
+    },
+    {
+      "id": "git",
+      "topic": "Git branching",
+      "expectations": "new to teams",
+      "requires_code": true,
+      "smoke": true
+    },
+    {
+      "id": "docker",
+      "topic": "Docker containers",
+      "expectations": "know basic Linux commands",
+      "requires_code": true
+    },
+    {
+      "id": "regex",
+      "topic": "Regular expressions",
+      "expectations": "need to clean log files",
+      "requires_code": true
+    },
+    {
+      "id": "spreadsheet",
+      "topic": "Writing formulas in a spreadsheet",
+      "expectations": "tracking household costs",
+      "requires_code": null,
+      "note": "formulas are code-like, so either decision is acceptable; not scored"
+    }
+  ]
+}

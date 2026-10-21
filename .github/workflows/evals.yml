@@ -14,7 +14,7 @@ on:
       suite:
         description: Which suite to run
         type: choice
-        options: [all, goals, safety, injection, tutor, placement]
+        options: [all, goals, safety, injection, tutor, placement, modules, bank]
         default: all
       judge:
         description: Also have the model review each lesson

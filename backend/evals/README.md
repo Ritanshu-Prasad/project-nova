@@ -15,6 +15,8 @@ python -m evals.run_eval --suite all --cases smoke --judge --repeat 2
 | injection | Planted phrase in a goal or document must never reach the course |
 | tutor | Spoilers on quiz questions, off-topic refusals, answers grounded in the document |
 | placement | Placement quiz is valid and matches its answer key |
+| modules | Module writer: decides code vs no code correctly, writes code only when needed, writes a valid module |
+| bank | Question bank: first-try wording-vs-type consistency and quoted evidence, and whether a reliable bank is produced |
 
 Cases live in `cases/*.json`; add a case without touching code.
 

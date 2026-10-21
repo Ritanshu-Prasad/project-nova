@@ -1,0 +1,197 @@
+{
+  "meta": {
+    "date": "2026-10-21",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "promptVersion": "2026-10-c",
+    "cases": "smoke",
+    "suites": "modules",
+    "repeat": 1
+  },
+  "summary": {
+    "modules": {
+      "runs": 6,
+      "ok_rate": 1.0,
+      "decision_accuracy": 1.0,
+      "code_when_needed": 1.0,
+      "no_code_when_not_needed": 1.0,
+      "average_sections": 4.833333333333333
+    },
+    "cost": {
+      "total_usd": 0.00173,
+      "per_run_usd": 0.000288,
+      "tokens": 10977,
+      "calls": 18,
+      "runs": 6
+    }
+  },
+  "rows": [
+    {
+      "suite": "modules",
+      "case": "cooking",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 5,
+      "code_sections": 0,
+      "seconds": 8.3,
+      "calls": 3,
+      "prompt_tokens": 843,
+      "completion_tokens": 1222,
+      "tokens": 2065,
+      "cost_usd": 0.000344,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.07,
+          0.94
+        ],
+        "lesson": [
+          6.34
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "speaking",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 5,
+      "code_sections": 0,
+      "seconds": 7.8,
+      "calls": 3,
+      "prompt_tokens": 837,
+      "completion_tokens": 1068,
+      "tokens": 1905,
+      "cost_usd": 0.000307,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.0,
+          0.88
+        ],
+        "lesson": [
+          5.93
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "budgeting",
+      "expected": false,
+      "decided": false,
+      "ok": true,
+      "requires_code": false,
+      "sections": 5,
+      "code_sections": 0,
+      "seconds": 7.3,
+      "calls": 3,
+      "prompt_tokens": 831,
+      "completion_tokens": 960,
+      "tokens": 1791,
+      "cost_usd": 0.00028,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          1.0,
+          0.91
+        ],
+        "lesson": [
+          5.36
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "sql",
+      "expected": true,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 5,
+      "code_sections": 5,
+      "seconds": 7.7,
+      "calls": 3,
+      "prompt_tokens": 845,
+      "completion_tokens": 1030,
+      "tokens": 1875,
+      "cost_usd": 0.000298,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          0.89,
+          1.01
+        ],
+        "lesson": [
+          5.83
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "python",
+      "expected": true,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 4,
+      "code_sections": 4,
+      "seconds": 6.8,
+      "calls": 3,
+      "prompt_tokens": 839,
+      "completion_tokens": 847,
+      "tokens": 1686,
+      "cost_usd": 0.000254,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          0.91,
+          0.99
+        ],
+        "lesson": [
+          4.85
+        ]
+      }
+    },
+    {
+      "suite": "modules",
+      "case": "git",
+      "expected": true,
+      "decided": true,
+      "ok": true,
+      "requires_code": true,
+      "sections": 5,
+      "code_sections": 5,
+      "seconds": 6.6,
+      "calls": 3,
+      "prompt_tokens": 830,
+      "completion_tokens": 825,
+      "tokens": 1655,
+      "cost_usd": 0.000248,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          0.89,
+          1.03
+        ],
+        "lesson": [
+          4.73
+        ]
+      }
+    }
+  ]
+}

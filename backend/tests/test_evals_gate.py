@@ -86,7 +86,7 @@ def test_the_shipped_thresholds_name_metrics_the_report_produces():
     summary = report.build_summary([], ["beginner"])
     assert "cost" in summary
     rules = load_rules(gate.Path(gate.__file__).parent / "thresholds.json")
-    assert {rule["metric"].split(".")[0] for rule in rules} <= {"goals", "safety", "injection", "tutor", "placement", "cost"}
+    assert {rule["metric"].split(".")[0] for rule in rules} <= {"goals", "cost", *report.SECTIONS}
 
 
 def test_rules_are_read_from_a_file(tmp_path):

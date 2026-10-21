@@ -3,11 +3,12 @@ import statistics
 from fnmatch import fnmatch
 from pathlib import Path
 
-from evals import gate, injection_eval, placement_eval, safety_eval, tutor_eval
+from evals import bank_eval, gate, injection_eval, module_eval, placement_eval, safety_eval, tutor_eval
 from evals.metrics import fraction, level_gap, percentile
 
 GOAL_METRICS = ["ok", "first_try", "seconds", "tokens", "cost_usd", "grade", "duplicates", "agreement", "judge", "questions_judge"]
 SPREAD_METRICS = ["seconds", "tokens", "grade", "judge"]
+SECTIONS = {"safety": safety_eval, "injection": injection_eval, "tutor": tutor_eval, "placement": placement_eval, "modules": module_eval, "bank": bank_eval}
 
 
 # --- Summaries ---
@@ -71,11 +72,11 @@ def summarise_cost(result_rows: list[dict]) -> dict:
 
 def build_summary(result_rows: list[dict], levels: list[str]) -> dict:
     """One summary with a section for every suite that produced rows."""
-    suites = {name: [row for row in result_rows if row["suite"] == name] for name in ("goals", "safety", "injection", "tutor", "placement")}
+    suites = {name: [row for row in result_rows if row["suite"] == name] for name in ("goals", *SECTIONS)}
     summary = {}
     if suites["goals"]:
         summary["goals"] = summarise_goals(suites["goals"], levels)
-    for name, module in (("safety", safety_eval), ("injection", injection_eval), ("tutor", tutor_eval), ("placement", placement_eval)):
+    for name, module in SECTIONS.items():
         if suites[name]:
             summary[name] = module.summarise(suites[name])
     summary["cost"] = summarise_cost(result_rows)
@@ -88,7 +89,7 @@ def render_markdown(summary: dict, meta: dict) -> str:
     lines = [f"# Evaluation {meta['date']}", "", f"Model `{meta['model']}`, prompts `{meta['promptVersion']}`, cases `{meta['cases']}`, suites `{meta['suites']}`, repeats {meta['repeat']}", ""]
     if "goals" in summary:
         lines += _goal_table(summary["goals"])
-    for name in ("safety", "injection", "tutor", "placement"):
+    for name in SECTIONS:
         if name in summary:
             lines += [f"## {name.capitalize()}", ""] + [f"- {metric}: {_cell(value)}" for metric, value in summary[name].items()] + [""]
     cost = summary["cost"]

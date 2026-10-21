@@ -282,8 +282,11 @@ WRITE_ATTEMPTS = 3
 BATCH_TOKENS = 3500
 
 
-async def write_bank(content: ModuleContent) -> QuestionBank:
-    """Writes the bank with one call per question type, so a question can only ever have the type it was asked for, then checks it and rewrites only the questions that failed."""
+async def write_bank(content: ModuleContent, first_pass: dict | None = None) -> QuestionBank:
+    """Writes the bank with one call per question type, so a question can only ever have the type it was asked for, then checks it and rewrites only the questions that failed.
+
+    Pass a dict as `first_pass` to learn how good the model's first answer was: it gets "questions" and "problems" (by question id).
+    """
     plan = plan_types(content)
     sections = plan_sections(content, plan)
     questions: list = [None] * len(plan)
@@ -291,6 +294,8 @@ async def write_bank(content: ModuleContent) -> QuestionBank:
     for attempt in range(WRITE_ATTEMPTS):
         bank = _assemble(questions, sections)
         problems = check_bank(bank, content, plan, sections)
+        if first_pass is not None and not first_pass:
+            first_pass.update(questions=len(plan), problems=problems)
         if not problems:
             return with_found_sections(bank, content, sections)
         logger.warning("Question bank problems (attempt %d): %s", attempt + 1, problems)
