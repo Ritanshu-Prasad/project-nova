@@ -23,6 +23,10 @@
   .bar { height: 8px; background: var(--line); border-radius: 4px; margin-top: 8px; overflow: hidden; } .bar i { display: block; height: 100%; background: var(--accent); }
   #error { color: #dc2626; min-height: 1.5em; }
   .scroll { overflow-x: auto; }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; padding: 6px 10px; }
+  summary { cursor: pointer; display: flex; gap: 12px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+  summary .bad { color: #dc2626; } pre { white-space: pre-wrap; word-break: break-word; background: var(--bg); padding: 8px; border-radius: 6px; font-size: 12px; max-height: 240px; overflow: auto; }
+  .filter { color: var(--muted); font-size: 13px; margin-bottom: 8px; display: block; }
 </style>
 </head>
 <body>
@@ -36,6 +40,9 @@
   </form>
   <div id="error" role="alert"></div>
   <div id="out"></div>
+  <h2>Recent requests</h2>
+  <label class="filter"><input type="checkbox" id="problems" style="min-width:0"> only requests with retries, failures, remarks or errors</label>
+  <div id="traces"></div>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -59,7 +66,9 @@ $('form').addEventListener('submit', async (event) => {
   if (!response.ok) { $('error').textContent = response.status === 401 ? 'Wrong token.' : 'Could not load usage (' + response.status + ').'; return; }
   if (!(response.headers.get('content-type') || '').includes('json')) { $('error').textContent = 'This address is not the NOVA backend. Open /api/admin on the backend or the app.'; return; }
   render(await response.json());
+  loadTraces();
 });
+$('problems').addEventListener('change', () => { if ($('token').value) loadTraces(); });
 
 function render(report) {
   const today = report.days[0];
@@ -83,6 +92,20 @@ function render(report) {
     <div class="scroll"><table><tr><th>day (UTC)</th><th>calls</th><th>tokens</th><th>cost</th><th>retries</th><th>failures</th><th>cache hits</th><th>turned away</th></tr>
       ${report.days.map((day) => `<tr><td>${day.day}</td><td>${num(day.totals.calls)}</td><td>${num(day.totals.prompt_tokens + day.totals.completion_tokens)}</td><td>${money(day.totals.cost_usd)}</td><td>${day.totals.retries}</td><td>${day.totals.failures}</td><td>${sumEvents(day.events, 'cache:', ':hit')}</td><td>${sumEvents(day.events, 'limit_denied:', '')}</td></tr>`).join('')}
     </table></div>`;
+}
+
+async function loadTraces() {
+  const response = await fetch('/api/admin/traces?limit=50&problems=' + $('problems').checked, { headers: { Authorization: 'Bearer ' + $('token').value } });
+  if (!response.ok) { $('traces').textContent = 'Could not load requests (' + response.status + ').'; return; }
+  const { traces, content_saved } = await response.json();
+  $('traces').innerHTML = (traces.map((trace) => `<details>
+      <summary><span>${esc(trace.time.slice(11, 19))} UTC</span><span>${esc(trace.method)} ${esc(trace.path)}</span><span class="${trace.status >= 400 ? 'bad' : ''}">${trace.status}</span><span>${trace.calls} calls</span><span>${num(trace.prompt_tokens + trace.completion_tokens)} tokens</span><span>${money(trace.cost_usd)}</span><span>${trace.seconds.toFixed(1)} s</span>${trace.retries || trace.failures ? `<span class="bad">${trace.retries} retries / ${trace.failures} failed</span>` : ''}</summary>
+      <p class="note">request ${esc(trace.request_id)}</p>
+      <div class="scroll"><table><tr><th>kind</th><th>model</th><th>in</th><th>out</th><th>seconds</th><th>ok</th></tr>
+      ${trace.call_log.map((call) => `<tr><td>${esc(call.kind)}</td><td>${esc(call.model.split('/').pop())}</td><td>${num(call.prompt_tokens)}</td><td>${num(call.completion_tokens)}</td><td>${call.seconds}</td><td>${call.ok ? 'yes' : '<span class="bad">no</span>'}</td></tr>`).join('')}</table></div>
+      ${trace.notes.map((note) => `<p class="note">${esc(note)}</p>`).join('')}
+      ${(trace.exchanges || []).map((exchange) => `<p class="note">${esc(exchange.kind)}</p><pre>${esc(exchange.system)}\n\n${esc(exchange.user)}\n\n--- reply ---\n${esc(exchange.reply)}</pre>`).join('')}
+    </details>`).join('') || '<p class="note">No requests yet.</p>') + (content_saved ? '' : '<p class="note">Prompts and replies are not saved (set NOVA_TRACE_CONTENT=on to see them here).</p>');
 }
 
 function sumEvents(events, start, end) {

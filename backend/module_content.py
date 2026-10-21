@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel, Field, model_validator
 
 import llm
+import usage
 
 from prompts import sanitise
 
@@ -80,6 +81,7 @@ async def write_module(topic: str, expectations: str, previous: list["ModuleCont
         content = await llm.ask(ModuleContent, module_system(required), module_user(topic, expectations, previous), MODULE_TOKENS, kind="lesson")
         if content.requires_code == required:
             return content
+        usage.note(f"module: wrote requires_code={content.requires_code} but {required} was decided, asked again")
     raise HTTPException(502, "The model could not write the module")
 
 

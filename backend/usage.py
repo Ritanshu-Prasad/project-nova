@@ -18,6 +18,9 @@ LATENCY_EDGES = (1, 3, 10, 30)
 LEDGER_SECONDS = 90 * 24 * 3600
 BUDGET_WINDOW_SECONDS = 2 * 24 * 3600
 BUDGET_WARNING_SHARE = 0.8
+MAX_NOTES = 20
+MAX_EXCHANGES = 30
+EXCHANGE_CHARS = 2000
 
 
 class RequestUsage:
@@ -30,6 +33,9 @@ class RequestUsage:
         self.retries = 0
         self.failures = 0
         self.seconds_by_kind: dict[str, list[float]] = {}
+        self.call_log: list[dict] = []
+        self.notes: list[str] = []
+        self.exchanges: list[dict] = []
 
     @property
     def tokens(self) -> int:
@@ -98,6 +104,7 @@ async def record_call(kind: str, model: str, tokens_used: dict | None, seconds: 
         spent.prompt_tokens += prompt
         spent.completion_tokens += completion
         spent.seconds_by_kind.setdefault(kind, []).append(seconds)
+        spent.call_log.append({"kind": kind, "model": model, "prompt_tokens": prompt, "completion_tokens": completion, "seconds": round(seconds, 2), "ok": True})
     logger.debug("model call %s: %d tokens in %.1f s", kind, prompt + completion, seconds)
     amounts = {"calls": 1, "prompt": prompt, "completion": completion, "millis": round(seconds * 1000), _bucket(seconds): 1}
     await asyncio.gather(_add(ledger_key(_day(), model), {f"{kind}:{name}": amount for name, amount in amounts.items()}), _charge(prompt + completion))
@@ -115,8 +122,23 @@ async def record_failure(kind: str, model: str) -> None:
     spent = current()
     if spent:
         spent.failures += 1
+        spent.call_log.append({"kind": kind, "model": model, "prompt_tokens": 0, "completion_tokens": 0, "seconds": 0, "ok": False})
     tracing.record_failure(kind, model)
     await _add(ledger_key(_day(), model), {f"{kind}:failures": 1})
+
+
+def note(text: str) -> None:
+    """A remark about this request for its trace, such as the questions that had to be rewritten."""
+    spent = current()
+    if spent and len(spent.notes) < MAX_NOTES:
+        spent.notes.append(text[:300])
+
+
+def record_exchange(kind: str, system: str, user: str, reply: str) -> None:
+    """Keeps the text of a model call for this request's trace, only when NOVA_TRACE_CONTENT=on."""
+    spent = current()
+    if spent and os.getenv("NOVA_TRACE_CONTENT") == "on" and len(spent.exchanges) < MAX_EXCHANGES:
+        spent.exchanges.append({"kind": kind, "system": system[:EXCHANGE_CHARS], "user": user[:EXCHANGE_CHARS], "reply": reply[:EXCHANGE_CHARS]})
 
 
 async def record_event(name: str) -> None:

@@ -114,7 +114,7 @@ class FakeRedis:
     """Answers Upstash REST commands from a dictionary and records them."""
 
     def __init__(self):
-        self.data, self.commands, self.hashes = {}, [], {}
+        self.data, self.commands, self.hashes, self.lists = {}, [], {}, {}
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         import json
@@ -143,6 +143,14 @@ class FakeRedis:
         if name == "HGETALL":
             flat = [item for pair in self.hashes.get(key, {}).items() for item in (pair[0], str(pair[1]))]
             return httpx.Response(200, json={"result": flat})
+        if name == "LPUSH":
+            self.lists.setdefault(key, []).insert(0, rest[0])
+            return httpx.Response(200, json={"result": len(self.lists[key])})
+        if name == "LTRIM":
+            self.lists[key] = self.lists[key][: int(rest[1]) + 1]
+            return httpx.Response(200, json={"result": "OK"})
+        if name == "LRANGE":
+            return httpx.Response(200, json={"result": self.lists.get(key, [])[int(rest[0]): int(rest[1]) + 1]})
         if name == "TTL":
             return httpx.Response(200, json={"result": 42})
         return httpx.Response(200, json={"result": 1})
@@ -247,3 +255,37 @@ def test_redis_is_used_when_configured_either_way(monkeypatch):
     monkeypatch.setenv("UPSTASH_REDIS_REST_URL", "https://redis.test")
     monkeypatch.setenv("UPSTASH_REDIS_REST_TOKEN", "t")
     assert isinstance(shared.make_state(), RedisState)
+
+
+# --- Lists of recent items ---
+
+def test_the_newest_items_come_first_and_only_the_cap_is_kept(clock):
+    state = MemoryState()
+    for number in range(5):
+        run(state.push_capped("traces", f"item{number}", 3, 60))
+    assert run(state.recent("traces", 10)) == ["item4", "item3", "item2"]
+
+
+def test_a_list_can_be_read_in_part_and_an_unknown_one_is_empty(clock):
+    state = MemoryState()
+    run(state.push_capped("traces", "a", 5, 60)), run(state.push_capped("traces", "b", 5, 60))
+    assert run(state.recent("traces", 1)) == ["b"] and run(state.recent("nothing", 5)) == []
+
+
+def test_a_list_expires_after_its_first_write_and_starts_again(clock):
+    state = MemoryState()
+    run(state.push_capped("traces", "old", 5, 60))
+    clock[0] += 30
+    run(state.push_capped("traces", "mid", 5, 60))
+    clock[0] += 31
+    assert run(state.recent("traces", 5)) == []
+    run(state.push_capped("traces", "new", 5, 60))
+    assert run(state.recent("traces", 5)) == ["new"]
+
+
+def test_redis_keeps_the_newest_items_with_one_request_and_an_expiry_that_is_not_moved(redis):
+    state, fake = redis
+    for number in range(4):
+        run(state.push_capped("traces", f"item{number}", 3, 3600))
+    assert fake.commands[0] == ["PIPELINE", 3] and ["LTRIM", "traces", "0", "2"] in fake.commands
+    assert run(state.recent("traces", 2)) == ["item3", "item2"] and run(state.recent("nothing", 2)) == []

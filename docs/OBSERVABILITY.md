@@ -31,6 +31,14 @@ Every model call adds to a counter for its day, model and kind: calls, prompt to
 - `NOVA_LOG_PROMPTS=on`: also saves each prompt and reply (cut to 2,000 characters) to `backend/.data/prompts.jsonl`, tied to the request id. It keeps what learners typed, so it is for local debugging only and is ignored when `VERCEL` is set.
 - `LOG_LEVEL=DEBUG` adds a line per model call with its tokens and time.
 
+## Recent requests (built in, no outside service)
+
+Every request that used the model leaves one record in NOVA's own store (Upstash Redis in production, memory locally): when it ran, route, status, seconds, the calls in order with their tokens and time, the cost, retries and failures, and remarks such as "question bank, attempt 1: 2 problem(s): evidence is not a quote". The newest 500 records of each day are kept for 7 days. They are listed under **Recent requests** on `/api/admin` and at `GET /api/admin/traces?limit=50&problems=true` (same token), where "problems" means a retry, a failure, a remark or an error status.
+
+The text of the calls (prompts and replies, each cut to 2,000 characters) is saved only with `NOVA_TRACE_CONTENT=on`, because it holds what learners typed and uploaded. It stays in NOVA's own store and expires with the record. With it on, `python -m evals.from_traces` (run in `backend/`) turns requests that had problems into module eval cases in `evals/cases/from_traces.json` for you to review, so a failure seen in use is checked by every later eval.
+
+A streamed course answers before its last model calls finish, so its record can miss those calls.
+
 ## Tracing each model call (optional, Langfuse)
 
 With a [Langfuse](https://langfuse.com) project, every model call becomes a generation inside one trace per request, with its model, prompt and completion tokens, estimated cost and time. Failed calls show as errors, and the question bank adds a `bank_problems` score when its checks reject questions. The trace id comes from the request id, so a log line and its trace match.

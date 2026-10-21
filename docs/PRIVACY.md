@@ -10,6 +10,9 @@ A goal you type is sent to the AI provider (Nebius) to write your course and to 
 
 ## Progress and accounts
 Your courses, progress and profile are stored under your account by the existing account service. 
+## Request records
+So the operator can find slow or failed requests, NOVA keeps a short record of each request that used the model: time, route, status, token counts, cost and remarks, for 7 days. It does not contain what you typed or what the model answered unless the operator sets `NOVA_TRACE_CONTENT=on`, in which case those texts (cut to 2,000 characters each) are kept in NOVA's own store for the same 7 days.
+
 ## Tracing (only if switched on)
 If the operator sets up Langfuse tracing, each model call is recorded there with its model, token counts, cost and timing. What you typed and what the model answered is sent only if the operator also sets `NOVA_TRACE_CONTENT=on`. Tracing is off unless configured.
 

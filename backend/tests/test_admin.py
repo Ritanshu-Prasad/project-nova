@@ -33,7 +33,7 @@ def call(kind="lesson", prompt=1000, completion=200, seconds=2.0):
     run(usage.record_call(kind, MODEL, {"prompt_tokens": prompt, "completion_tokens": completion}, seconds))
 
 
-ROUTES = ["/api/admin/usage", "/api/admin/metrics", "/admin", "/api/admin"]
+ROUTES = ["/api/admin/usage", "/api/admin/metrics", "/api/admin/traces", "/admin", "/api"+"/admin"]
 
 
 # --- Who may look ---

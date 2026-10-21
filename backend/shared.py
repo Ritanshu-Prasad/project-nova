@@ -19,6 +19,7 @@ class MemoryState:
     def __init__(self):
         self.entries: dict[str, tuple[float, str]] = {}
         self.hashes: dict[str, tuple[float, dict[str, int]]] = {}
+        self.lists: dict[str, tuple[float, list[str]]] = {}
 
     async def hit(self, key: str, window_seconds: int) -> int:
         """Counts a request in a fixed window and returns how many have been counted in it."""
@@ -62,9 +63,23 @@ class MemoryState:
         expires, fields = self.hashes.get(key, (0.0, {}))
         return dict(fields) if expires > time.monotonic() else {}
 
+    async def push_capped(self, key: str, value: str, max_items: int, ttl_seconds: int) -> None:
+        """Puts a value at the front of a list that keeps only its `max_items` newest and expires `ttl_seconds` after the first write."""
+        now = time.monotonic()
+        expires, items = self.lists.get(key, (0.0, []))
+        if expires <= now:
+            expires, items = now + ttl_seconds, []
+        self.lists[key] = (expires, [value, *items][:max_items])
+
+    async def recent(self, key: str, count: int) -> list[str]:
+        """The newest `count` values of a list, newest first."""
+        expires, items = self.lists.get(key, (0.0, []))
+        return items[:count] if expires > time.monotonic() else []
+
     def clear(self) -> None:
         self.entries.clear()
         self.hashes.clear()
+        self.lists.clear()
 
     def _live(self, key: str, now: float) -> str | None:
         entry = self.entries.get(key)
@@ -121,6 +136,12 @@ class RedisState:
     async def hgetall(self, key: str) -> dict[str, int]:
         flat = await self._cmd("HGETALL", key) or []
         return {name: int(value) for name, value in zip(flat[::2], flat[1::2])}
+
+    async def push_capped(self, key: str, value: str, max_items: int, ttl_seconds: int) -> None:
+        await self._post(f"{self.url}/pipeline", [["LPUSH", key, value], ["LTRIM", key, "0", str(max_items - 1)], ["EXPIRE", key, str(ttl_seconds), "NX"]])
+
+    async def recent(self, key: str, count: int) -> list[str]:
+        return await self._cmd("LRANGE", key, "0", str(count - 1)) or []
 
     async def _cmd(self, *args: str):
         return (await self._post(self.url, list(args))).get("result")

@@ -12,6 +12,7 @@ import accounts
 import llm
 import pricing
 import shared
+import traces
 import tracing
 import usage
 from request_context import request_id_var
@@ -78,6 +79,8 @@ def add_request_logging(app: FastAPI) -> None:
             response.headers["X-Response-Time"] = f"{elapsed:.0f}ms"
             cost = f" [{spent.describe()}]" if spent.calls else ""
             logger.info("%s %s -> %s (%.0f ms)%s", request.method, request.url.path, response.status_code, elapsed, cost, extra={"usage": spent.as_dict()} if spent.calls else {})
+            if spent.calls or spent.failures:
+                await traces.save(traces.build_record(spent, request_id, request.method, request.url.path, response.status_code, elapsed / 1000))
             if spent.calls and tracing.enabled():
                 await tracing.flush_within()
             return response

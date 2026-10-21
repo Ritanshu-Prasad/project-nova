@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 
 import llm
 import pricing
+import traces
 import usage
 
 router = APIRouter()
@@ -44,6 +45,13 @@ async def usage_report(request: Request, days: int = Query(7, ge=1, le=90)):
         "budget": {"daily_token_limit": usage.daily_limit() or None, "used_today": await usage.used_today()},
         "days": await usage.daily_report(days, _models()),
     }
+
+
+@router.get("/api/admin/traces")
+async def trace_list(request: Request, limit: int = Query(50, ge=1, le=200), problems: bool = False):
+    """The newest requests that used the model, each with its calls, tokens, cost and remarks; the text of the calls is there only when NOVA_TRACE_CONTENT=on."""
+    _authorise(request)
+    return {"traces": await traces.recent(limit, only_problems=problems), "content_saved": os.getenv("NOVA_TRACE_CONTENT") == "on"}
 
 
 @router.get("/api/admin/metrics", response_class=PlainTextResponse)
