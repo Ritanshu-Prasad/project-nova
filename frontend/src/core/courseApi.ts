@@ -1,6 +1,6 @@
 import type { Course, Level, Question, Topic } from './courseSchema';
 import { normQuestion, normalizeCourse, normTopic } from './courseSchema';
-import { courseFromObjective } from './courseTemplates';
+import { courseFromObjective, isPresetObjective } from './courseTemplates';
 import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse';
 
 /**
@@ -19,8 +19,11 @@ import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse'
  *
  * Without the backend (or if it fails) NOVA falls back to built-in templates and in-browser PDF extraction.
  */
+/** Global toggle: PDF upload option disabled for now; course creation is goal/preset focused */
+export const ENABLE_PDF_UPLOAD = false;
+
 export type GenerateRequest =
-  | { mode: 'goal'; objective: string; level: Level }
+  | { mode: 'goal'; objective: string; level: Level; isPreset?: boolean }
   | { mode: 'documents'; files: File[]; focus: string; structure: DocStructure; level: Level };
 
 export interface GenerateResult {
@@ -167,7 +170,10 @@ export async function reportAnswers(answers: { hash: string; level: Level; corre
 }
 
 export async function generateCourse(req: GenerateRequest, progress: ProgressFn): Promise<GenerateResult> {
-  if (hasCourseApi) {
+  // If user selected a preset course, bypass backend model generation and load the curated preset directly
+  const isPreset = req.mode === 'goal' && (req.isPreset || isPresetObjective(req.objective));
+
+  if (!isPreset && hasCourseApi) {
     try {
       return { course: await viaBackend(req, progress), via: 'ai' };
     } catch (e) {
@@ -176,17 +182,17 @@ export async function generateCourse(req: GenerateRequest, progress: ProgressFn)
   }
   if (req.mode === 'documents') return { course: await courseFromPdfs(req.files, req, progress), via: 'local' };
   // Templates are instant; pace the steps so the forge reads well.
-  progress('read', 'Understanding your goal');
-  await pause(500);
+  progress('read', isPreset ? 'Loading pre-set curriculum…' : 'Understanding your goal');
+  await pause(400);
   // Demo lessons and question pools are large, so they load in their own chunk (plain templates if it fails).
   const authored = await import('./templates/content').catch(() => null);
   const base = courseFromObjective(req.objective, req.level);
   const course = authored ? authored.withAuthoredContent(base) : base;
   progress('outline', 'Planning modules');
-  await pause(500);
+  await pause(400);
   progress('topics', `Building ${course.modules.reduce((n, m) => n + m.topics.length, 0)} topics`);
-  await pause(500);
+  await pause(400);
   progress('quiz', 'Writing practice questions');
-  await pause(450);
+  await pause(350);
   return { course, via: 'local' };
 }

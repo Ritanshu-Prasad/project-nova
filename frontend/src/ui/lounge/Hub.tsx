@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { ENABLE_PDF_UPLOAD } from '../../core/courseApi';
 import { ArrowLeft, BookOpen, ChevronDown, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
@@ -404,8 +405,8 @@ function DockCard({ item: w }: { item: DockItem }) {
 function EmptyState() {
   const callsign = useProfile((s) => s.callsign) || 'Pilot';
   const tiles: { tab: ForgeTab; icon: LucideIcon; title: string; sub: string }[] = [
-    { tab: 'goal', icon: Sparkles, title: 'Describe a goal', sub: '“Teach me linear algebra”, “React patterns”…' },
-    { tab: 'docs', icon: FileUp, title: 'Upload notes or a book', sub: 'One or more PDFs — class notes, textbooks' },
+    { tab: 'goal', icon: Sparkles, title: 'Describe a goal or select a preset', sub: '“Teach me linear algebra”, “React patterns”…' },
+    ...(ENABLE_PDF_UPLOAD ? [{ tab: 'docs' as const, icon: FileUp, title: 'Upload notes or a book', sub: 'One or more PDFs — class notes, textbooks' }] : []),
   ];
   return (
     <motion.section initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12 }} className="card pointer-events-auto absolute left-1/2 top-1/2 w-[min(640px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 p-7 text-center sm:p-9">
@@ -414,7 +415,7 @@ function EmptyState() {
         Hi {callsign}, what do you want to learn today?
       </h1>
       <p className="mt-2 text-white/60">Pick how to start — NOVA turns it into a course of bite-sized planets.</p>
-      <div className="mt-7 grid gap-3 sm:grid-cols-2">
+      <div className={`mt-7 grid gap-3 ${tiles.length === 1 ? 'max-w-md mx-auto' : 'sm:grid-cols-2'}`}>
         {tiles.map((t) => (
           <button key={t.tab} type="button" onClick={() => (audio.play('click'), openForge(t.tab))} className="group cursor-pointer rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-1 hover:border-[var(--user)] hover:bg-white/[0.07]">
             <span className="grid size-11 place-items-center rounded-2xl transition-colors group-hover:text-[var(--user-ink)] group-hover:[background:var(--user)]" style={{ background: 'rgb(var(--user-rgb) / 0.16)', color: 'var(--user)' }}>

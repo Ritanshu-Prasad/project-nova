@@ -1,3 +1,4 @@
+import { ENABLE_PDF_UPLOAD } from './courseApi';
 import { create } from 'zustand';
 import { replayLaunch } from './director';
 import { useNova } from './store';
@@ -73,7 +74,7 @@ export const cheerPet = () => {
 
 /** Opens the New course window on a tab (from anywhere in the lounge). */
 export function openForge(tab: ForgeTab = 'goal'): void {
-  useHub.getState().setForgeTab(tab);
+  useHub.getState().setForgeTab(ENABLE_PDF_UPLOAD ? tab : 'goal');
   useHub.getState().go('hub');
   useNova.getState().setCurriculumOpen(true);
 }
