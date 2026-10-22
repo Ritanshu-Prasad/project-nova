@@ -47,10 +47,6 @@ def test_all_topics_keep_their_place(fake_model):
     assert all(isinstance(content, TopicContent) for module in written for content in module)
 
 
-def test_question_room_grows_with_the_count():
-    assert writing.question_tokens(10) == 500 + 450 * 10
-
-
 def test_keep_written_removes_failed_topics_and_empty_modules():
     planned = outline(3, 2)
     done = TopicContent(None, [], [])

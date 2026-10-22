@@ -6,24 +6,19 @@ from typing import List, Optional, Sequence
 
 from fastapi import HTTPException
 
-import llm
 from answer_check import drop_disputed
 from cache import BANKS
 from course_adapter import to_lesson, to_question
-from course_models import Lesson, Question, QuestionList
-from course_requests import CourseRequest, describe_request, describe_topic
+from course_models import Lesson, Question
+from course_requests import CourseRequest
 from module_content import write_module
 from planning import Outline, OutlineModule, OutlineTopic
 from progress import Report, ignore
-from prompts import lesson_system, questions_system
 from question_bank import QuestionBank, pick_from, write_bank
 
 logger = logging.getLogger("nova.writing")
 
-QUIZ_SIZE = 8
-PRACTICE_SIZE = 12
 MODULE_QUIZ_SIZE = 5
-LESSON_TOKENS = 4500
 
 
 @dataclass
@@ -35,46 +30,40 @@ class TopicContent:
 
 # --- Writing ---
 
-def question_tokens(count: int) -> int:
-    return 500 + 450 * count
-
-
 async def write_topic(module_title: str, topic: OutlineTopic, request: CourseRequest, context: str, outline: Sequence[str] = (), previous: str = "") -> TopicContent:
-    """A topic's lesson, quiz and practice questions. From a goal they come from the module writer and a checked question bank; from documents, from the document excerpts."""
-    if context:
-        return await _write_grounded_topic(module_title, topic, request, context, outline, previous)
-    return await _write_goal_topic(module_title, topic, request, outline, previous)
+    """A topic's lesson, quiz and practice questions.
 
+    The lesson is a written module (only from the document excerpts when there are some); its questions come from a bank
+    in which every question quotes the lesson, are checked against an independent answer, and are split between quiz
+    and practice. A goal's bank is kept for the end-of-module quiz.
+    """
+    content = await write_module(topic.title, _expectations(request, module_title, topic, outline, previous), [], context)
+    bank = await write_bank(content)
+    if not context:
+        await BANKS.put(bank_key(request.objective, module_title, topic.title), bank.model_dump())
+    questions = pick_from(await _undisputed(bank.questions, context), len(bank.questions))
+    half = (len(questions) + 1) // 2
+    return TopicContent(to_lesson(content), [to_question(q) for q in questions[:half]], [to_question(q) for q in questions[half:]])
 
-# --- A topic from a goal ---
 
 def bank_key(objective: str, module_title: str, topic_title: str) -> tuple:
     return ("bank", objective.casefold(), module_title.casefold(), topic_title.casefold())
 
 
-async def _write_goal_topic(module_title: str, topic: OutlineTopic, request: CourseRequest, outline: Sequence[str], previous: str) -> TopicContent:
-    """The lesson is a written module; its questions come from a bank whose every question quotes the lesson. The bank is kept for the end-of-module quiz."""
-    content = await write_module(topic.title, _expectations(request, module_title, topic, outline, previous), [])
-    bank = await write_bank(content)
-    await BANKS.put(bank_key(request.objective, module_title, topic.title), bank.model_dump())
-    questions = pick_from(await _undisputed(bank.questions), len(bank.questions))
-    half = (len(questions) + 1) // 2
-    return TopicContent(to_lesson(content), [to_question(q) for q in questions[:half]], [to_question(q) for q in questions[half:]])
-
-
 def _expectations(request: CourseRequest, module_title: str, topic: OutlineTopic, outline: Sequence[str], previous: str) -> str:
-    parts = [f"The learner's goal: {request.objective}.", f'This is the topic "{topic.title}" ({topic.summary}) of the module "{module_title}".']
+    goal = request.objective or request.focus
+    parts = [f"The learner's goal: {goal}." if goal else "", f'This is the topic "{topic.title}" ({topic.summary}) of the module "{module_title}".']
     if outline:
         parts.append("Course outline: " + "; ".join(outline) + ".")
     if previous:
         parts.append(f"The previous topic covered: {previous}")
-    return " ".join(parts)
+    return " ".join(part for part in parts if part)
 
 
-async def _undisputed(questions: list) -> list:
+async def _undisputed(questions: list, context: str = "") -> list:
     """The bank questions whose key the model reproduces when it answers blind; the check works on the app's question shape."""
     converted = [to_question(question) for question in questions]
-    kept = {id(question) for question in await drop_disputed(converted, "intermediate")}
+    kept = {id(question) for question in await drop_disputed(converted, "intermediate", context)}
     return [question for question, shaped in zip(questions, converted) if id(shaped) in kept]
 
 
@@ -83,25 +72,6 @@ async def module_quiz(banks: list[dict], size: int = MODULE_QUIZ_SIZE) -> list[Q
     drawn = [pick_from(QuestionBank.model_validate(bank).questions, len(bank["questions"])) for bank in banks]
     interleaved = [question for round_ in zip_longest(*drawn) for question in round_ if question is not None]
     return [to_question(question) for question in interleaved[:size]]
-
-
-# --- A topic from documents ---
-
-async def _write_grounded_topic(module_title: str, topic: OutlineTopic, request: CourseRequest, context: str, outline: Sequence[str], previous: str) -> TopicContent:
-    grounded = bool(context)
-    user = f"{describe_request(request, context)}\n\n{describe_topic(module_title, topic.title, topic.summary, list(outline), previous)}"
-    lesson, quiz, practice = await asyncio.gather(
-        llm.ask(Lesson, lesson_system(request.level, grounded, in_course=bool(outline or previous)), user, LESSON_TOKENS, kind="lesson"),
-        _graded_quiz(request, grounded, user, context),
-        llm.ask(QuestionList, questions_system(request.level, PRACTICE_SIZE, grounded), user, question_tokens(PRACTICE_SIZE), kind="practice"),
-    )
-    return TopicContent(lesson, quiz, practice.questions)
-
-
-async def _graded_quiz(request: CourseRequest, grounded: bool, user: str, context: str) -> List[Question]:
-    """The questions that count towards a module pass are also checked against an independent answer."""
-    written = await llm.ask(QuestionList, questions_system(request.level, QUIZ_SIZE, grounded), user, question_tokens(QUIZ_SIZE), kind="quiz")
-    return await drop_disputed(written.questions, request.level, context)
 
 
 async def write_all_topics(outline: Outline, request: CourseRequest, contexts: List[str], report: Report = ignore) -> List[List[Optional[TopicContent]]]:

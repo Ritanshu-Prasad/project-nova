@@ -17,274 +17,158 @@
           "kind": "concept",
           "summary": "About it.",
           "lesson": {
-            "minutes": 7,
+            "minutes": 3,
             "objectives": [
-              "Explain bridges",
-              "Compare network types"
+              "Understand idea 0",
+              "Understand idea 1",
+              "Understand idea 2"
             ],
-            "simple": "Bridges connect containers.",
+            "simple": "How small, repeated actions turn into habits that last without willpower.",
             "blocks": [
               {
                 "type": "text",
-                "title": "Overview",
-                "body": "A **bridge** links containers."
-              },
-              {
-                "type": "analogy",
-                "body": "Like a switch in an office."
+                "title": "Idea 0",
+                "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
               },
               {
                 "type": "keyTerms",
                 "terms": [
                   {
-                    "term": "Bridge",
-                    "def": "A virtual switch"
+                    "term": "Term 0",
+                    "def": "A short definition of the term."
                   },
                   {
-                    "term": "Veth",
-                    "def": "A virtual cable"
+                    "term": "Term 1",
+                    "def": "A short definition of the term."
+                  },
+                  {
+                    "term": "Term 2",
+                    "def": "A short definition of the term."
                   }
                 ]
               },
               {
-                "type": "steps",
-                "title": "Create one",
-                "steps": [
-                  "Run docker network create",
-                  "Attach a container"
-                ]
+                "type": "text",
+                "title": "Idea 1",
+                "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
               },
               {
-                "type": "code",
-                "language": "bash",
-                "code": "docker network create demo",
-                "caption": "Create a network"
-              },
-              {
-                "type": "formula",
-                "expr": "capacity = ports x speed",
-                "caption": "Rough capacity"
-              },
-              {
-                "type": "compare",
-                "title": "Bridge vs host",
-                "columns": [
-                  "Bridge",
-                  "Host"
-                ],
-                "rows": [
-                  [
-                    "Isolation",
-                    "Yes",
-                    "No"
-                  ]
-                ]
-              },
-              {
-                "type": "example",
-                "title": "Two containers",
-                "body": "web and db share a bridge."
-              },
-              {
-                "type": "callout",
-                "tone": "warning",
-                "body": "The default bridge has no DNS."
-              },
-              {
-                "type": "source",
-                "doc": "guide.pdf",
-                "page": 1,
-                "excerpt": "Bridges connect containers."
+                "type": "text",
+                "title": "Idea 2",
+                "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
               },
               {
                 "type": "summary",
                 "points": [
-                  "Bridges isolate",
-                  "Names resolve on user bridges"
+                  "Idea 0",
+                  "Idea 1",
+                  "Idea 2"
                 ]
               }
             ]
           },
           "quiz": [
             {
-              "q": "quiz: which network is the default?",
-              "why": "Bridge is the default.",
-              "difficulty": 1,
-              "type": "mcq",
-              "options": [
-                "bridge",
-                "host",
-                "none",
-                "overlay"
-              ],
-              "answer": 0
-            },
-            {
-              "q": "quiz: which are drivers?",
-              "why": "Three are real drivers.",
+              "q": "Which of these hold for section 1 (item 1)? Select all that apply.",
+              "why": "The lesson says so directly.",
               "difficulty": 2,
               "type": "multi",
               "options": [
-                "bridge",
-                "host",
-                "tractor",
-                "overlay"
+                "Pick 3 for item 1 of section 1",
+                "Pick 1 for item 1 of section 1",
+                "Pick 4 for item 1 of section 1",
+                "Pick 2 for item 1 of section 1",
+                "Pick 0 for item 1 of section 1"
               ],
               "answers": [
-                0,
-                1,
-                3
+                3,
+                4
               ]
             },
             {
-              "q": "quiz: bridges isolate containers.",
-              "why": "They form a private network.",
+              "q": "Which of these hold for section 2 (item 2)? Select all that apply.",
+              "why": "The lesson says so directly.",
+              "difficulty": 2,
+              "type": "multi",
+              "options": [
+                "Pick 4 for item 2 of section 2",
+                "Pick 1 for item 2 of section 2",
+                "Pick 2 for item 2 of section 2",
+                "Pick 3 for item 2 of section 2",
+                "Pick 0 for item 2 of section 2"
+              ],
+              "answers": [
+                2,
+                4
+              ]
+            },
+            {
+              "q": "Section 0 says a small action tied to a daily routine becomes easier to repeat (item 1).",
+              "why": "The lesson says so directly.",
+              "difficulty": 1,
+              "type": "truefalse",
+              "answer": false
+            },
+            {
+              "q": "Section 1 says a small action tied to a daily routine becomes easier to repeat (item 2).",
+              "why": "The lesson says so directly.",
               "difficulty": 1,
               "type": "truefalse",
               "answer": true
-            },
-            {
-              "q": "quiz: the default driver is ____.",
-              "why": "It is the default.",
-              "difficulty": 1,
-              "type": "fill",
-              "answer": "bridge",
-              "accept": [
-                "Bridge"
-              ]
-            },
-            {
-              "q": "quiz: create a network named demo.",
-              "why": "That is the command.",
-              "difficulty": 2,
-              "type": "code",
-              "language": "bash",
-              "starter": "docker ",
-              "solution": "docker network create demo",
-              "checks": [
-                {
-                  "label": "uses network create",
-                  "pattern": "network\\s+create"
-                }
-              ]
-            },
-            {
-              "q": "quiz: order the steps.",
-              "why": "Create first.",
-              "difficulty": 2,
-              "type": "order",
-              "items": [
-                "Create network",
-                "Start container",
-                "Attach container"
-              ]
-            },
-            {
-              "q": "quiz: match driver to use.",
-              "why": "Scope differs.",
-              "difficulty": 3,
-              "type": "match",
-              "pairs": [
-                [
-                  "bridge",
-                  "single host"
-                ],
-                [
-                  "overlay",
-                  "multi host"
-                ]
-              ]
             }
           ],
           "practice": [
             {
-              "q": "practice: which network is the default?",
-              "why": "Bridge is the default.",
+              "q": "Which statement matches section 0 of the lesson (item 4)?",
+              "why": "The lesson says so directly.",
               "difficulty": 1,
               "type": "mcq",
               "options": [
-                "bridge",
-                "host",
-                "none",
-                "overlay"
+                "Choice 0 for item 4 of section 0",
+                "Choice 2 for item 4 of section 0",
+                "Choice 3 for item 4 of section 0",
+                "Choice 1 for item 4 of section 0"
               ],
               "answer": 0
             },
             {
-              "q": "practice: which are drivers?",
-              "why": "Three are real drivers.",
-              "difficulty": 2,
-              "type": "multi",
+              "q": "Which statement matches section 0 of the lesson (item 1)?",
+              "why": "The lesson says so directly.",
+              "difficulty": 1,
+              "type": "mcq",
               "options": [
-                "bridge",
-                "host",
-                "tractor",
-                "overlay"
+                "Choice 0 for item 1 of section 0",
+                "Choice 3 for item 1 of section 0",
+                "Choice 1 for item 1 of section 0",
+                "Choice 2 for item 1 of section 0"
               ],
-              "answers": [
-                0,
-                1,
-                3
-              ]
+              "answer": 2
             },
             {
-              "q": "practice: bridges isolate containers.",
-              "why": "They form a private network.",
+              "q": "Which statement matches section 2 of the lesson (item 3)?",
+              "why": "The lesson says so directly.",
               "difficulty": 1,
-              "type": "truefalse",
-              "answer": true
+              "type": "mcq",
+              "options": [
+                "Choice 3 for item 3 of section 2",
+                "Choice 1 for item 3 of section 2",
+                "Choice 2 for item 3 of section 2",
+                "Choice 0 for item 3 of section 2"
+              ],
+              "answer": 0
             },
             {
-              "q": "practice: the default driver is ____.",
-              "why": "It is the default.",
+              "q": "Which statement matches section 1 of the lesson (item 2)?",
+              "why": "The lesson says so directly.",
               "difficulty": 1,
-              "type": "fill",
-              "answer": "bridge",
-              "accept": [
-                "Bridge"
-              ]
-            },
-            {
-              "q": "practice: create a network named demo.",
-              "why": "That is the command.",
-              "difficulty": 2,
-              "type": "code",
-              "language": "bash",
-              "starter": "docker ",
-              "solution": "docker network create demo",
-              "checks": [
-                {
-                  "label": "uses network create",
-                  "pattern": "network\\s+create"
-                }
-              ]
-            },
-            {
-              "q": "practice: order the steps.",
-              "why": "Create first.",
-              "difficulty": 2,
-              "type": "order",
-              "items": [
-                "Create network",
-                "Start container",
-                "Attach container"
-              ]
-            },
-            {
-              "q": "practice: match driver to use.",
-              "why": "Scope differs.",
-              "difficulty": 3,
-              "type": "match",
-              "pairs": [
-                [
-                  "bridge",
-                  "single host"
-                ],
-                [
-                  "overlay",
-                  "multi host"
-                ]
-              ]
+              "type": "mcq",
+              "options": [
+                "Choice 3 for item 2 of section 1",
+                "Choice 1 for item 2 of section 1",
+                "Choice 2 for item 2 of section 1",
+                "Choice 0 for item 2 of section 1"
+              ],
+              "answer": 2
             }
           ]
         }

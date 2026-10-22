@@ -18,6 +18,7 @@ def to_lesson(content: ModuleContent) -> course.Lesson:
             blocks.append({"type": "analogy", "body": section.analogy})
         if section.action_steps:
             blocks.append({"type": "steps", "title": "Try it", "steps": section.action_steps})
+        blocks += [{"type": "source", "doc": source.doc, "page": source.page, "excerpt": source.excerpt} for source in section.sources or []]
         if section.code:
             blocks.append({"type": "code", "language": section.code.language, "code": section.code.snippet, "caption": section.code.explanation})
         if number == 0:

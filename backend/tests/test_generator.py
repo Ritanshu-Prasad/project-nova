@@ -10,7 +10,7 @@ import planning
 import question_bank
 import writing
 from conftest import make_pdf
-from samples import lesson_json, module_json, outline_json
+from samples import module_content_json, module_json, outline_json
 
 
 def generate_goal(client, objective="Docker networking", level="beginner"):
@@ -109,7 +109,7 @@ def test_documents_mode_writes_every_topic_up_front(client, fake_model, pdf):
     assert course["source"] == "documents" and course["documents"] == [{"name": "bio.pdf", "pages": 1}]
     topic = course["modules"][0]["topics"][0]
     assert "loaded" not in topic and topic["lesson"]["blocks"]
-    assert len(topic["quiz"]) == writing.QUIZ_SIZE and len(topic["practice"]) == writing.PRACTICE_SIZE
+    assert len(topic["quiz"]) == 4 and len(topic["practice"]) == 4
 
 
 def test_documents_mode_sends_the_document_text_to_the_model(client, fake_model, pdf):
@@ -149,7 +149,7 @@ def test_each_module_is_planned_from_its_own_group(client, fake_model):
 
 def test_each_module_is_written_from_its_own_pages(client, fake_model):
     generate_book(client)
-    water = [user for user in user_prompts(fake_model, "textbook author") if "Roots take up water" in user]
+    water = [user for user in user_prompts(fake_model, "expert curriculum designer and teacher") if "Roots take up water" in user]
     assert water and all("Plants absorb light" not in user and "Leaves exchange gases" not in user for user in water)
 
 
@@ -170,21 +170,30 @@ def test_the_course_is_named_after_its_documents(client, fake_model):
     assert course["title"] == "Book" and course["subtitle"] == "Built from 1 document"
 
 
+def book_module_with_source(doc: str, page: int, excerpt: str) -> list:
+    """Replies for a one-topic book: the module plan, the code decision, and a module that cites one source."""
+    written = module_content_json()
+    written["sections"][0]["sources"] = [{"doc": doc, "page": page, "excerpt": excerpt}]
+    return [module_json(topics=1), {"requires_code": False, "reason": "A general skill."}, written]
+
+
 def test_course_citations_point_at_real_pages(client, fake_model):
-    lesson = lesson_json()
-    lesson["blocks"].append({"type": "source", "doc": "invented.pdf", "page": 40, "excerpt": "Chapter 1 Light Plants absorb light"})
-    fake_model.replies = [module_json(topics=1), lesson]
+    fake_model.replies = book_module_with_source("invented.pdf", 40, "Chapter 1 Light Plants absorb light")
     topic = generate_book(client, bookmarks=[("Whole book", 1)]).json()["modules"][0]["topics"][0]
     sources = [(b["doc"], b["page"]) for b in topic["lesson"]["blocks"] if b["type"] == "source"]
     assert sources == [("book.pdf", 1)]
 
 
 def test_a_citation_that_quotes_nothing_in_the_documents_is_removed(client, fake_model):
-    lesson = lesson_json()
-    lesson["blocks"].append({"type": "source", "doc": "book.pdf", "page": 1, "excerpt": "A sentence the book never contained at all"})
-    fake_model.replies = [module_json(topics=1), lesson]
+    fake_model.replies = book_module_with_source("book.pdf", 1, "A sentence the book never contained at all")
     topic = generate_book(client, bookmarks=[("Whole book", 1)]).json()["modules"][0]["topics"][0]
     assert [b for b in topic["lesson"]["blocks"] if b["type"] == "source"] == []
+
+
+def test_document_lessons_are_told_to_teach_only_from_the_excerpts(client, fake_model):
+    generate_book(client)
+    systems = [system for system, _ in fake_model.prompts if "expert curriculum designer and teacher" in system]
+    assert systems and all("Teach only from the documents" in system for system in systems)
 
 
 def test_a_failed_topic_is_dropped_and_the_rest_of_the_course_is_kept(client, fake_model):
@@ -196,7 +205,7 @@ def test_a_failed_topic_is_dropped_and_the_rest_of_the_course_is_kept(client, fa
 
 
 def test_a_module_with_no_written_topics_is_removed(client, fake_model):
-    fake_model.replies = [module_json(topics=1)] * 3 + [HTTPException(502, "bad")] * 3
+    fake_model.replies = [module_json(topics=1)] * 3 + [HTTPException(502, "bad")]
     modules = generate_book(client).json()["modules"]
     assert len(modules) == 2 and [m["id"] for m in modules] == ["mod-1", "mod-2"]
 
@@ -311,9 +320,6 @@ def test_goal_courses_use_the_outline_limit(client, fake_model):
     generate_goal(client)
     assert fake_model.limits == [planning.OUTLINE_TOKENS]
 
-
-def test_more_questions_get_more_room():
-    assert writing.question_tokens(12) > writing.question_tokens(8) > writing.question_tokens(1) > 0
 
 
 # --- The streamed route ---

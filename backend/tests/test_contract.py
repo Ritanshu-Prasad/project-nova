@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from conftest import make_pdf
-from samples import module_json, outline_json, rich_lesson_json, rich_questions
+from samples import module_json, outline_json
 
 FIXTURES = Path(__file__).parent / "fixtures"
 UPDATE = os.getenv("UPDATE_FIXTURES") == "1"
@@ -35,10 +35,6 @@ def fixed_draws():
     random.seed(2026)
 
 
-def scripted_topic_replies() -> list:
-    return [rich_lesson_json(), {"questions": rich_questions("quiz")}, {"questions": rich_questions("practice")}]
-
-
 def test_lazy_course_matches_the_frontend_sample(client, fake_model):
     fake_model.replies = [outline_json(modules=2, topics=2, scope="narrow")]
     response = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker networking"})
@@ -46,7 +42,7 @@ def test_lazy_course_matches_the_frontend_sample(client, fake_model):
 
 
 def test_documents_course_matches_the_frontend_sample(client, fake_model):
-    fake_model.replies = [module_json(topics=1, title="Bridges")] + scripted_topic_replies()
+    fake_model.replies = [module_json(topics=1, title="Bridges")]
     pdf = make_pdf(["Bridges connect containers."], bookmarks=[("Whole guide", 1)])
     response = client.post("/api/courses/generate", data={"mode": "documents", "level": "beginner"}, files=[("files", ("guide.pdf", pdf, "application/pdf"))])
     check("documents_course", response.json())
