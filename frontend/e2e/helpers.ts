@@ -7,6 +7,8 @@ export const lazyCourse = sample('lazy_course');
 export const topic = sample('topic');
 export const moduleQuiz = sample('module_quiz');
 export const placement = sample('placement');
+/** A sentence of the sample lesson that shows once the lesson is written. */
+export const lessonText: string = topic.lesson.blocks.find((block: { type: string }) => block.type === 'text').body.slice(0, 40);
 
 const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
@@ -19,7 +21,6 @@ export async function mockBackend(page: Page, options: { topicFailures?: number;
   await page.route('**/api/courses/generate/stream*', (route) => {
     const events = [
       { type: 'progress', stage: 'outline', detail: 'Planning your modules' },
-      { type: 'progress', stage: 'quiz', detail: 'Writing the module quizzes' },
       { type: 'course', course: lazyCourse },
     ];
     return route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: events.map((e) => JSON.stringify(e)).join('\n') + '\n' });
