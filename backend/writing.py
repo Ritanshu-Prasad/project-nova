@@ -41,7 +41,7 @@ async def write_topic(module_title: str, topic: OutlineTopic, request: CourseReq
     bank = await write_bank(content)
     if not context:
         await BANKS.put(bank_key(request.objective, module_title, topic.title), bank.model_dump())
-    questions = pick_from(await _undisputed(bank.questions, context), len(bank.questions))
+    questions = pick_from(await _undisputed(bank.questions, content.as_text()), len(bank.questions))
     half = (len(questions) + 1) // 2
     return TopicContent(to_lesson(content), [to_question(q) for q in questions[:half]], [to_question(q) for q in questions[half:]])
 
@@ -60,10 +60,10 @@ def _expectations(request: CourseRequest, module_title: str, topic: OutlineTopic
     return " ".join(part for part in parts if part)
 
 
-async def _undisputed(questions: list, context: str = "") -> list:
-    """The bank questions whose key the model reproduces when it answers blind; the check works on the app's question shape."""
+async def _undisputed(questions: list, lesson: str) -> list:
+    """The bank questions whose key the model reproduces when it answers with the lesson in front of it; the check works on the app's question shape."""
     converted = [to_question(question) for question in questions]
-    kept = {id(question) for question in await drop_disputed(converted, context)}
+    kept = {id(question) for question in await drop_disputed(converted, lesson, open_book=True)}
     return [question for question, shaped in zip(questions, converted) if id(shaped) in kept]
 
 

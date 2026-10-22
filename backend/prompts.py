@@ -65,7 +65,7 @@ def answer_system() -> str:
         _rules(
             "The student is a capable general reader.",
             'Option indexes start at 0. Give one index for single-answer questions and every correct index for "select all" questions.',
-            "Answer every question using only the question text and any document excerpts given.",
+            "Answer every question using only the question text and any reference text given.",
             LANGUAGE_RULE,
             DOCUMENT_RULE,
         ),

@@ -27,15 +27,18 @@ class BlindAnswers(BaseModel):
     answers: List[BlindAnswer]
 
 
-async def drop_disputed(questions: List[Question], context: str = "", minimum: int = MIN_QUESTIONS) -> List[Question]:
+async def drop_disputed(questions: List[Question], context: str = "", minimum: int = MIN_QUESTIONS, open_book: bool = False) -> List[Question]:
     """Has the model answer the questions without seeing the key, and drops those where every attempt disagrees.
 
     A key the model cannot reproduce is more likely wrong than the question is hard, and asking twice keeps one
     unlucky answer from removing a good question. Nothing is dropped if that would leave too few questions, and
-    a failing check leaves the questions as they were. Questions written from documents are not checked unless
-    NOVA_VERIFY_DOCUMENTS=on, because every vote would have to read the document excerpts again.
+    a failing check leaves the questions as they were.
+
+    Questions about a particular lesson cannot be answered blind, so with `open_book` the lesson is given as
+    `context` and the check asks whether the key follows from it. Otherwise questions written from documents are
+    not checked unless NOVA_VERIFY_DOCUMENTS=on, because every vote would have to read the excerpts again.
     """
-    if os.getenv("NOVA_VERIFY_ANSWERS") == "off" or (context and os.getenv("NOVA_VERIFY_DOCUMENTS") != "on"):
+    if os.getenv("NOVA_VERIFY_ANSWERS") == "off" or (context and not open_book and os.getenv("NOVA_VERIFY_DOCUMENTS") != "on"):
         return questions
     checkable = [(position, question) for position, question in enumerate(questions) if question.type in CHECKABLE]
     if not checkable:
@@ -60,7 +63,7 @@ async def _vote(checkable: list, context: str) -> dict:
 
 def _render(checkable: list, context: str) -> str:
     blocks = [_describe(number, question) for number, (_, question) in enumerate(checkable, start=1)]
-    return (f"Document excerpts:\n{context}\n\n" if context else "") + "\n\n".join(blocks)
+    return (f"Reference text:\n{context}\n\n" if context else "") + "\n\n".join(blocks)
 
 
 def _describe(number: int, question: Question) -> str:

@@ -124,7 +124,7 @@ def write_goal_topic():
 def test_the_whole_bank_is_checked_in_the_apps_question_shapes_when_a_topic_is_written(fake_model, monkeypatch):
     seen = []
 
-    async def keep_all(questions, context="", minimum=0):
+    async def keep_all(questions, context="", minimum=0, open_book=False):
         seen.append([question.type for question in questions])
         return questions
 
@@ -135,7 +135,7 @@ def test_the_whole_bank_is_checked_in_the_apps_question_shapes_when_a_topic_is_w
 
 
 def test_questions_the_blind_vote_disputes_are_left_out_of_the_topic(fake_model, monkeypatch):
-    async def drop_two(questions, context="", minimum=0):
+    async def drop_two(questions, context="", minimum=0, open_book=False):
         return questions[2:]
 
     monkeypatch.setattr(writing, "drop_disputed", drop_two)
@@ -170,3 +170,10 @@ def test_questions_from_documents_are_not_checked_unless_asked(fake_model):
     original = quiz()
     assert run(drop_disputed(original, context="[a.pdf p.1]\ntext")) == original
     assert fake_model.calls == []
+
+
+def test_questions_about_a_lesson_are_checked_with_the_lesson_in_front_of_the_model(fake_model):
+    fake_model.replies = twice(answers(KEY, [0], *[KEY] * 6))
+    kept = run(drop_disputed(quiz(), context="The lesson says bridges isolate.", open_book=True))
+    assert len(fake_model.calls) == 2 and len(kept) == 7  # the second question is disputed in both votes
+    assert all("Reference text:\nThe lesson says bridges isolate." in user for _, user in fake_model.prompts)
