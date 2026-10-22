@@ -365,12 +365,31 @@ async def _write_batch(content: ModuleContent, kind: str, sections: list[int]) -
 POINTS_AT_THE_TEXT = re.compile(r",?\s+(according to|as described in|as stated in|as explained in|based on|in)\s+(the\s+)?(module|lesson|text|passage|section\s+\d+)(?=\s*[?.:]|$)", re.I)
 
 
+LEADING_SUBJECT = re.compile(r"\b(?:the|this)\s+(?:module|lesson)\s+(?:explicitly\s+|clearly\s+|also\s+)?(?:states|specifies|explains|says|notes|describes|defines|outlines|instructs|provides|lists|shows|teaches|mentions|emphasi[sz]es|recommends|suggests|warns|advises|requires|identifies|highlights|clarifies|indicates|stresses|covers|confirms|asks|gives|uses)(?:\s+that|\s+to)?\s+", re.I)
+LEADING_PHRASE = re.compile(r"(?:^|(?<=[.!?]\s))(?:(?:according to|as (?:stated|described|explained|noted|shown) in|from)\s+(?:the|this)\s+(?:module|lesson)|as\s+(?:the|this)\s+(?:module|lesson)\s+(?:says|states|notes|explains)),?\s+", re.I)
+TRAILING_PHRASE = re.compile(r",?\s+as\s+(?:stated|described|explained|noted|shown)\s+in\s+(?:the|this)\s+(?:module|lesson)(?=\s*[.?!;:]|$)", re.I)
+SENTENCE_START = re.compile(r"(^|[.!?]\s+)([a-z])")
+SECTION_REFERENCE = re.compile(r"\s*\b(?:in|from|per|see|of)\s+section\s+\d+\b", re.I)
+OPTION_SENTENCE = re.compile(r"(?:^|(?<=[.!?])\s+)[^.!?]*\boption\s+[a-f]\b[^.!?]*[.!?]?", re.I)
+
+
+def plain_pointers(text: str) -> str:
+    """Says the fact itself instead of "The module states that ...", drops "as described in the module", and drops sentences about "Option d", whose letter the app changes when it shuffles."""
+    repaired = SECTION_REFERENCE.sub("", TRAILING_PHRASE.sub("", LEADING_PHRASE.sub("", LEADING_SUBJECT.sub("", OPTION_SENTENCE.sub("", text))))).strip()
+    if repaired == text:
+        return text
+    return SENTENCE_START.sub(lambda found: found.group(1) + found.group(2).upper(), repaired)
+
+
 def tidy(question):
-    """Repairs wording the model often gets slightly wrong, since the type is decided here: a multiple-select stem gets its "Select all that apply.", and a pointer such as "according to Section 2" is cut."""
-    stem = POINTS_AT_THE_TEXT.sub("", question.question_text).strip()
+    """Repairs wording the model often gets slightly wrong, since the type is decided here: a multiple-select stem gets its "Select all that apply.", and pointers at the lesson are rewritten out of the stem, options and explanation."""
+    stem = plain_pointers(POINTS_AT_THE_TEXT.sub("", question.question_text))
     if question.type == "msq" and not MULTI_CUE.search(stem):
         stem = f"{stem} Select all that apply."
-    return question.model_copy(update={"question_text": stem})
+    changes = {"question_text": stem, "explanation": plain_pointers(question.explanation) or question.explanation}
+    if hasattr(question, "options"):
+        changes["options"] = [option.model_copy(update={"text": plain_pointers(option.text) or option.text}) for option in question.options]
+    return question.model_copy(update=changes)
 
 
 def _assemble(questions: list, sections: list[int]) -> QuestionBank:

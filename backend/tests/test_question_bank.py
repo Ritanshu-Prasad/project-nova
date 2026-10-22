@@ -439,3 +439,60 @@ def test_ordinary_words_like_text_and_module_in_other_senses_are_fine():
 def test_the_text_of_a_question_is_cleaned_like_the_lesson():
     question = bank({**mcq(1), "question_text": "Which short‑term goal fits “weekly” checks?"}, *good_questions()[1:]).questions[0]
     assert question.question_text.startswith('Which short-term goal fits "weekly" checks?')
+
+
+# --- Saying the fact instead of pointing at the module ---
+
+@pytest.mark.parametrize("raw, fixed", [
+    ("The module states that both the amount received and the frequency must be noted.", "Both the amount received and the frequency must be noted."),
+    ("The module states to write down every regular inflow of cash.", "Write down every regular inflow of cash."),
+    ("The module explicitly describes the 4-4-4 breathing method as inhaling for four.", "The 4-4-4 breathing method as inhaling for four."),
+    ("The module outlines four specific steps to follow.", "Four specific steps to follow."),
+    ("Autolyse hydrates the flour, as stated in the module.", "Autolyse hydrates the flour."),
+    ("According to the lesson, a join key must appear in both tables.", "A join key must appear in both tables."),
+    ("Rent comes first. The module says that savings follow.", "Rent comes first. Savings follow."),
+])
+def test_a_pointer_at_the_module_is_turned_into_the_fact_itself(raw, fixed):
+    from question_bank import plain_pointers
+
+    assert plain_pointers(raw) == fixed
+
+
+def test_sentences_about_an_option_letter_are_dropped_because_the_app_reshuffles_options():
+    from question_bank import plain_pointers
+
+    assert plain_pointers("Anchors work because habits need triggers. Option d is incorrect because it skips the trigger.") == "Anchors work because habits need triggers."
+
+
+@pytest.mark.parametrize("text", ["Rent comes first.", "A module in a program has a name.", "The text field holds the value.", "Autolyse hydrates the flour."])
+def test_text_without_a_pointer_is_left_alone(text):
+    from question_bank import plain_pointers
+
+    assert plain_pointers(text) == text
+
+
+def test_tidy_repairs_the_explanation_and_the_options_of_a_question():
+    from question_bank import tidy
+
+    messy = {**mcq(1), "explanation": "The module states that a small action is easier to repeat after a routine.", "options": [{"id": "a", "text": "As the module says, rest"}, *options(4)[1:]]}
+    question = tidy(bank(messy, *good_questions()[1:]).questions[0])
+    assert question.explanation == "A small action is easier to repeat after a routine." and wording_problem(question) is None
+
+
+def test_a_bank_whose_explanations_say_the_module_states_passes_without_a_rewrite(model):
+    original = REPLIES["mcq"]
+    model.override["mcq"] = lambda: [{**q, "explanation": "The module states that a small action is easier to repeat."} for q in original()]
+    result = asyncio.run(write_bank(content()))
+    assert model.requests.count("mcq") == 1 and all(not q.explanation.lower().startswith("the module") for q in result.questions)
+
+
+@pytest.mark.parametrize("raw, fixed", [
+    ("Correct because the module states INNER JOIN returns only matching rows.", "Correct because INNER JOIN returns only matching rows."),
+    ("Rent is fixed since the module warns that it rarely changes.", "Rent is fixed since it rarely changes."),
+    ("The steps listed are exactly those in Section 3 for storage.", "The steps listed are exactly those for storage."),
+    ("This follows from Section 2.", "This follows."),
+])
+def test_pointers_in_the_middle_of_a_sentence_are_repaired_too(raw, fixed):
+    from question_bank import plain_pointers
+
+    assert plain_pointers(raw) == fixed
