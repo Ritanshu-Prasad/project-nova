@@ -202,7 +202,7 @@ interface CourseState {
   showGraduation: (courseId: string | null) => void;
 }
 
-export type TopicContent = Pick<Topic, 'lesson' | 'quiz' | 'practice'>;
+export type TopicContent = Pick<Topic, 'lesson' | 'quiz' | 'practice'> & { kind?: Topic['kind'] };
 
 type Saved = Pick<CourseState, 'activeId' | 'library' | 'stats'>;
 

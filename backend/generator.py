@@ -84,6 +84,7 @@ async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
     content = await write_topic(body.module, outline, request, "", body.outline, body.previous)
     seen: set = set()
     topic = {
+        "kind": content.kind,
         "lesson": content.lesson.model_dump(by_alias=True, exclude_none=True),
         "quiz": [q.model_dump(exclude_none=True) for q in dedupe_questions(content.quiz, seen)],
         "practice": [q.model_dump(exclude_none=True) for q in dedupe_questions(content.practice, seen)],

@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from answer_check import drop_disputed
 from cache import BANKS
 from course_adapter import to_lesson, to_question
-from course_models import Lesson, Question
+from course_models import Lesson, Question, TopicKind
 from course_requests import CourseRequest
 from module_content import write_module
 from planning import Outline, OutlineModule, OutlineTopic
@@ -26,6 +26,7 @@ class TopicContent:
     lesson: Lesson
     quiz: List[Question]
     practice: List[Question]
+    kind: TopicKind = "concept"
 
 
 # --- Writing ---
@@ -43,7 +44,14 @@ async def write_topic(module_title: str, topic: OutlineTopic, request: CourseReq
         await BANKS.put(bank_key(request.objective, module_title, topic.title), bank.model_dump())
     questions = pick_from(await _undisputed(bank.questions, content.as_text()), len(bank.questions))
     half = (len(questions) + 1) // 2
-    return TopicContent(to_lesson(content), [to_question(q) for q in questions[:half]], [to_question(q) for q in questions[half:]])
+    return TopicContent(to_lesson(content), [to_question(q) for q in questions[:half]], [to_question(q) for q in questions[half:]], topic_kind(content, bool(context)))
+
+
+def topic_kind(content, from_documents: bool) -> TopicKind:
+    """The badge of a topic comes from what was decided, not from a guess: a document to read, code to write, or nothing special."""
+    if from_documents:
+        return "document"
+    return "programming" if content.requires_code else "concept"
 
 
 def bank_key(objective: str, module_title: str, topic_title: str) -> tuple:

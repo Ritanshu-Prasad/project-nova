@@ -147,3 +147,31 @@ def test_the_module_quiz_changes_between_draws():
 
 def test_the_module_quiz_with_no_banks_is_empty():
     assert asyncio.run(module_quiz([])) == []
+
+
+# --- The badge of a topic ---
+
+def test_a_topic_about_something_not_technical_has_no_special_kind(fake_model):
+    assert write_one().kind == "concept"
+
+
+def test_a_topic_that_needs_code_is_a_programming_topic(fake_model, monkeypatch):
+    async def needs(topic, expectations):
+        return True
+
+    import module_content
+
+    monkeypatch.setattr(module_content, "needs_code", needs)
+    assert write_one().kind == "programming"
+
+
+def test_topics_written_from_documents_are_document_topics(fake_model):
+    topic = OutlineTopic(title="Overlay", planet="Vega", summary="Across hosts")
+    assert asyncio.run(write_topic("Scaling", topic, request(), "[a.pdf p.1]\nBridges isolate containers.", [], "")).kind == "document"
+
+
+def test_the_prompts_no_longer_ask_the_model_for_a_kind_or_the_name_nova():
+    from prompts import module_system, outline_system
+
+    for prompt in (outline_system(), module_system()):
+        assert '"kind"' not in prompt and "never use the name Nova" in prompt

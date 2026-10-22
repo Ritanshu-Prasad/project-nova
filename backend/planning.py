@@ -62,9 +62,33 @@ async def plan_outline(request: CourseRequest, report: Report = ignore) -> Outli
 
 
 def fit_outline(outline: Outline) -> Outline:
-    """Keeps the course within the size of its scope, whatever the model returned."""
+    """Keeps the course within the size of its scope, whatever the model returned, and gives every topic its own planet name."""
     max_modules, max_topics = OUTLINE_LIMITS[outline.scope]
     modules = [module.model_copy(update={"topics": module.topics[:max_topics]}) for module in outline.modules[:max_modules]]
+    return named_planets(outline.model_copy(update={"modules": modules}))
+
+
+# --- Planet names ---
+
+BANNED_PLANETS = {"nova"}
+STAR_NAMES = ["Vega", "Lyra", "Mira", "Altair", "Sirius", "Rigel", "Deneb", "Capella", "Antares", "Spica", "Arcturus", "Procyon", "Castor", "Pollux", "Algol", "Mizar", "Polaris", "Aldebaran", "Bellatrix", "Canopus", "Fomalhaut", "Regulus", "Hadar", "Elnath", "Alnitak", "Mintaka", "Saiph", "Thuban"]
+
+
+def named_planets(outline: Outline) -> Outline:
+    """A planet name that is the product's own ("Nova"), or that an earlier topic already has, is replaced by an unused star name."""
+    taken = {topic.planet.casefold() for module in outline.modules for topic in module.topics} | BANNED_PLANETS
+    spare = (name for name in STAR_NAMES if name.casefold() not in taken)
+    seen: set[str] = set()
+    modules = []
+    for module in outline.modules:
+        topics = []
+        for topic in module.topics:
+            name = topic.planet.casefold()
+            if name in BANNED_PLANETS or name in seen or not name:
+                topic = topic.model_copy(update={"planet": next(spare, f"Orbit {len(seen) + 1}")})
+            seen.add(topic.planet.casefold())
+            topics.append(topic)
+        modules.append(module.model_copy(update={"topics": topics}))
     return outline.model_copy(update={"modules": modules})
 
 
@@ -76,7 +100,7 @@ async def plan_document_outline(request: CourseRequest, documents: List[Document
     modules = await asyncio.gather(*(_plan_module(request, group, terms) for group in groups))
     names = [Path(document.name).stem.replace("_", " ").replace("-", " ").strip().title() for document in documents]
     subtitle = f"Built from {len(documents)} document{'s' if len(documents) > 1 else ''}"
-    return Outline(title=" & ".join(names)[:MAX_TITLE_CHARS], subtitle=subtitle, modules=modules)
+    return named_planets(Outline(title=" & ".join(names)[:MAX_TITLE_CHARS], subtitle=subtitle, modules=modules))
 
 
 async def _plan_module(request: CourseRequest, group: Group, terms: List[str]) -> OutlineModule:

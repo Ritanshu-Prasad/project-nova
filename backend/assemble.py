@@ -87,7 +87,7 @@ def _topic(module_number: int, topic_number: int, outline: OutlineTopic, content
         id=f"top-{module_number}-{topic_number}",
         title=outline.title,
         planet=outline.planet,
-        kind=outline.kind,
+        kind=content.kind,
         summary=outline.summary,
         lesson=content.lesson,
         quiz=dedupe_questions(content.quiz, seen),

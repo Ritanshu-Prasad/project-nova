@@ -76,3 +76,12 @@ describe('ensureTopic', () => {
     expect(vi.mocked(api.fetchTopic).mock.calls[0][0]).not.toHaveProperty('level');
   });
 });
+
+describe('the kind of a topic', () => {
+  it('is taken from what the backend says it wrote', async () => {
+    vi.mocked(api.fetchTopic).mockImplementationOnce(async (req) => ({ ...written(req.topic), kind: 'programming' as const }));
+    useCourse.getState().addCourse(course('c-kind'));
+    await ensureTopic('c-kind', 't1');
+    expect(useCourse.getState().library['c-kind'].course.modules[0].topics[0].kind).toBe('programming');
+  });
+});

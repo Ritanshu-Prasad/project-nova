@@ -112,16 +112,16 @@ export interface TaughtTopic {
 }
 
 /** Fetches the lesson and questions of one outline-only topic: POST {API}/api/courses/topic (JSON). */
-export async function fetchTopic(req: TopicRequest): Promise<Pick<Topic, 'lesson' | 'quiz' | 'practice'>> {
+export async function fetchTopic(req: TopicRequest): Promise<Pick<Topic, 'lesson' | 'quiz' | 'practice'> & { kind?: Topic['kind'] }> {
   const res = await fetch(`${API}/api/courses/topic`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
   });
   if (!res.ok) throw new Error(`Course API responded ${res.status}`);
-  const { lesson, quiz, practice } = normTopic({ ...(await res.json()), title: req.topic });
+  const { lesson, quiz, practice, kind } = normTopic({ ...(await res.json()), title: req.topic });
   if (!lesson.blocks.length) throw new Error('The topic came back empty.');
-  return { lesson, quiz, practice };
+  return { lesson, quiz, practice, kind };
 }
 
 /** Fetches a module quiz written from what its lessons really taught: POST {API}/api/courses/module-quiz (JSON). */

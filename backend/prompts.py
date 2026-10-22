@@ -22,13 +22,13 @@ def outline_system() -> str:
     return "\n".join([
         "You are a senior curriculum architect. Design a course as JSON:",
         '{"title": str, "subtitle": str, "scope": "narrow|broad", "modules": [{"title": str, "topics": [',
-        '  {"title": str, "planet": str, "kind": "concept|programming|math|science|humanities|language|document", "summary": str, "minutes": int}]}]}',
+        '  {"title": str, "planet": str, "summary": str, "minutes": int}]}]}',
         "",
         _rules(
             EXPECTATIONS_RULE,
             'Set "scope" to narrow for one targeted skill (3 modules of 2 to 3 topics) or broad for a wide field (5 to 6 modules of 3 to 4 topics).',
             f"Order the modules as a learning arc: {LEARNING_ARC}.",
-            '"planet" is a short, unique, star-like name for the topic on a journey map (for example Vega, Lyra, Mira).',
+            '"planet" is a short, unique, star-like name for the topic on a journey map (for example Vega, Lyra, Mira); never use the name Nova.',
             'Module titles carry no numbering. "summary" is one sentence. "minutes" is 8 to 12, the time to read the lesson, do its tasks and answer its questions.',
             LANGUAGE_RULE,
             GOAL_RULE,
@@ -40,12 +40,12 @@ def outline_system() -> str:
 def module_system() -> str:
     return "\n".join([
         "You are a senior curriculum architect. Turn one part of a document into a course module as JSON:",
-        '{"title": str, "topics": [{"title": str, "planet": str, "kind": "concept|programming|math|science|humanities|language|document", "summary": str, "minutes": int}]}',
+        '{"title": str, "topics": [{"title": str, "planet": str, "summary": str, "minutes": int}]}',
         "",
         _rules(
             EXPECTATIONS_RULE,
             "Name the module after what this part teaches, with no numbering, and give it 2 to 3 topics that follow the order of the material.",
-            '"planet" is a short, unique, star-like name for the topic on a journey map (for example Vega, Lyra, Mira). "summary" is one sentence. "minutes" is 8 to 12.',
+            '"planet" is a short, unique, star-like name for the topic on a journey map (for example Vega, Lyra, Mira); never use the name Nova. "summary" is one sentence. "minutes" is 8 to 12.',
             LANGUAGE_RULE,
             DOCUMENT_RULE,
         ),

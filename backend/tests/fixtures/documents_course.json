@@ -13,7 +13,7 @@
           "id": "top-1-1",
           "title": "Bridges topic 1",
           "planet": "Star 1",
-          "kind": "concept",
+          "kind": "document",
           "summary": "About it.",
           "lesson": {
             "minutes": 5,

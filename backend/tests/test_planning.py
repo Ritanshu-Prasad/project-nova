@@ -103,3 +103,49 @@ def test_outline_titles_are_made_plain_and_lose_their_numbering():
     outline = Outline.model_validate({"title": "1. Short‑term money", "modules": [{"title": "Step 2: Budget “basics”", "topics": [{"title": "3) Track—review", "planet": "Vega", "summary": "A ‑ b"}]}]})
     assert outline.title == "Short-term money"
     assert outline.modules[0].title == 'Budget "basics"' and outline.modules[0].topics[0].title == "Track - review"
+
+
+# --- Planet names ---
+
+def outline_with_planets(*planets):
+    from planning import Outline
+
+    return Outline.model_validate({"title": "T", "modules": [{"title": "M", "topics": [{"title": f"Topic {n}", "planet": planet} for n, planet in enumerate(planets)]}]})
+
+
+def planets_of(outline):
+    return [topic.planet for module in outline.modules for topic in module.topics]
+
+
+def test_the_products_own_name_is_never_a_planet():
+    from planning import named_planets
+
+    names = planets_of(named_planets(outline_with_planets("Vega", "Nova", "nova")))
+    assert "nova" not in [name.casefold() for name in names] and len(set(names)) == 3
+
+
+def test_a_repeated_planet_gets_a_new_name_and_the_first_keeps_its_own():
+    from planning import named_planets
+
+    names = planets_of(named_planets(outline_with_planets("Vega", "Lyra", "Vega")))
+    assert names[:2] == ["Vega", "Lyra"] and len({name.casefold() for name in names}) == 3
+
+
+def test_a_blank_planet_gets_a_name_and_good_names_are_untouched():
+    from planning import named_planets
+
+    assert planets_of(named_planets(outline_with_planets("Orion", "Atlas"))) == ["Orion", "Atlas"]
+    assert planets_of(named_planets(outline_with_planets("", "Atlas")))[0] != ""
+
+
+def test_replacement_names_do_not_clash_with_names_the_model_already_used():
+    from planning import named_planets
+
+    names = planets_of(named_planets(outline_with_planets("Nova", "Sirius", "Rigel", "Rigel")))
+    assert len({name.casefold() for name in names}) == 4 and "Sirius" in names and names.count("Rigel") == 1
+
+
+def test_fitting_an_outline_also_names_its_planets():
+    from planning import fit_outline
+
+    assert "nova" not in [name.casefold() for name in planets_of(fit_outline(outline_with_planets("Nova", "Vega")))]

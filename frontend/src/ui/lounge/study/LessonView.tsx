@@ -7,7 +7,7 @@ import { holoBurst } from '../../../core/journey';
 import Blocks from './Blocks';
 import Btn from './Btn';
 import { TYPE } from './typography';
-import { KIND_TEMPLATES } from './kinds';
+import { BADGE_KINDS, KIND_TEMPLATES } from './kinds';
 
 /** A lesson: kind-tinted header, optional plain-language version, typed blocks, then "complete & continue". */
 export default function LessonView({ topic, active }: { topic: PlacedTopic; active: ActiveCourse }) {
@@ -29,9 +29,11 @@ export default function LessonView({ topic, active }: { topic: PlacedTopic; acti
     <article className="font-sans">
       <header className="rounded-2xl border border-white/[0.07] p-6 sm:p-7" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${tpl.tint} 18%, #0b1020), #0b1020 70%)` }}>
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold" style={{ background: `color-mix(in srgb, ${tpl.tint} 22%, transparent)`, color: tpl.tint }}>
-            <Icon size={13} /> {tpl.label}
-          </span>
+          {BADGE_KINDS.includes(topic.kind) && (
+            <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold" style={{ background: `color-mix(in srgb, ${tpl.tint} 22%, transparent)`, color: tpl.tint }}>
+              <Icon size={13} /> {tpl.label}
+            </span>
+          )}
           <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-white/70">
             {topic.moduleIndex + 1}.{active.topics.filter((t) => t.moduleIndex === topic.moduleIndex).findIndex((t) => t.id === topic.id) + 1} · {topic.planet}
           </span>

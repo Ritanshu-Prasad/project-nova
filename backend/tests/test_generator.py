@@ -546,3 +546,12 @@ def test_the_kept_pages_can_be_deleted(client, fake_model):
 
 def test_deleting_needs_a_proper_key(client, fake_model):
     assert client.delete("/api/courses/documents/not-a-key").status_code == 422
+
+
+def test_the_topic_route_says_what_kind_of_topic_it_wrote(client, fake_model):
+    assert client.post("/api/courses/topic", json=topic_request()).json()["kind"] == "concept"
+
+
+def test_document_topics_carry_the_document_kind(client, fake_model):
+    topic = generate_book(client).json()["modules"][0]["topics"][0]
+    assert topic["kind"] == "document"

@@ -8,6 +8,9 @@ export interface KindTemplate {
   tip: string;
 }
 
+/** Only these kinds say something the learner cannot already see; a plain concept topic shows no badge. */
+export const BADGE_KINDS: TopicKind[] = ['programming', 'document'];
+
 /** Lesson layout template per topic kind: the AI only picks the kind, the UI does the rest. */
 export const KIND_TEMPLATES: Record<TopicKind, KindTemplate> = {
   concept: { label: 'Concept', icon: Sparkles, tint: '#a78bfa', tip: 'Explain this to Pixel in one sentence before you take the quiz.' },

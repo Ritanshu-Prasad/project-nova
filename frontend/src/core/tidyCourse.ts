@@ -57,9 +57,9 @@ export function tidyCourse(course: Course): Course {
 }
 
 /** The same clean-up for one topic's content, as it arrives from a lazy fetch. */
-export function tidyTopicContent(c: Pick<Topic, 'lesson' | 'quiz' | 'practice'>): Pick<Topic, 'lesson' | 'quiz' | 'practice'> {
+export function tidyTopicContent<T extends Pick<Topic, 'lesson' | 'quiz' | 'practice'>>(c: T): T {
   const blocks = c.lesson.blocks.map(cleanBlock).filter((b): b is Block => b !== null);
-  return { lesson: { ...c.lesson, blocks }, quiz: c.quiz.map(cleanQuestion), practice: c.practice?.map(cleanQuestion) };
+  return { ...c, lesson: { ...c.lesson, blocks }, quiz: c.quiz.map(cleanQuestion), practice: c.practice?.map(cleanQuestion) };
 }
 
 function cleanBlock(b: Block): Block | null {
