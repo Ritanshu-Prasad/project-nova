@@ -97,6 +97,10 @@ function render(report) {
     <h2>By day</h2>
     <div class="scroll"><table><tr><th>day (UTC)</th><th>calls</th><th>tokens</th><th>cost</th><th>retries</th><th>failures</th><th>cache hits</th><th>turned away</th></tr>
       ${report.days.map((day) => `<tr><td>${day.day}</td><td>${num(day.totals.calls)}</td><td>${num(day.totals.prompt_tokens + day.totals.completion_tokens)}</td><td>${money(day.totals.cost_usd)}</td><td>${day.totals.retries}</td><td>${day.totals.failures}</td><td>${sumEvents(day.events, 'cache:', ':hit')}</td><td>${sumEvents(day.events, 'limit_denied:', '')}</td></tr>`).join('')}
+    </table></div>
+    <h2>Where learners get to</h2>
+    <div class="scroll"><table><tr><th>day (UTC)</th><th>courses started</th><th>topics finished</th><th>module quizzes finished</th><th>courses finished</th></tr>
+      ${report.days.map((day) => `<tr><td>${day.day}</td>${['course_started', 'topic_finished', 'module_quiz_finished', 'course_finished'].map((step) => `<td>${num(day.events['funnel:' + step] ?? 0)}</td>`).join('')}</tr>`).join('')}
     </table></div>`;
 }
 

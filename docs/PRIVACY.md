@@ -10,6 +10,9 @@ A goal you type is sent to the AI provider (Nebius) to write your course and to 
 
 ## Progress and accounts
 Your courses, progress and profile are stored under your account by the existing account service. 
+## Counting steps
+To see where learners stop, the app tells the server when you start a course, finish a topic, pass a module quiz or finish a course. Only the name of the step is sent, never which course or anything about you.
+
 ## Reporting a question
 If you press "Report this question", NOVA keeps the question's text and the reason you chose for 7 days, so the people running it can fix or remove the question. It does not keep who you are.
 

@@ -47,6 +47,10 @@ When `NOVA_FAILURE_ALERT` model calls (20 by default, `0` switches it off) give 
 
 To check the cost estimate against the Nebius invoice for a day, run `cd backend && python -m compare_invoice 2026-10-21 0.42` (the day in UTC, the invoice amount in dollars). It prints the ratio and the price settings that would match.
 
+## Where learners get to
+
+The app counts four steps: a course started, a topic finished for the first time, a module quiz passed for the first time, and a course finished. Each count is one call to `POST /api/events` with the name of the step only (no course, no text, nothing that identifies the learner), added to the day's totals. `/api/admin` shows them per day under **Where learners get to**, and `/api/admin/metrics` exports them as `nova_events_today{event="funnel:..."}`.
+
 ## Questions learners report
 
 After answering, a learner can press **Report this question** and say what is wrong (the marked answer, unclear wording, wrong kind of question, off topic). The question's text and the reason are kept for 7 days (newest 500 a day) and listed under **Reported by learners** on `/api/admin`, and at `GET /api/admin/reports`. Nothing that says who reported it is kept, and reports are limited per address. A reported question is the best next eval case: add its topic to `backend/evals/cases/modules.json`.

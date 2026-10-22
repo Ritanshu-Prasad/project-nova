@@ -5,6 +5,7 @@ import { flushAnswers, noteAnswer } from './feedback';
 import { flatTopics, type Course, type Module, type PlacedTopic, type Question, type Topic } from './courseSchema';
 import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
 import { tidyCourse, tidyTopicContent } from './tidyCourse';
+import { track } from './usageEvents';
 
 export type { RatedQuestion } from './quizBuilder';
 
@@ -247,6 +248,7 @@ export const useCourse = create<CourseState>()((set, get) => {
     if (!e || e.completedAt || !isComplete(e)) return;
     patchActive((x) => ({ ...x, completedAt: Date.now() }));
     set({ graduation: id });
+    track('course_finished');
   };
 
   return {
@@ -258,6 +260,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const course = tidyCourse(raw);
       const topics = flatTopics(course);
       const progress = Object.fromEntries(topics.map((t) => [t.id, { cleared: false, notes: '' }]));
+      track('course_started');
       set({ activeId: course.id, library: { ...get().library, [course.id]: { course, progress, modules: {}, skill: freshSkill(), current: topics[0]?.id ?? '', updatedAt: Date.now() } } });
     },
 
@@ -305,7 +308,10 @@ export const useCourse = create<CourseState>()((set, get) => {
       if (e.course.modules.some((m) => m.topics.some((t) => t.id === topicId && t.loaded === false))) return null;
       const first = !e.progress[topicId]?.cleared;
       patchActive((x) => ({ ...x, progress: { ...x.progress, [topicId]: { ...(x.progress[topicId] ?? { notes: '' }), cleared: true } } }));
-      if (first) set({ stats: { ...get().stats, xp: get().stats.xp + 30 } });
+      if (first) {
+        set({ stats: { ...get().stats, xp: get().stats.xp + 30 } });
+        track('topic_finished');
+      }
       markGraduation();
       const outline = outlineOf(e.course);
       const i = outline.findIndex((it) => it.id === topicId);
@@ -365,6 +371,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const passed = score >= PASS_MARK;
       patchActive((x) => ({ ...x, modules: { ...x.modules, [moduleId]: { passed: prev.passed || passed, best: Math.max(prev.best, score), attempts: prev.attempts + 1 } } }));
       bumpDay(passed && !prev.passed ? 80 : 0);
+      if (passed && !prev.passed) track('module_quiz_finished');
       flushAnswers();
       markGraduation();
       const outline = outlineOf(e.course);
