@@ -13,7 +13,6 @@ import llm
 import pricing
 import shared
 import traces
-import tracing
 import usage
 from request_context import request_id_var
 
@@ -81,8 +80,6 @@ def add_request_logging(app: FastAPI) -> None:
             logger.info("%s %s -> %s (%.0f ms)%s", request.method, request.url.path, response.status_code, elapsed, cost, extra={"usage": spent.as_dict()} if spent.calls else {})
             if spent.calls or spent.failures:
                 await traces.save(traces.build_record(spent, request_id, request.method, request.url.path, response.status_code, elapsed / 1000))
-            if spent.calls and tracing.enabled():
-                await tracing.flush_within()
             return response
         finally:
             request_id_var.reset(token)
@@ -98,7 +95,7 @@ def log_startup() -> None:
         "thinking": os.getenv("NOVA_THINKING") == "on",
         "cache": os.getenv("NOVA_CACHE") != "off",
         "rate_limits": os.getenv("NOVA_RATE_LIMIT") != "off",
-        "tracing": "langfuse" + (" with content" if tracing.with_content() else "") if tracing.enabled() else "off",
+        "trace_content": os.getenv("NOVA_TRACE_CONTENT") == "on",
         "store": "redis" if isinstance(shared.state, shared.RedisState) else "memory",
         "daily_token_budget": usage.daily_limit() or "none",
         "price_per_million_in_out": f"{pricing.current_price().input_per_million}/{pricing.current_price().output_per_million}",

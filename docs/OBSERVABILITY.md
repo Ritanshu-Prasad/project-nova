@@ -39,16 +39,6 @@ The text of the calls (prompts and replies, each cut to 2,000 characters) is sav
 
 A streamed course answers before its last model calls finish, so its record can miss those calls.
 
-## Tracing each model call (optional, Langfuse)
-
-With a [Langfuse](https://langfuse.com) project, every model call becomes a generation inside one trace per request, with its model, prompt and completion tokens, estimated cost and time. Failed calls show as errors, and the question bank adds a `bank_problems` score when its checks reject questions. The trace id comes from the request id, so a log line and its trace match.
-
-1. Create a Langfuse project (cloud or self-hosted) and put its keys in `.env`: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST`. Without all three, tracing is off and nothing is sent.
-2. By default only numbers are sent. Prompts and replies contain what learners typed and uploaded, so they are sent only with `NOVA_TRACE_CONTENT=on`.
-3. The startup line shows `tracing`: `off`, `langfuse` or `langfuse with content`.
-
-Sending never blocks or fails a request. A request that called the model waits at most 2 seconds for its traces to be sent, because a serverless function can be frozen as soon as it answers. The streamed course response answers before its model calls finish, so its last calls are sent by the SDK's background thread instead.
-
 ## Warnings worth watching for
 - `... is not an allowed model, using ... Nano instead`: a setting asked for another model.
 - `Daily token budget is 80% used`: logged once (and posted to `NOVA_ALERT_WEBHOOK`, a Slack-style webhook, when set) when the day's tokens cross 80% of `NOVA_DAILY_TOKEN_BUDGET`; at 100% new work is refused with a 503 until the next UTC day.

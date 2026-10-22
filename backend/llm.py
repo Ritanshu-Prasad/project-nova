@@ -12,7 +12,6 @@ from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
 
 import capture
-import tracing
 import usage
 
 logger = logging.getLogger("nova.llm")
@@ -97,7 +96,6 @@ async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
     await usage.record_call(kind, payload["model"], body.get("usage"), time.perf_counter() - started)
     choice = body["choices"][0]
     capture.save_exchange(kind, system, user, choice["message"]["content"] or "", body.get("usage"))
-    tracing.record_generation(kind, payload["model"], system, user, choice["message"]["content"] or "", body.get("usage"), time.perf_counter() - started)
     usage.record_exchange(kind, system, user, choice["message"]["content"] or "")
     try:
         return _parse_json(choice["message"]["content"] or "")
@@ -162,7 +160,6 @@ async def chat_text(messages: list, model: str, max_tokens: int = 700) -> str:
     await usage.record_call("tutor", model, body.get("usage"), time.perf_counter() - started)
     reply = body["choices"][0]["message"]["content"] or ""
     capture.save_exchange("tutor", messages[0]["content"], messages[-1]["content"], reply, body.get("usage"))
-    tracing.record_generation("tutor", model, messages[0]["content"], messages[-1]["content"], reply, body.get("usage"), time.perf_counter() - started)
     usage.record_exchange("tutor", messages[0]["content"], messages[-1]["content"], reply)
     return reply
 
