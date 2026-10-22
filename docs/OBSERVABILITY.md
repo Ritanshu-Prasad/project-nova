@@ -37,7 +37,7 @@ Every request that used the model leaves one record in NOVA's own store (Upstash
 
 The text of the calls (prompts and replies, each cut to 2,000 characters) is saved only with `NOVA_TRACE_CONTENT=on`, because it holds what learners typed and uploaded. It stays in NOVA's own store and expires with the record. With it on, `python -m evals.from_traces` (run in `backend/`) turns requests that had problems into module eval cases in `evals/cases/from_traces.json` for you to review, so a failure seen in use is checked by every later eval.
 
-A streamed course answers before its last model calls finish, so its record can miss those calls.
+A streamed course is saved when its stream ends, so its record has every call.
 
 ## Warnings worth watching for
 - `... is not an allowed model, using ... Nano instead`: a setting asked for another model.

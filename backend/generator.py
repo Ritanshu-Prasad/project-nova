@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import time
 from typing import AsyncIterator, List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
@@ -19,7 +20,9 @@ from placement import PlacementRequest, PlacementResult, starting_point, write_p
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
 from progress import Report, ignore
 from safety import check_goal, refuse_orders
+import traces
 import usage
+from request_context import request_id_var
 from usage import check_budget
 from writing import bank_key, keep_written, module_quiz, write_all_topics, write_topic
 
@@ -152,6 +155,7 @@ async def _course_events(request: CourseRequest, documents: List[Document], fres
         finally:
             events.put_nowait(None)
 
+    started = time.perf_counter()
     job = asyncio.create_task(run())
     try:
         while (event := await events.get()) is not None:
@@ -160,6 +164,15 @@ async def _course_events(request: CourseRequest, documents: List[Document], fres
         job.cancel()
         if spent := usage.current():
             logger.info("Course stream ended [%s]", spent.describe())
+            await _save_stream_trace(spent, time.perf_counter() - started)
+
+
+async def _save_stream_trace(spent, seconds: float) -> None:
+    """A stream answers before its model calls are done, so its request record is saved here, when the last of them has finished."""
+    try:
+        await traces.save(traces.build_record(spent, request_id_var.get(), "POST", "/api/courses/generate/stream", 200, seconds))
+    except asyncio.CancelledError:
+        pass
 
 
 async def _course_from_goal(request: CourseRequest, fresh: bool, report: Report) -> dict:

@@ -251,3 +251,24 @@ def test_problem_requests_with_text_become_cases(tmp_path):
     source.write_text(json.dumps({"traces": records}))
     assert from_traces.main(["--file", str(source), "--out", str(out)]) == 0
     assert json.loads(out.read_text())["modules"][0]["topic"] == "Git branching"
+
+
+# --- Streamed courses ---
+
+def test_a_streamed_course_is_saved_once_when_the_stream_ends_with_all_its_calls(monkeypatch):
+    import generator
+
+    async def make_course(request, documents, fresh, report=None):
+        await usage.record_call("outline", MODEL, {"prompt_tokens": 100, "completion_tokens": 50}, 1.0)
+        await asyncio.sleep(0.05)
+        await usage.record_call("lesson", MODEL, {"prompt_tokens": 100, "completion_tokens": 50}, 1.0)
+        return {"id": "course-x"}
+
+    monkeypatch.setattr(generator, "_make_course", make_course)
+    app = FastAPI()
+    observability.add_request_logging(app)
+    app.include_router(generator.router)
+    response = TestClient(app).post("/api/courses/generate/stream", data={"mode": "goal", "objective": "Docker networking"}, headers={"x-request-id": "stream1"})
+    assert response.status_code == 200
+    (saved,) = run(traces.recent(10))
+    assert saved["request_id"] == "stream1" and saved["path"] == "/api/courses/generate/stream" and saved["calls"] == 2

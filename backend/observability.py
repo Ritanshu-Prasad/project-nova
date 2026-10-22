@@ -18,6 +18,7 @@ from request_context import request_id_var
 
 router = APIRouter()
 logger = logging.getLogger("nova.requests")
+STREAM_TYPE = "application/x-ndjson"  # saved when the stream ends, by the generator
 
 VALID_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 STARTED = time.time()
@@ -78,7 +79,7 @@ def add_request_logging(app: FastAPI) -> None:
             response.headers["X-Response-Time"] = f"{elapsed:.0f}ms"
             cost = f" [{spent.describe()}]" if spent.calls else ""
             logger.info("%s %s -> %s (%.0f ms)%s", request.method, request.url.path, response.status_code, elapsed, cost, extra={"usage": spent.as_dict()} if spent.calls else {})
-            if spent.calls or spent.failures:
+            if (spent.calls or spent.failures) and not response.headers.get("content-type", "").startswith(STREAM_TYPE):
                 await traces.save(traces.build_record(spent, request_id, request.method, request.url.path, response.status_code, elapsed / 1000))
             return response
         finally:
