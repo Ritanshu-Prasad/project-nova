@@ -24,7 +24,7 @@ def verdict(estimated: float, invoiced: float) -> str:
 
 
 async def compare(day: str, invoiced: float) -> str:
-    report = await usage.report_for_day(day, [llm.generate_model(), llm.tutor_model()])
+    report = await usage.report_for_day(day, list(dict.fromkeys([llm.generate_model(), llm.tutor_model()])))
     totals = report["totals"]
     return f"{day}: {totals['calls']} calls, {totals['prompt_tokens'] + totals['completion_tokens']} tokens; " + verdict(totals["cost_usd"], invoiced)
 
