@@ -16,11 +16,11 @@ from datetime import date
 from pathlib import Path
 
 import llm
-from evals import bank_eval, cases, gate, goal_eval, injection_eval, module_eval, placement_eval, report, safety_eval, tutor_eval
+from evals import bank_eval, cases, gate, goal_eval, injection_eval, module_eval, outline_eval, placement_eval, report, safety_eval, tutor_eval
 from prompts import PROMPT_VERSION
 
 HERE = Path(__file__).parent
-SUITES = {"goals": None, "safety": safety_eval, "injection": injection_eval, "tutor": tutor_eval, "placement": placement_eval, "modules": module_eval, "bank": bank_eval}
+SUITES = {"goals": None, "safety": safety_eval, "injection": injection_eval, "tutor": tutor_eval, "placement": placement_eval, "modules": module_eval, "bank": bank_eval, "outline": outline_eval}
 
 
 async def run_suites(names: list[str], which: str, judge: bool, repeat: int) -> list[dict]:

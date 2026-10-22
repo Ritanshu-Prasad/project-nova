@@ -10,6 +10,7 @@ from course_requests import CourseRequest
 from evals import cases, rows
 from evals.judge import judge_lesson, judge_questions
 from evals.metrics import citation_survival, duplicate_rate, reading_grade, type_mix
+from evals.text_hygiene import hygiene_issues
 from evals.pdfs import make_pdf
 from pdf_parser import read_documents
 from planning import fit_outline, plan_outline
@@ -34,6 +35,8 @@ async def run_goal(case: dict, style: dict, judge: bool) -> dict:
         questions = content.quiz + content.practice
         grade = reading_grade(text)
         row.update(ok=True, text=text, words=len(text.split()), grade=grade, duplicates=duplicate_rate(questions), mix=type_mix(questions), questions=len(questions))
+        row["hygiene_detail"] = hygiene_issues(content.lesson, questions)
+        row["hygiene"] = sum(row["hygiene_detail"].values())
         row["agreement"] = await agreement(content.quiz)
         if judge:
             scores = await judge_lesson(case["goal"], style["expectations"], content.lesson.objectives, text)

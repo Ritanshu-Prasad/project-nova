@@ -13,64 +13,67 @@
         "overview": {
           "runs": 4,
           "ok": 1.0,
-          "first_try": 0.985,
-          "seconds": 39.475,
-          "tokens": 17293,
+          "first_try": 0.969,
+          "seconds": 47.275,
+          "tokens": 17403.25,
           "cost_usd": 0.002,
-          "grade": 12.6,
+          "grade": 11.607,
           "duplicates": 0.0,
-          "agreement": 0.375,
-          "judge": 4.25,
-          "questions_judge": 3.833,
-          "seconds_sd": 17.172,
-          "tokens_sd": 7617.11,
-          "grade_sd": 3.937,
-          "judge_sd": 0.54
+          "agreement": 0.838,
+          "hygiene": 0,
+          "judge": 4.0,
+          "questions_judge": 3.25,
+          "seconds_sd": 30.064,
+          "tokens_sd": 5671.217,
+          "grade_sd": 2.265,
+          "judge_sd": 0.791
         },
         "practical": {
           "runs": 4,
           "ok": 1.0,
           "first_try": 1.0,
-          "seconds": 30.175,
-          "tokens": 14393.25,
+          "seconds": 33.675,
+          "tokens": 14850.5,
           "cost_usd": 0.002,
-          "grade": 11.945,
+          "grade": 12.444,
           "duplicates": 0.0,
           "agreement": 0.5,
-          "judge": 3.875,
-          "questions_judge": 3.583,
-          "seconds_sd": 1.517,
-          "tokens_sd": 1375.828,
-          "grade_sd": 0.517,
-          "judge_sd": 1.031
+          "hygiene": 0,
+          "judge": 4.0,
+          "questions_judge": 3.75,
+          "seconds_sd": 1.533,
+          "tokens_sd": 1802.824,
+          "grade_sd": 0.555,
+          "judge_sd": 0.816
         },
         "deep": {
           "runs": 4,
-          "ok": 0.75,
-          "first_try": 0.858,
-          "seconds": 52.925,
-          "tokens": 19379.5,
-          "cost_usd": 0.003,
-          "grade": 12.501,
+          "ok": 1.0,
+          "first_try": 0.981,
+          "seconds": 46.9,
+          "tokens": 19172.75,
+          "cost_usd": 0.002,
+          "grade": 22.621,
           "duplicates": 0.0,
-          "agreement": 0.933,
-          "judge": 3.333,
-          "questions_judge": 3.444,
-          "seconds_sd": 22.077,
-          "tokens_sd": 6954.419,
-          "grade_sd": 1.267,
-          "judge_sd": 1.756
+          "agreement": 0.729,
+          "hygiene": 0,
+          "judge": 3.688,
+          "questions_judge": 3.417,
+          "seconds_sd": 12.732,
+          "tokens_sd": 3955.055,
+          "grade_sd": 21.45,
+          "judge_sd": 0.657
         }
       },
-      "style_effect": 1.115,
+      "style_effect": 1.092,
       "documents": {
         "plants": {
           "ok": 1.0,
           "modules": 2,
-          "topics": 5,
-          "seconds": 35.7,
-          "tokens": 54352,
-          "cost_usd": 0.00674,
+          "topics": 6,
+          "seconds": 39.9,
+          "tokens": 71264,
+          "cost_usd": 0.008297,
           "retry_rate": 0.0,
           "citations": 1.0,
           "duplicates": 0.0
@@ -78,24 +81,24 @@
       },
       "latency": {
         "answers": {
-          "p50": 1.75,
-          "p95": 2.43
+          "p50": 2.03,
+          "p95": 2.38
         },
         "judge": {
-          "p50": 1.02,
-          "p95": 1.17
+          "p50": 1.08,
+          "p95": 1.32
         },
         "lesson": {
-          "p50": 8.89,
-          "p95": 13.09
+          "p50": 8.6,
+          "p95": 13.44
         },
         "outline": {
-          "p50": 1.56,
-          "p95": 6.03
+          "p50": 1.47,
+          "p95": 7.39
         },
         "quiz": {
-          "p50": 4.45,
-          "p95": 23.22
+          "p50": 4.84,
+          "p95": 26.68
         }
       }
     },
@@ -125,7 +128,7 @@
     "placement": {
       "runs": 2,
       "valid_rate": 1.0,
-      "agreement": 0.6
+      "agreement": 1.0
     },
     "modules": {
       "runs": 6,
@@ -133,20 +136,40 @@
       "decision_accuracy": 1.0,
       "code_when_needed": 1.0,
       "no_code_when_not_needed": 1.0,
-      "average_sections": 4.833333333333333
+      "average_sections": 5.333333333333333
     },
     "bank": {
       "runs": 6,
       "ok_rate": 1.0,
-      "clean_share": 0.9444444444444445,
-      "first_try": 0.9761904761904763
+      "clean_share": 0.7685185185185186,
+      "first_try": 0.9606481481481483
+    },
+    "outline": {
+      "runs": 6,
+      "ok_rate": 1.0,
+      "styles": {
+        "overview": {
+          "modules": 4.0,
+          "topics": 12.0
+        },
+        "practical": {
+          "modules": 4.0,
+          "topics": 12.0
+        },
+        "deep": {
+          "modules": 4.5,
+          "topics": 13.5
+        }
+      },
+      "size_follows_style": 1.0,
+      "trimmed": 0.0
     },
     "cost": {
-      "total_usd": 0.05634,
-      "per_run_usd": 0.000612,
-      "tokens": 438189,
-      "calls": 356,
-      "runs": 92
+      "total_usd": 0.0588,
+      "per_run_usd": 0.0006,
+      "tokens": 490702,
+      "calls": 389,
+      "runs": 98
     }
   }
 }

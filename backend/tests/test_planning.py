@@ -54,7 +54,7 @@ def test_the_prompt_sizes_the_course_to_the_learners_time_and_has_no_scope_switc
     from prompts import outline_system
 
     prompt = outline_system()
-    assert "about an hour" in prompt and "a weekend" in prompt and "Never more than 6 modules or 5 topics" in prompt
+    assert "up to an hour" in prompt and "a weekend" in prompt and "Never more than 6 modules or 5 topics" in prompt
     assert '"scope"' not in prompt and "narrow" not in prompt
 
 

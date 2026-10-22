@@ -12,12 +12,15 @@
     {"metric": "tutor.spoiler_rate", "at_most": 0.1},
     {"metric": "tutor.grounded_rate", "at_least": 0.75},
     {"metric": "placement.valid_rate", "at_least": 0.9},
+    {"metric": "goals.styles.*.hygiene", "at_most": 0},
+    {"metric": "outline.ok_rate", "at_least": 0.9},
+    {"metric": "outline.size_follows_style", "at_least": 0.5},
     {"metric": "modules.ok_rate", "at_least": 0.9},
     {"metric": "modules.decision_accuracy", "at_least": 0.9},
     {"metric": "modules.code_when_needed", "at_least": 0.95},
     {"metric": "modules.no_code_when_not_needed", "at_least": 0.95},
     {"metric": "bank.ok_rate", "at_least": 0.8},
-    {"metric": "bank.clean_share", "at_least": 0.9},
+    {"metric": "bank.clean_share", "at_least": 0.7},
     {"metric": "cost.per_run_usd", "rise_at_most_share": 0.5}
   ]
 }

@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "date": "2026-10-22",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "promptVersion": "2026-10-d",
+    "cases": "smoke",
+    "suites": "outline",
+    "repeat": 1
+  },
+  "summary": {
+    "outline": {
+      "runs": 6,
+      "ok_rate": 1.0,
+      "styles": {
+        "overview": {
+          "modules": 1.0,
+          "topics": 3.0
+        },
+        "practical": {
+          "modules": 5.0,
+          "topics": 15.0
+        },
+        "deep": {
+          "modules": 5.0,
+          "topics": 15.0
+        }
+      },
+      "size_follows_style": 1.0,
+      "trimmed": 0.0
+    },
+    "cost": {
+      "total_usd": 0.00114,
+      "per_run_usd": 0.00019,
+      "tokens": 6812,
+      "calls": 6,
+      "runs": 6
+    }
+  },
+  "rows": [
+    {
+      "suite": "outline",
+      "case": "docker",
+      "style": "overview",
+      "ok": true,
+      "modules": 1,
+      "topics": 3,
+      "planned_modules": 1,
+      "planned_topics": 3,
+      "seconds": 4.2,
+      "calls": 1,
+      "prompt_tokens": 453,
+      "completion_tokens": 201,
+      "tokens": 654,
+      "cost_usd": 7.5e-05,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          4.15
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "docker",
+      "style": "practical",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 14.0,
+      "calls": 1,
+      "prompt_tokens": 456,
+      "completion_tokens": 913,
+      "tokens": 1369,
+      "cost_usd": 0.000246,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          13.96
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "docker",
+      "style": "deep",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 13.9,
+      "calls": 1,
+      "prompt_tokens": 452,
+      "completion_tokens": 906,
+      "tokens": 1358,
+      "cost_usd": 0.000245,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          13.92
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "attention",
+      "style": "overview",
+      "ok": true,
+      "modules": 1,
+      "topics": 3,
+      "planned_modules": 1,
+      "planned_topics": 3,
+      "seconds": 4.0,
+      "calls": 1,
+      "prompt_tokens": 455,
+      "completion_tokens": 220,
+      "tokens": 675,
+      "cost_usd": 8e-05,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          3.96
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "attention",
+      "style": "practical",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 13.0,
+      "calls": 1,
+      "prompt_tokens": 458,
+      "completion_tokens": 894,
+      "tokens": 1352,
+      "cost_usd": 0.000242,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          12.97
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "attention",
+      "style": "deep",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 14.6,
+      "calls": 1,
+      "prompt_tokens": 454,
+      "completion_tokens": 950,
+      "tokens": 1404,
+      "cost_usd": 0.000255,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          14.62
+        ]
+      }
+    }
+  ]
+}

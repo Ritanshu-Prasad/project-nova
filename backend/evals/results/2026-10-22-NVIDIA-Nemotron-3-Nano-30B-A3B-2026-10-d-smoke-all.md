@@ -4,23 +4,23 @@ Model `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`, prompts `2026-10-d`, cases `smoke
 
 ## Courses
 
-| style | runs | ok | first_try | seconds | tokens | cost_usd | grade | duplicates | agreement | judge | questions_judge |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| overview | 4 | 1.0 | 0.985 | 39.475 | 17293 | 0.002 | 12.6 | 0.0 | 0.375 | 4.25 | 3.833 |
-| practical | 4 | 1.0 | 1.0 | 30.175 | 14393.25 | 0.002 | 11.945 | 0.0 | 0.5 | 3.875 | 3.583 |
-| deep | 4 | 0.75 | 0.858 | 52.925 | 19379.5 | 0.003 | 12.501 | 0.0 | 0.933 | 3.333 | 3.444 |
+| style | runs | ok | first_try | seconds | tokens | cost_usd | grade | duplicates | agreement | hygiene | judge | questions_judge |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| overview | 4 | 1.0 | 0.969 | 47.275 | 17403.25 | 0.002 | 11.607 | 0.0 | 0.838 | 0 | 4.0 | 3.25 |
+| practical | 4 | 1.0 | 1.0 | 33.675 | 14850.5 | 0.002 | 12.444 | 0.0 | 0.5 | 0 | 4.0 | 3.75 |
+| deep | 4 | 1.0 | 0.981 | 46.9 | 19172.75 | 0.002 | 22.621 | 0.0 | 0.729 | 0 | 3.688 | 3.417 |
 
-The deepest request gives a lesson this many times longer than the shortest: 1.115
+The deepest request gives a lesson this many times longer than the shortest: 1.092
 
 | kind of call | p50 s | p95 s |
 |---|---|---|
-| answers | 1.75 | 2.43 |
-| judge | 1.02 | 1.17 |
-| lesson | 8.89 | 13.09 |
-| outline | 1.56 | 6.03 |
-| quiz | 4.45 | 23.22 |
+| answers | 2.03 | 2.38 |
+| judge | 1.08 | 1.32 |
+| lesson | 8.6 | 13.44 |
+| outline | 1.47 | 7.39 |
+| quiz | 4.84 | 26.68 |
 
-- document `plants`: ok 1.0, modules 2, topics 5, seconds 35.7, tokens 54352, cost_usd 0.00674, retry_rate 0.0, citations 1.0, duplicates 0.0
+- document `plants`: ok 1.0, modules 2, topics 6, seconds 39.9, tokens 71264, cost_usd 0.008297, retry_rate 0.0, citations 1.0, duplicates 0.0
 
 ## Safety
 
@@ -52,7 +52,7 @@ The deepest request gives a lesson this many times longer than the shortest: 1.1
 
 - runs: 2
 - valid_rate: 1.0
-- agreement: 0.6
+- agreement: 1.0
 
 ## Modules
 
@@ -61,16 +61,24 @@ The deepest request gives a lesson this many times longer than the shortest: 1.1
 - decision_accuracy: 1.0
 - code_when_needed: 1.0
 - no_code_when_not_needed: 1.0
-- average_sections: 4.833333333333333
+- average_sections: 5.333333333333333
 
 ## Bank
 
 - runs: 6
 - ok_rate: 1.0
-- clean_share: 0.9444444444444445
-- first_try: 0.9761904761904763
+- clean_share: 0.7685185185185186
+- first_try: 0.9606481481481483
+
+## Outline
+
+- runs: 6
+- ok_rate: 1.0
+- styles: {'overview': {'modules': 4.0, 'topics': 12.0}, 'practical': {'modules': 4.0, 'topics': 12.0}, 'deep': {'modules': 4.5, 'topics': 13.5}}
+- size_follows_style: 1.0
+- trimmed: 0.0
 
 ## Cost
 
-92 runs, 356 model calls, 438189 tokens, about $0.05634 in total ($0.000612 per run), estimated at the configured price.
+98 runs, 389 model calls, 490702 tokens, about $0.0588 in total ($0.0006 per run), estimated at the configured price.
 

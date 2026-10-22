@@ -3,12 +3,12 @@ import statistics
 from fnmatch import fnmatch
 from pathlib import Path
 
-from evals import bank_eval, gate, injection_eval, module_eval, placement_eval, safety_eval, tutor_eval
+from evals import bank_eval, gate, injection_eval, module_eval, outline_eval, placement_eval, safety_eval, tutor_eval
 from evals.metrics import length_ratio, percentile
 
-GOAL_METRICS = ["ok", "first_try", "seconds", "tokens", "cost_usd", "grade", "duplicates", "agreement", "judge", "questions_judge"]
+GOAL_METRICS = ["ok", "first_try", "seconds", "tokens", "cost_usd", "grade", "duplicates", "agreement", "hygiene", "judge", "questions_judge"]
 SPREAD_METRICS = ["seconds", "tokens", "grade", "judge"]
-SECTIONS = {"safety": safety_eval, "injection": injection_eval, "tutor": tutor_eval, "placement": placement_eval, "modules": module_eval, "bank": bank_eval}
+SECTIONS = {"safety": safety_eval, "injection": injection_eval, "tutor": tutor_eval, "placement": placement_eval, "modules": module_eval, "bank": bank_eval, "outline": outline_eval}
 
 
 # --- Summaries ---
@@ -98,7 +98,7 @@ def render_markdown(summary: dict, meta: dict) -> str:
 
 
 def _goal_table(goals: dict) -> list[str]:
-    columns = ["ok", "first_try", "seconds", "tokens", "cost_usd", "grade", "duplicates", "agreement", "judge", "questions_judge"]
+    columns = ["ok", "first_try", "seconds", "tokens", "cost_usd", "grade", "duplicates", "agreement", "hygiene", "judge", "questions_judge"]
     lines = ["## Courses", "", "| style | runs | " + " | ".join(columns) + " |", "|---|---|" + "---|" * len(columns)]
     for style, values in goals["styles"].items():
         lines.append("| " + " | ".join([style, str(values["runs"])] + [_cell(values.get(name)) for name in columns]) + " |")

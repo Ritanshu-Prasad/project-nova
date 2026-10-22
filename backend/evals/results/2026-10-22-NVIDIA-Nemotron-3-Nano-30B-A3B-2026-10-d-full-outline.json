@@ -1,0 +1,473 @@
+{
+  "meta": {
+    "date": "2026-10-22",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "promptVersion": "2026-10-d",
+    "cases": "full",
+    "suites": "outline",
+    "repeat": 1
+  },
+  "summary": {
+    "outline": {
+      "runs": 18,
+      "ok_rate": 1.0,
+      "styles": {
+        "overview": {
+          "modules": 1.3333333333333333,
+          "topics": 3.8333333333333335
+        },
+        "practical": {
+          "modules": 4.166666666666667,
+          "topics": 12.5
+        },
+        "deep": {
+          "modules": 4.333333333333333,
+          "topics": 13.0
+        }
+      },
+      "size_follows_style": 1.0,
+      "trimmed": 0.0
+    },
+    "cost": {
+      "total_usd": 0.00308,
+      "per_run_usd": 0.000171,
+      "tokens": 18987,
+      "calls": 18,
+      "runs": 18
+    }
+  },
+  "rows": [
+    {
+      "suite": "outline",
+      "case": "docker",
+      "style": "overview",
+      "ok": true,
+      "modules": 1,
+      "topics": 3,
+      "planned_modules": 1,
+      "planned_topics": 3,
+      "seconds": 3.6,
+      "calls": 1,
+      "prompt_tokens": 453,
+      "completion_tokens": 195,
+      "tokens": 648,
+      "cost_usd": 7.4e-05,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          3.57
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "docker",
+      "style": "practical",
+      "ok": true,
+      "modules": 4,
+      "topics": 12,
+      "planned_modules": 4,
+      "planned_topics": 12,
+      "seconds": 11.1,
+      "calls": 1,
+      "prompt_tokens": 456,
+      "completion_tokens": 755,
+      "tokens": 1211,
+      "cost_usd": 0.000209,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          11.06
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "docker",
+      "style": "deep",
+      "ok": true,
+      "modules": 4,
+      "topics": 12,
+      "planned_modules": 4,
+      "planned_topics": 12,
+      "seconds": 10.9,
+      "calls": 1,
+      "prompt_tokens": 452,
+      "completion_tokens": 744,
+      "tokens": 1196,
+      "cost_usd": 0.000206,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          10.93
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "attention",
+      "style": "overview",
+      "ok": true,
+      "modules": 1,
+      "topics": 3,
+      "planned_modules": 1,
+      "planned_topics": 3,
+      "seconds": 3.4,
+      "calls": 1,
+      "prompt_tokens": 455,
+      "completion_tokens": 209,
+      "tokens": 664,
+      "cost_usd": 7.7e-05,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          3.44
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "attention",
+      "style": "practical",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 12.8,
+      "calls": 1,
+      "prompt_tokens": 458,
+      "completion_tokens": 893,
+      "tokens": 1351,
+      "cost_usd": 0.000242,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          12.8
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "attention",
+      "style": "deep",
+      "ok": true,
+      "modules": 4,
+      "topics": 12,
+      "planned_modules": 4,
+      "planned_topics": 12,
+      "seconds": 11.0,
+      "calls": 1,
+      "prompt_tokens": 454,
+      "completion_tokens": 745,
+      "tokens": 1199,
+      "cost_usd": 0.000206,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          11.01
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "sql",
+      "style": "overview",
+      "ok": true,
+      "modules": 3,
+      "topics": 8,
+      "planned_modules": 3,
+      "planned_topics": 8,
+      "seconds": 7.0,
+      "calls": 1,
+      "prompt_tokens": 454,
+      "completion_tokens": 461,
+      "tokens": 915,
+      "cost_usd": 0.000138,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          7.04
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "sql",
+      "style": "practical",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 12.3,
+      "calls": 1,
+      "prompt_tokens": 457,
+      "completion_tokens": 866,
+      "tokens": 1323,
+      "cost_usd": 0.000235,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          12.27
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "sql",
+      "style": "deep",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 13.6,
+      "calls": 1,
+      "prompt_tokens": 453,
+      "completion_tokens": 912,
+      "tokens": 1365,
+      "cost_usd": 0.000246,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          13.62
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "photosynthesis",
+      "style": "overview",
+      "ok": true,
+      "modules": 1,
+      "topics": 3,
+      "planned_modules": 1,
+      "planned_topics": 3,
+      "seconds": 3.2,
+      "calls": 1,
+      "prompt_tokens": 452,
+      "completion_tokens": 187,
+      "tokens": 639,
+      "cost_usd": 7.2e-05,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          3.21
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "photosynthesis",
+      "style": "practical",
+      "ok": true,
+      "modules": 3,
+      "topics": 9,
+      "planned_modules": 3,
+      "planned_topics": 9,
+      "seconds": 9.9,
+      "calls": 1,
+      "prompt_tokens": 455,
+      "completion_tokens": 567,
+      "tokens": 1022,
+      "cost_usd": 0.000163,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          9.86
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "photosynthesis",
+      "style": "deep",
+      "ok": true,
+      "modules": 3,
+      "topics": 9,
+      "planned_modules": 3,
+      "planned_topics": 9,
+      "seconds": 10.5,
+      "calls": 1,
+      "prompt_tokens": 451,
+      "completion_tokens": 571,
+      "tokens": 1022,
+      "cost_usd": 0.000164,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          10.52
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "rust",
+      "style": "overview",
+      "ok": true,
+      "modules": 1,
+      "topics": 3,
+      "planned_modules": 1,
+      "planned_topics": 3,
+      "seconds": 4.5,
+      "calls": 1,
+      "prompt_tokens": 454,
+      "completion_tokens": 212,
+      "tokens": 666,
+      "cost_usd": 7.8e-05,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          4.51
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "rust",
+      "style": "practical",
+      "ok": true,
+      "modules": 3,
+      "topics": 9,
+      "planned_modules": 3,
+      "planned_topics": 9,
+      "seconds": 9.5,
+      "calls": 1,
+      "prompt_tokens": 457,
+      "completion_tokens": 542,
+      "tokens": 999,
+      "cost_usd": 0.000157,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          9.47
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "rust",
+      "style": "deep",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 13.0,
+      "calls": 1,
+      "prompt_tokens": 453,
+      "completion_tokens": 885,
+      "tokens": 1338,
+      "cost_usd": 0.00024,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          12.98
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "statistics",
+      "style": "overview",
+      "ok": true,
+      "modules": 1,
+      "topics": 3,
+      "planned_modules": 1,
+      "planned_topics": 3,
+      "seconds": 3.6,
+      "calls": 1,
+      "prompt_tokens": 456,
+      "completion_tokens": 214,
+      "tokens": 670,
+      "cost_usd": 7.9e-05,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          3.58
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "statistics",
+      "style": "practical",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 14.0,
+      "calls": 1,
+      "prompt_tokens": 459,
+      "completion_tokens": 961,
+      "tokens": 1420,
+      "cost_usd": 0.000258,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          13.97
+        ]
+      }
+    },
+    {
+      "suite": "outline",
+      "case": "statistics",
+      "style": "deep",
+      "ok": true,
+      "modules": 5,
+      "topics": 15,
+      "planned_modules": 5,
+      "planned_topics": 15,
+      "seconds": 13.1,
+      "calls": 1,
+      "prompt_tokens": 455,
+      "completion_tokens": 884,
+      "tokens": 1339,
+      "cost_usd": 0.000239,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          13.08
+        ]
+      }
+    }
+  ]
+}

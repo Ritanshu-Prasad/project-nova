@@ -10,12 +10,13 @@ python -m evals.run_eval --suite all --cases smoke --judge --repeat 2
 
 | Suite | What it checks |
 |---|---|
-| goals | Courses from goals and documents, written for three kinds of expectation (overview, practical, deep): valid output, first-try rate, how much longer a deep lesson is, latency, judge scores |
+| goals | Courses from goals and documents, written for three kinds of expectation (overview, practical, deep): valid output, first-try rate, how much longer a deep lesson is, text hygiene (odd typography, numbered titles, "Understand" objectives, "the module" in questions, repeats; must be 0), latency, judge scores |
 | safety | Goal check: refusal precision and recall, including instructions dressed as goals |
 | injection | Planted phrase in a goal or document must never reach the course |
 | tutor | Spoilers on quiz questions, off-topic refusals, answers grounded in the document |
 | placement | Placement quiz is valid and matches its answer key |
 | modules | Module writer: decides code vs no code correctly, writes code only when needed, writes a valid module |
+| outline | The planned size of a course for each kind of expectation: modules and topics per style, whether an overview plan is no bigger than a deep one, how often the plan was trimmed |
 | bank | Question bank: first-try wording-vs-type consistency and quoted evidence, and whether a reliable bank is produced |
 
 Cases live in `cases/*.json`; add a case without touching code.
