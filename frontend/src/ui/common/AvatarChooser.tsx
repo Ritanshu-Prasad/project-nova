@@ -79,7 +79,7 @@ function Tile({ kind, label, icon, active, value, compact, onClick }: { kind: Ki
       }`}
     >
       {preview ? (
-        <img src={value} alt="" className="absolute inset-0 size-full object-cover" />
+        <img src={value} alt="" referrerPolicy="no-referrer" className="absolute inset-0 size-full object-cover" />
       ) : (
         <>
           {icon}

@@ -289,7 +289,9 @@ function Overview({ active }: { active: ActiveCourse }) {
       <motion.section initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.4, delay: 0.05 }} className="card pointer-events-auto absolute right-6 top-24 hidden w-[300px] p-5 lg:block">
         <div className="chip-label">Today</div>
         <div className="mt-2 flex items-center gap-3">
-          <PilotAvatar size={38} className="rounded-2xl" />
+          <button type="button" onClick={() => choose('profile')} aria-label="Open profile" title="Open profile" className="group cursor-pointer transition hover:scale-105 active:scale-95">
+            <PilotAvatar size={38} className="rounded-2xl transition group-hover:ring-2 group-hover:ring-[var(--user)]" />
+          </button>
           <h2 className="min-w-0 truncate font-display text-xl font-bold text-white">
             {greeting()}, <span style={{ color: 'var(--user)' }}>{callsign}</span>
           </h2>

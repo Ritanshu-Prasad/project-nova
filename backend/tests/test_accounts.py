@@ -240,3 +240,28 @@ def test_session_secret_rotation_invalidates_session(client, monkeypatch):
     assert client.get("/api/auth/me").status_code == 401
 
 
+def test_google_auth_missing_client_id(client, monkeypatch):
+    monkeypatch.delenv("GOOGLE_CLIENT_ID", raising=False)
+    res = client.post("/api/auth/google", json={"accessToken": "token"}, headers=HEADERS)
+    assert res.status_code == 503
+    assert "GOOGLE_CLIENT_ID is not configured" in res.json()["detail"]
+
+
+def test_google_auth_token_rejected_by_google(client, monkeypatch):
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "client-id")
+
+    async def fake_get(self, url, **kwargs):
+        class FakeResponse:
+            status_code = 400
+
+            def json(self):
+                return {"error": "invalid_token"}
+
+        return FakeResponse()
+
+    monkeypatch.setattr(accounts.httpx.AsyncClient, "get", fake_get)
+    res = client.post("/api/auth/google", json={"accessToken": "expired-token"}, headers=HEADERS)
+    assert res.status_code == 401
+    assert "could not verify this sign-in" in res.json()["detail"]
+
+

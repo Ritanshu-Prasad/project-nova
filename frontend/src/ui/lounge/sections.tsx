@@ -358,6 +358,8 @@ export function ProfileSection() {
 
 /** Other pilots' standings: everyone by XP, or the current demo course by MMR. */
 function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
+  const callsign = useProfile((s) => s.callsign) || 'Pilot';
+  const stats = useCourse((s) => s.stats);
   const demo = active?.course.source === 'template' ? { key: courseKey(active.course.title), title: active.course.title } : null;
   const [board, setBoard] = useState(demo?.key ?? 'global');
   const [result, setResult] = useState<{ board: string; data?: FleetBoard; error?: string } | null>(null);
@@ -415,6 +417,23 @@ function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
                 </span>
               </li>
             ))}
+            {data.you && !data.top.slice(0, 20).some((r) => r.me) && (
+              <>
+                <li className="my-1 border-t border-dashed border-white/10" aria-hidden="true" />
+                <li className="flex items-center gap-3 rounded-xl bg-[rgb(var(--user-rgb)/0.14)] px-3 py-2 text-sm ring-1 ring-[rgb(var(--user-rgb)/0.45)]">
+                  <span className="w-6 text-right font-display font-bold text-white/50">{data.you.rank}</span>
+                  <PilotAvatar size={24} className="rounded-full" />
+                  <span className="min-w-0 flex-1 truncate font-semibold text-white">
+                    {callsign}
+                    <span className="ml-1.5 text-xs font-normal text-white/50">(you)</span>
+                  </span>
+                  <span className="text-xs text-white/45">LV {levelOf(stats.xp)}</span>
+                  <span className="w-20 text-right font-display font-bold text-white">
+                    {data.you.score.toLocaleString('en-IN')} <span className="text-[10px] font-normal text-white/45">{board === 'global' ? 'XP' : 'MMR'}</span>
+                  </span>
+                </li>
+              </>
+            )}
           </ol>
         </>
       ) : (
