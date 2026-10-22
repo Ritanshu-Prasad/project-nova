@@ -55,9 +55,10 @@ def test_a_module_without_code_gives_a_lesson_without_code_blocks():
     assert all(block.type != "code" for block in to_lesson(written()).blocks)
 
 
-def test_the_overview_is_the_short_version_and_the_headings_are_the_objectives():
+def test_the_overview_is_the_short_version_and_the_objectives_are_the_modules_own_sentences():
     lesson = to_lesson(written())
-    assert lesson.simple.startswith("How small, repeated actions") and lesson.objectives == ["Understand idea 0", "Understand idea 1", "Understand idea 2"]
+    assert lesson.simple.startswith("How small, repeated actions")
+    assert lesson.objectives == ["Explain how a small action attaches to a routine", "Build a habit that needs little willpower"]
 
 
 def test_the_reading_time_follows_the_length_with_a_minimum():

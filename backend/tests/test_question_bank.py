@@ -30,9 +30,9 @@ def options(count, text="Option"):
     return [{"id": "abcdef"[i], "text": f"{text} {i} about the idea"} for i in range(count)]
 
 
-def mcq(n, section_index=0, answer="a", stem="Which habit idea does the module describe?"):
+def mcq(n, section_index=0, answer="a", stem="Which habit idea is described?"):
     return {"question_id": f"q{n}", "type": "mcq", "question_text": f"{stem} (variant {n})", "options": options(4, f"Choice {n}"), "correct_answer": answer,
-            "explanation": "The module says so directly.", "evidence": quote(), "section_index": section_index}
+            "explanation": "A small action is easier to repeat when it follows a routine.", "evidence": quote(), "section_index": section_index}
 
 
 def msq(n, section_index=1):
@@ -42,12 +42,12 @@ def msq(n, section_index=1):
 
 def true_false(n, section_index=2, answer=True):
     return {"question_id": f"q{n}", "type": "true_false", "question_text": f"A small action tied to a daily routine becomes easier to repeat {n}.", "correct_answer": answer,
-            "explanation": "The module says so directly.", "evidence": quote(), "section_index": section_index}
+            "explanation": "A small action is easier to repeat when it follows a routine.", "evidence": quote(), "section_index": section_index}
 
 
 def order(n, section_index=0, items=None):
     return {"question_id": f"q{n}", "type": "order", "question_text": "Put these steps in the correct order: building a habit", "items": items or STEPS,
-            "explanation": "The module lists the steps in this order.", "evidence": quote(), "section_index": section_index}
+            "explanation": "The steps come in this order.", "evidence": quote(), "section_index": section_index}
 
 
 def bank(*questions):
@@ -411,3 +411,31 @@ def test_a_bank_written_with_a_missing_cue_passes_without_a_rewrite(model):
     model.override["msq"] = lambda: [{**msq(n, [1, 2][n - 1]), "question_text": f"Which of these are true about habits {n}?"} for n in (1, 2)]
     result = asyncio.run(write_bank(content()))
     assert model.requests.count("msq") == 1 and all(q.question_text.endswith("Select all that apply.") for q in result.questions if q.type == "msq")
+
+
+# --- Pointers at the lesson anywhere in a question ---
+
+@pytest.mark.parametrize("change", [
+    {"explanation": "The module specifies recording every expense in one place."},
+    {"explanation": "This lesson explains why anchors work."},
+    {"question_text": "In the lesson on pricing, which habit idea matters most?"},
+    {"question_text": "Which habit idea is described in Section 2?"},
+])
+def test_a_question_or_explanation_that_points_at_the_module_is_a_problem(change):
+    question = bank({**mcq(1), **change}, *good_questions()[1:]).questions[0]
+    assert "must not point at" in wording_problem(question)
+
+
+def test_an_option_that_points_at_the_module_is_a_problem():
+    bad = {**mcq(1), "options": [{"id": "a", "text": "As the module says"}, *options(4)[1:]]}
+    assert "must not point at" in wording_problem(bank(bad, *good_questions()[1:]).questions[0])
+
+
+def test_ordinary_words_like_text_and_module_in_other_senses_are_fine():
+    question = bank({**mcq(1), "question_text": "Which tag formats the text of a button label?", "explanation": "A small action is easier to repeat when it follows a routine."}, *good_questions()[1:]).questions[0]
+    assert wording_problem(question) is None
+
+
+def test_the_text_of_a_question_is_cleaned_like_the_lesson():
+    question = bank({**mcq(1), "question_text": "Which short‑term goal fits “weekly” checks?"}, *good_questions()[1:]).questions[0]
+    assert question.question_text.startswith('Which short-term goal fits "weekly" checks?')

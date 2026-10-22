@@ -3,7 +3,6 @@ from module_content import ModuleContent
 
 WORDS_PER_MINUTE = 200
 MIN_MINUTES = 3
-MAX_OBJECTIVES = 4
 DIFFICULTY = {"mcq": 1, "true_false": 1, "msq": 2, "order": 2}
 
 
@@ -27,7 +26,7 @@ def to_lesson(content: ModuleContent) -> course.Lesson:
     words = len(content.as_text().split())
     return course.Lesson.model_validate({
         "minutes": max(MIN_MINUTES, round(words / WORDS_PER_MINUTE)),
-        "objectives": [f"Understand {section.heading.lower()}" for section in content.sections][:MAX_OBJECTIVES],
+        "objectives": content.learning_objectives,
         "simple": content.overview,
         "blocks": blocks,
     })

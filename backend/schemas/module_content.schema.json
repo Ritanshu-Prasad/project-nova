@@ -6,6 +6,7 @@
   "required": [
     "title",
     "overview",
+    "learning_objectives",
     "requires_code",
     "code_reason",
     "key_terms",
@@ -21,6 +22,15 @@
       "type": "string",
       "minLength": 40,
       "maxLength": 600
+    },
+    "learning_objectives": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {
+        "type": "string",
+        "minLength": 5
+      }
     },
     "requires_code": {
       "type": "boolean"

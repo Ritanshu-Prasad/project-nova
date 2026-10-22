@@ -4,6 +4,7 @@
 export interface ModuleContent {
   title: string;
   overview: string;
+  learning_objectives: string[];
   requires_code: boolean;
   code_reason: string;
   key_terms: { term: string; definition: string }[];

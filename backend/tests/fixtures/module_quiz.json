@@ -1,29 +1,29 @@
 {
   "quiz": [
     {
-      "q": "Which statement matches section 2 of the lesson (item 3)?",
-      "why": "The lesson says so directly.",
+      "q": "Which statement matches idea 2 (item 3)?",
+      "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 1,
       "type": "mcq",
       "options": [
-        "Choice 3 for item 3 of section 2",
-        "Choice 2 for item 3 of section 2",
-        "Choice 1 for item 3 of section 2",
-        "Choice 0 for item 3 of section 2"
+        "Choice 3 for item 3 of idea 2",
+        "Choice 2 for item 3 of idea 2",
+        "Choice 1 for item 3 of idea 2",
+        "Choice 0 for item 3 of idea 2"
       ],
       "answer": 0
     },
     {
-      "q": "Which of these hold for section 2 (item 2)? Select all that apply.",
-      "why": "The lesson says so directly.",
+      "q": "Which of these hold for idea 2 (item 2)? Select all that apply.",
+      "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 2,
       "type": "multi",
       "options": [
-        "Pick 0 for item 2 of section 2",
-        "Pick 4 for item 2 of section 2",
-        "Pick 1 for item 2 of section 2",
-        "Pick 2 for item 2 of section 2",
-        "Pick 3 for item 2 of section 2"
+        "Pick 0 for item 2 of idea 2",
+        "Pick 4 for item 2 of idea 2",
+        "Pick 1 for item 2 of idea 2",
+        "Pick 2 for item 2 of idea 2",
+        "Pick 3 for item 2 of idea 2"
       ],
       "answers": [
         0,
@@ -31,23 +31,23 @@
       ]
     },
     {
-      "q": "Section 1 says a small action tied to a daily routine becomes easier to repeat (item 2).",
-      "why": "The lesson says so directly.",
+      "q": "For idea 1, a small action tied to a daily routine becomes easier to repeat (item 2).",
+      "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 1,
       "type": "truefalse",
       "answer": true
     },
     {
-      "q": "Which of these hold for section 1 (item 1)? Select all that apply.",
-      "why": "The lesson says so directly.",
+      "q": "Which of these hold for idea 1 (item 1)? Select all that apply.",
+      "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 2,
       "type": "multi",
       "options": [
-        "Pick 1 for item 1 of section 1",
-        "Pick 3 for item 1 of section 1",
-        "Pick 2 for item 1 of section 1",
-        "Pick 0 for item 1 of section 1",
-        "Pick 4 for item 1 of section 1"
+        "Pick 1 for item 1 of idea 1",
+        "Pick 3 for item 1 of idea 1",
+        "Pick 2 for item 1 of idea 1",
+        "Pick 0 for item 1 of idea 1",
+        "Pick 4 for item 1 of idea 1"
       ],
       "answers": [
         2,
@@ -55,8 +55,8 @@
       ]
     },
     {
-      "q": "Section 0 says a small action tied to a daily routine becomes easier to repeat (item 1).",
-      "why": "The lesson says so directly.",
+      "q": "For idea 0, a small action tied to a daily routine becomes easier to repeat (item 1).",
+      "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 1,
       "type": "truefalse",
       "answer": false

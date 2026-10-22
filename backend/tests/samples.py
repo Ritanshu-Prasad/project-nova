@@ -100,6 +100,7 @@ def module_content_json(sections: int = 3, requires_code: bool = False) -> dict:
     return {
         "title": "Building a daily habit",
         "overview": "How small, repeated actions turn into habits that last without willpower.",
+        "learning_objectives": ["Explain how a small action attaches to a routine", "Build a habit that needs little willpower"],
         "requires_code": requires_code,
         "code_reason": "The topic needs code." if requires_code else "A general life skill, no software involved.",
         "key_terms": [{"term": f"Term {n}", "definition": "A short definition of the term."} for n in range(3)],
@@ -111,15 +112,15 @@ def bank_batch_json(user: str) -> dict:
     """A clean batch of questions for the request in `user` ("... of type mcq, the first from section 1, then section 0.")."""
     kind = re.search(r"of type (\w+),", user).group(1)
     sections = [int(number) for number in re.findall(r"section (\d+)", user.split("Write exactly")[1])]
-    common = lambda n, section: {"question_id": f"q{n}", "explanation": "The lesson says so directly.", "evidence": EVIDENCE, "section_index": section}
+    common = lambda n, section: {"question_id": f"q{n}", "explanation": "A small action is easier to repeat when it follows a routine.", "evidence": EVIDENCE, "section_index": section}
     batch = []
     for n, section in enumerate(sections, 1):
         if kind == "mcq":
-            batch.append({**common(n, section), "type": "mcq", "question_text": f"Which statement matches section {section} of the lesson (item {n})?", "options": [{"id": "abcd"[i], "text": f"Choice {i} for item {n} of section {section}"} for i in range(4)], "correct_answer": "abcd"[n % 4]})
+            batch.append({**common(n, section), "type": "mcq", "question_text": f"Which statement matches idea {section} (item {n})?", "options": [{"id": "abcd"[i], "text": f"Choice {i} for item {n} of idea {section}"} for i in range(4)], "correct_answer": "abcd"[n % 4]})
         elif kind == "msq":
-            batch.append({**common(n, section), "type": "msq", "question_text": f"Which of these hold for section {section} (item {n})? Select all that apply.", "options": [{"id": "abcde"[i], "text": f"Pick {i} for item {n} of section {section}"} for i in range(5)], "correct_answer": ["a", "c"]})
+            batch.append({**common(n, section), "type": "msq", "question_text": f"Which of these hold for idea {section} (item {n})? Select all that apply.", "options": [{"id": "abcde"[i], "text": f"Pick {i} for item {n} of idea {section}"} for i in range(5)], "correct_answer": ["a", "c"]})
         elif kind == "true_false":
-            batch.append({**common(n, section), "type": "true_false", "question_text": f"Section {section} says a small action tied to a daily routine becomes easier to repeat (item {n}).", "correct_answer": n % 2 == 0})
+            batch.append({**common(n, section), "type": "true_false", "question_text": f"For idea {section}, a small action tied to a daily routine becomes easier to repeat (item {n}).", "correct_answer": n % 2 == 0})
         else:
             batch.append({**common(n, section), "type": "order", "question_text": f"Put these steps in the correct order: building habit {n}", "items": STEPS})
     return {"questions": batch}

@@ -9,6 +9,7 @@ from chunking import Group, build_overview
 from course_models import TopicKind
 from course_requests import MAX_TITLE_CHARS, CourseRequest, describe_request
 from pdf_parser import Document
+from text_clean import Clean, Heading
 from progress import Report, ignore
 from prompts import module_system, outline_system
 
@@ -24,10 +25,10 @@ MODULE_TOKENS = 2500
 # --- Outline ---
 
 class OutlineTopic(BaseModel):
-    title: str
-    planet: str
+    title: Heading
+    planet: Clean
     kind: TopicKind = "concept"
-    summary: str = ""
+    summary: Clean = ""
     minutes: int = 5
 
     @field_validator("kind", mode="before")
@@ -37,13 +38,13 @@ class OutlineTopic(BaseModel):
 
 
 class OutlineModule(BaseModel):
-    title: str
+    title: Heading
     topics: List[OutlineTopic] = Field(min_length=1)
 
 
 class Outline(BaseModel):
-    title: str
-    subtitle: str = ""
+    title: Heading
+    subtitle: Clean = ""
     scope: Scope = "broad"
     modules: List[OutlineModule] = Field(min_length=1)
 

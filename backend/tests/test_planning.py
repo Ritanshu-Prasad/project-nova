@@ -95,3 +95,11 @@ def test_document_modules_keep_at_most_three_topics(fake_model):
 def test_the_course_is_named_after_its_documents(fake_model, names, title, subtitle):
     outline = plan([Document(name, []) for name in names], [group_of("One")])
     assert (outline.title, outline.subtitle) == (title, subtitle)
+
+
+def test_outline_titles_are_made_plain_and_lose_their_numbering():
+    from planning import Outline
+
+    outline = Outline.model_validate({"title": "1. Short‑term money", "modules": [{"title": "Step 2: Budget “basics”", "topics": [{"title": "3) Track—review", "planet": "Vega", "summary": "A ‑ b"}]}]})
+    assert outline.title == "Short-term money"
+    assert outline.modules[0].title == 'Budget "basics"' and outline.modules[0].topics[0].title == "Track - review"
