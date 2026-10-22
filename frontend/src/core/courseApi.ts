@@ -156,6 +156,18 @@ export async function fetchPlacementNote(answers: { difficulty: number; correct:
   return typeof note === 'string' ? note : '';
 }
 
+export type ReportReason = 'wrong_answer' | 'unclear' | 'wrong_type' | 'off_topic' | 'other';
+
+/** Tells the backend a question is wrong: POST {API}/api/feedback/report. It carries the question's text and the reason only. */
+export async function reportQuestion(question: string, reason: ReportReason): Promise<void> {
+  const res = await fetch(`${API}/api/feedback/report`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, reason }),
+  });
+  if (!res.ok) throw new Error(`Course API responded ${res.status}`);
+}
+
 /** Sends answer statistics: a hash of each question and whether the answer was right. No learner identifier. */
 export async function reportAnswers(answers: { hash: string; correct: boolean }[]): Promise<void> {
   await fetch(`${API}/api/feedback/answers`, {

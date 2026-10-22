@@ -43,6 +43,8 @@
   <h2>Recent requests</h2>
   <label class="filter"><input type="checkbox" id="problems" style="min-width:0"> only requests with retries, failures, remarks or errors</label>
   <div id="traces"></div>
+  <h2>Reported by learners</h2>
+  <div id="reports"></div>
   <h2>Errors</h2>
   <div id="errors"></div>
 </main>
@@ -69,6 +71,7 @@ $('form').addEventListener('submit', async (event) => {
   if (!(response.headers.get('content-type') || '').includes('json')) { $('error').textContent = 'This address is not the NOVA backend. Open /api/admin on the backend or the app.'; return; }
   render(await response.json());
   loadTraces();
+  loadReports();
   loadErrors();
 });
 $('problems').addEventListener('change', () => { if ($('token').value) loadTraces(); });
@@ -109,6 +112,16 @@ async function loadTraces() {
       ${trace.notes.map((note) => `<p class="note">${esc(note)}</p>`).join('')}
       ${(trace.exchanges || []).map((exchange) => `<p class="note">${esc(exchange.kind)}</p><pre>${esc(exchange.system)}\n\n${esc(exchange.user)}\n\n--- reply ---\n${esc(exchange.reply)}</pre>`).join('')}
     </details>`).join('') || '<p class="note">No requests yet.</p>') + (content_saved ? '' : '<p class="note">Prompts and replies are not saved (set NOVA_TRACE_CONTENT=on to see them here).</p>');
+}
+
+async function loadReports() {
+  const response = await fetch('/api/admin/reports?limit=50', { headers: { Authorization: 'Bearer ' + $('token').value } });
+  if (!response.ok) { $('reports').textContent = 'Could not load reports (' + response.status + ').'; return; }
+  const { reports } = await response.json();
+  $('reports').innerHTML = reports.map((r) => `<details>
+      <summary><span>${esc(r.time.slice(0, 16).replace('T', ' '))} UTC</span><span class="bad">${esc(r.reason.replace('_', ' '))}</span><span>${esc(r.question.slice(0, 90))}</span></summary>
+      <pre>${esc(r.question)}${r.note ? '\n\nNote: ' + esc(r.note) : ''}</pre>
+    </details>`).join('') || '<p class="note">No reports yet.</p>';
 }
 
 async function loadErrors() {

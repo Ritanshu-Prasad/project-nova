@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 import errors
 import llm
 import pricing
+import reports
 import traces
 import usage
 
@@ -60,6 +61,13 @@ async def error_list(request: Request, limit: int = Query(50, ge=1, le=200)):
     """The newest unhandled errors, with where they happened and which request they broke."""
     _authorise(request)
     return {"errors": await errors.recent(limit)}
+
+
+@router.get("/api/admin/reports")
+async def report_list(request: Request, limit: int = Query(50, ge=1, le=200)):
+    """The questions learners reported, newest first."""
+    _authorise(request)
+    return {"reports": await reports.recent(limit)}
 
 
 @router.get("/api/admin/metrics", response_class=PlainTextResponse)

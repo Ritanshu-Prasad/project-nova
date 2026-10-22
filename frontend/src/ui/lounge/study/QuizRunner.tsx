@@ -6,6 +6,8 @@ import { shuffledIndices, useCourse } from '../../../core/course';
 import type { Question } from '../../../core/courseSchema';
 import { FORMAT_LABEL } from '../../../core/quizBuilder';
 import Btn from './Btn';
+import ReportQuestion from './ReportQuestion';
+import { hasCourseApi } from '../../../core/courseApi';
 
 export interface QuizResult {
   correct: number;
@@ -248,6 +250,7 @@ export default function QuizRunner({ questions, limits, rates, practice = false,
                   </div>
                   {q.why}
                 </div>
+                {hasCourseApi && <ReportQuestion key={qi} question={q.q} />}
                 <Btn variant="primary" icon={<ArrowRight size={15} />} onClick={next}>
                   {qi < questions.length - 1 ? 'Next question' : 'See results'}
                 </Btn>

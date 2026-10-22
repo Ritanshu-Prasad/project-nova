@@ -47,6 +47,10 @@ When `NOVA_FAILURE_ALERT` model calls (20 by default, `0` switches it off) give 
 
 To check the cost estimate against the Nebius invoice for a day, run `cd backend && python -m compare_invoice 2026-10-21 0.42` (the day in UTC, the invoice amount in dollars). It prints the ratio and the price settings that would match.
 
+## Questions learners report
+
+After answering, a learner can press **Report this question** and say what is wrong (the marked answer, unclear wording, wrong kind of question, off topic). The question's text and the reason are kept for 7 days (newest 500 a day) and listed under **Reported by learners** on `/api/admin`, and at `GET /api/admin/reports`. Nothing that says who reported it is kept, and reports are limited per address. A reported question is the best next eval case: add its topic to `backend/evals/cases/modules.json`.
+
 ## Warnings worth watching for
 - `... is not an allowed model, using ... Nano instead`: a setting asked for another model.
 - `Daily token budget is 80% used`: logged once (and posted to `NOVA_ALERT_WEBHOOK`, a Slack-style webhook, when set) when the day's tokens cross 80% of `NOVA_DAILY_TOKEN_BUDGET`; at 100% new work is refused with a 503 until the next UTC day.

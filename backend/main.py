@@ -10,6 +10,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # sibling modules on serverless runtimes too
 from accounts import router as accounts_router  # noqa: E402
 from admin import router as admin_router  # noqa: E402
+from reports import router as reports_router  # noqa: E402
 from calibration import router as calibration_router  # noqa: E402
 from fleet import router as fleet_router  # noqa: E402
 from generator import router as generator_router  # noqa: E402
@@ -23,6 +24,7 @@ add_request_logging(app)
 app.include_router(health_router)
 app.include_router(accounts_router)
 app.include_router(admin_router)
+app.include_router(reports_router)
 app.include_router(calibration_router)
 app.include_router(fleet_router)
 app.include_router(generator_router)
