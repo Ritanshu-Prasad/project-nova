@@ -39,7 +39,7 @@
   "properties": {
     "questions": {
       "type": "array",
-      "minItems": 8,
+      "minItems": 6,
       "maxItems": 10,
       "items": {
         "oneOf": [

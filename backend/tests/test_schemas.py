@@ -30,4 +30,4 @@ def test_each_question_type_in_the_bank_schema_requires_what_its_model_requires(
 
 def test_the_bank_schema_allows_the_same_number_of_questions_as_the_model():
     questions = load("question_bank.schema.json")["properties"]["questions"]
-    assert (questions["minItems"], questions["maxItems"]) == (8, 10)
+    assert (questions["minItems"], questions["maxItems"]) == (6, 10)

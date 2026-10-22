@@ -1,0 +1,800 @@
+{
+  "meta": {
+    "date": "2026-10-22",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "promptVersion": "2026-10-d",
+    "cases": "smoke",
+    "suites": "goals",
+    "repeat": 2
+  },
+  "summary": {
+    "goals": {
+      "styles": {
+        "overview": {
+          "runs": 4,
+          "ok": 0.75,
+          "first_try": 0.86,
+          "seconds": 52.6,
+          "tokens": 15194.5,
+          "cost_usd": 0.002,
+          "grade": 10.87,
+          "duplicates": 0.0,
+          "agreement": 1.0,
+          "judge": 3.083,
+          "questions_judge": 4.0,
+          "seconds_sd": 20.748,
+          "tokens_sd": 6223.167,
+          "grade_sd": 0.803,
+          "judge_sd": 1.809
+        },
+        "practical": {
+          "runs": 4,
+          "ok": 1.0,
+          "first_try": 1.0,
+          "seconds": 43.45,
+          "tokens": 12435,
+          "cost_usd": 0.002,
+          "grade": 12.035,
+          "duplicates": 0.0,
+          "agreement": 0.729,
+          "judge": 4.188,
+          "questions_judge": 3.083,
+          "seconds_sd": 20.744,
+          "tokens_sd": 1255.565,
+          "grade_sd": 1.338,
+          "judge_sd": 0.427
+        },
+        "deep": {
+          "runs": 4,
+          "ok": 1.0,
+          "first_try": 1.0,
+          "seconds": 46.325,
+          "tokens": 14073.25,
+          "cost_usd": 0.002,
+          "grade": 12.014,
+          "duplicates": 0.0,
+          "agreement": 0.75,
+          "judge": 3.75,
+          "questions_judge": 4.75,
+          "seconds_sd": 23.264,
+          "tokens_sd": 1186.449,
+          "grade_sd": 1.419,
+          "judge_sd": 0.935
+        }
+      },
+      "style_effect": 1.3,
+      "documents": {
+        "plants": {
+          "ok": 1.0,
+          "modules": 2,
+          "topics": 6,
+          "seconds": 101.8,
+          "tokens": 62116,
+          "cost_usd": 0.00833,
+          "retry_rate": 0.07894736842105263,
+          "citations": 1.0,
+          "duplicates": 0.0
+        }
+      },
+      "latency": {
+        "answers": {
+          "p50": 1.95,
+          "p95": 4.23
+        },
+        "judge": {
+          "p50": 1.15,
+          "p95": 1.33
+        },
+        "lesson": {
+          "p50": 9.63,
+          "p95": 34.57
+        },
+        "outline": {
+          "p50": 2.27,
+          "p95": 8.38
+        },
+        "quiz": {
+          "p50": 5.93,
+          "p95": 23.85
+        }
+      }
+    },
+    "cost": {
+      "total_usd": 0.02919,
+      "per_run_usd": 0.002245,
+      "tokens": 228927,
+      "calls": 175,
+      "runs": 13
+    }
+  },
+  "rows": [
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "docker",
+      "style": "overview",
+      "ok": true,
+      "words": 273,
+      "grade": 10.890607287449395,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 5,
+        "multi": 1,
+        "truefalse": 2
+      },
+      "questions": 8,
+      "agreement": 1.0,
+      "judge": 4.25,
+      "judge_notes": "major errors",
+      "questions_judge": 4.333333333333333,
+      "questions_notes": "Question 2 has multiple correct answers but only one is marked; others are valid.",
+      "seconds": 72.9,
+      "calls": 11,
+      "prompt_tokens": 7191,
+      "completion_tokens": 4142,
+      "tokens": 11333,
+      "cost_usd": 0.001426,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          3.11,
+          1.04
+        ],
+        "lesson": [
+          27.61
+        ],
+        "quiz": [
+          7.97,
+          15.76,
+          35.02
+        ],
+        "answers": [
+          2.54,
+          2.54,
+          1.35
+        ],
+        "judge": [
+          0.99,
+          1.18
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "docker",
+      "style": "practical",
+      "ok": true,
+      "words": 274,
+      "grade": 12.921946169772259,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 4,
+        "truefalse": 2
+      },
+      "questions": 6,
+      "agreement": 0.6666666666666666,
+      "judge": 4.75,
+      "judge_notes": "none",
+      "questions_judge": 4.0,
+      "questions_notes": "Question 2 incorrectly states that environment variables expose ports; they only provide service discovery via container names, not port mapping.",
+      "seconds": 74.5,
+      "calls": 11,
+      "prompt_tokens": 6823,
+      "completion_tokens": 4467,
+      "tokens": 11290,
+      "cost_usd": 0.001481,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          8.38,
+          2.27
+        ],
+        "lesson": [
+          34.57
+        ],
+        "quiz": [
+          10.28,
+          19.87,
+          23.85
+        ],
+        "answers": [
+          1.83,
+          2.08,
+          1.03
+        ],
+        "judge": [
+          1.08,
+          1.26
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "docker",
+      "style": "deep",
+      "ok": true,
+      "words": 378,
+      "grade": 11.04723991707501,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 4,
+        "truefalse": 2
+      },
+      "questions": 6,
+      "agreement": 1.0,
+      "judge": 3.5,
+      "judge_notes": "mixing high\u2011level concepts with low\u2011level commands without concrete examples; lacks explicit objectives and step\u2011by\u2011step bridge setup",
+      "questions_judge": 5.0,
+      "questions_notes": "none",
+      "seconds": 81.0,
+      "calls": 12,
+      "prompt_tokens": 10313,
+      "completion_tokens": 5319,
+      "tokens": 15632,
+      "cost_usd": 0.001895,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          11.71,
+          2.22
+        ],
+        "lesson": [
+          33.69
+        ],
+        "quiz": [
+          10.28,
+          21.19,
+          22.8,
+          5.07
+        ],
+        "answers": [
+          1.95,
+          1.94,
+          1.19
+        ],
+        "judge": [
+          1.25,
+          1.07
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "attention",
+      "style": "overview",
+      "ok": true,
+      "words": 636,
+      "grade": 11.661981981981985,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 4,
+        "truefalse": 2
+      },
+      "questions": 6,
+      "agreement": 1.0,
+      "judge": 4.0,
+      "judge_notes": "none",
+      "questions_judge": 4.0,
+      "questions_notes": "Question 2 is ambiguous and lacks a single defensible answer.",
+      "seconds": 62.4,
+      "calls": 15,
+      "prompt_tokens": 13152,
+      "completion_tokens": 8133,
+      "tokens": 21285,
+      "cost_usd": 0.002741,
+      "retries": 1,
+      "retry_rate": 0.06666666666666667,
+      "first_try": 0.9333333333333333,
+      "kind_seconds": {
+        "outline": [
+          4.09,
+          1.3
+        ],
+        "lesson": [
+          8.03
+        ],
+        "quiz": [
+          2.99,
+          5.93,
+          8.85,
+          2.81,
+          2.6,
+          26.52,
+          2.7
+        ],
+        "answers": [
+          1.95,
+          2.04,
+          1.22
+        ],
+        "judge": [
+          1.07,
+          1.12
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "attention",
+      "style": "practical",
+      "ok": true,
+      "words": 342,
+      "grade": 10.045352323838081,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 5,
+        "truefalse": 2
+      },
+      "questions": 7,
+      "agreement": 1.0,
+      "judge": 3.75,
+      "judge_notes": "Lacks concrete code examples and hands\u2011on exercises to meet the learner's practical expectation.",
+      "questions_judge": 1.6666666666666667,
+      "questions_notes": "Many questions are ambiguous or have multiple defensible answers, making the correct options unclear.",
+      "seconds": 31.5,
+      "calls": 11,
+      "prompt_tokens": 7623,
+      "completion_tokens": 4333,
+      "tokens": 11956,
+      "cost_usd": 0.001497,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          7.37,
+          1.09
+        ],
+        "lesson": [
+          7.82
+        ],
+        "quiz": [
+          3.06,
+          4.81,
+          9.12
+        ],
+        "answers": [
+          2.34,
+          2.33,
+          1.39
+        ],
+        "judge": [
+          1.22,
+          1.14
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "attention",
+      "style": "deep",
+      "ok": true,
+      "words": 453,
+      "grade": 10.829557997558002,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 5,
+        "truefalse": 2
+      },
+      "questions": 7,
+      "agreement": 0.25,
+      "judge": 3.75,
+      "judge_notes": "none",
+      "questions_judge": 5.0,
+      "questions_notes": "none",
+      "seconds": 31.1,
+      "calls": 11,
+      "prompt_tokens": 8422,
+      "completion_tokens": 4395,
+      "tokens": 12817,
+      "cost_usd": 0.00156,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          4.77,
+          1.07
+        ],
+        "lesson": [
+          9.63
+        ],
+        "quiz": [
+          2.93,
+          6.39,
+          9.53
+        ],
+        "answers": [
+          2.19,
+          2.21,
+          1.54
+        ],
+        "judge": [
+          1.23,
+          1.14
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "docker",
+      "style": "overview",
+      "ok": false,
+      "error": "The course model returned an unusable answer",
+      "seconds": 24.7,
+      "calls": 7,
+      "prompt_tokens": 5563,
+      "completion_tokens": 2963,
+      "tokens": 8526,
+      "cost_usd": 0.001045,
+      "retries": 3,
+      "retry_rate": 0.42857142857142855,
+      "first_try": 0.5714285714285714,
+      "kind_seconds": {
+        "outline": [
+          4.02,
+          1.13
+        ],
+        "lesson": [
+          8.91
+        ],
+        "quiz": [
+          3.0,
+          4.59,
+          2.94,
+          3.08
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "docker",
+      "style": "practical",
+      "ok": true,
+      "words": 286,
+      "grade": 12.680093240093239,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 5,
+        "truefalse": 2
+      },
+      "questions": 7,
+      "agreement": 0.25,
+      "judge": 4.25,
+      "judge_notes": "some examples are missing",
+      "questions_judge": 3.6666666666666665,
+      "questions_notes": "Several answers are wrong or misleading, undermining accuracy",
+      "seconds": 33.0,
+      "calls": 11,
+      "prompt_tokens": 7678,
+      "completion_tokens": 4602,
+      "tokens": 12280,
+      "cost_usd": 0.001565,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          6.09,
+          1.23
+        ],
+        "lesson": [
+          8.63
+        ],
+        "quiz": [
+          2.95,
+          5.75,
+          10.66
+        ],
+        "answers": [
+          2.65,
+          2.68,
+          1.38
+        ],
+        "judge": [
+          1.02,
+          1.27
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "docker",
+      "style": "deep",
+      "ok": true,
+      "words": 463,
+      "grade": 12.256890405117272,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 4,
+        "multi": 2
+      },
+      "questions": 6,
+      "agreement": 1.0,
+      "judge": 2.75,
+      "judge_notes": "lacks depth on why and detailed examples",
+      "questions_judge": 4.0,
+      "questions_notes": "Question 2 lacks a single definitive answer; multiple valid purposes exist.",
+      "seconds": 36.2,
+      "calls": 11,
+      "prompt_tokens": 8593,
+      "completion_tokens": 5038,
+      "tokens": 13631,
+      "cost_usd": 0.001725,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          8.14,
+          1.51
+        ],
+        "lesson": [
+          10.19
+        ],
+        "quiz": [
+          3.05,
+          6.05,
+          9.89
+        ],
+        "answers": [
+          2.13,
+          2.66,
+          1.4
+        ],
+        "judge": [
+          1.15,
+          1.21
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "attention",
+      "style": "overview",
+      "ok": true,
+      "words": 555,
+      "grade": 10.055985790408524,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 5,
+        "truefalse": 2
+      },
+      "questions": 7,
+      "agreement": 1.0,
+      "judge": 1.0,
+      "judge_notes": "Severe errors and incoherent structure prevent the lesson from delivering the promised big\u2011picture overview.",
+      "questions_judge": 3.6666666666666665,
+      "questions_notes": "Questions 1,2,4,5,6,7 are overly detailed and not suitable for a high\u2011level overview",
+      "seconds": 50.4,
+      "calls": 15,
+      "prompt_tokens": 12842,
+      "completion_tokens": 6792,
+      "tokens": 19634,
+      "cost_usd": 0.002401,
+      "retries": 1,
+      "retry_rate": 0.06666666666666667,
+      "first_try": 0.9333333333333333,
+      "kind_seconds": {
+        "outline": [
+          4.06,
+          1.16
+        ],
+        "lesson": [
+          8.11
+        ],
+        "quiz": [
+          3.43,
+          5.52,
+          9.01,
+          9.9,
+          6.66,
+          3.37,
+          2.49
+        ],
+        "answers": [
+          1.81,
+          1.8,
+          1.3
+        ],
+        "judge": [
+          1.16,
+          1.33
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "attention",
+      "style": "practical",
+      "ok": true,
+      "words": 374,
+      "grade": 12.49317934782609,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 5,
+        "truefalse": 3
+      },
+      "questions": 8,
+      "agreement": 1.0,
+      "judge": 4.0,
+      "judge_notes": "none",
+      "questions_judge": 3.0,
+      "questions_notes": "several questions are ambiguous or mismatched to practical hands\u2011on expectations",
+      "seconds": 34.8,
+      "calls": 11,
+      "prompt_tokens": 9161,
+      "completion_tokens": 5053,
+      "tokens": 14214,
+      "cost_usd": 0.001762,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          7.05,
+          1.35
+        ],
+        "lesson": [
+          12.33
+        ],
+        "quiz": [
+          3.5,
+          4.65,
+          8.11
+        ],
+        "answers": [
+          2.04,
+          2.03,
+          1.37
+        ],
+        "judge": [
+          1.14,
+          1.4
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "goal",
+      "case": "attention",
+      "style": "deep",
+      "ok": true,
+      "words": 502,
+      "grade": 13.923119134314579,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 2,
+        "multi": 2,
+        "truefalse": 3
+      },
+      "questions": 7,
+      "agreement": 0.75,
+      "judge": 5.0,
+      "judge_notes": "none",
+      "questions_judge": 5.0,
+      "questions_notes": "none",
+      "seconds": 37.0,
+      "calls": 11,
+      "prompt_tokens": 9168,
+      "completion_tokens": 5045,
+      "tokens": 14213,
+      "cost_usd": 0.001761,
+      "retries": 0,
+      "retry_rate": 0.0,
+      "first_try": 1.0,
+      "kind_seconds": {
+        "outline": [
+          5.82,
+          1.17
+        ],
+        "lesson": [
+          11.75
+        ],
+        "quiz": [
+          3.96,
+          6.1,
+          10.18
+        ],
+        "answers": [
+          4.23,
+          4.23,
+          1.53
+        ],
+        "judge": [
+          1.23,
+          1.11
+        ]
+      }
+    },
+    {
+      "suite": "goals",
+      "kind": "document",
+      "case": "plants",
+      "ok": true,
+      "modules": 2,
+      "topics": 6,
+      "grade": 11.00267260460986,
+      "duplicates": 0.0,
+      "mix": {
+        "mcq": 29,
+        "multi": 12,
+        "truefalse": 12
+      },
+      "citations": 1.0,
+      "seconds": 101.8,
+      "calls": 38,
+      "prompt_tokens": 36545,
+      "completion_tokens": 25571,
+      "tokens": 62116,
+      "cost_usd": 0.00833,
+      "retries": 3,
+      "retry_rate": 0.07894736842105263,
+      "first_try": 0.9210526315789473,
+      "kind_seconds": {
+        "module": [
+          2.36,
+          2.75
+        ],
+        "outline": [
+          1.5,
+          1.53,
+          1.54,
+          1.52,
+          1.55,
+          1.54
+        ],
+        "lesson": [
+          8.46,
+          9.74,
+          10.12,
+          10.17,
+          11.38,
+          11.49
+        ],
+        "quiz": [
+          2.93,
+          3.49,
+          3.34,
+          3.71,
+          3.55,
+          3.2,
+          3.68,
+          4.7,
+          6.4,
+          6.19,
+          6.44,
+          7.88,
+          9.36,
+          6.44,
+          6.7,
+          9.03,
+          2.08,
+          8.76,
+          8.97,
+          10.51,
+          2.42,
+          21.07,
+          74.33,
+          2.7
+        ]
+      }
+    }
+  ]
+}

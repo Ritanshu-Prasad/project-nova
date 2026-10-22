@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 import llm
+import usage
 from module_content import ModuleContent
 from question_bank import TYPE_RULES, QuestionBank, bank_system, bank_user, check_bank, pick_quiz, plan_sections, plan_types, with_found_sections, wording_problem, write_bank
 from test_module_content import module, section
@@ -139,9 +140,10 @@ def test_an_order_question_needs_four_to_six_distinct_items():
             bank(*good_questions()[:7], order(9, items=items))
 
 
-def test_a_bank_has_eight_to_ten_questions():
+def test_a_bank_has_six_to_ten_questions():
     with pytest.raises(ValidationError):
-        bank(*good_questions()[:7])
+        bank(*good_questions()[:5])
+    assert len(bank(*good_questions()[:6]).questions) == 6
 
 
 # --- Whole-bank checks ---
@@ -282,6 +284,7 @@ def model(monkeypatch):
 
     async def chat_json(system, user, max_tokens=0, thinking=False, schema=None, kind="call"):
         asked = re.search(r"of type (\w+),", user).group(1)
+        state.asked_count = int(re.search(r"Write exactly (\d+)", user).group(1))
         state.requests.append(asked)
         reply = state.override.get(asked) or REPLIES[asked]
         return {"questions": reply() if callable(reply) else reply}
@@ -331,8 +334,20 @@ def test_a_rewrite_asks_only_for_the_failed_questions(model):
     assert asked == [2, 1]
 
 
-def test_a_bank_that_stays_wrong_is_refused(model):
-    model.override["true_false"] = [{**true_false(1, 0), "evidence": "a quote that is not in the module at all"}, true_false(2, 1, False)]
+def bad_evidence(question: dict) -> dict:
+    return {**question, "evidence": "a quote that is not in the module at all"}
+
+
+def test_questions_that_never_pass_are_left_out_when_enough_good_ones_remain(model):
+    spent = usage.begin()
+    model.override["true_false"] = lambda: [bad_evidence(true_false(n, 0)) for n in range(1, model.asked_count + 1)]
+    result = asyncio.run(write_bank(content()))
+    assert len(result.questions) == 6 and [q.question_id for q in result.questions] == [f"q{n}" for n in range(1, 7)]
+    assert "never passed" in spent.notes[-1] and {q.type for q in result.questions} == {"mcq", "msq"}
+
+
+def test_a_bank_with_too_few_good_questions_is_refused(model):
+    model.override["mcq"] = lambda: [bad_evidence(mcq(n, 0)) for n in range(1, model.asked_count + 1)]
     with pytest.raises(HTTPException) as error:
         asyncio.run(write_bank(content()))
     assert error.value.status_code == 502

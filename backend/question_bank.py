@@ -16,7 +16,7 @@ from module_content import ModuleContent
 logger = logging.getLogger("nova.question_bank")
 
 QUESTION_TYPES = ("mcq", "msq", "true_false", "order")
-MIN_QUESTIONS, MAX_QUESTIONS = 8, 10
+MIN_QUESTIONS, MAX_QUESTIONS = 6, 10
 QUOTE_SHARE = 0.75
 OptionId = Literal["a", "b", "c", "d", "e", "f"]
 
@@ -304,7 +304,8 @@ BATCH_TOKENS = 3500
 async def write_bank(content: ModuleContent, first_pass: dict | None = None) -> QuestionBank:
     """Writes the bank with one call per question type, so a question can only ever have the type it was asked for, then checks it and rewrites only the questions that failed.
 
-    Pass a dict as `first_pass` to learn how good the model's first answer was: it gets "questions" and "problems" (by question id).
+    Questions that still fail after the rewrites are left out when enough good ones remain. Pass a dict as `first_pass`
+    to learn how good the model's first answer was: it gets "questions" and "problems" (by question id).
     """
     plan = plan_types(content)
     sections = plan_sections(content, plan)
@@ -321,7 +322,18 @@ async def write_bank(content: ModuleContent, first_pass: dict | None = None) -> 
         reasons = "; ".join(sorted(set(problems.values())))
         usage.note(f"question bank, attempt {attempt + 1}: {len(problems)} problem(s): {reasons}")
         await _fill(content, plan, sections, questions, [number for number, question in enumerate(bank.questions) if question.question_id in problems] or list(range(len(plan))))
-    raise HTTPException(502, "The model could not write a reliable question bank")
+    return _without_failures(_assemble(questions, sections), content, plan, sections)
+
+
+def _without_failures(bank: QuestionBank, content: ModuleContent, plan: list[str], sections: list[int]) -> QuestionBank:
+    """The bank without the questions that never passed, when at least MIN_QUESTIONS good ones are left."""
+    problems = check_bank(bank, content, plan, sections)
+    kept = [(question, section) for question, section in zip(bank.questions, sections) if question.question_id not in problems]
+    if len(kept) < MIN_QUESTIONS:
+        raise HTTPException(502, "The model could not write a reliable question bank")
+    usage.note(f"question bank: {len(bank.questions) - len(kept)} question(s) left out because they never passed the checks")
+    numbered = [question.model_copy(update={"question_id": f"q{number}"}) for number, (question, _) in enumerate(kept, 1)]
+    return with_found_sections(QuestionBank(questions=numbered), content, [section for _, section in kept])
 
 
 async def _fill(content: ModuleContent, plan: list[str], sections: list[int], questions: list, positions: list[int]) -> None:

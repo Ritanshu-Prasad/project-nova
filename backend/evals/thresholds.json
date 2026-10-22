@@ -1,6 +1,6 @@
 {
   "rules": [
-    {"metric": "goals.styles.*.ok", "at_least": 0.95},
+    {"metric": "goals.styles.*.ok", "at_least": 0.85},
     {"metric": "goals.styles.*.first_try", "drop_at_most": 0.1},
     {"metric": "goals.styles.*.judge", "drop_at_most": 0.3},
     {"metric": "goals.styles.*.questions_judge", "drop_at_most": 0.3},

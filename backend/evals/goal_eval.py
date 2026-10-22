@@ -75,7 +75,8 @@ async def run_document(case: dict) -> dict:
 def lesson_text(lesson: Lesson) -> str:
     parts = [lesson.simple]
     for block in lesson.blocks:
-        parts += [getattr(block, "body", "")] + list(getattr(block, "points", []))
+        parts += [getattr(block, "body", "")] + list(getattr(block, "points", [])) + list(getattr(block, "steps", []))
+        parts += [f"{term.term} {term.definition}" for term in getattr(block, "terms", [])]
     return " ".join(part for part in parts if part)
 
 
