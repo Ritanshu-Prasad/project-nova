@@ -37,8 +37,8 @@ CODE RULE (strict)
 CONTENT RULES
 - State only facts you are sure of. If unsure of a detail, leave it out. Never invent names, numbers, dates, quotes or sources.
 - Be concrete and specific, no filler.
-- "analogy": a real-world comparison for non-obvious ideas (optional per section).
-- "action_steps": 2 to 5 things the learner can actually do, in the order to do them (optional per section).
+- SHAPE, and vary it: every section has an "explanation". Add at most TWO extras to a section, chosen for what that idea needs: "example" (a worked example with concrete numbers or a real situation), "common_mistake" (one mistake learners make and how to avoid it), "quick_check" (a short question with its answer, as {{"question": str, "answer": str}}), "analogy" (a real-world comparison, only for a non-obvious idea), "action_steps" (2 to 5 steps in order, only when the idea is a real procedure). Do not give neighbouring sections the same extras: alternate them.
+- LOCALE: if the expectations name a country, currency or units, use them in every example; otherwise do not use currency symbols or country-specific examples.
 - "key_terms": 3 to 8 terms the module really defines, each with a one-sentence definition.
 - "learning_objectives": 2 to 4 sentences saying what the learner will be able to do afterwards, each starting with a verb (for example "Explain why a bank balance is not the same as net income"). No numbering.
 - Section headings are plain titles with no numbering ("Clarify your net income", not "1. Clarify your net income"). Use ordinary hyphens and straight quotation marks.
@@ -123,13 +123,32 @@ class SourceQuote(BaseModel):
     excerpt: str = Field(min_length=10)
 
 
+class QuickCheck(BaseModel):
+    question: Clean = Field(min_length=10)
+    answer: Clean = Field(min_length=2)
+
+
+EXTRAS = ("example", "common_mistake", "quick_check", "analogy", "action_steps")
+MAX_EXTRAS = 2
+
+
 class Section(BaseModel):
     heading: Heading = Field(min_length=3)
     explanation: Clean = Field(min_length=200)
+    example: Optional[Clean] = Field(default=None, min_length=20)
+    common_mistake: Optional[Clean] = Field(default=None, min_length=20)
+    quick_check: Optional[QuickCheck] = None
     analogy: Optional[Clean] = None
     action_steps: Optional[list[Clean]] = Field(default=None, min_length=2, max_length=5)
     code: Optional[CodeExample] = None
     sources: Optional[list[SourceQuote]] = Field(default=None, max_length=2)
+
+    @model_validator(mode="after")
+    def at_most_two_extras(self):
+        """A section that carries more than two extras keeps the first two, in the order of EXTRAS, so a long answer never fails on this."""
+        for extra in [name for name in EXTRAS if getattr(self, name)][MAX_EXTRAS:]:
+            setattr(self, extra, None)
+        return self
 
 
 class ModuleContent(BaseModel):
@@ -163,7 +182,7 @@ class ModuleContent(BaseModel):
         """Every text of the module except code examples."""
         parts = [self.title, self.overview] + [f"{term.term}\n{term.definition}" for term in self.key_terms]
         for section in self.sections:
-            parts += [section.heading, section.explanation, section.analogy or "", *(section.action_steps or [])]
+            parts += [section.heading, section.explanation, section.example or "", section.common_mistake or "", section.analogy or "", *(section.action_steps or [])]
         return "\n".join(parts)
 
     def section_text(self, number: int) -> str:
@@ -180,6 +199,12 @@ class ModuleContent(BaseModel):
 
 def _section_lines(section: Section) -> list[str]:
     lines = [section.explanation]
+    if section.example:
+        lines.append(f"Worked example: {section.example}")
+    if section.common_mistake:
+        lines.append(f"Common mistake: {section.common_mistake}")
+    if section.quick_check:
+        lines.append(f"Quick check: {section.quick_check.question} Answer: {section.quick_check.answer}")
     if section.analogy:
         lines.append(section.analogy)
     lines += [f"Step {number}: {step}" for number, step in enumerate(section.action_steps or [], 1)]

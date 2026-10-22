@@ -1,8 +1,12 @@
+import math
+
 import course_models as course
 from module_content import ModuleContent
 
 WORDS_PER_MINUTE = 200
-MIN_MINUTES = 3
+MINUTES_PER_TASK = 1.5
+MINUTES_PER_CODE = 2
+MINUTES_FOR_QUESTIONS = 3
 DIFFICULTY = {"mcq": 1, "true_false": 1, "msq": 2, "order": 2}
 
 
@@ -13,6 +17,12 @@ def to_lesson(content: ModuleContent) -> course.Lesson:
     blocks: list[dict] = []
     for number, section in enumerate(content.sections):
         blocks.append({"type": "text", "title": section.heading, "body": section.explanation})
+        if section.example:
+            blocks.append({"type": "example", "title": "Worked example", "body": section.example})
+        if section.common_mistake:
+            blocks.append({"type": "callout", "tone": "warning", "body": f"Common mistake: {section.common_mistake}"})
+        if section.quick_check:
+            blocks.append({"type": "callout", "tone": "tip", "body": f"Quick check: {section.quick_check.question} Answer: {section.quick_check.answer}"})
         if section.analogy:
             blocks.append({"type": "analogy", "body": section.analogy})
         if section.action_steps:
@@ -23,13 +33,20 @@ def to_lesson(content: ModuleContent) -> course.Lesson:
         if number == 0:
             blocks.append({"type": "keyTerms", "terms": [{"term": term.term, "def": term.definition} for term in content.key_terms]})
     blocks.append({"type": "summary", "points": [section.heading for section in content.sections]})
-    words = len(content.as_text().split())
     return course.Lesson.model_validate({
-        "minutes": max(MIN_MINUTES, round(words / WORDS_PER_MINUTE)),
+        "minutes": lesson_minutes(content),
         "objectives": content.learning_objectives,
         "simple": content.overview,
         "blocks": blocks,
     })
+
+
+def lesson_minutes(content: ModuleContent) -> int:
+    """Reading time plus the time to do the tasks, run the code examples and answer the questions that come with the lesson."""
+    reading = len(content.as_text().split()) / WORDS_PER_MINUTE
+    tasks = MINUTES_PER_TASK * sum(1 for section in content.sections if section.action_steps)
+    code = MINUTES_PER_CODE * sum(1 for section in content.sections if section.code)
+    return math.ceil(reading + tasks + code + MINUTES_FOR_QUESTIONS)
 
 
 # --- Questions ---

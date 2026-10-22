@@ -14,6 +14,9 @@ export interface ModuleContent {
 export interface ModuleSection {
   heading: string;
   explanation: string;
+  example?: string;
+  common_mistake?: string;
+  quick_check?: { question: string; answer: string };
   analogy?: string;
   action_steps?: string[];
   code?: { language: string; snippet: string; explanation: string };

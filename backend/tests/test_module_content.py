@@ -185,3 +185,28 @@ def test_repeated_objectives_are_refused():
 def test_the_prompt_asks_for_objectives_and_plain_headings():
     system = module_system(False)
     assert "learning_objectives" in system and "no numbering" in system.lower() and "ordinary hyphens" in system
+
+
+# --- Lesson shape and locale ---
+
+def test_a_section_keeps_at_most_two_extras_and_never_fails_for_more():
+    extras = dict(example="Rent is 12000 of a 30000 income, so 40 percent goes to housing.", common_mistake="Counting a bonus as regular income and spending it all.", analogy="It is like watering a plant.", action_steps=["Pick one habit", "Do it daily"])
+    kept = ModuleContent.model_validate(module(sections=[section(**extras), section(), section()])).sections[0]
+    assert kept.example and kept.common_mistake and kept.analogy is None and kept.action_steps is None
+
+
+def test_a_section_with_one_or_two_extras_is_left_as_written():
+    kept = ModuleContent.model_validate(module(sections=[section(analogy="It is like watering a plant.", action_steps=["Pick one habit", "Do it daily"]), section(), section()])).sections[0]
+    assert kept.analogy and kept.action_steps
+
+
+def test_the_prompt_asks_for_varied_shapes_and_for_locale_aware_examples():
+    system = module_system(False)
+    assert "at most TWO extras" in system and "alternate" in system and "common_mistake" in system and "quick_check" in system
+    assert "name a country, currency or units" in system and "do not use currency symbols" in system
+
+
+def test_the_module_text_includes_the_extras_so_questions_can_quote_them():
+    extras = dict(example="Rent is 12000 of a 30000 income, so 40 percent goes to housing.", quick_check={"question": "What share is 12000 of 30000?", "answer": "forty percent"})
+    text = ModuleContent.model_validate(module(sections=[section(**extras), section(), section()])).as_text()
+    assert "Worked example: Rent is 12000" in text and "Answer: forty percent" in text

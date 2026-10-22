@@ -61,12 +61,38 @@ def test_the_overview_is_the_short_version_and_the_objectives_are_the_modules_ow
     assert lesson.objectives == ["Explain how a small action attaches to a routine", "Build a habit that needs little willpower"]
 
 
-def test_the_reading_time_follows_the_length_with_a_minimum():
-    assert to_lesson(written()).minutes == 3
+def test_the_time_counts_reading_tasks_code_and_questions():
+    plain = to_lesson(written()).minutes
+    with_steps = module_content_json()
+    with_steps["sections"][0]["action_steps"] = ["Pick one habit", "Do it daily"]
+    with_code = module_content_json(requires_code=True)
+    assert plain == 5 and to_lesson(ModuleContent.model_validate(with_steps)).minutes == plain + 2
+    assert to_lesson(ModuleContent.model_validate(with_code)).minutes == plain + 2
+
+
+def test_a_longer_lesson_takes_longer():
     long = module_content_json(sections=8)
     for section in long["sections"]:
         section["explanation"] = section["explanation"] * 6
-    assert to_lesson(ModuleContent.model_validate(long)).minutes > 3
+    assert to_lesson(ModuleContent.model_validate(long)).minutes > 10
+
+
+def test_examples_mistakes_and_quick_checks_become_blocks_in_that_order():
+    data = module_content_json()
+    data["sections"][0].update(example="Rent is 12000 of a 30000 income, so 40 percent goes to housing.", common_mistake="Counting a bonus as regular income and spending it all.", quick_check={"question": "What share is 12000 of 30000?", "answer": "40 percent"})
+    data["sections"][1].update(analogy="It is like watering a plant.")
+    blocks = to_lesson(ModuleContent.model_validate(data)).blocks
+    assert [block.type for block in blocks][:5] == ["text", "example", "callout", "keyTerms", "text"]
+    assert blocks[1].title == "Worked example" and blocks[2].tone == "warning" and blocks[2].body.startswith("Common mistake:")
+
+
+def test_a_quick_check_shows_its_answer():
+    data = module_content_json()
+    data["sections"][0].update(quick_check={"question": "What share is 12000 of 30000?", "answer": "40 percent"})
+    data["sections"][0]["analogy"] = "It is like watering a plant."
+    blocks = to_lesson(ModuleContent.model_validate(data)).blocks
+    check = next(block for block in blocks if block.type == "callout")
+    assert check.tone == "tip" and "Quick check: What share is 12000 of 30000? Answer: 40 percent" == check.body
 
 
 def test_the_lesson_is_accepted_by_the_course_model():

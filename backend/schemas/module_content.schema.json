@@ -83,6 +83,32 @@
             "type": "string",
             "minLength": 200
           },
+          "example": {
+            "type": "string",
+            "minLength": 20
+          },
+          "common_mistake": {
+            "type": "string",
+            "minLength": 20
+          },
+          "quick_check": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "question",
+              "answer"
+            ],
+            "properties": {
+              "question": {
+                "type": "string",
+                "minLength": 10
+              },
+              "answer": {
+                "type": "string",
+                "minLength": 2
+              }
+            }
+          },
           "analogy": {
             "type": "string"
           },
