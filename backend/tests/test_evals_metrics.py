@@ -3,7 +3,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from course_models import Question
 from evals.judge import JUDGE_PROMPT, QUESTION_PROMPT, QuestionScores, Scores, answered_off_topic, judge_lesson, judge_questions
-from evals.metrics import citation_survival, duplicate_rate, first_try_rate, fraction, length_ratio, percentile, precision_recall, reading_grade, retry_rate, type_mix
+from evals.metrics import citation_survival, duplicate_rate, first_try_rate, fraction, judge_agreement, length_ratio, percentile, precision_recall, reading_grade, retry_rate, type_mix
 from samples import mcq
 
 parse = TypeAdapter(Question).validate_python
@@ -157,3 +157,24 @@ def test_an_off_topic_answer_is_detected(fake_model):
     fake_model.replies = [{"answered": True}]
     assert asyncio.run(answered_off_topic("Write a poem", "Roses are red")) is True
     assert asyncio.run(answered_off_topic("Write a poem", "I can only help with this lesson")) is False
+
+
+# --- The judge against a person ---
+
+def test_a_judge_that_matches_the_person_agrees_fully():
+    result = judge_agreement([(4.0, 4.0), (2.0, 2.0), (5.0, 5.0)])
+    assert result["mean_error"] == 0 and result["within_one"] == 1.0 and result["bias"] == 0 and result["correlation"] == pytest.approx(1.0)
+
+
+def test_a_lenient_judge_has_a_positive_bias():
+    result = judge_agreement([(5.0, 3.0), (4.0, 3.0), (4.5, 2.0)])
+    assert result["bias"] > 1 and result["within_one"] == pytest.approx(1 / 3)
+
+
+def test_a_judge_that_ranks_the_other_way_has_a_negative_correlation():
+    assert judge_agreement([(5.0, 1.0), (3.0, 3.0), (1.0, 5.0)])["correlation"] == pytest.approx(-1.0)
+
+
+def test_without_labels_or_variation_there_is_nothing_to_say():
+    assert judge_agreement([])["items"] == 0 and judge_agreement([])["mean_error"] is None
+    assert judge_agreement([(3.0, 4.0), (3.0, 2.0)])["correlation"] is None

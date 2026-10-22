@@ -79,3 +79,26 @@ def precision_recall(expected: list[bool], predicted: list[bool]) -> tuple[float
 def citation_survival(before: int, after: int) -> float:
     """The share of quotes that were really in the documents; 1.0 when the model made none up."""
     return after / before if before else 1.0
+
+
+def judge_agreement(pairs: list[tuple[float, float]]) -> dict:
+    """How the judge's scores compare with a person's, from (judge, human) pairs on the same 1 to 5 scale."""
+    if not pairs:
+        return {"items": 0, "mean_error": None, "within_one": None, "bias": None, "correlation": None}
+    judge, human = [pair[0] for pair in pairs], [pair[1] for pair in pairs]
+    return {
+        "items": len(pairs),
+        "mean_error": sum(abs(j - h) for j, h in pairs) / len(pairs),
+        "within_one": sum(1 for j, h in pairs if abs(j - h) <= 1) / len(pairs),
+        "bias": sum(j - h for j, h in pairs) / len(pairs),
+        "correlation": _correlation(judge, human),
+    }
+
+
+def _correlation(first: list[float], second: list[float]) -> float | None:
+    mean_a, mean_b = sum(first) / len(first), sum(second) / len(second)
+    spread_a = math.sqrt(sum((a - mean_a) ** 2 for a in first))
+    spread_b = math.sqrt(sum((b - mean_b) ** 2 for b in second))
+    if not spread_a or not spread_b:
+        return None
+    return sum((a - mean_a) * (b - mean_b) for a, b in zip(first, second)) / (spread_a * spread_b)

@@ -25,7 +25,7 @@ async def check(case: dict) -> dict:
 
 
 async def run(which: str) -> list[dict]:
-    topics = cases.chosen(cases.load("modules")["modules"], which)
+    topics = cases.module_cases(which)
     return list(await asyncio.gather(*(check(case) for case in topics)))
 
 

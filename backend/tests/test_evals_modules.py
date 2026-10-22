@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 
 import pytest
@@ -115,3 +116,14 @@ def test_the_report_has_a_section_for_each_new_suite():
     summary = report.build_summary(rows, ["beginner"])
     text = report.render_markdown(summary, {"date": "2026-01-01", "model": "m", "promptVersion": "p", "cases": "smoke", "suites": "all", "repeat": 1})
     assert "## Modules" in text and "## Bank" in text and summary["modules"]["decision_accuracy"] == 1.0
+
+
+# --- Cases saved from real problems ---
+
+def test_cases_saved_from_real_problems_always_run_after_the_listed_topics(tmp_path, monkeypatch):
+    monkeypatch.setattr(cases, "DIRECTORY", tmp_path)
+    (tmp_path / "modules.json").write_text(json.dumps({"modules": [{"id": "a", "smoke": True}, {"id": "b"}]}))
+    assert [case["id"] for case in cases.module_cases("smoke")] == ["a"]
+    (tmp_path / "from_traces.json").write_text(json.dumps({"modules": [{"id": "seen"}]}))
+    assert [case["id"] for case in cases.module_cases("smoke")] == ["a", "seen"]
+    assert [case["id"] for case in cases.module_cases("full")] == ["a", "b", "seen"]
