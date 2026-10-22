@@ -301,6 +301,8 @@ class CourseMeta(BaseModel):
     calls: int = 0
     tokens: int = 0
     costUsd: float = 0.0
+    plannedModules: int = 0
+    plannedTopics: int = 0
 
 
 class Course(BaseModel):

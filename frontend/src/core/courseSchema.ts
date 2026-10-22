@@ -88,7 +88,7 @@ export interface Course {
   modules: Module[];
   documents?: { name: string; pages: number }[];
   /** How an AI course was written (model and prompt version), for tracing a bad one. */
-  meta?: { model: string; promptVersion: string; createdAt: number; documentsKey?: string };
+  meta?: { model: string; promptVersion: string; createdAt: number; documentsKey?: string; plannedModules?: number; plannedTopics?: number };
 }
 
 /** A topic with its position in the course. */
@@ -244,6 +244,6 @@ export function normalizeCourse(raw: unknown): Course {
 function normMeta(raw: unknown): Course['meta'] {
   const m = (raw ?? {}) as Record<string, unknown>;
   return str(m.model) && str(m.promptVersion)
-    ? { model: str(m.model), promptVersion: str(m.promptVersion), createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0, documentsKey: str(m.documentsKey) || undefined }
+    ? { model: str(m.model), promptVersion: str(m.promptVersion), createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0, documentsKey: str(m.documentsKey) || undefined, plannedModules: typeof m.plannedModules === 'number' && m.plannedModules > 0 ? m.plannedModules : undefined, plannedTopics: typeof m.plannedTopics === 'number' && m.plannedTopics > 0 ? m.plannedTopics : undefined }
     : undefined;
 }

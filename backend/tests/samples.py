@@ -22,16 +22,15 @@ def lesson_json() -> dict:
     }
 
 
-def outline_json(modules: int = 2, topics: int = 2, scope: str = "broad") -> dict:
+def outline_json(modules: int = 2, topics: int = 2) -> dict:
     return {
         "title": "Sample Course",
         "subtitle": "A sample",
-        "scope": scope,
         "modules": [
             {
                 "title": f"Module {m}",
                 "topics": [
-                    {"title": f"Topic {m}.{t}", "planet": f"Planet {m}{t}", "kind": "concept", "summary": "About it.", "minutes": 5}
+                    {"title": f"Topic {m}.{t}", "planet": f"Planet {m}{t}", "summary": "About it.", "minutes": 5}
                     for t in range(1, topics + 1)
                 ],
             }

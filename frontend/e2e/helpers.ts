@@ -13,7 +13,16 @@ export const lessonText: string = topic.lesson.blocks.find((block: { type: strin
 const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
 /** The backend, replaced by the samples the backend tests check; anything else is "not found" so the app falls back. */
-export async function mockBackend(page: Page, options: { topicFailures?: number; topicDelayMs?: number } = {}) {
+/** The sample course with a third module, so the learner is shown the plan before it starts. */
+export const planCourse = (() => {
+  const third = JSON.parse(JSON.stringify(lazyCourse.modules[0]));
+  third.id = 'mod-3';
+  third.title = 'A third module';
+  third.topics.forEach((t: { id: string }, n: number) => (t.id = `top-3-${n + 1}`));
+  return { ...lazyCourse, modules: [...lazyCourse.modules, third], meta: { ...lazyCourse.meta, plannedModules: 3, plannedTopics: 6 } };
+})();
+
+export async function mockBackend(page: Page, options: { topicFailures?: number; topicDelayMs?: number; course?: unknown } = {}) {
   let topicFailures = options.topicFailures ?? 0;
   const calls = { topic: 0, moduleQuiz: 0 };
 
@@ -21,7 +30,7 @@ export async function mockBackend(page: Page, options: { topicFailures?: number;
   await page.route('**/api/courses/generate/stream*', (route) => {
     const events = [
       { type: 'progress', stage: 'outline', detail: 'Planning your modules' },
-      { type: 'course', course: lazyCourse },
+      { type: 'course', course: options.course ?? lazyCourse },
     ];
     return route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: events.map((e) => JSON.stringify(e)).join('\n') + '\n' });
   });

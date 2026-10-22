@@ -67,14 +67,15 @@ def assemble_lazy_course(outline: Outline, request: CourseRequest) -> Course:
         objective=request.objective,
         source="ai",
         modules=modules,
-        meta=_meta(),
+        meta=_meta(outline),
     )
 
 
-def _meta() -> CourseMeta:
+def _meta(outline: Outline | None = None) -> CourseMeta:
     spent = usage.current()
     cost = {"calls": spent.calls, "tokens": spent.tokens, "costUsd": round(spent.cost_usd, 6)} if spent else {}
-    return CourseMeta(model=llm.generate_model(), promptVersion=PROMPT_VERSION, createdAt=int(time.time() * 1000), **cost)
+    planned = {"plannedModules": outline.planned_modules, "plannedTopics": outline.planned_topics} if outline else {}
+    return CourseMeta(model=llm.generate_model(), promptVersion=PROMPT_VERSION, createdAt=int(time.time() * 1000), **cost, **planned)
 
 
 def new_course_id() -> str:

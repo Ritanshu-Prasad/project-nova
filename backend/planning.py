@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import List, Literal
+from typing import List
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -13,9 +13,8 @@ from text_clean import Clean, Heading
 from progress import Report, ignore
 from prompts import module_system, outline_system
 
-Scope = Literal["narrow", "broad"]
-
-OUTLINE_LIMITS = {"narrow": (3, 3), "broad": (6, 4)}
+MAX_MODULES = 6
+MAX_TOPICS_PER_MODULE = 5
 DOCUMENT_TOPICS_PER_MODULE = 3
 MODULE_OVERVIEW_CHARS = 8000
 OUTLINE_TOKENS = 3000
@@ -45,13 +44,10 @@ class OutlineModule(BaseModel):
 class Outline(BaseModel):
     title: Heading
     subtitle: Clean = ""
-    scope: Scope = "broad"
     modules: List[OutlineModule] = Field(min_length=1)
-
-    @field_validator("scope", mode="before")
-    @classmethod
-    def known_scope(cls, scope: object) -> object:
-        return scope if scope in OUTLINE_LIMITS else "broad"
+    # What the model proposed before anything was trimmed, so the learner can be told.
+    planned_modules: int = 0
+    planned_topics: int = 0
 
 
 # --- From a goal ---
@@ -62,10 +58,10 @@ async def plan_outline(request: CourseRequest, report: Report = ignore) -> Outli
 
 
 def fit_outline(outline: Outline) -> Outline:
-    """Keeps the course within the size of its scope, whatever the model returned, and gives every topic its own planet name."""
-    max_modules, max_topics = OUTLINE_LIMITS[outline.scope]
-    modules = [module.model_copy(update={"topics": module.topics[:max_topics]}) for module in outline.modules[:max_modules]]
-    return named_planets(outline.model_copy(update={"modules": modules}))
+    """Trims a course only when it is far bigger than a learner could use, remembers what was planned, and gives every topic its own planet name."""
+    modules = [module.model_copy(update={"topics": module.topics[:MAX_TOPICS_PER_MODULE]}) for module in outline.modules[:MAX_MODULES]]
+    planned = {"planned_modules": len(outline.modules), "planned_topics": sum(len(module.topics) for module in outline.modules)}
+    return named_planets(outline.model_copy(update={"modules": modules, **planned}))
 
 
 # --- Planet names ---

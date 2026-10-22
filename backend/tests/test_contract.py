@@ -36,7 +36,7 @@ def fixed_draws():
 
 
 def test_lazy_course_matches_the_frontend_sample(client, fake_model):
-    fake_model.replies = [outline_json(modules=2, topics=2, scope="narrow")]
+    fake_model.replies = [outline_json(modules=2, topics=2)]
     response = client.post("/api/courses/generate", data={"mode": "goal", "objective": "Docker networking"})
     check("lazy_course", response.json())
 

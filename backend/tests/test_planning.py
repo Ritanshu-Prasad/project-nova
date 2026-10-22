@@ -12,8 +12,8 @@ def request(**fields) -> CourseRequest:
     return CourseRequest(mode="goal", objective="Docker", **fields)
 
 
-def fitted(modules: int, topics: int, scope: str) -> Outline:
-    return fit_outline(Outline.model_validate(outline_json(modules, topics, scope)))
+def fitted(modules: int, topics: int) -> Outline:
+    return fit_outline(Outline.model_validate(outline_json(modules, topics)))
 
 
 def group_of(title: str, text: str = "words") -> list:
@@ -26,10 +26,6 @@ def test_unknown_topic_kind_becomes_concept():
     assert OutlineTopic(title="T", planet="P", kind="nonsense").kind == "concept"
 
 
-def test_unknown_scope_is_treated_as_broad():
-    assert Outline.model_validate(outline_json(scope="huge")).scope == "broad"
-
-
 def test_an_outline_needs_at_least_one_module():
     with pytest.raises(ValueError):
         Outline.model_validate({"title": "Empty", "modules": []})
@@ -37,18 +33,29 @@ def test_an_outline_needs_at_least_one_module():
 
 # --- Size ---
 
-def test_narrow_outline_is_cut_to_three_modules_of_three_topics():
-    outline = fitted(modules=5, topics=4, scope="narrow")
-    assert len(outline.modules) == 3 and all(len(module.topics) == 3 for module in outline.modules)
+def test_a_course_is_cut_only_beyond_six_modules_of_five_topics():
+    outline = fitted(modules=8, topics=7)
+    assert len(outline.modules) == 6 and all(len(module.topics) == 5 for module in outline.modules)
 
 
-def test_broad_outline_is_cut_to_six_modules_of_four_topics():
-    outline = fitted(modules=8, topics=6, scope="broad")
-    assert len(outline.modules) == 6 and all(len(module.topics) == 4 for module in outline.modules)
+def test_a_course_within_the_limits_is_left_alone_whatever_its_size():
+    assert [len(m.topics) for m in fitted(modules=2, topics=2).modules] == [2, 2]
+    assert [len(m.topics) for m in fitted(modules=6, topics=5).modules] == [5] * 6
+    assert [len(m.topics) for m in fitted(modules=1, topics=8).modules] == [5]
 
 
-def test_outline_within_the_limits_is_left_alone():
-    assert [len(m.topics) for m in fitted(modules=2, topics=2, scope="narrow").modules] == [2, 2]
+def test_the_outline_remembers_what_was_planned_before_trimming():
+    outline = fitted(modules=8, topics=7)
+    assert (outline.planned_modules, outline.planned_topics) == (8, 56)
+    assert (fitted(modules=3, topics=3).planned_modules, fitted(modules=3, topics=3).planned_topics) == (3, 9)
+
+
+def test_the_prompt_sizes_the_course_to_the_learners_time_and_has_no_scope_switch():
+    from prompts import outline_system
+
+    prompt = outline_system()
+    assert "about an hour" in prompt and "a weekend" in prompt and "Never more than 6 modules or 5 topics" in prompt
+    assert '"scope"' not in prompt and "narrow" not in prompt
 
 
 # --- From a goal ---

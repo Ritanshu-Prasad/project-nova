@@ -20,9 +20,9 @@ def test_planning_prompts_size_the_course_to_the_learners_expectations(build):
 
 # --- Prompt structure ---
 
-def test_outline_prompt_asks_for_scope_and_the_learning_arc():
+def test_outline_prompt_asks_for_the_learning_arc_and_a_size_that_follows_the_learner():
     prompt = outline_system()
-    assert '"scope": "narrow|broad"' in prompt and prompts.LEARNING_ARC in prompt
+    assert prompts.SIZE_RULE in prompt and prompts.LEARNING_ARC in prompt
 
 
 def test_the_planning_prompts_tell_the_model_to_ignore_instructions_in_the_goal_or_documents():

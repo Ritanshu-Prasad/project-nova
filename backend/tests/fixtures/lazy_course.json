@@ -88,6 +88,8 @@
     "createdAt": 0,
     "calls": 0,
     "tokens": 0,
-    "costUsd": 0.0
+    "costUsd": 0.0,
+    "plannedModules": 2,
+    "plannedTopics": 4
   }
 }

@@ -54,9 +54,9 @@ def test_goal_mode_makes_only_the_outline_call(client, fake_model):
 
 
 def test_goal_mode_never_returns_more_than_the_limits(client, fake_model):
-    fake_model.replies = [outline_json(modules=9, topics=7, scope="narrow")]
+    fake_model.replies = [outline_json(modules=9, topics=7)]
     modules = generate_goal(client).json()["modules"]
-    assert len(modules) == 3 and all(len(m["topics"]) == 3 for m in modules)
+    assert len(modules) == 6 and all(len(m["topics"]) == 5 for m in modules)
 
 
 def test_goal_mode_course_ids_are_unique_per_request(client, fake_model):
@@ -555,3 +555,9 @@ def test_the_topic_route_says_what_kind_of_topic_it_wrote(client, fake_model):
 def test_document_topics_carry_the_document_kind(client, fake_model):
     topic = generate_book(client).json()["modules"][0]["topics"][0]
     assert topic["kind"] == "document"
+
+
+def test_the_course_says_how_many_modules_and_topics_were_planned_even_when_some_were_cut(client, fake_model):
+    fake_model.replies = [outline_json(modules=8, topics=7)]
+    meta = generate_goal(client).json()["meta"]
+    assert (meta["plannedModules"], meta["plannedTopics"]) == (8, 56)

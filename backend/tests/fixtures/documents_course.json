@@ -186,6 +186,8 @@
     "documentsKey": "00000000000000000000000000000000",
     "calls": 0,
     "tokens": 0,
-    "costUsd": 0.0
+    "costUsd": 0.0,
+    "plannedModules": 0,
+    "plannedTopics": 0
   }
 }
