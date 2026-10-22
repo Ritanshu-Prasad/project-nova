@@ -108,6 +108,34 @@ jobs:
           name: playwright-results
           path: frontend/test-results
 
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    continue-on-error: true  # reports known problems; does not block a deploy
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Audit Backend Dependencies
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/requirements.lock
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit Frontend Dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev
+
   sync-stable:
     name: Promote to Stable Deployment Branch
     needs: [verify, e2e]

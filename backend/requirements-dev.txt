@@ -1,3 +1,4 @@
 -r requirements.txt
+-c requirements.lock
 pytest
 pyflakes
