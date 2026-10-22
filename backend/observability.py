@@ -9,6 +9,7 @@ import uuid
 from fastapi import APIRouter, FastAPI, Request
 
 import accounts
+import errors
 import llm
 import pricing
 import shared
@@ -70,8 +71,9 @@ def add_request_logging(app: FastAPI) -> None:
         started = time.perf_counter()
         try:
             response = await call_next(request)
-        except Exception:
+        except Exception as error:
             logger.exception("%s %s -> failed", request.method, request.url.path)
+            await errors.save(error, request_id, request.method, request.url.path)
             raise
         else:
             elapsed = (time.perf_counter() - started) * 1000

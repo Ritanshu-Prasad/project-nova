@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
+import errors
 import llm
 import pricing
 import traces
@@ -52,6 +53,13 @@ async def trace_list(request: Request, limit: int = Query(50, ge=1, le=200), pro
     """The newest requests that used the model, each with its calls, tokens, cost and remarks; the text of the calls is there only when NOVA_TRACE_CONTENT=on."""
     _authorise(request)
     return {"traces": await traces.recent(limit, only_problems=problems), "content_saved": os.getenv("NOVA_TRACE_CONTENT") == "on"}
+
+
+@router.get("/api/admin/errors")
+async def error_list(request: Request, limit: int = Query(50, ge=1, le=200)):
+    """The newest unhandled errors, with where they happened and which request they broke."""
+    _authorise(request)
+    return {"errors": await errors.recent(limit)}
 
 
 @router.get("/api/admin/metrics", response_class=PlainTextResponse)

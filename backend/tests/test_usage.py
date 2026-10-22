@@ -272,3 +272,51 @@ def test_a_failing_webhook_does_not_break_the_call(monkeypatch):
     monkeypatch.setattr(usage.httpx, "AsyncClient", BrokenClient)
     call(prompt=900, completion=0)
     assert run(usage.used_today()) == 900
+
+
+# --- Failure alert ---
+
+def fail(count: int):
+    for _ in range(count):
+        run(usage.record_failure("lesson", "m"))
+
+
+class AlertClient:
+    posted: list = []
+
+    def __init__(self, **_): pass
+    async def __aenter__(self): return self
+    async def __aexit__(self, *_): return False
+    async def post(self, url, json): AlertClient.posted.append((url, json))
+
+
+@pytest.fixture
+def alerts(monkeypatch):
+    AlertClient.posted = []
+    monkeypatch.setenv("NOVA_ALERT_WEBHOOK", "https://hooks.example/alert")
+    monkeypatch.setenv("NOVA_FAILURE_ALERT", "3")
+    monkeypatch.setattr(usage.httpx, "AsyncClient", AlertClient)
+    return AlertClient
+
+
+def test_reaching_the_failure_limit_in_an_hour_sends_one_alert(alerts):
+    fail(5)
+    assert len(alerts.posted) == 1 and "3 model calls gave up" in alerts.posted[0][1]["text"]
+
+
+def test_fewer_failures_than_the_limit_send_nothing(alerts):
+    fail(2)
+    assert alerts.posted == []
+
+
+def test_the_failure_alert_can_be_switched_off(alerts, monkeypatch):
+    monkeypatch.setenv("NOVA_FAILURE_ALERT", "0")
+    fail(30)
+    assert alerts.posted == []
+
+
+def test_a_new_hour_counts_again(alerts, monkeypatch):
+    fail(3)
+    monkeypatch.setattr(usage.time, "strftime", lambda fmt, now=None: "2099-01-01-00" if "%H" in fmt and fmt.endswith("%H") else "2099-01-01")
+    fail(3)
+    assert len(alerts.posted) == 2

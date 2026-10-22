@@ -18,6 +18,7 @@ LEDGER_SECONDS = 90 * 24 * 3600
 BUDGET_WINDOW_SECONDS = 2 * 24 * 3600
 BUDGET_WARNING_SHARE = 0.8
 MAX_NOTES = 20
+FAILURES_PER_HOUR = 20
 MAX_EXCHANGES = 30
 EXCHANGE_CHARS = 2000
 
@@ -122,7 +123,23 @@ async def record_failure(kind: str, model: str) -> None:
     if spent:
         spent.failures += 1
         spent.call_log.append({"kind": kind, "model": model, "prompt_tokens": 0, "completion_tokens": 0, "seconds": 0, "ok": False})
-    await _add(ledger_key(_day(), model), {f"{kind}:failures": 1})
+    await asyncio.gather(_add(ledger_key(_day(), model), {f"{kind}:failures": 1}), _watch_failures())
+
+
+async def _watch_failures() -> None:
+    """Sends one alert in the hour when the calls that gave up reach NOVA_FAILURE_ALERT (20 by default, 0 turns it off)."""
+    limit = int(os.getenv("NOVA_FAILURE_ALERT") or FAILURES_PER_HOUR)
+    if limit <= 0:
+        return
+    try:
+        total = await shared.state.add("nova:failures:" + time.strftime("%Y-%m-%d-%H", time.gmtime()), 1, 3700)
+    except shared.StateError as error:
+        logger.warning("Failures not counted: %s", error)
+        return
+    if total == limit:
+        message = f"NOVA: {limit} model calls gave up in the last hour"
+        logger.warning(message)
+        await _send_alert(message)
 
 
 def note(text: str) -> None:
@@ -150,6 +167,11 @@ async def daily_report(days: int, models: list[str]) -> list[dict]:
     """Per day (newest first) and per kind: calls, tokens, estimated cost, latency, retries and failures."""
     stamps = [time.time() - number * 86400 for number in range(days)]
     return [await _report_day(_day(stamp), models) for stamp in stamps]
+
+
+async def report_for_day(day: str, models: list[str]) -> dict:
+    """The same report as one entry of daily_report, for a named day (YYYY-MM-DD, UTC)."""
+    return await _report_day(day, models)
 
 
 async def _report_day(day: str, models: list[str]) -> dict:

@@ -39,6 +39,14 @@ The text of the calls (prompts and replies, each cut to 2,000 characters) is sav
 
 A streamed course is saved when its stream ends, so its record has every call.
 
+## Errors and alerts
+
+Unhandled errors are kept in the same store as the request records (newest 200 a day, for 7 days) and listed under **Errors** on `/api/admin` and at `GET /api/admin/errors`: the error, the innermost few lines where it happened, and the request id to find the matching request. Errors the app answers on purpose (a refused goal, a busy model) are not errors; they show as problems in the request list.
+
+When `NOVA_FAILURE_ALERT` model calls (20 by default, `0` switches it off) give up within one hour, one message goes to `NOVA_ALERT_WEBHOOK`.
+
+To check the cost estimate against the Nebius invoice for a day, run `cd backend && python -m compare_invoice 2026-10-21 0.42` (the day in UTC, the invoice amount in dollars). It prints the ratio and the price settings that would match.
+
 ## Warnings worth watching for
 - `... is not an allowed model, using ... Nano instead`: a setting asked for another model.
 - `Daily token budget is 80% used`: logged once (and posted to `NOVA_ALERT_WEBHOOK`, a Slack-style webhook, when set) when the day's tokens cross 80% of `NOVA_DAILY_TOKEN_BUDGET`; at 100% new work is refused with a 503 until the next UTC day.
