@@ -1,4 +1,4 @@
-import type { Course, Level, Question, Topic } from './courseSchema';
+import type { Course, Question, Topic } from './courseSchema';
 import { normQuestion, normalizeCourse, normTopic } from './courseSchema';
 import { courseFromObjective } from './courseTemplates';
 import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse';
@@ -9,7 +9,7 @@ import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse'
  *   POST {API}/api/courses/generate/stream   multipart/form-data   (POST .../generate answers with the course alone)
  *     mode       "goal" | "documents"
  *     objective  string          (goal mode)
- *     level      beginner | intermediate | advanced
+ *     expectations  free text: depth, time, focus, what the learner already knows (optional)
  *     focus      string          (documents mode, optional)
  *     structure  chapters | topics
  *     files      PDF files       (documents mode, repeated field)
@@ -20,8 +20,8 @@ import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse'
  * Without the backend (or if it fails) NOVA falls back to built-in templates and in-browser PDF extraction.
  */
 export type GenerateRequest =
-  | { mode: 'goal'; objective: string; level: Level }
-  | { mode: 'documents'; files: File[]; focus: string; structure: DocStructure; level: Level };
+  | { mode: 'goal'; objective: string; expectations: string }
+  | { mode: 'documents'; files: File[]; focus: string; structure: DocStructure; expectations: string };
 
 export interface GenerateResult {
   course: Course;
@@ -36,7 +36,7 @@ const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function viaBackend(req: GenerateRequest, progress: ProgressFn): Promise<Course> {
   const form = new FormData();
   form.set('mode', req.mode);
-  form.set('level', req.level);
+  form.set('expectations', req.expectations);
   if (req.mode === 'goal') form.set('objective', req.objective);
   else {
     form.set('focus', req.focus);
@@ -83,8 +83,8 @@ async function plainCourse(form: FormData, progress: ProgressFn): Promise<Course
 
 /** What the backend needs to write one topic of a lazily generated AI course. */
 export interface TopicRequest {
-  level: Level;
   objective: string;
+  expectations: string;
   course: string;
   module: string;
   topic: string;
@@ -116,7 +116,7 @@ export async function fetchTopic(req: TopicRequest): Promise<Pick<Topic, 'lesson
 }
 
 /** Fetches a module quiz written from what its lessons really taught: POST {API}/api/courses/module-quiz (JSON). */
-export async function fetchModuleQuiz(req: { level: Level; objective: string; module: string; topics: TaughtTopic[] }): Promise<Question[]> {
+export async function fetchModuleQuiz(req: { objective: string; module: string; topics: TaughtTopic[] }): Promise<Question[]> {
   const res = await fetch(`${API}/api/courses/module-quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -132,7 +132,7 @@ export async function forgetDocuments(key: string): Promise<void> {
   await fetch(`${API}/api/courses/documents/${encodeURIComponent(key)}`, { method: 'DELETE' }).catch(() => undefined);
 }
 
-/** Five multiple-choice questions, easy to hard, for a learner unsure which level to pick: POST {API}/api/courses/placement. */
+/** Five multiple-choice questions, easy to hard, for a learner unsure what to expect: POST {API}/api/courses/placement. */
 export async function fetchPlacement(objective: string): Promise<Question[]> {
   const res = await fetch(`${API}/api/courses/placement`, {
     method: 'POST',
@@ -144,20 +144,20 @@ export async function fetchPlacement(objective: string): Promise<Question[]> {
   return (Array.isArray(questions) ? questions : []).map(normQuestion).filter((q: Question | null): q is Question => q !== null && q.type === 'mcq');
 }
 
-/** The level a set of placement answers points to. */
-export async function fetchPlacementLevel(answers: { difficulty: number; correct: boolean }[]): Promise<Level> {
-  const res = await fetch(`${API}/api/courses/placement/level`, {
+/** A sentence about where a learner starts, from their placement answers, to use as course expectations. */
+export async function fetchPlacementNote(answers: { difficulty: number; correct: boolean }[]): Promise<string> {
+  const res = await fetch(`${API}/api/courses/placement/note`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ answers }),
   });
   if (!res.ok) throw new Error(`Course API responded ${res.status}`);
-  const { level } = await res.json();
-  return level === 'advanced' || level === 'intermediate' ? level : 'beginner';
+  const { note } = await res.json();
+  return typeof note === 'string' ? note : '';
 }
 
-/** Sends answer statistics: a hash of each question, the level and whether the answer was right. No learner identifier. */
-export async function reportAnswers(answers: { hash: string; level: Level; correct: boolean }[]): Promise<void> {
+/** Sends answer statistics: a hash of each question and whether the answer was right. No learner identifier. */
+export async function reportAnswers(answers: { hash: string; correct: boolean }[]): Promise<void> {
   await fetch(`${API}/api/feedback/answers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -166,7 +166,13 @@ export async function reportAnswers(answers: { hash: string; level: Level; corre
   });
 }
 
+/** Builds the course and remembers what the learner expected, so each topic is written to that. */
 export async function generateCourse(req: GenerateRequest, progress: ProgressFn): Promise<GenerateResult> {
+  const result = await build(req, progress);
+  return { ...result, course: { ...result.course, expectations: req.expectations.trim() || undefined } };
+}
+
+async function build(req: GenerateRequest, progress: ProgressFn): Promise<GenerateResult> {
   if (hasCourseApi) {
     try {
       return { course: await viaBackend(req, progress), via: 'ai' };
@@ -180,7 +186,7 @@ export async function generateCourse(req: GenerateRequest, progress: ProgressFn)
   await pause(500);
   // Demo lessons and question pools are large, so they load in their own chunk (plain templates if it fails).
   const authored = await import('./templates/content').catch(() => null);
-  const base = courseFromObjective(req.objective, req.level);
+  const base = courseFromObjective(req.objective);
   const course = authored ? authored.withAuthoredContent(base) : base;
   progress('outline', 'Planning modules');
   await pause(500);

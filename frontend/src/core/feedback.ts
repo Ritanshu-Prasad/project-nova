@@ -1,8 +1,7 @@
 import { hasCourseApi, reportAnswers } from './courseApi';
-import type { Level } from './courseSchema';
 
 const FLUSH_AT = 10;
-const queue: { hash: string; level: Level; correct: boolean }[] = [];
+const queue: { hash: string; correct: boolean }[] = [];
 
 /** A short fingerprint of a question's text, so the server can count answers without ever seeing the question. */
 export async function questionHash(text: string): Promise<string> {
@@ -11,11 +10,11 @@ export async function questionHash(text: string): Promise<string> {
 }
 
 /** Remembers one graded answer; they are sent in batches. Failing to send is fine: this is only statistics. */
-export function noteAnswer(text: string, level: Level, correct: boolean): void {
+export function noteAnswer(text: string, correct: boolean): void {
   if (!hasCourseApi || !globalThis.crypto?.subtle) return;
   questionHash(text)
     .then((hash) => {
-      queue.push({ hash, level, correct });
+      queue.push({ hash, correct });
       if (queue.length >= FLUSH_AT) flushAnswers();
     })
     .catch(() => undefined);

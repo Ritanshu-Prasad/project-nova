@@ -250,16 +250,16 @@ const EMPTY_SAVE: PilotSave = {
 
 type SlimCourse = Course & { slim?: true };
 
-/** A demo course is saved as its template reference (objective + level) — the lessons are rebuilt on load. */
+/** A demo course is saved as its template reference (objective) — the lessons are rebuilt on load. */
 function slim(e: LibraryEntry): LibraryEntry {
   if (e.course.source !== 'template') return e;
-  const { id, title, subtitle, objective, level, source } = e.course;
-  return { ...e, course: { id, title, subtitle, objective, level, source, modules: [], slim: true } as SlimCourse };
+  const { id, title, subtitle, objective, source } = e.course;
+  return { ...e, course: { id, title, subtitle, objective, source, modules: [], slim: true } as SlimCourse };
 }
 
 function rebuild(c: SlimCourse): Course {
   if (!c.slim) return c;
-  return tidyCourse({ ...courseFromObjective(c.objective, c.level), id: c.id });
+  return tidyCourse({ ...courseFromObjective(c.objective), id: c.id });
 }
 
 export function collectSave(): PilotSave {

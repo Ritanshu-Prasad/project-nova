@@ -1,6 +1,6 @@
 import { allEnglishTopics } from './templates/english_index';
 import { coreTopics } from './templates/core_topics';
-import type { Block, Course, Level, Module, Question, Topic, TopicKind, Panel } from './courseSchema';
+import type { Block, Course, Module, Question, Topic, TopicKind, Panel } from './courseSchema';
 import { makeId } from './courseSchema';
 
 /**
@@ -2353,17 +2353,17 @@ const EXTRA_TOPICS: Topic[] = [
   ])
 ];
 
-function fromTemplate(t: Template, objective: string, level: Level): Course {
+function fromTemplate(t: Template, objective: string): Course {
 const pool = [...EXTRA_TOPICS, ...coreTopics, ...t.modules.flatMap((m) => m.topics)];
   const layout = LAYOUTS[t.id];
   const modules: Module[] = layout
     ? layout.map((l) => ({ id: l.id, title: l.title, topics: l.topics.map((id) => pool.find((x) => x.id === id)).filter((x): x is Topic => !!x) }))
     : t.modules;
-  return { id: makeId('course'), title: t.title, subtitle: t.subtitle, objective, level, source: 'template', modules };
+  return { id: makeId('course'), title: t.title, subtitle: t.subtitle, objective, source: 'template', modules };
 }
 
 /** A generic, honest starter plan for any goal: how to learn it well, until the AI writes the subject lessons. */
-function starterPlan(objective: string, level: Level): Course {
+function starterPlan(objective: string): Course {
   const goal = objective.trim().replace(/^(i want to|teach me|help me)\s+(learn|understand|master|get better at)?\s*/i, '').replace(/[.!?]+$/, '') || 'your topic';
   const g = goal.length > 48 ? `${goal.slice(0, 45)}…` : goal;
   const mk = (id: string, title: string, planet: string, summary: string, blocks: Block[], simple: string, quiz: Question[], objectives: string[]): Topic =>
@@ -2373,7 +2373,6 @@ function starterPlan(objective: string, level: Level): Course {
     title: g.charAt(0).toUpperCase() + g.slice(1),
     subtitle: 'Starter plan — your AI tutor tailors these lessons once it is connected',
     objective,
-    level,
     source: 'starter',
     modules: [
       {
@@ -2427,9 +2426,9 @@ function starterPlan(objective: string, level: Level): Course {
 }
 
 /** Picks a template for the goal, or builds a starter plan for anything else. */
-export function courseFromObjective(objective: string, level: Level = 'beginner'): Course {
+export function courseFromObjective(objective: string): Course {
   const t = TEMPLATES.find((x) => x.match.test(objective));
-  return t ? fromTemplate(t, objective, level) : starterPlan(objective, level);
+  return t ? fromTemplate(t, objective) : starterPlan(objective);
 }
 
 export const TEMPLATE_PRESETS = [

@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import type { Block, Course, Level, Module, Question, Topic } from './courseSchema';
+import type { Block, Course, Module, Question, Topic } from './courseSchema';
 import { makeId } from './courseSchema';
 
 /**
@@ -271,7 +271,7 @@ function buildTopic(docName: string, sec: Section, rawText: string, planet: stri
 /** Reads the PDFs and returns a structured course (one module per document). */
 export async function courseFromPdfs(
   files: File[],
-  opts: { structure: DocStructure; focus?: string; level: Level },
+  opts: { structure: DocStructure; focus?: string },
   progress: ProgressFn,
 ): Promise<Course> {
   const pdfjs = await loadPdfjs();
@@ -353,7 +353,6 @@ export async function courseFromPdfs(
     title: documents.length > 1 ? `${first} + ${documents.length - 1} more` : first,
     subtitle: opts.focus?.trim() ? `Focused on “${opts.focus.trim()}” · built from your documents` : 'Built from your documents',
     objective: opts.focus?.trim() || `Study ${documents.map((d) => d.name).join(', ')}`,
-    level: opts.level,
     source: 'documents',
     modules,
     documents,

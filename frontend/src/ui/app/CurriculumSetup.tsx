@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { audio } from '../../core/audio';
 import { useActiveCourse, useCourse } from '../../core/course';
 import { generateCourse, hasCourseApi, type GenerateRequest } from '../../core/courseApi';
-import type { Course, Level } from '../../core/courseSchema';
+import type { Course } from '../../core/courseSchema';
 import { TEMPLATE_PRESETS } from '../../core/courseTemplates';
 import { useHub } from '../../core/hub';
 import { goToLounge, holoBurst, useDeck } from '../../core/journey';
@@ -16,11 +16,6 @@ import { HudButton } from '../common/HudButton';
 import PlacementCheck from './PlacementCheck';
 
 type Stage = 'edit' | 'forge' | 'ready' | 'error';
-const LEVELS: { id: Level; label: string }[] = [
-  { id: 'beginner', label: 'Beginner' },
-  { id: 'intermediate', label: 'Intermediate' },
-  { id: 'advanced', label: 'Advanced' },
-];
 const MAX_FILES = 5;
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 
@@ -31,7 +26,7 @@ export default function CurriculumSetup() {
   const tab = useHub((s) => s.forgeTab);
   const active = useActiveCourse();
   const [objective, setObjective] = useState('');
-  const [level, setLevel] = useState<Level>('beginner');
+  const [expectations, setExpectations] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [focus, setFocus] = useState('');
   const [structure, setStructure] = useState<DocStructure>('chapters');
@@ -68,7 +63,7 @@ export default function CurriculumSetup() {
     setSteps([]);
     audio.play('hudBoot');
     holoBurst(0.8);
-    const req: GenerateRequest = tab === 'goal' ? { mode: 'goal', objective: objective.trim(), level } : { mode: 'documents', files, focus, structure, level };
+    const req: GenerateRequest = tab === 'goal' ? { mode: 'goal', objective: objective.trim(), expectations } : { mode: 'documents', files, focus, structure, expectations };
     try {
       const { course, via } = await generateCourse(req, (key, label) =>
         setSteps((prev) => {
@@ -170,8 +165,8 @@ export default function CurriculumSetup() {
                           ))}
                         </div>
                       </div>
-                      <LevelPicker level={level} onChange={setLevel} />
-                      {hasCourseApi && objective.trim().length >= 3 && <PlacementCheck objective={objective.trim()} onLevel={setLevel} />}
+                      <Expectations value={expectations} onChange={setExpectations} />
+                      {hasCourseApi && objective.trim().length >= 3 && <PlacementCheck objective={objective.trim()} onNote={(note) => setExpectations((current) => (current.trim() ? `${current.trim()} ${note}` : note))} />}
                     </div>
                   ) : (
                     <div className="mt-5 space-y-5">
@@ -223,7 +218,7 @@ export default function CurriculumSetup() {
                         ))}
                       </div>
                       <input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="Anything to focus on? e.g. “chapter on thermodynamics” (optional)" className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-[var(--user)]" />
-                      <LevelPicker level={level} onChange={setLevel} />
+                      <Expectations value={expectations} onChange={setExpectations} />
                       <p className="text-xs text-white/45">{hasCourseApi ? 'Your files are sent to the NOVA course service and its AI provider to build lessons and quizzes. Their text is kept for 30 days so the tutor can answer from them, and deleted when you remove the course. Only upload material you are allowed to share.' : 'Your files stay on this device — NOVA reads them right here in your browser.'}</p>
                     </div>
                   )}
@@ -295,17 +290,18 @@ export default function CurriculumSetup() {
   );
 }
 
-function LevelPicker({ level, onChange }: { level: Level; onChange: (l: Level) => void }) {
+function Expectations({ value, onChange }: { value: string; onChange: (text: string) => void }) {
   return (
-    <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">Your level</div>
-      <div className="grid grid-cols-3 gap-2">
-        {LEVELS.map((l) => (
-          <button key={l.id} type="button" onClick={() => onChange(l.id)} className={`cursor-pointer rounded-xl border py-2 text-sm font-medium transition ${level === l.id ? 'border-[var(--user)] bg-[rgb(var(--user-rgb)/0.12)] text-white' : 'border-white/10 text-white/65 hover:text-white'}`}>
-            {l.label}
-          </button>
-        ))}
-      </div>
-    </div>
+    <label className="block">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">What do you expect? (optional)</div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        maxLength={1000}
+        rows={2}
+        placeholder="e.g. “I only have a weekend”, “I know the basics already”, “focus on practical examples”"
+        className="w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-[var(--user)]"
+      />
+    </label>
   );
 }

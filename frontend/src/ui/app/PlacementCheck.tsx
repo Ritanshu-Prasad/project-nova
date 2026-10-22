@@ -1,21 +1,21 @@
 import { Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { fetchPlacement, fetchPlacementLevel } from '../../core/courseApi';
-import type { Level, Question } from '../../core/courseSchema';
+import { fetchPlacement, fetchPlacementNote } from '../../core/courseApi';
+import type { Question } from '../../core/courseSchema';
 
 type Mcq = Extract<Question, { type: 'mcq' }>;
 type Phase = 'idle' | 'loading' | 'asking' | 'scoring' | 'error';
 
-/** An optional five-question check for a learner who does not know which level to pick. */
-export default function PlacementCheck({ objective, onLevel }: { objective: string; onLevel: (level: Level) => void }) {
+/** An optional five-question check for a learner who is unsure what to expect; it writes a sentence about where they start. */
+export default function PlacementCheck({ objective, onNote }: { objective: string; onNote: (note: string) => void }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [questions, setQuestions] = useState<Mcq[]>([]);
   const [results, setResults] = useState<{ difficulty: number; correct: boolean }[]>([]);
-  const [suggested, setSuggested] = useState<Level | null>(null);
+  const [done, setDone] = useState(false);
 
   const start = async () => {
     setPhase('loading');
-    setSuggested(null);
+    setDone(false);
     try {
       const quiz = (await fetchPlacement(objective)) as Mcq[];
       if (!quiz.length) throw new Error('empty');
@@ -34,9 +34,8 @@ export default function PlacementCheck({ objective, onLevel }: { objective: stri
     if (next.length < questions.length) return;
     setPhase('scoring');
     try {
-      const level = await fetchPlacementLevel(next);
-      setSuggested(level);
-      onLevel(level);
+      onNote(await fetchPlacementNote(next));
+      setDone(true);
       setPhase('idle');
     } catch {
       setPhase('error');
@@ -66,14 +65,14 @@ export default function PlacementCheck({ objective, onLevel }: { objective: stri
     <div className="flex flex-wrap items-center gap-3 text-sm">
       <button type="button" onClick={() => void start()} disabled={phase === 'loading' || phase === 'scoring'} className="flex cursor-pointer items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-white/70 transition hover:text-white disabled:cursor-wait disabled:opacity-60">
         {phase === 'loading' || phase === 'scoring' ? <Loader2 size={14} className="animate-spin" /> : null}
-        Not sure of your level? Take a 5-question check
+        Not sure where you start? Take a 5-question check
       </button>
-      {suggested && (
+      {done && (
         <span className="flex items-center gap-1 text-emerald-200">
-          <Check size={14} /> Suggested level: {suggested}
+          <Check size={14} /> Added to what you expect
         </span>
       )}
-      {phase === 'error' && <span className="text-amber-200">The check is not available right now. Pick a level yourself.</span>}
+      {phase === 'error' && <span className="text-amber-200">The check is not available right now. Describe where you start yourself.</span>}
     </div>
   );
 }

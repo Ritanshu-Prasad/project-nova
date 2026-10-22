@@ -38,7 +38,7 @@ export async function mockBackend(page: Page, options: { topicFailures?: number;
     calls.moduleQuiz++;
     return json(route, moduleQuiz);
   });
-  await page.route('**/api/courses/placement/level*', (route) => json(route, { level: 'advanced' }));
+  await page.route('**/api/courses/placement/note*', (route) => json(route, { note: 'I am already experienced and want detailed, advanced coverage.' }));
   await page.route('**/api/courses/placement', (route) => json(route, placement));
   return calls;
 }

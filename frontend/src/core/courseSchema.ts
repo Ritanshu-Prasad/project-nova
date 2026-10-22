@@ -10,7 +10,6 @@
 
 /** Picks the lesson layout template (icon, accent, side-rail widgets). */
 export type TopicKind = 'concept' | 'programming' | 'math' | 'science' | 'humanities' | 'language' | 'document';
-export type Level = 'beginner' | 'intermediate' | 'advanced';
 
 export type Block =
   | { type: 'text'; title?: string; body: string }
@@ -83,7 +82,8 @@ export interface Course {
   title: string;
   subtitle: string;
   objective: string;
-  level: Level;
+  /** What the learner said they expect (depth, time, focus); sent along when topics are written. */
+  expectations?: string;
   source: 'template' | 'starter' | 'documents' | 'ai';
   modules: Module[];
   documents?: { name: string; pages: number }[];
@@ -106,7 +106,6 @@ export const flatTopics = (c: Course): PlacedTopic[] =>
 const str = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback);
 const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 const KINDS: TopicKind[] = ['concept', 'programming', 'math', 'science', 'humanities', 'language', 'document'];
-const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
 let uid = 0;
 export const makeId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${(uid++).toString(36)}`;
 
@@ -234,7 +233,7 @@ export function normalizeCourse(raw: unknown): Course {
     title: str(c.title, 'Your course'),
     subtitle: str(c.subtitle),
     objective: str(c.objective),
-    level: LEVELS.includes(c.level as Level) ? (c.level as Level) : 'beginner',
+    expectations: str(c.expectations) || undefined,
     source: c.source === 'documents' || c.source === 'template' || c.source === 'starter' ? c.source : 'ai',
     modules,
     documents: arr<Record<string, unknown>>(c.documents).map((d) => ({ name: str(d.name), pages: typeof d.pages === 'number' ? d.pages : 0 })),

@@ -32,8 +32,8 @@ export function ensureTopic(courseId: string, topicId: string): Promise<void> {
 
   const topics = course.modules.flatMap((m) => m.topics);
   const request = fetchTopic({
-    level: course.level,
     objective: course.objective,
+    expectations: course.expectations ?? '',
     course: course.title,
     module: module.title,
     topic: topic.title,
@@ -60,7 +60,6 @@ function refreshModuleQuiz(courseId: string, moduleId: string): void {
 
   quizRefreshed.add(key);
   fetchModuleQuiz({
-    level: course.level,
     objective: course.objective,
     module: module.title,
     topics: module.topics.map((t) => ({

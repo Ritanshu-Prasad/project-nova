@@ -66,16 +66,17 @@ test('the module quiz is rewritten from the lessons once the last one is written
   }), { timeout: 10_000 }).toBe(moduleQuiz.quiz.length);
 });
 
-test('a placement check suggests a level', async ({ page }) => {
+test('a placement check adds where the learner starts to what they expect', async ({ page }) => {
   await mockBackend(page);
   await openForge(page);
   await page.locator('textarea').first().fill('Docker networking');
-  await page.getByRole('button', { name: /not sure of your level/i }).click();
+  await page.getByRole('button', { name: /not sure where you start/i }).click();
   for (let question = 1; question <= placement.questions.length; question++) {
     await expect(page.getByText(`Question ${question} of ${placement.questions.length}`)).toBeVisible();
     await page.getByRole('button', { name: placement.questions[question - 1].options[0], exact: true }).first().click();
   }
-  await expect(page.getByText('Suggested level: advanced')).toBeVisible();
+  await expect(page.getByText('Added to what you expect')).toBeVisible();
+  await expect(page.locator('textarea').nth(1)).toHaveValue(/already experienced/);
 });
 
 test('when the AI service is down the app still builds a course', async ({ page }) => {

@@ -316,7 +316,7 @@ export const useCourse = create<CourseState>()((set, get) => {
       const id = get().activeId;
       const e = id ? get().library[id] : undefined;
       if (!e) return 0;
-      if (opts.qId) noteAnswer(opts.qId, e.course.level, correct);
+      if (opts.qId) noteAnswer(opts.qId, correct);
       const sk = e.skill;
       const K = kFactor(e.course);
       const expected = 1 / (1 + Math.pow(10, (questionRating(opts.progress, opts.difficulty) - sk.mmr) / 400));
