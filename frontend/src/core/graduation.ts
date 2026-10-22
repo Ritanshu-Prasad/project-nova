@@ -25,7 +25,7 @@ export function graduationFacts(e: LibraryEntry, pilot: string, hubQuizzes: numb
     mmr: Math.round(e.skill.mmr),
     rank: rank.label,
     rankColor: rank.tier.color,
-    planets: flatTopics(e.course).length,
+    planets: e.course.modules.length,
     modules: e.course.modules.length,
     accuracy: e.skill.answered ? Math.round((e.skill.correct / e.skill.answered) * 100) : null,
     hubQuizzes,

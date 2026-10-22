@@ -33,7 +33,7 @@ export default function LessonView({ topic, active }: { topic: PlacedTopic; acti
             <Icon size={13} /> {tpl.label}
           </span>
           <span className="rounded-full bg-white/[0.07] px-2.5 py-1 text-white/70">
-            {topic.moduleIndex + 1}.{active.topics.filter((t) => t.moduleIndex === topic.moduleIndex).findIndex((t) => t.id === topic.id) + 1} · {topic.planet}
+            Planet {topic.moduleIndex + 1} · Topic {active.topics.filter((t) => t.moduleIndex === topic.moduleIndex).findIndex((t) => t.id === topic.id) + 1}
           </span>
           <span className="flex items-center gap-1 rounded-full bg-white/[0.07] px-2.5 py-1 text-white/70">
             <Clock size={12} /> {topic.lesson.minutes} min

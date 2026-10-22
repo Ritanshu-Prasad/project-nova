@@ -129,3 +129,114 @@ def test_dev_session_secret_file_persistence(tmp_path, monkeypatch):
     sec2 = accounts._get_dev_secret()
     assert sec2 == sec1
 
+
+def test_google_auth_success(client, monkeypatch):
+    client_id = "test-client-id.apps.googleusercontent.com"
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", client_id)
+
+    async def fake_get(self, url, **kwargs):
+        class FakeResponse:
+            def __init__(self, status_code, data):
+                self.status_code = status_code
+                self._data = data
+
+            def json(self):
+                return self._data
+
+        if "tokeninfo" in str(url):
+            return FakeResponse(200, {"aud": client_id, "sub": "google-user-123"})
+        if "userinfo" in str(url):
+            return FakeResponse(200, {
+                "sub": "google-user-123",
+                "email": "pilot@example.com",
+                "name": "Nova Pilot",
+                "picture": "https://lh3.googleusercontent.com/avatar.jpg",
+                "email_verified": True,
+            })
+        return FakeResponse(404, {})
+
+    monkeypatch.setattr(accounts.httpx.AsyncClient, "get", fake_get)
+
+    res = client.post("/api/auth/google", json={"accessToken": "valid-token"}, headers=HEADERS)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["isNew"] is True
+    assert data["user"]["sub"] == "google:google-user-123"
+    assert data["user"]["email"] == "pilot@example.com"
+    assert data["user"]["picture"] == "https://lh3.googleusercontent.com/avatar.jpg"
+    assert accounts.COOKIE in client.cookies
+
+    # Verify session cookie allows reading account
+    me_res = client.get("/api/auth/me")
+    assert me_res.status_code == 200
+    assert me_res.json()["user"]["sub"] == "google:google-user-123"
+
+    # Second login is not new
+    res2 = client.post("/api/auth/google", json={"accessToken": "valid-token"}, headers=HEADERS)
+    assert res2.status_code == 200
+    assert res2.json()["isNew"] is False
+
+
+def test_google_auth_wrong_client_id(client, monkeypatch):
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "expected-client-id")
+
+    async def fake_get(self, url, **kwargs):
+        class FakeResponse:
+            def __init__(self, status_code, data):
+                self.status_code = status_code
+                self._data = data
+
+            def json(self):
+                return self._data
+
+        return FakeResponse(200, {"aud": "different-client-id", "azp": "different-client-id", "sub": "123"})
+
+    monkeypatch.setattr(accounts.httpx.AsyncClient, "get", fake_get)
+    res = client.post("/api/auth/google", json={"accessToken": "token-for-other-app"}, headers=HEADERS)
+    assert res.status_code == 401
+    assert "issued to a different app" in res.json()["detail"]
+
+
+def test_google_auth_unverified_email(client, monkeypatch):
+    client_id = "test-client-id"
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", client_id)
+
+    async def fake_get(self, url, **kwargs):
+        class FakeResponse:
+            def __init__(self, status_code, data):
+                self.status_code = status_code
+                self._data = data
+
+            def json(self):
+                return self._data
+
+        if "tokeninfo" in str(url):
+            return FakeResponse(200, {"aud": client_id, "sub": "123"})
+        return FakeResponse(200, {"sub": "123", "email": "unverified@example.com", "email_verified": False})
+
+    monkeypatch.setattr(accounts.httpx.AsyncClient, "get", fake_get)
+    res = client.post("/api/auth/google", json={"accessToken": "token"}, headers=HEADERS)
+    assert res.status_code == 401
+    assert "verified email" in res.json()["detail"]
+
+
+def test_google_auth_missing_token_or_csrf(client):
+    # Missing CSRF
+    res = client.post("/api/auth/google", json={"accessToken": "token"})
+    assert res.status_code == 403
+
+    # Missing token
+    res = client.post("/api/auth/google", json={}, headers=HEADERS)
+    assert res.status_code == 400
+
+
+def test_session_secret_rotation_invalidates_session(client, monkeypatch):
+    monkeypatch.setenv("SESSION_SECRET", "old-secret-12345678901234567890123456789012")
+    sign_in(client)
+    assert client.get("/api/auth/me").status_code == 200
+
+    # Rotate secret
+    monkeypatch.setenv("SESSION_SECRET", "new-secret-98765432109876543210987654321098")
+    assert client.get("/api/auth/me").status_code == 401
+
+

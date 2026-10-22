@@ -24,7 +24,7 @@ export const PILOT_KEYS = [
 
 const EPOCH_KEY = 'nova.accountsEpoch';
 /** Bump to clear every browser's local pilot again. */
-const EPOCH = '1';
+const EPOCH = '2';
 
 /** Removes the pilot from this browser (on sign-out, or when another account signs in). */
 export function clearLocalPilot(): void {

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Award, Clapperboard, Cloud, CloudOff, Settings, FileText, Image as ImageIcon, Library, LogOut, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound, Users } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { signOut, useAccount, type SyncStatus } from '../../core/account';
-import { firstUncleared, levelOf, levelProgress, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
+import { firstUncleared, levelOf, levelProgress, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
 import { flatTopics } from '../../core/courseSchema';
 import { courseKey, fetchBoard, type FleetBoard } from '../../core/fleet';
 import { openForge, relaunch, useHub, useProfile } from '../../core/hub';
@@ -194,14 +194,15 @@ function ModuleSkills({ active }: { active: ActiveCourse }) {
 }
 
 function CourseRoute({ active }: { active: ActiveCourse }) {
-  const { course, cleared, topics, next } = active;
-  const n = topics.length;
+  const { course, entry, next } = active;
+  const clearedPlanets = passedModules(entry).length;
+  const totalPlanets = course.modules.length;
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <Label icon={<Rocket size={12} />}>Course route · {course.title}</Label>
         <span className="mb-2 text-sm text-white/55">
-          {cleared}/{n} planets cleared
+          {clearedPlanets}/{totalPlanets} planets cleared
         </span>
       </div>
       {course.documents && course.documents.length > 0 ? (
@@ -220,8 +221,8 @@ function CourseRoute({ active }: { active: ActiveCourse }) {
         {!next
           ? 'All planets cleared — what a journey!'
           : next.kind === 'quiz'
-            ? `Checkpoint: pass the Module ${next.moduleIndex + 1} quiz to fly on to the next module.`
-            : `Next stop: ${next.topic.planet} — ${next.topic.title}. Click an unlocked planet to study it.`}
+            ? `Checkpoint: pass the Module ${next.moduleIndex + 1} quiz to fly on to the next planet.`
+            : `Next stop: Planet ${next.moduleIndex + 1} (${course.modules[next.moduleIndex]?.title || next.topic.planet}) — ${next.topic.title}. Click an unlocked planet to study it.`}
       </p>
     </div>
   );
@@ -300,7 +301,7 @@ export function ProfileSection() {
                       <span className="h-1 w-20 overflow-hidden rounded-full bg-white/10">
                         <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--user)' }} />
                       </span>
-                      {pct}% · {r.label} · {e.course.modules.length} modules · {n} planets
+                      {pct}% · {r.label} · {e.course.modules.length} planet{e.course.modules.length === 1 ? '' : 's'} · {n} topic{n === 1 ? '' : 's'}
                     </div>
                   </button>
                   {e.completedAt && (
@@ -399,7 +400,11 @@ function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
             {data.top.slice(0, 20).map((r) => (
               <li key={r.rank} className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${r.me ? 'bg-[rgb(var(--user-rgb)/0.14)] ring-1 ring-[rgb(var(--user-rgb)/0.45)]' : 'bg-white/[0.03]'}`}>
                 <span className={`w-6 text-right font-display font-bold ${r.rank <= 3 ? 'text-amber-300' : 'text-white/50'}`}>{r.rank}</span>
-                <span className="size-2.5 shrink-0 rounded-full" style={{ background: r.color }} aria-hidden="true" />
+                {r.me ? (
+                  <PilotAvatar size={24} className="rounded-full" />
+                ) : (
+                  <PilotAvatar size={24} className="rounded-full" name={r.callsign} src="" color={r.color} />
+                )}
                 <span className="min-w-0 flex-1 truncate font-semibold text-white">
                   {r.callsign}
                   {r.me && <span className="ml-1.5 text-xs font-normal text-white/50">(you)</span>}

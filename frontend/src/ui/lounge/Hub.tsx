@@ -13,6 +13,7 @@ import { Z } from '../../core/layers';
 import { actionFor, keyLabel, useSettings, type Action } from '../../core/settings';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
+import PilotAvatar from '../common/PilotAvatar';
 import Graduation from './Graduation';
 import { HubQuizStation, QuizArrival, QuizPill } from './HubQuiz';
 import RankEmblem from './RankEmblem';
@@ -252,7 +253,7 @@ function Overview({ active }: { active: ActiveCourse }) {
         </div>
 
         <div className="mt-4 rounded-2xl bg-white/[0.04] p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-white/45">{!next ? 'Course complete' : next.kind === 'quiz' ? 'Checkpoint' : `Next · planet ${next.topic.index + 1} of ${n}`}</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-white/45">{!next ? 'Course complete' : next.kind === 'quiz' ? `Checkpoint · planet ${next.moduleIndex + 1} of ${course.modules.length}` : `Next · planet ${next.moduleIndex + 1} of ${course.modules.length}`}</div>
           <div className="mt-1 font-display text-[17px] font-semibold text-white">{next ? itemLabel(next) : 'Every planet cleared — great flying!'}</div>
           {next && (
             <div className="mt-1 flex items-center gap-3 text-xs text-white/50">
@@ -287,9 +288,12 @@ function Overview({ active }: { active: ActiveCourse }) {
       {/* Today */}
       <motion.section initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.4, delay: 0.05 }} className="card pointer-events-auto absolute right-6 top-24 hidden w-[300px] p-5 lg:block">
         <div className="chip-label">Today</div>
-        <h2 className="mt-1 font-display text-xl font-bold text-white">
-          {greeting()}, <span style={{ color: 'var(--user)' }}>{callsign}</span>
-        </h2>
+        <div className="mt-2 flex items-center gap-3">
+          <PilotAvatar size={38} className="rounded-2xl" />
+          <h2 className="min-w-0 truncate font-display text-xl font-bold text-white">
+            {greeting()}, <span style={{ color: 'var(--user)' }}>{callsign}</span>
+          </h2>
+        </div>
         <div className="mt-4 flex items-center gap-4">
           <Ring value={todayCount / DAILY_GOAL}>
             <span className="text-center font-display text-sm font-bold leading-none text-white">
@@ -414,7 +418,7 @@ function EmptyState() {
       <h1 className="mt-2 font-display text-3xl font-bold text-white">
         Hi {callsign}, what do you want to learn today?
       </h1>
-      <p className="mt-2 text-white/60">Pick how to start — NOVA turns it into a course of bite-sized planets.</p>
+      <p className="mt-2 text-white/60">Pick how to start — NOVA turns it into a course of planetary modules.</p>
       <div className={`mt-7 grid gap-3 ${tiles.length === 1 ? 'max-w-md mx-auto' : 'sm:grid-cols-2'}`}>
         {tiles.map((t) => (
           <button key={t.tab} type="button" onClick={() => (audio.play('click'), openForge(t.tab))} className="group cursor-pointer rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:-translate-y-1 hover:border-[var(--user)] hover:bg-white/[0.07]">
