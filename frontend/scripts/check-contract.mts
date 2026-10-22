@@ -24,14 +24,14 @@ function sameTopic(label: string, sent: any, got: any) {
   }
 }
 
-// An outline-only course keeps every topic, flagged as not written yet, and its module quizzes.
+// An outline-only course keeps every topic, flagged as not written yet; its module quizzes come later, from the topics' question banks.
 const lazy = read('lazy_course');
 const lazyGot = normalizeCourse(lazy);
 expect(lazyGot.modules.length === lazy.modules.length, 'lazy: modules were dropped');
 for (const [m, module] of lazy.modules.entries()) {
   expect(lazyGot.modules[m].topics.length === module.topics.length, `lazy: topics of module ${m + 1} were dropped`);
   expect(lazyGot.modules[m].topics.every((t) => t.loaded === false), `lazy: module ${m + 1} has a topic that is not flagged as outline-only`);
-  expect(countBy(lazyGot.modules[m].quiz ?? []) === countBy(module.quiz), `lazy: module ${m + 1} quiz changed`);
+  expect(countBy(lazyGot.modules[m].quiz ?? []) === countBy(module.quiz ?? []), `lazy: module ${m + 1} quiz changed`);
 }
 
 // A fully written course keeps everything and is not flagged.
@@ -52,7 +52,7 @@ for (const [m, module] of docs.modules.entries()) {
 const fetched = read('topic');
 sameTopic('topic', fetched, normTopic({ ...fetched, title: 'Bridges' }));
 
-// A module quiz written from the lessons.
+// A module quiz drawn from the question banks of the taught topics.
 const moduleQuiz = read('module_quiz');
 const moduleQuizGot = moduleQuiz.quiz.map(normQuestion).filter((q: Question | null): q is Question => q !== null);
 expect(countBy(moduleQuiz.quiz) === countBy(moduleQuizGot), 'module quiz: questions changed');

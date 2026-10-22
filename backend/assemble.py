@@ -51,14 +51,13 @@ def assemble_course(outline: Outline, contents: List[List[TopicContent]], reques
     )
 
 
-def assemble_lazy_course(outline: Outline, quizzes: List[List[Question]], request: CourseRequest) -> Course:
-    """The outline with its module quizzes; every topic is an empty placeholder to be written later."""
+def assemble_lazy_course(outline: Outline, request: CourseRequest) -> Course:
+    """The outline; every topic is an empty placeholder to be written later, and a module's quiz is drawn once its topics are."""
     modules = [
         Module(
             id=f"mod-{m}",
             title=module.title,
             topics=[_stub(m, t, topic) for t, topic in enumerate(module.topics, start=1)],
-            quiz=dedupe_questions(quizzes[m - 1], set()),
         )
         for m, module in enumerate(outline.modules, start=1)
     ]

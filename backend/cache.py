@@ -47,3 +47,4 @@ class ResultCache:
 
 COURSES = ResultCache("course", ttl_seconds=3600)
 TOPICS = ResultCache("topic", ttl_seconds=3600)
+BANKS = ResultCache("bank", ttl_seconds=7 * 24 * 3600)

@@ -5,10 +5,12 @@ import contextlib
 import json
 
 import generator
+import module_content
 import planning
+import question_bank
 import writing
 from conftest import make_pdf
-from samples import lesson_json, module_json, outline_json, questions
+from samples import lesson_json, module_json, outline_json
 
 
 def generate_goal(client, objective="Docker networking", level="beginner"):
@@ -25,7 +27,7 @@ def user_prompts(fake_model, marker: str) -> list:
 
 # --- POST /api/courses/generate, goal mode ---
 
-def test_goal_mode_returns_an_outline_with_module_quizzes(client, fake_model):
+def test_goal_mode_returns_an_outline(client, fake_model):
     response = generate_goal(client)
     assert response.status_code == 200
     course = response.json()
@@ -40,15 +42,15 @@ def test_goal_mode_topics_are_not_written_yet(client, fake_model):
     assert all(t["loaded"] is False and t["lesson"]["blocks"] == [] and t["quiz"] == [] for t in topics)
 
 
-def test_goal_mode_modules_carry_their_own_quiz(client, fake_model):
+def test_goal_mode_modules_have_no_quiz_until_their_topics_are_written(client, fake_model):
     modules = generate_goal(client).json()["modules"]
-    assert all(len(m["quiz"]) == writing.MODULE_QUIZ_SIZE for m in modules)
+    assert all("quiz" not in m for m in modules)
 
 
-def test_goal_mode_makes_only_outline_and_quiz_calls(client, fake_model):
+def test_goal_mode_makes_only_the_outline_call(client, fake_model):
     generate_goal(client)
-    assert user_prompts(fake_model, "textbook author") == []
-    assert len(fake_model.calls) == 1 + 2
+    assert user_prompts(fake_model, "expert curriculum designer and teacher") == []
+    assert len(fake_model.calls) == 1
 
 
 def test_goal_mode_never_returns_more_than_the_limits(client, fake_model):
@@ -73,12 +75,6 @@ def test_goal_mode_rejects_an_unknown_level(client, fake_model):
 def test_goal_mode_passes_model_errors_through(client, fake_model):
     fake_model.replies = [HTTPException(503, "busy")]
     assert generate_goal(client).status_code == 503
-
-
-def test_a_failed_module_quiz_is_left_empty_instead_of_failing_the_course(client, fake_model):
-    fake_model.replies = [outline_json(modules=1, topics=1), HTTPException(502, "bad")]
-    response = generate_goal(client)
-    assert response.status_code == 200 and response.json()["modules"][0]["quiz"] == []
 
 
 # --- The goal and level in the prompts ---
@@ -219,21 +215,27 @@ def test_topic_route_returns_lesson_and_questions(client, fake_model):
     assert body["lesson"]["blocks"] and body["quiz"] and body["practice"]
 
 
-def test_topic_route_removes_questions_repeated_between_quiz_and_practice(client, fake_model):
-    repeated = {"questions": questions(writing.QUIZ_SIZE)}
-    fake_model.replies = [lesson_json(), repeated, repeated]
+def test_topic_route_splits_the_bank_between_quiz_and_practice_without_repeats(client, fake_model):
     body = client.post("/api/courses/topic", json=topic_request()).json()
-    assert len(body["quiz"]) == writing.QUIZ_SIZE and body["practice"] == []
+    asked = [q["q"] for q in body["quiz"] + body["practice"]]
+    assert len(asked) == len(set(asked)) == 8 and len(body["quiz"]) == 4
+
+
+def test_topic_route_gives_every_question_type_the_bank_planned(client, fake_model):
+    body = client.post("/api/courses/topic", json=topic_request()).json()
+    assert sorted({q["type"] for q in body["quiz"] + body["practice"]}) == ["mcq", "multi", "truefalse"]
 
 
 def test_topic_route_keeps_the_def_key_on_key_terms(client, fake_model):
     blocks = client.post("/api/courses/topic", json=topic_request()).json()["lesson"]["blocks"]
-    assert next(b for b in blocks if b["type"] == "keyTerms")["terms"] == [{"term": "Term", "def": "Definition"}]
+    terms = next(b for b in blocks if b["type"] == "keyTerms")["terms"]
+    assert terms[0] == {"term": "Term 0", "def": "A short definition of the term."}
 
 
 def test_topic_route_names_the_topic_and_module_in_the_prompt(client, fake_model):
     client.post("/api/courses/topic", json=topic_request(topic="Overlay networks", module="Scaling"))
-    assert all("Overlay networks" in user and "Scaling" in user for _, user in fake_model.prompts)
+    [user] = user_prompts(fake_model, "expert curriculum designer and teacher")
+    assert "Overlay networks" in user and "Scaling" in user
 
 
 def test_topic_route_sanitises_its_fields(client, fake_model):
@@ -302,13 +304,12 @@ def test_the_cache_can_be_switched_off(client, fake_model, monkeypatch):
 
 def test_each_kind_of_call_gets_its_own_token_limit(client, fake_model):
     client.post("/api/courses/topic", json=topic_request())
-    assert sorted(fake_model.limits) == sorted([writing.LESSON_TOKENS, writing.question_tokens(writing.QUIZ_SIZE), writing.question_tokens(writing.PRACTICE_SIZE)])
+    assert module_content.MODULE_TOKENS in fake_model.limits and question_bank.BATCH_TOKENS in fake_model.limits
 
 
-def test_goal_courses_use_the_outline_and_quiz_limits(client, fake_model):
+def test_goal_courses_use_the_outline_limit(client, fake_model):
     generate_goal(client)
-    assert fake_model.limits[0] == planning.OUTLINE_TOKENS
-    assert set(fake_model.limits[1:]) == {writing.question_tokens(writing.MODULE_QUIZ_SIZE)}
+    assert fake_model.limits == [planning.OUTLINE_TOKENS]
 
 
 def test_more_questions_get_more_room():
@@ -338,7 +339,7 @@ def test_the_stream_ends_with_the_course(client, fake_model):
 
 def test_the_stream_reports_progress_in_order(client, fake_model):
     stages = [event["stage"] for event in stream_events(client) if event["type"] == "progress"]
-    assert stages == ["outline", "quiz"]
+    assert stages == ["outline"]
 
 
 def test_the_stream_is_sent_as_ndjson_without_buffering(client, fake_model):
@@ -444,8 +445,8 @@ def test_fresh_applies_to_topics_too(client, fake_model):
 
 def test_the_topic_route_passes_the_outline_and_previous_topic_to_the_model(client, fake_model):
     client.post("/api/courses/topic", json=topic_request(outline=["Bridges", "Overlay"], previous="Bridges isolate"))
-    lesson_users = user_prompts(fake_model, "textbook author")
-    assert "Course outline: 1. Bridges; 2. Overlay" in lesson_users[0] and "The previous topic covered: Bridges isolate" in lesson_users[0]
+    [user] = user_prompts(fake_model, "expert curriculum designer and teacher")
+    assert "Course outline: Bridges; Overlay." in user and "The previous topic covered: Bridges isolate" in user
 
 
 def test_a_topic_in_another_position_is_written_again(client, fake_model):
@@ -462,39 +463,35 @@ def quiz_request(**overrides) -> dict:
     return {"level": "beginner", "objective": "Docker", "module": "Basics", "topics": taught, **overrides}
 
 
-def test_the_module_quiz_route_returns_questions(client, fake_model):
+def test_the_module_quiz_route_draws_from_the_banks_of_the_taught_topics(client, fake_model):
+    client.post("/api/courses/topic", json=topic_request())
     response = client.post("/api/courses/module-quiz", json=quiz_request())
     assert response.status_code == 200 and len(response.json()["quiz"]) == writing.MODULE_QUIZ_SIZE
 
 
-def test_the_module_quiz_is_written_from_the_taught_content(client, fake_model):
-    client.post("/api/courses/module-quiz", json=quiz_request())
-    assert "Veth pair" in fake_model.prompts[0][1]
-
-
-def test_the_same_taught_content_is_not_written_twice(client, fake_model):
-    client.post("/api/courses/module-quiz", json=quiz_request())
+def test_the_module_quiz_asks_about_every_topic_in_turn(client, fake_model):
+    client.post("/api/courses/topic", json=topic_request(topic="Bridges"))
+    client.post("/api/courses/topic", json=topic_request(topic="Overlay"))
+    taught = [{"title": "Bridges"}, {"title": "Overlay"}]
     calls = len(fake_model.calls)
-    assert client.post("/api/courses/module-quiz", json=quiz_request()).status_code == 200
-    assert len(fake_model.calls) == calls
+    quiz = client.post("/api/courses/module-quiz", json=quiz_request(topics=taught)).json()["quiz"]
+    assert 3 <= len(quiz) <= writing.MODULE_QUIZ_SIZE and len(fake_model.calls) == calls
 
 
-def test_different_taught_content_is_written_again(client, fake_model):
-    client.post("/api/courses/module-quiz", json=quiz_request())
-    calls = len(fake_model.calls)
-    other = quiz_request(topics=[{"title": "Overlay", "points": ["Spans hosts"]}])
-    client.post("/api/courses/module-quiz", json=other)
-    assert len(fake_model.calls) == calls * 2
+def test_the_module_quiz_is_drawn_again_each_time(client, fake_model):
+    client.post("/api/courses/topic", json=topic_request())
+    draws = {tuple(q["q"] for q in client.post("/api/courses/module-quiz", json=quiz_request()).json()["quiz"]) for _ in range(8)}
+    assert len(draws) > 1
+
+
+def test_without_banks_the_module_quiz_is_empty_and_the_app_builds_one(client, fake_model):
+    assert client.post("/api/courses/module-quiz", json=quiz_request()).json() == {"quiz": []}
+    assert fake_model.calls == []
 
 
 def test_the_module_quiz_route_rejects_bad_requests(client, fake_model):
     assert client.post("/api/courses/module-quiz", json=quiz_request(topics=[])).status_code == 422
     assert client.post("/api/courses/module-quiz", json={"level": "beginner"}).status_code == 422
-
-
-def test_the_module_quiz_route_passes_model_errors_through(client, fake_model):
-    fake_model.replies = [HTTPException(503, "busy")]
-    assert client.post("/api/courses/module-quiz", json=quiz_request()).status_code == 503
 
 
 # --- Keeping the documents for the tutor ---

@@ -15,7 +15,7 @@ import generator  # noqa: E402
 import llm  # noqa: E402
 import shared  # noqa: E402
 from evals.pdfs import make_pdf  # noqa: E402,F401
-from samples import lesson_json, mcq, module_json, outline_json, questions  # noqa: E402
+from samples import bank_batch_json, lesson_json, mcq, module_content_json, module_json, outline_json, questions  # noqa: E402
 
 
 def reply_for(system: str, call_number: int, user: str = "") -> dict:
@@ -24,6 +24,12 @@ def reply_for(system: str, call_number: int, user: str = "") -> dict:
         return {"allowed": True, "reason": ""}
     if "placement quiz" in system:
         return {"questions": [{**mcq(n), "difficulty": difficulty} for n, difficulty in enumerate([3, 1, 2, 1, 2])]}
+    if "decide whether a learning topic needs code" in system:
+        return {"requires_code": False, "reason": "A general skill."}
+    if "expert curriculum designer and teacher" in system:
+        return module_content_json(requires_code="MUST have" in system)
+    if "strict assessment writer" in system:
+        return bank_batch_json(user)
     if "careful student" in system:
         return {"answers": [{"number": int(number), "choice": [1]} for number in re.findall(r"^Question (\d+)", user, re.MULTILINE)]}
     if "strict assessment reviewer" in system:

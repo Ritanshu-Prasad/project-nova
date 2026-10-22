@@ -74,7 +74,7 @@ def test_a_refused_goal_gets_no_course(client, fake_model):
 
 def test_an_allowed_goal_costs_one_extra_call_and_still_gets_a_course(client, fake_model):
     response = goal(client)
-    assert response.status_code == 200 and len(fake_model.calls) == 1 + 1 + 2
+    assert response.status_code == 200 and len(fake_model.calls) == 1 + 1
 
 
 def test_a_goal_is_not_cached_when_it_was_refused(client, fake_model):

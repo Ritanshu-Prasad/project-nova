@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from fastapi.responses import StreamingResponse
 
 from assemble import assemble_course, assemble_lazy_course, dedupe_questions, new_course_id, verify_sources
-from cache import COURSES, TOPICS
+from cache import BANKS, COURSES, TOPICS
 from chunking import build_topic_context, focus_terms, group_sections
 from course_models import Course, Level
 from course_requests import CourseRequest, Mode, ModuleQuizRequest, Structure, TopicRequest
@@ -21,7 +21,7 @@ from progress import Report, ignore
 from safety import check_goal
 import usage
 from usage import check_budget
-from writing import keep_written, write_all_topics, write_module_quiz, write_module_quiz_from_lessons, write_topic
+from writing import bank_key, keep_written, module_quiz, write_all_topics, write_topic
 
 router = APIRouter()
 STREAM_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
@@ -88,17 +88,10 @@ async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
 
 
 @router.post("/api/courses/module-quiz", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
-async def generate_module_quiz(body: ModuleQuizRequest, fresh: bool = Query(False)):
-    """The module's quiz written from what its lessons really taught."""
-    key = ("module-quiz", body.level, body.objective.casefold(), body.module.casefold(), body.model_dump_json(include={"topics"}))
-    cached = None if fresh else await TOPICS.get(key)
-    if cached:
-        return cached
-    request = CourseRequest(mode="goal", level=body.level, objective=body.objective)
-    quiz = await write_module_quiz_from_lessons(request, body.module, body.topics)
-    result = {"quiz": [q.model_dump(exclude_none=True) for q in dedupe_questions(quiz, set())]}
-    await TOPICS.put(key, result)
-    return result
+async def generate_module_quiz(body: ModuleQuizRequest):
+    """The module's quiz, drawn from the question banks of the topics the learner was taught; empty when those banks are gone, and the app then builds one from its topics."""
+    banks = [bank for taught in body.topics if (bank := await BANKS.get(bank_key(body.objective, body.module, taught.title)))]
+    return {"quiz": [q.model_dump(exclude_none=True) for q in dedupe_questions(await module_quiz(banks), set())] if banks else []}
 
 
 @router.post("/api/courses/placement", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
@@ -167,16 +160,14 @@ async def _course_events(request: CourseRequest, documents: List[Document], fres
 
 
 async def _course_from_goal(request: CourseRequest, fresh: bool, report: Report) -> dict:
-    """Outline and module quizzes now; each topic is written when the learner opens it."""
+    """The outline now; each topic, with its question bank, is written when the learner opens it."""
     key = (request.level, request.objective.casefold())
     cached = None if fresh else await COURSES.get(key)
     if cached:
         logger.info("Course %s served from the cache", _fingerprint(request.objective))
         return {**cached, "id": new_course_id(), "objective": request.objective}
     outline = fit_outline(await _while_checking(request.objective, plan_outline(request, report)))
-    report("quiz", "Writing the module quizzes")
-    quizzes = await asyncio.gather(*(write_module_quiz(module, request) for module in outline.modules))
-    course = _dump(assemble_lazy_course(outline, quizzes, request))
+    course = _dump(assemble_lazy_course(outline, request))
     await COURSES.put(key, course)
     return course
 

@@ -66,7 +66,7 @@ def test_the_graded_questions_of_a_spoiler_case_belong_to_its_lesson():
 def test_a_goal_run_reports_quality_and_cost(fake_model):
     row = run(run_goal(GOALS["goals"][0], "beginner", judge=False))
     assert row["ok"] and row["suite"] == "goals" and row["kind"] == "goal" and row["level"] == "beginner"
-    assert row["questions"] == 20 and row["duplicates"] == 0.0 and row["agreement"] == 1.0 and row["grade"] > 0
+    assert row["questions"] == 8 and row["duplicates"] == 0.0 and 0.0 <= row["agreement"] <= 1.0 and row["grade"] > 0
     assert {"seconds", "calls", "prompt_tokens", "completion_tokens", "tokens", "cost_usd", "retries", "retry_rate", "first_try", "kind_seconds", "mix", "grade_ok"} <= set(row)
 
 

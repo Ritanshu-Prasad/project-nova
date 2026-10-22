@@ -251,6 +251,10 @@ def test_each_type_has_its_own_prompt_with_only_its_own_rule():
         assert all(TYPE_RULES[other] not in prompt for other in TYPE_RULES if other != kind)
 
 
+def test_questions_must_stand_alone_without_pointing_at_the_module():
+    assert 'never say "the module"' in bank_system("mcq")
+
+
 def test_the_question_writer_sees_the_module_text_and_which_section_each_question_comes_from():
     text = bank_user(content(), "msq", [1, 2])
     assert "[Section 0]" in text and text.endswith("Write exactly 2 questions of type msq, the first from section 1, then section 2.")
@@ -332,3 +336,23 @@ def test_a_bank_that_stays_wrong_is_refused(model):
     with pytest.raises(HTTPException) as error:
         asyncio.run(write_bank(content()))
     assert error.value.status_code == 502
+
+
+# --- Small replies ---
+
+def test_a_lone_question_without_the_wrapper_is_accepted():
+    from question_bank import McqBatch
+
+    assert len(McqBatch.model_validate(mcq(1)).questions) == 1
+
+
+def test_a_bare_list_of_questions_is_accepted():
+    from question_bank import McqBatch
+
+    assert len(McqBatch.model_validate([mcq(1), mcq(2)]).questions) == 2
+
+
+def test_a_wrapped_reply_is_left_alone():
+    from question_bank import McqBatch
+
+    assert len(McqBatch.model_validate({"questions": [mcq(1)]}).questions) == 1

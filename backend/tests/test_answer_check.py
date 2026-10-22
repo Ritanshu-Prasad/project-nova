@@ -9,7 +9,7 @@ from answer_check import drop_disputed
 from course_models import Question
 from course_requests import CourseRequest
 from planning import OutlineTopic
-from samples import lesson_json, questions
+from samples import questions
 
 parse = TypeAdapter(Question).validate_python
 
@@ -116,20 +116,31 @@ def test_it_can_be_switched_off(fake_model, monkeypatch):
 
 # --- In writing a topic ---
 
-def write(fake_model, blind):
-    fake_model.replies = [lesson_json(), {"questions": questions(8)}, {"questions": questions(12, start=100)}, blind, blind]
+def write_goal_topic():
     topic = OutlineTopic(title="Bridges", planet="Vega")
     return run(writing.write_topic("Basics", topic, CourseRequest(mode="goal", level="beginner", objective="Docker"), context=""))
 
 
-def test_the_graded_quiz_is_checked_when_a_topic_is_written(fake_model):
-    content = write(fake_model, answers(KEY, [0], *[KEY] * 6))
-    assert len(content.quiz) == 7 and len(content.practice) == 12
+def test_the_whole_bank_is_checked_in_the_apps_question_shapes_when_a_topic_is_written(fake_model, monkeypatch):
+    seen = []
+
+    async def keep_all(questions, level, context="", minimum=0):
+        seen.append([question.type for question in questions])
+        return questions
+
+    monkeypatch.setattr(writing, "drop_disputed", keep_all)
+    content = write_goal_topic()
+    assert len(seen) == 1 and sorted(set(seen[0])) == ["mcq", "multi", "truefalse"] and len(seen[0]) == 8
+    assert len(content.quiz) + len(content.practice) == 8
 
 
-def test_practice_questions_are_not_checked(fake_model):
-    write(fake_model, answers(*[KEY] * 8))
-    assert len(fake_model.calls) == 5
+def test_questions_the_blind_vote_disputes_are_left_out_of_the_topic(fake_model, monkeypatch):
+    async def drop_two(questions, level, context="", minimum=0):
+        return questions[2:]
+
+    monkeypatch.setattr(writing, "drop_disputed", drop_two)
+    content = write_goal_topic()
+    assert len(content.quiz) + len(content.practice) == 6
 
 
 # --- Two votes, quick answers ---

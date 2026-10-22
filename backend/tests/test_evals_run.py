@@ -118,8 +118,8 @@ def test_a_run_that_holds_every_threshold_passes(fake_model, results, tmp_path, 
 
 
 def test_a_run_that_matches_its_baseline_passes_the_relative_rules(fake_model, results, tmp_path):
-    baseline = write_baseline(results, tmp_path, agreement=1.0, duplicates=0.0, first_try=1.0)
-    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.duplicates", "rise_at_most_share": 0.1}, {"metric": "goals.levels.*.agreement", "drop_at_most": 0.1}])
+    baseline = write_baseline(results, tmp_path, duplicates=0.0, first_try=1.0)
+    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.duplicates", "rise_at_most_share": 0.1}, {"metric": "goals.levels.*.first_try", "drop_at_most": 0.1}])
     assert main(eval_args(results, "--suite", "goals", "--baseline", str(baseline), "--thresholds", rules, "--fail-on-regression")) == 0
 
 

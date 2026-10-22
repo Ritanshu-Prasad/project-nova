@@ -1,3 +1,6 @@
+import re
+
+
 def mcq(n: int = 0) -> dict:
     return {"type": "mcq", "q": f"Question number {n}?", "options": ["a", "b", "c", "d"], "answer": 1, "why": "Because."}
 
@@ -80,3 +83,43 @@ def rich_questions(tag: str) -> list:
         {"type": "order", "q": f"{tag}: order the steps.", "items": ["Create network", "Start container", "Attach container"], "why": "Create first.", "difficulty": 2},
         {"type": "match", "q": f"{tag}: match driver to use.", "pairs": [["bridge", "single host"], ["overlay", "multi host"]], "why": "Scope differs.", "difficulty": 3},
     ]
+
+
+# --- The module writer and the question bank ---
+
+EVIDENCE = "a small repeated action becomes a lasting routine when it is attached to something that already happens every day"
+STEPS = ["Choose one tiny action", "Attach it to a daily routine", "Do it right after the routine", "Celebrate right away"]
+
+
+def module_content_json(sections: int = 3, requires_code: bool = False) -> dict:
+    """A module whose every section contains EVIDENCE, so the bank samples below can quote it."""
+    body = f"In this part we show that {EVIDENCE}. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
+    items = [{"heading": f"Idea {n}", "explanation": body * 2} for n in range(sections)]
+    if requires_code:
+        items[-1]["code"] = {"language": "python", "snippet": "print('hi')", "explanation": "Prints a greeting to the screen."}
+    return {
+        "title": "Building a daily habit",
+        "overview": "How small, repeated actions turn into habits that last without willpower.",
+        "requires_code": requires_code,
+        "code_reason": "The topic needs code." if requires_code else "A general life skill, no software involved.",
+        "key_terms": [{"term": f"Term {n}", "definition": "A short definition of the term."} for n in range(3)],
+        "sections": items,
+    }
+
+
+def bank_batch_json(user: str) -> dict:
+    """A clean batch of questions for the request in `user` ("... of type mcq, the first from section 1, then section 0.")."""
+    kind = re.search(r"of type (\w+),", user).group(1)
+    sections = [int(number) for number in re.findall(r"section (\d+)", user.split("Write exactly")[1])]
+    common = lambda n, section: {"question_id": f"q{n}", "explanation": "The lesson says so directly.", "evidence": EVIDENCE, "section_index": section}
+    batch = []
+    for n, section in enumerate(sections, 1):
+        if kind == "mcq":
+            batch.append({**common(n, section), "type": "mcq", "question_text": f"Which statement matches section {section} of the lesson (item {n})?", "options": [{"id": "abcd"[i], "text": f"Choice {i} for item {n} of section {section}"} for i in range(4)], "correct_answer": "abcd"[n % 4]})
+        elif kind == "msq":
+            batch.append({**common(n, section), "type": "msq", "question_text": f"Which of these hold for section {section} (item {n})? Select all that apply.", "options": [{"id": "abcde"[i], "text": f"Pick {i} for item {n} of section {section}"} for i in range(5)], "correct_answer": ["a", "c"]})
+        elif kind == "true_false":
+            batch.append({**common(n, section), "type": "true_false", "question_text": f"Section {section} says a small action tied to a daily routine becomes easier to repeat (item {n}).", "correct_answer": n % 2 == 0})
+        else:
+            batch.append({**common(n, section), "type": "order", "question_text": f"Put these steps in the correct order: building habit {n}", "items": STEPS})
+    return {"questions": batch}

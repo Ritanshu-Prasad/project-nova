@@ -1,5 +1,6 @@
 import json
 import os
+import random
 from pathlib import Path
 
 import pytest
@@ -28,12 +29,18 @@ def check(name: str, data: dict) -> None:
     assert path.read_text() == text, f"{name}.json is out of date; run UPDATE_FIXTURES=1 pytest backend/tests/test_contract.py"
 
 
+@pytest.fixture(autouse=True)
+def fixed_draws():
+    """Questions are drawn and shuffled at random; the samples need the same draw every time."""
+    random.seed(2026)
+
+
 def scripted_topic_replies() -> list:
     return [rich_lesson_json(), {"questions": rich_questions("quiz")}, {"questions": rich_questions("practice")}]
 
 
 def test_lazy_course_matches_the_frontend_sample(client, fake_model):
-    fake_model.replies = [outline_json(modules=2, topics=2, scope="narrow"), {"questions": rich_questions("m1")}, {"questions": rich_questions("m2")}]
+    fake_model.replies = [outline_json(modules=2, topics=2, scope="narrow")]
     response = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker networking"})
     check("lazy_course", response.json())
 
@@ -45,16 +52,21 @@ def test_documents_course_matches_the_frontend_sample(client, fake_model):
     check("documents_course", response.json())
 
 
+TOPIC = {"level": "beginner", "objective": "Docker networking", "course": "Docker", "module": "Basics", "topic": "Bridges", "summary": "About bridges"}
+
+
 def test_topic_matches_the_frontend_sample(client, fake_model):
-    fake_model.replies = scripted_topic_replies()
-    body = {"level": "beginner", "objective": "Docker networking", "course": "Docker", "module": "Basics", "topic": "Bridges", "summary": "About bridges"}
-    check("topic", client.post("/api/courses/topic", json=body).json())
+    response = client.post("/api/courses/topic", json=TOPIC)
+    assert response.status_code == 200
+    check("topic", response.json())
 
 
 def test_module_quiz_matches_the_frontend_sample(client, fake_model):
-    fake_model.replies = [{"questions": rich_questions("module")}]
-    body = {"level": "beginner", "objective": "Docker networking", "module": "Basics", "topics": [{"title": "Bridges", "objectives": ["Explain bridges"], "terms": ["Veth"], "points": ["Bridges isolate"]}]}
-    check("module_quiz", client.post("/api/courses/module-quiz", json=body).json())
+    client.post("/api/courses/topic", json=TOPIC)
+    body = {"level": "beginner", "objective": "Docker networking", "module": "Basics", "topics": [{"title": "Bridges"}]}
+    response = client.post("/api/courses/module-quiz", json=body)
+    assert response.status_code == 200 and response.json()["quiz"]
+    check("module_quiz", response.json())
 
 
 def test_placement_matches_the_frontend_sample(client, fake_model):

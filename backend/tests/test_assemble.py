@@ -76,15 +76,15 @@ def test_the_objective_falls_back_to_the_focus_then_the_title():
     assert assemble_course(outline(1, 1), contents, CourseRequest(mode="documents", level="beginner"), documents()).objective == "Sample Course"
 
 
-def test_a_lazy_course_has_placeholder_topics_and_module_quizzes():
-    course = assemble_lazy_course(outline(), [parsed(questions(10)), parsed(questions(10, start=50))], request())
+def test_a_lazy_course_has_placeholder_topics_and_no_module_quizzes_yet():
+    course = assemble_lazy_course(outline(), request())
     assert course.source == "ai" and course.documents is None
-    assert [len(m.quiz) for m in course.modules] == [10, 10]
+    assert [m.quiz for m in course.modules] == [None, None]
     assert all(t.loaded is False and t.lesson.blocks == [] for m in course.modules for t in m.topics)
 
 
 def test_lazy_topics_keep_the_planned_minutes():
-    course = assemble_lazy_course(outline(1, 1), [[]], request())
+    course = assemble_lazy_course(outline(1, 1), request())
     assert course.modules[0].topics[0].lesson.minutes == 5
 
 
@@ -172,7 +172,7 @@ def test_verify_sources_checks_every_topic_against_the_uploaded_documents():
 def test_a_course_records_its_model_and_prompt_version(monkeypatch):
     monkeypatch.setenv("NOVA_ALLOWED_MODELS", "some/model")
     monkeypatch.setenv("NOVA_GENERATE_MODEL", "some/model")
-    course = assemble_lazy_course(outline(1, 1), [[]], request())
+    course = assemble_lazy_course(outline(1, 1), request())
     assert course.meta.model == "some/model" and course.meta.promptVersion == prompts.PROMPT_VERSION and course.meta.createdAt > 0
 
 
@@ -186,11 +186,11 @@ def test_a_course_records_what_it_cost_to_write():
 
     spent = usage.begin()
     asyncio.run(usage.record_call("outline", "m", {"prompt_tokens": 4000, "completion_tokens": 1000}, 1.0))
-    meta = assemble_lazy_course(outline(1, 1), [[]], request()).meta
+    meta = assemble_lazy_course(outline(1, 1), request()).meta
     assert (meta.calls, meta.tokens) == (1, 5000) and meta.costUsd == round(spent.cost_usd, 6) > 0
 
 
 def test_a_course_made_outside_a_request_has_no_cost():
     usage._current.set(None)
-    meta = assemble_lazy_course(outline(1, 1), [[]], request()).meta
+    meta = assemble_lazy_course(outline(1, 1), request()).meta
     assert (meta.calls, meta.tokens, meta.costUsd) == (0, 0, 0.0)
