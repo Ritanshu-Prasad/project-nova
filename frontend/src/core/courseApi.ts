@@ -26,6 +26,8 @@ export type GenerateRequest =
 export interface GenerateResult {
   course: Course;
   via: 'ai' | 'local';
+  /** Why the AI service was not used, when it was configured but failed. */
+  reason?: string;
 }
 
 const API = (import.meta.env.VITE_COURSE_API as string | undefined)?.replace(/\/$/, '') || '';
@@ -46,8 +48,15 @@ async function viaBackend(req: GenerateRequest, progress: ProgressFn): Promise<C
   progress('upload', req.mode === 'documents' ? `Uploading ${req.files.length} document(s)` : 'Sending your goal');
   const res = await fetch(`${API}/api/courses/generate/stream`, { method: 'POST', body: form });
   if (res.status === 404) return plainCourse(form, progress);
-  if (!res.ok) throw new Error(`Course API responded ${res.status}`);
+  if (!res.ok) throw new Error(await failure(res));
   return normalizeCourse(await readCourse(res, progress));
+}
+
+/** What the backend said was wrong, such as "Too many requests", or just its status. */
+async function failure(res: Response): Promise<string> {
+  const body = await res.json().catch(() => null);
+  const detail = typeof body?.detail === 'string' ? body.detail : '';
+  return detail ? `${detail} (${res.status})` : `Course API responded ${res.status}`;
 }
 
 /** The streamed route sends one JSON event per line: progress steps, then the course (or an error). */
@@ -185,14 +194,16 @@ export async function generateCourse(req: GenerateRequest, progress: ProgressFn)
 }
 
 async function build(req: GenerateRequest, progress: ProgressFn): Promise<GenerateResult> {
+  let reason: string | undefined;
   if (hasCourseApi) {
     try {
       return { course: await viaBackend(req, progress), via: 'ai' };
     } catch (e) {
       console.warn('[course] backend unavailable, using local generation', e);
+      reason = e instanceof Error ? e.message : String(e);
     }
   }
-  if (req.mode === 'documents') return { course: await courseFromPdfs(req.files, req, progress), via: 'local' };
+  if (req.mode === 'documents') return { course: await courseFromPdfs(req.files, req, progress), via: 'local', reason };
   // Templates are instant; pace the steps so the forge reads well.
   progress('read', 'Understanding your goal');
   await pause(500);
@@ -206,5 +217,5 @@ async function build(req: GenerateRequest, progress: ProgressFn): Promise<Genera
   await pause(500);
   progress('quiz', 'Writing practice questions');
   await pause(450);
-  return { course, via: 'local' };
+  return { course, via: 'local', reason };
 }

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.stubEnv('VITE_COURSE_API', 'https://api.example');
-const { reportQuestion, reportAnswers } = await import('./courseApi');
+const { generateCourse, reportQuestion, reportAnswers } = await import('./courseApi');
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -28,5 +28,28 @@ describe('reportAnswers', () => {
     vi.stubGlobal('fetch', fetchMock);
     await reportAnswers([{ hash: 'abcdef0123456789', correct: true }]);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ answers: [{ hash: 'abcdef0123456789', correct: true }] });
+  });
+});
+
+
+describe('generateCourse', () => {
+  const goal = { mode: 'goal' as const, objective: 'Public speaking', expectations: '' };
+
+  it('says why the AI service was not used when the backend refuses', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'Too many requests, try again later' }), { status: 429 })));
+    const result = await generateCourse(goal, () => undefined);
+    expect(result.via).toBe('local');
+    expect(result.reason).toBe('Too many requests, try again later (429)');
+  });
+
+  it('says so when the backend cannot be reached at all', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    expect((await generateCourse(goal, () => undefined)).reason).toBe('Failed to fetch');
+  });
+
+  it('remembers what the learner expected on the course', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('down')));
+    const result = await generateCourse({ ...goal, expectations: ' one weekend ' }, () => undefined);
+    expect(result.course.expectations).toBe('one weekend');
   });
 });

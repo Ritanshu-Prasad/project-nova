@@ -353,6 +353,17 @@ async def _write_batch(content: ModuleContent, kind: str, sections: list[int]) -
     raise HTTPException(502, "The model could not write the requested number of questions")
 
 
+POINTS_AT_THE_TEXT = re.compile(r",?\s+(according to|as described in|as stated in|as explained in|based on|in)\s+(the\s+)?(module|lesson|text|passage|section\s+\d+)(?=\s*[?.:]|$)", re.I)
+
+
+def tidy(question):
+    """Repairs wording the model often gets slightly wrong, since the type is decided here: a multiple-select stem gets its "Select all that apply.", and a pointer such as "according to Section 2" is cut."""
+    stem = POINTS_AT_THE_TEXT.sub("", question.question_text).strip()
+    if question.type == "msq" and not MULTI_CUE.search(stem):
+        stem = f"{stem} Select all that apply."
+    return question.model_copy(update={"question_text": stem})
+
+
 def _assemble(questions: list, sections: list[int]) -> QuestionBank:
-    """The questions in plan order, with the ids and sections given here and not by the model."""
-    return QuestionBank(questions=[question.model_copy(update={"question_id": f"q{number}", "section_index": section}) for number, (question, section) in enumerate(zip(questions, sections), 1)])
+    """The questions in plan order, tidied, with the ids and sections given here and not by the model."""
+    return QuestionBank(questions=[tidy(question).model_copy(update={"question_id": f"q{number}", "section_index": section}) for number, (question, section) in enumerate(zip(questions, sections), 1)])

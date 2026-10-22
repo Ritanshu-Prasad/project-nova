@@ -371,3 +371,43 @@ def test_a_wrapped_reply_is_left_alone():
     from question_bank import McqBatch
 
     assert len(McqBatch.model_validate({"questions": [mcq(1)]}).questions) == 1
+
+
+# --- Repairing small wording slips ---
+
+def test_a_multiple_select_stem_without_its_cue_gets_it():
+    from question_bank import tidy
+
+    question = bank(*good_questions()[:4], {**msq(5), "question_text": "Which of these are key factors for the audience?"}, *good_questions()[5:]).questions[4]
+    assert tidy(question).question_text == "Which of these are key factors for the audience? Select all that apply."
+
+
+def test_a_stem_that_already_has_the_cue_is_left_alone():
+    from question_bank import tidy
+
+    question = bank(*good_questions()).questions[4]
+    assert tidy(question).question_text == question.question_text
+
+
+@pytest.mark.parametrize("stem, tidied", [
+    ("Which step comes first, according to Section 0?", "Which step comes first?"),
+    ("Which habit idea is described, as described in the module?", "Which habit idea is described?"),
+    ("What does the lesson say about anchors, based on the text.", "What does the lesson say about anchors."),
+])
+def test_pointers_to_the_text_are_cut_from_the_end_of_a_stem(stem, tidied):
+    from question_bank import tidy
+
+    assert tidy(bank({**mcq(1), "question_text": stem}, *good_questions()[1:]).questions[0]).question_text == tidied
+
+
+def test_a_stem_that_mentions_a_module_in_the_middle_is_not_changed():
+    from question_bank import tidy
+
+    stem = "In the module on pricing, which habit idea matters most?"
+    assert tidy(bank({**mcq(1), "question_text": stem}, *good_questions()[1:]).questions[0]).question_text == stem
+
+
+def test_a_bank_written_with_a_missing_cue_passes_without_a_rewrite(model):
+    model.override["msq"] = lambda: [{**msq(n, [1, 2][n - 1]), "question_text": f"Which of these are true about habits {n}?"} for n in (1, 2)]
+    result = asyncio.run(write_bank(content()))
+    assert model.requests.count("msq") == 1 and all(q.question_text.endswith("Select all that apply.") for q in result.questions if q.type == "msq")
