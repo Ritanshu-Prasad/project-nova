@@ -9,7 +9,7 @@ from samples import module_json, outline_json
 
 
 def request(**fields) -> CourseRequest:
-    return CourseRequest(mode="goal", level="beginner", objective="Docker", **fields)
+    return CourseRequest(mode="goal", objective="Docker", **fields)
 
 
 def fitted(modules: int, topics: int, scope: str) -> Outline:
@@ -74,7 +74,7 @@ def test_plan_outline_gives_up_with_502_on_unusable_answers(fake_model):
 def plan(documents, groups):
     import asyncio
 
-    doc_request = CourseRequest(mode="documents", level="beginner")
+    doc_request = CourseRequest(mode="documents")
     return asyncio.run(plan_document_outline(doc_request, documents, groups, []))
 
 

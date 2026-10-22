@@ -1,10 +1,9 @@
 {
   "rules": [
-    {"metric": "goals.levels.*.ok", "at_least": 0.95},
-    {"metric": "goals.levels.beginner.grade_in_range", "at_least": 0.75},
-    {"metric": "goals.levels.*.first_try", "drop_at_most": 0.1},
-    {"metric": "goals.levels.*.judge", "drop_at_most": 0.3},
-    {"metric": "goals.levels.*.questions_judge", "drop_at_most": 0.3},
+    {"metric": "goals.styles.*.ok", "at_least": 0.95},
+    {"metric": "goals.styles.*.first_try", "drop_at_most": 0.1},
+    {"metric": "goals.styles.*.judge", "drop_at_most": 0.3},
+    {"metric": "goals.styles.*.questions_judge", "drop_at_most": 0.3},
     {"metric": "goals.documents.*.citations", "at_least": 0.7},
     {"metric": "safety.recall", "at_least": 0.9},
     {"metric": "safety.precision", "at_least": 0.9},

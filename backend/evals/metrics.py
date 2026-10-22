@@ -27,9 +27,9 @@ def _syllables(word: str) -> int:
     return max(1, len(VOWEL_GROUP.findall(word)))
 
 
-def level_gap(easier: str, harder: str) -> float:
-    """How many grade levels harder the second text reads than the first; it should be above zero."""
-    return reading_grade(harder) - reading_grade(easier)
+def length_ratio(shorter: str, longer: str) -> float:
+    """How many times longer the second text is than the first; a deeper request should give a ratio above one."""
+    return len(longer.split()) / max(1, len(shorter.split()))
 
 
 # --- Questions ---
@@ -74,15 +74,6 @@ def precision_recall(expected: list[bool], predicted: list[bool]) -> tuple[float
     wanted = sum(expected)
     true_positives = sum(1 for want, got in zip(expected, predicted) if want and got)
     return (true_positives / flagged if flagged else None), (true_positives / wanted if wanted else None)
-
-
-# Reading grades that suit each level; reported, and not yet a gate.
-GRADE_RANGES = {"beginner": (0.0, 9.0), "intermediate": (9.0, 12.0), "advanced": (12.0, 99.0)}
-
-
-def grade_in_range(grade: float, level: str) -> bool:
-    low, high = GRADE_RANGES[level]
-    return low <= grade < high
 
 
 def citation_survival(before: int, after: int) -> float:

@@ -14,7 +14,7 @@ from writing import TopicContent, keep_written, module_quiz, write_all_topics, w
 
 
 def request() -> CourseRequest:
-    return CourseRequest(mode="goal", level="beginner", objective="Docker")
+    return CourseRequest(mode="goal", objective="Docker")
 
 
 def outline(modules=2, topics=2) -> Outline:

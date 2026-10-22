@@ -85,8 +85,8 @@ def test_the_judge_adds_scores(fake_model, results):
 def write_baseline(results, tmp_path, **goal_metrics):
     main(eval_args(results, "--suite", "goals"))
     baseline = json.loads(next(results.glob("*.json")).read_text())
-    for level in baseline["summary"]["goals"]["levels"].values():
-        level.update(goal_metrics)
+    for style in baseline["summary"]["goals"]["styles"].values():
+        style.update(goal_metrics)
     path = tmp_path / "baseline.json"
     path.write_text(json.dumps(baseline))
     for file in results.iterdir():
@@ -101,31 +101,31 @@ def write_rules(tmp_path, rules):
 
 
 def test_without_a_baseline_the_fixed_thresholds_still_apply(fake_model, results, tmp_path, capsys):
-    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.ok", "at_least": 1.5}])
+    rules = write_rules(tmp_path, [{"metric": "goals.styles.*.ok", "at_least": 1.5}])
     assert main(eval_args(results, "--suite", "goals", "--thresholds", rules)) == 0
     assert "thresholds broken" in capsys.readouterr().out
 
 
 def test_a_broken_threshold_fails_the_run_only_when_asked(fake_model, results, tmp_path):
-    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.ok", "at_least": 1.5}])
+    rules = write_rules(tmp_path, [{"metric": "goals.styles.*.ok", "at_least": 1.5}])
     assert main(eval_args(results, "--suite", "goals", "--thresholds", rules, "--fail-on-regression")) == 1
 
 
 def test_a_run_that_holds_every_threshold_passes(fake_model, results, tmp_path, capsys):
-    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.ok", "at_least": 0.5}])
+    rules = write_rules(tmp_path, [{"metric": "goals.styles.*.ok", "at_least": 0.5}])
     assert main(eval_args(results, "--suite", "goals", "--thresholds", rules, "--fail-on-regression")) == 0
     assert "every threshold holds" in capsys.readouterr().out
 
 
 def test_a_run_that_matches_its_baseline_passes_the_relative_rules(fake_model, results, tmp_path):
     baseline = write_baseline(results, tmp_path, duplicates=0.0, first_try=1.0)
-    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.duplicates", "rise_at_most_share": 0.1}, {"metric": "goals.levels.*.first_try", "drop_at_most": 0.1}])
+    rules = write_rules(tmp_path, [{"metric": "goals.styles.*.duplicates", "rise_at_most_share": 0.1}, {"metric": "goals.styles.*.first_try", "drop_at_most": 0.1}])
     assert main(eval_args(results, "--suite", "goals", "--baseline", str(baseline), "--thresholds", rules, "--fail-on-regression")) == 0
 
 
 def test_a_baseline_that_is_better_than_the_run_makes_the_gate_fail(fake_model, results, tmp_path, capsys):
     baseline = write_baseline(results, tmp_path, grade=20.0, seconds=100.0, questions_judge=5.0, judge=5.0)
-    rules = write_rules(tmp_path, [{"metric": "goals.levels.*.judge", "drop_at_most": 0.3}])
+    rules = write_rules(tmp_path, [{"metric": "goals.styles.*.judge", "drop_at_most": 0.3}])
     code = main(eval_args(results, "--suite", "goals", "--judge", "--baseline", str(baseline), "--thresholds", rules, "--fail-on-regression"))
     assert code == 1 and "may fall at most" in capsys.readouterr().out
 

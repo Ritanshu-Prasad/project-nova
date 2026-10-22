@@ -3,14 +3,14 @@ import json
 from evals import gate
 from evals.gate import Violation, check, flatten, load_rules
 
-SUMMARY = {"goals": {"levels": {"beginner": {"ok": 1.0, "judge": 4.2, "runs": 3}, "advanced": {"ok": 0.9, "judge": 3.5}}, "level_gap": 1.6, "documents": {"plants": {"citations": 0.8}}}, "safety": {"recall": 0.95, "precision": None}, "cost": {"per_run_usd": 0.002}}
+SUMMARY = {"goals": {"styles": {"beginner": {"ok": 1.0, "judge": 4.2, "runs": 3}, "advanced": {"ok": 0.9, "judge": 3.5}}, "style_effect": 1.6, "documents": {"plants": {"citations": 0.8}}}, "safety": {"recall": 0.95, "precision": None}, "cost": {"per_run_usd": 0.002}}
 
 
 # --- flatten ---
 
 def test_numbers_are_listed_under_dotted_names():
     flat = flatten(SUMMARY)
-    assert flat["goals.levels.beginner.ok"] == 1.0 and flat["goals.level_gap"] == 1.6 and flat["safety.recall"] == 0.95 and flat["cost.per_run_usd"] == 0.002
+    assert flat["goals.styles.beginner.ok"] == 1.0 and flat["goals.style_effect"] == 1.6 and flat["safety.recall"] == 0.95 and flat["cost.per_run_usd"] == 0.002
 
 
 def test_missing_values_lists_and_booleans_are_left_out():
@@ -25,12 +25,12 @@ def violations(current, baseline, *rules):
 
 
 def test_a_value_below_its_minimum_is_a_violation():
-    found = violations(SUMMARY, {}, {"metric": "goals.levels.advanced.ok", "at_least": 0.95})
-    assert found == [Violation("goals.levels.advanced.ok", "must be at least", 0.9, 0.95)]
+    found = violations(SUMMARY, {}, {"metric": "goals.styles.advanced.ok", "at_least": 0.95})
+    assert found == [Violation("goals.styles.advanced.ok", "must be at least", 0.9, 0.95)]
 
 
 def test_a_value_at_its_minimum_passes():
-    assert violations(SUMMARY, {}, {"metric": "goals.levels.advanced.ok", "at_least": 0.9}) == []
+    assert violations(SUMMARY, {}, {"metric": "goals.styles.advanced.ok", "at_least": 0.9}) == []
 
 
 def test_a_value_above_its_maximum_is_a_violation():
@@ -38,9 +38,9 @@ def test_a_value_above_its_maximum_is_a_violation():
 
 
 def test_a_fall_against_the_baseline_is_a_violation_only_when_big_enough():
-    baseline = {"goals": {"levels": {"beginner": {"judge": 4.6}}}}
-    assert violations(SUMMARY, baseline, {"metric": "goals.levels.beginner.judge", "drop_at_most": 0.3}) == [Violation("goals.levels.beginner.judge", "may fall at most", 4.2, 0.3, 4.6)]
-    assert violations(SUMMARY, {"goals": {"levels": {"beginner": {"judge": 4.4}}}}, {"metric": "goals.levels.beginner.judge", "drop_at_most": 0.3}) == []
+    baseline = {"goals": {"styles": {"beginner": {"judge": 4.6}}}}
+    assert violations(SUMMARY, baseline, {"metric": "goals.styles.beginner.judge", "drop_at_most": 0.3}) == [Violation("goals.styles.beginner.judge", "may fall at most", 4.2, 0.3, 4.6)]
+    assert violations(SUMMARY, {"goals": {"styles": {"beginner": {"judge": 4.4}}}}, {"metric": "goals.styles.beginner.judge", "drop_at_most": 0.3}) == []
 
 
 def test_a_rise_against_the_baseline_is_measured_as_a_share():
@@ -50,12 +50,12 @@ def test_a_rise_against_the_baseline_is_measured_as_a_share():
 
 
 def test_rules_against_a_baseline_are_skipped_without_one():
-    assert violations(SUMMARY, {}, {"metric": "goals.levels.*.judge", "drop_at_most": 0.01}, {"metric": "cost.per_run_usd", "rise_at_most_share": 0.0}) == []
+    assert violations(SUMMARY, {}, {"metric": "goals.styles.*.judge", "drop_at_most": 0.01}, {"metric": "cost.per_run_usd", "rise_at_most_share": 0.0}) == []
 
 
 def test_a_wildcard_applies_to_every_matching_metric():
-    found = violations(SUMMARY, {}, {"metric": "goals.levels.*.ok", "at_least": 0.95})
-    assert [v.metric for v in found] == ["goals.levels.advanced.ok"]
+    found = violations(SUMMARY, {}, {"metric": "goals.styles.*.ok", "at_least": 0.95})
+    assert [v.metric for v in found] == ["goals.styles.advanced.ok"]
 
 
 def test_a_rule_for_a_suite_that_was_not_run_is_skipped():
@@ -68,8 +68,8 @@ def test_every_broken_rule_is_reported():
 
 
 def test_a_violation_describes_itself_with_its_baseline():
-    text = Violation("goals.levels.beginner.judge", "may fall at most", 4.2, 0.3, 4.6).describe()
-    assert "goals.levels.beginner.judge = 4.2" in text and "may fall at most 0.3" in text and "baseline 4.6" in text
+    text = Violation("goals.styles.beginner.judge", "may fall at most", 4.2, 0.3, 4.6).describe()
+    assert "goals.styles.beginner.judge = 4.2" in text and "may fall at most 0.3" in text and "baseline 4.6" in text
 
 
 # --- the shipped rules ---

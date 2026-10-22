@@ -223,10 +223,10 @@ def test_an_unreachable_store_never_blocks_work(monkeypatch):
 def test_the_budget_guards_the_routes(client, fake_model, monkeypatch):
     budget(monkeypatch, "1")
     call(prompt=5, completion=0)
-    goal = {"mode": "goal", "level": "beginner", "objective": "Docker"}
+    goal = {"mode": "goal", "objective": "Docker"}
     assert client.post("/api/courses/generate", data=goal).status_code == 503
     assert client.post("/api/courses/generate/stream", data=goal).status_code == 503
-    assert client.post("/api/courses/topic", json={"level": "beginner", "objective": "Docker", "course": "D", "module": "M", "topic": "T"}).status_code == 503
+    assert client.post("/api/courses/topic", json={"objective": "Docker", "course": "D", "module": "M", "topic": "T"}).status_code == 503
     assert fake_model.calls == []
 
 

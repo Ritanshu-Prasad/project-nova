@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 from evals import bank_eval, gate, injection_eval, module_eval, placement_eval, safety_eval, tutor_eval
-from evals.metrics import fraction, level_gap, percentile
+from evals.metrics import length_ratio, percentile
 
 GOAL_METRICS = ["ok", "first_try", "seconds", "tokens", "cost_usd", "grade", "duplicates", "agreement", "judge", "questions_judge"]
 SPREAD_METRICS = ["seconds", "tokens", "grade", "judge"]
@@ -13,29 +13,29 @@ SECTIONS = {"safety": safety_eval, "injection": injection_eval, "tutor": tutor_e
 
 # --- Summaries ---
 
-def summarise_goals(result_rows: list[dict], levels: list[str]) -> dict:
-    """Averages per level for goal runs, how far apart the levels read, latency per kind of call, and document runs."""
+def summarise_goals(result_rows: list[dict], styles: list[str]) -> dict:
+    """Averages per request style for goal runs, how much a deeper request lengthens the lesson, latency per kind of call, and document runs."""
     goal_rows = [row for row in result_rows if row["kind"] == "goal"]
-    summary = {"levels": {}, "level_gap": _level_gaps(goal_rows, levels), "documents": _documents(result_rows), "latency": _latency(goal_rows)}
-    for level in levels:
-        mine = [row for row in goal_rows if row["level"] == level]
-        summary["levels"][level] = {
+    summary = {"styles": {}, "style_effect": _style_effect(goal_rows, styles), "documents": _documents(result_rows), "latency": _latency(goal_rows)}
+    for style in styles:
+        mine = [row for row in goal_rows if row["style"] == style]
+        summary["styles"][style] = {
             "runs": len(mine),
             "ok": _average([1.0 if row["ok"] else 0.0 for row in mine]),
             **{name: _average([row[name] for row in mine if row.get(name) is not None]) for name in GOAL_METRICS[1:]},
-            "grade_in_range": fraction([row for row in mine if row["ok"]], lambda row: row["grade_ok"]),
             **{f"{name}_sd": _spread([row[name] for row in mine if row.get(name) is not None]) for name in SPREAD_METRICS},
         }
     return summary
 
 
-def _level_gaps(goal_rows: list[dict], levels: list[str]) -> float | None:
-    gaps = []
+def _style_effect(goal_rows: list[dict], styles: list[str]) -> float | None:
+    """The deepest style's lesson as a multiple of the shortest style's, averaged over the goals; above one means the expectations are heard."""
+    ratios = []
     for case in {row["case"] for row in goal_rows}:
-        texts = {row["level"]: row["text"] for row in goal_rows if row["case"] == case and row["ok"]}
-        if levels[0] in texts and levels[-1] in texts:
-            gaps.append(level_gap(texts[levels[0]], texts[levels[-1]]))
-    return _average(gaps)
+        texts = {row["style"]: row["text"] for row in goal_rows if row["case"] == case and row["ok"]}
+        if styles[0] in texts and styles[-1] in texts:
+            ratios.append(length_ratio(texts[styles[0]], texts[styles[-1]]))
+    return _average(ratios)
 
 
 def _documents(result_rows: list[dict]) -> dict:
@@ -70,12 +70,12 @@ def summarise_cost(result_rows: list[dict]) -> dict:
     }
 
 
-def build_summary(result_rows: list[dict], levels: list[str]) -> dict:
+def build_summary(result_rows: list[dict], styles: list[str]) -> dict:
     """One summary with a section for every suite that produced rows."""
     suites = {name: [row for row in result_rows if row["suite"] == name] for name in ("goals", *SECTIONS)}
     summary = {}
     if suites["goals"]:
-        summary["goals"] = summarise_goals(suites["goals"], levels)
+        summary["goals"] = summarise_goals(suites["goals"], styles)
     for name, module in SECTIONS.items():
         if suites[name]:
             summary[name] = module.summarise(suites[name])
@@ -98,11 +98,11 @@ def render_markdown(summary: dict, meta: dict) -> str:
 
 
 def _goal_table(goals: dict) -> list[str]:
-    columns = ["ok", "first_try", "seconds", "tokens", "cost_usd", "grade", "grade_in_range", "duplicates", "agreement", "judge", "questions_judge"]
-    lines = ["## Courses", "", "| level | runs | " + " | ".join(columns) + " |", "|---|---|" + "---|" * len(columns)]
-    for level, values in goals["levels"].items():
-        lines.append("| " + " | ".join([level, str(values["runs"])] + [_cell(values.get(name)) for name in columns]) + " |")
-    lines += ["", f"Grade gap between easiest and hardest level: {_cell(goals['level_gap'])}", ""]
+    columns = ["ok", "first_try", "seconds", "tokens", "cost_usd", "grade", "duplicates", "agreement", "judge", "questions_judge"]
+    lines = ["## Courses", "", "| style | runs | " + " | ".join(columns) + " |", "|---|---|" + "---|" * len(columns)]
+    for style, values in goals["styles"].items():
+        lines.append("| " + " | ".join([style, str(values["runs"])] + [_cell(values.get(name)) for name in columns]) + " |")
+    lines += ["", f"The deepest request gives a lesson this many times longer than the shortest: {_cell(goals['style_effect'])}", ""]
     if goals["latency"]:
         lines += ["| kind of call | p50 s | p95 s |", "|---|---|---|"] + [f"| {kind} | {_cell(values['p50'])} | {_cell(values['p95'])} |" for kind, values in goals["latency"].items()] + [""]
     lines += [f"- document `{case}`: " + ", ".join(f"{key} {_cell(value)}" for key, value in document.items()) for case, document in goals["documents"].items()]
@@ -131,6 +131,6 @@ def history_table(results: Path) -> str:
         data = json.loads(path.read_text())
         meta, flat = data["meta"], gate.flatten(data["summary"])
         pick = lambda pattern: _average([value for name, value in flat.items() if fnmatch(name, pattern)])
-        values = [pick("goals.levels.*.ok"), flat.get("cost.per_run_usd"), pick("goals.levels.*.judge"), flat.get("safety.recall"), flat.get("tutor.spoiler_rate"), flat.get("tutor.grounded_rate")]
+        values = [pick("goals.styles.*.ok"), flat.get("cost.per_run_usd"), pick("goals.styles.*.judge"), flat.get("safety.recall"), flat.get("tutor.spoiler_rate"), flat.get("tutor.grounded_rate")]
         lines.append("| " + " | ".join([meta["date"], meta["model"].split("/")[-1], meta["promptVersion"], str(meta.get("suites", "goals"))] + [_cell(value) for value in values]) + " |")
     return "\n".join(lines) + "\n"

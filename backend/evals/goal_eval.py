@@ -9,7 +9,7 @@ from course_models import Lesson
 from course_requests import CourseRequest
 from evals import cases, rows
 from evals.judge import judge_lesson, judge_questions
-from evals.metrics import citation_survival, duplicate_rate, grade_in_range, reading_grade, type_mix
+from evals.metrics import citation_survival, duplicate_rate, reading_grade, type_mix
 from evals.pdfs import make_pdf
 from pdf_parser import read_documents
 from planning import fit_outline, plan_outline
@@ -21,10 +21,10 @@ PARALLEL_RUNS = 3
 
 # --- One run ---
 
-async def run_goal(case: dict, level: str, judge: bool) -> dict:
-    """Plans a course for the goal and writes its first topic at one level."""
-    request = CourseRequest(mode="goal", level=level, objective=case["goal"])
-    row = rows.start("goals", kind="goal", case=case["id"], level=level)
+async def run_goal(case: dict, style: dict, judge: bool) -> dict:
+    """Plans a course for the goal and writes its first topic, for a learner who expects what `style` says."""
+    request = CourseRequest(mode="goal", objective=case["goal"], expectations=style["expectations"])
+    row = rows.start("goals", kind="goal", case=case["id"], style=style["id"])
     try:
         outline = fit_outline(await plan_outline(request))
         module, topic = outline.modules[0], outline.modules[0].topics[0]
@@ -33,21 +33,21 @@ async def run_goal(case: dict, level: str, judge: bool) -> dict:
         text = lesson_text(content.lesson)
         questions = content.quiz + content.practice
         grade = reading_grade(text)
-        row.update(ok=True, text=text, grade=grade, grade_ok=grade_in_range(grade, level), duplicates=duplicate_rate(questions), mix=type_mix(questions), questions=len(questions))
-        row["agreement"] = await agreement(content.quiz, level)
+        row.update(ok=True, text=text, words=len(text.split()), grade=grade, duplicates=duplicate_rate(questions), mix=type_mix(questions), questions=len(questions))
+        row["agreement"] = await agreement(content.quiz)
         if judge:
-            scores = await judge_lesson(case["goal"], level, content.lesson.objectives, text)
-            question_scores = await judge_questions(case["goal"], level, [q.q for q in questions])
+            scores = await judge_lesson(case["goal"], style["expectations"], content.lesson.objectives, text)
+            question_scores = await judge_questions(case["goal"], style["expectations"], [q.q for q in questions])
             row.update(judge=scores.average, judge_notes=scores.notes, questions_judge=question_scores.average, questions_notes=question_scores.notes)
     except HTTPException as error:
         row.update(ok=False, error=str(error.detail))
     return rows.finish(row)
 
 
-async def run_document(case: dict, level: str) -> dict:
+async def run_document(case: dict) -> dict:
     """Builds a whole course from a small document and checks how many quotes were really in it."""
-    request = CourseRequest(mode="documents", level=level)
-    row = rows.start("goals", kind="document", case=case["id"], level=level)
+    request = CourseRequest(mode="documents")
+    row = rows.start("goals", kind="document", case=case["id"])
     quotes = {"before": 0, "after": 0}
     real_verify = generator.verify_sources
 
@@ -89,6 +89,6 @@ async def run(which: str, judge: bool, repeat: int) -> list[dict]:
         async with gate:
             return await coroutine
 
-    jobs = [limited(run_goal(case, level, judge)) for _ in range(repeat) for case in cases.chosen(goals["goals"], which) for level in goals["levels"]]
-    jobs += [limited(run_document(case, "intermediate")) for case in cases.chosen(documents["documents"], which)]
+    jobs = [limited(run_goal(case, style, judge)) for _ in range(repeat) for case in cases.chosen(goals["goals"], which) for style in goals["styles"]]
+    jobs += [limited(run_document(case)) for case in cases.chosen(documents["documents"], which)]
     return list(await asyncio.gather(*jobs))

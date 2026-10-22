@@ -63,7 +63,7 @@ def test_a_verdict_defaults_to_no_reason():
 # --- In the goal route ---
 
 def goal(client):
-    return client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker networking"})
+    return client.post("/api/courses/generate", data={"mode": "goal", "objective": "Docker networking"})
 
 
 def test_a_refused_goal_gets_no_course(client, fake_model):

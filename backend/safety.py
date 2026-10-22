@@ -23,12 +23,17 @@ def has_orders(goal: str) -> bool:
     return bool(ORDERS_IN_A_GOAL.search(goal))
 
 
+def refuse_orders(text: str) -> None:
+    """Free text that gives the model orders is refused at once, without asking the model; used for expectations and goals alike."""
+    if has_orders(text):
+        raise HTTPException(422, ASK_FOR_A_SUBJECT)
+
+
 async def check_goal(goal: str) -> None:
     """Refuses a goal that is meant to cause serious harm; if the check itself fails, the learner is not blocked."""
     if os.getenv("NOVA_MODERATION") == "off":
         return
-    if has_orders(goal):
-        raise HTTPException(422, ASK_FOR_A_SUBJECT)
+    refuse_orders(goal)
     try:
         verdict = await llm.ask(Verdict, safety_system(), wrap_goal(goal), VERDICT_TOKENS, kind="safety")
     except HTTPException as error:

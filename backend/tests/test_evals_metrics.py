@@ -3,7 +3,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from course_models import Question
 from evals.judge import JUDGE_PROMPT, QUESTION_PROMPT, QuestionScores, Scores, answered_off_topic, judge_lesson, judge_questions
-from evals.metrics import citation_survival, duplicate_rate, first_try_rate, fraction, grade_in_range, level_gap, percentile, precision_recall, reading_grade, retry_rate, type_mix
+from evals.metrics import citation_survival, duplicate_rate, first_try_rate, fraction, length_ratio, percentile, precision_recall, reading_grade, retry_rate, type_mix
 from samples import mcq
 
 parse = TypeAdapter(Question).validate_python
@@ -30,8 +30,8 @@ def test_a_text_without_a_full_stop_is_one_sentence():
     assert reading_grade("many words in one long run on sentence without an end") > 0
 
 
-def test_the_gap_is_positive_when_the_second_text_is_harder():
-    assert level_gap(SIMPLE, HARD) > 5 and level_gap(HARD, SIMPLE) < -5
+def test_the_length_ratio_says_how_many_times_longer_the_second_text_is():
+    assert length_ratio("one two", "one two three four five six") == 3.0 and length_ratio("", "a b") == 2.0
 
 
 # --- Questions ---
@@ -63,22 +63,22 @@ def test_citation_survival_is_the_share_of_quotes_that_were_real():
 # --- The reviewer ---
 
 def test_scores_are_averaged():
-    assert Scores(accuracy=4, clarity=5, level_fit=3, alignment=4).average == 4.0
+    assert Scores(accuracy=4, clarity=5, scope_fit=3, alignment=4).average == 4.0
 
 
-@pytest.mark.parametrize("field", ["accuracy", "clarity", "level_fit", "alignment"])
+@pytest.mark.parametrize("field", ["accuracy", "clarity", "scope_fit", "alignment"])
 def test_scores_must_be_between_one_and_five(field):
-    fields = {"accuracy": 3, "clarity": 3, "level_fit": 3, "alignment": 3, field: 6}
+    fields = {"accuracy": 3, "clarity": 3, "scope_fit": 3, "alignment": 3, field: 6}
     with pytest.raises(ValidationError):
         Scores(**fields)
 
 
-def test_a_lesson_is_reviewed_with_its_goal_level_and_objectives(fake_model):
+def test_a_lesson_is_reviewed_with_its_goal_expectations_and_objectives(fake_model):
     import asyncio
 
     scores = asyncio.run(judge_lesson("Docker", "advanced", ["Explain bridges", "Compare drivers"], "Lesson text here"))
     system, user = fake_model.prompts[0]
-    assert system == JUDGE_PROMPT and "Goal: Docker" in user and "Level: advanced" in user
+    assert system == JUDGE_PROMPT and "Goal: Docker" in user and "Learner expectations: advanced" in user
     assert "Explain bridges; Compare drivers" in user and "Lesson text here" in user and scores.average == 4.5
 
 
@@ -125,11 +125,6 @@ def test_precision_and_recall():
 def test_precision_is_unknown_when_nothing_was_flagged_and_recall_when_nothing_was_wanted():
     assert precision_recall([True, False], [False, False]) == (None, 0.0)
     assert precision_recall([False, False], [True, False]) == (0.0, None)
-
-
-@pytest.mark.parametrize("grade, level, fits", [(7.0, "beginner", True), (9.0, "beginner", False), (9.0, "intermediate", True), (12.0, "intermediate", False), (12.0, "advanced", True), (15.0, "advanced", True), (4.0, "advanced", False)])
-def test_grades_are_matched_to_levels(grade, level, fits):
-    assert grade_in_range(grade, level) is fits
 
 
 # --- More reviewers ---

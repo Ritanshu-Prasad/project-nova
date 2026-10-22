@@ -3,7 +3,6 @@ from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from pydantic import BaseModel, BeforeValidator, Field, TypeAdapter, ValidationError, field_validator, model_validator
 
-Level = Literal["beginner", "intermediate", "advanced"]
 TopicKind = Literal["concept", "programming", "math", "science", "humanities", "language", "document"]
 
 MIN_QUESTIONS = 6
@@ -309,7 +308,6 @@ class Course(BaseModel):
     title: str
     subtitle: str
     objective: str
-    level: Level
     source: Literal["ai", "documents"]
     modules: list[Module]
     documents: Optional[list[CourseDocument]] = None

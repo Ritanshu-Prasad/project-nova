@@ -14,7 +14,7 @@ async def check(case: dict) -> dict:
         questions = await write_placement(case["goal"])
         difficulties = [question.difficulty for question in questions]
         row.update(ok=True, count=len(questions), valid=len(questions) >= MIN_PLACEMENT_QUESTIONS and difficulties == sorted(difficulties) and max(difficulties) == 3)
-        row["agreement"] = await agreement(questions, "intermediate")
+        row["agreement"] = await agreement(questions)
     except HTTPException as error:
         row.update(ok=False, valid=False, error=str(error.detail))
     return rows.finish(row)

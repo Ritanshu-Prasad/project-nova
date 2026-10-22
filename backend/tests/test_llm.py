@@ -6,7 +6,6 @@ import pytest
 from fastapi import HTTPException
 
 import llm
-import prompts
 import usage
 from course_models import QuestionList
 from samples import questions
@@ -435,7 +434,7 @@ def test_unusable_answers_are_counted_as_retries(fake_model):
 
 
 def test_ask_passes_its_kind_on(fake_model):
-    run(llm.ask(QuestionList, prompts.questions_system("beginner", 8, False), "u", kind="quiz"))
+    run(llm.ask(QuestionList, "Write exactly 8 questions.", "u", kind="quiz"))
     assert fake_model.kinds == ["quiz"] and fake_model.schemas == [QuestionList]
 
 
@@ -482,7 +481,7 @@ def test_a_timeout_that_never_recovers_is_a_retry_then_a_failure(api, monkeypatc
 def test_an_answer_that_stays_unusable_is_a_failure_of_its_kind(fake_model):
     fake_model.replies = [{"questions": []}] * llm.ATTEMPTS
     with pytest.raises(HTTPException):
-        run(llm.ask(QuestionList, prompts.questions_system("beginner", 8, False), "u", kind="quiz"))
+        run(llm.ask(QuestionList, "Write exactly 8 questions.", "u", kind="quiz"))
     assert ledger("quiz")["retries"] == llm.ATTEMPTS and ledger("quiz")["failures"] == 1
 
 

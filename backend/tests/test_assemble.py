@@ -19,7 +19,7 @@ def parsed(items: list) -> list:
 
 
 def request() -> CourseRequest:
-    return CourseRequest(mode="goal", level="intermediate", objective="Docker")
+    return CourseRequest(mode="goal", objective="Docker")
 
 
 def content(quiz: list, practice: list) -> TopicContent:
@@ -71,9 +71,9 @@ def test_a_topic_never_repeats_a_question_between_quiz_and_practice():
 
 def test_the_objective_falls_back_to_the_focus_then_the_title():
     contents = [[content(questions(8), questions(12, start=100))]]
-    focused = CourseRequest(mode="documents", level="beginner", focus="Chapter 3")
+    focused = CourseRequest(mode="documents", focus="Chapter 3")
     assert assemble_course(outline(1, 1), contents, focused, documents()).objective == "Chapter 3"
-    assert assemble_course(outline(1, 1), contents, CourseRequest(mode="documents", level="beginner"), documents()).objective == "Sample Course"
+    assert assemble_course(outline(1, 1), contents, CourseRequest(mode="documents"), documents()).objective == "Sample Course"
 
 
 def test_a_lazy_course_has_placeholder_topics_and_no_module_quizzes_yet():

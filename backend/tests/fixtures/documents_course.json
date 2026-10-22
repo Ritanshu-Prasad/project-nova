@@ -3,7 +3,6 @@
   "title": "Guide",
   "subtitle": "Built from 1 document",
   "objective": "Guide",
-  "level": "beginner",
   "source": "documents",
   "modules": [
     {
@@ -183,7 +182,7 @@
   ],
   "meta": {
     "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
-    "promptVersion": "2026-10-c",
+    "promptVersion": "2026-10-d",
     "createdAt": 0,
     "documentsKey": "00000000000000000000000000000000",
     "calls": 0,

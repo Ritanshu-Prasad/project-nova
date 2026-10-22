@@ -58,10 +58,10 @@ def main(argv: list[str] | None = None) -> int:
     os.environ["NOVA_RATE_LIMIT"] = "off"
     os.environ["NOVA_MODERATION"] = "on"
     names = list(SUITES) if args.suite == "all" else [args.suite]
-    levels = cases.load("goals")["levels"]
+    styles = [style["id"] for style in cases.load("goals")["styles"]]
     result_rows = asyncio.run(run_suites(names, args.cases, args.judge, args.repeat))
     meta = {"date": date.today().isoformat(), "model": llm.generate_model(), "promptVersion": PROMPT_VERSION, "cases": args.cases, "suites": args.suite, "repeat": args.repeat}
-    summary = report.build_summary(result_rows, levels)
+    summary = report.build_summary(result_rows, styles)
     stem = f"{meta['date']}-{meta['model'].split('/')[-1]}-{PROMPT_VERSION}-{args.cases}-{meta['suites']}"
     Path(args.out).mkdir(parents=True, exist_ok=True)
     (Path(args.out) / f"{stem}.json").write_text(json.dumps({"meta": meta, "summary": summary, "rows": [_without_text(row) for row in result_rows]}, indent=2))

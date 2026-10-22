@@ -10,15 +10,15 @@ from fastapi.responses import StreamingResponse
 from assemble import assemble_course, assemble_lazy_course, dedupe_questions, new_course_id, verify_sources
 from cache import BANKS, COURSES, TOPICS
 from chunking import build_topic_context, focus_terms, group_sections
-from course_models import Course, Level
+from course_models import Course
 from course_requests import CourseRequest, Mode, ModuleQuizRequest, Structure, TopicRequest
 from document_store import delete_pages, is_valid_key, save_pages
 from limits import COURSE_LIMIT, TOPIC_LIMIT
 from pdf_parser import Document, read_documents, split_sections
-from placement import PlacementRequest, PlacementResult, recommend_level, write_placement
+from placement import PlacementRequest, PlacementResult, starting_point, write_placement
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
 from progress import Report, ignore
-from safety import check_goal
+from safety import check_goal, refuse_orders
 import usage
 from usage import check_budget
 from writing import bank_key, keep_written, module_quiz, write_all_topics, write_topic
@@ -33,21 +33,21 @@ logger = logging.getLogger("nova.generator")
 @router.post("/api/courses/generate", dependencies=[Depends(COURSE_LIMIT), Depends(check_budget)])
 async def generate(
     mode: Mode = Form(...),
-    level: Level = Form("beginner"),
+    expectations: str = Form(""),
     objective: str = Form(""),
     focus: str = Form(""),
     structure: Structure = Form("chapters"),
     files: List[UploadFile] = File(default=[]),
     fresh: bool = Query(False),
 ):
-    request, documents = await _read_request(mode, level, objective, focus, structure, files)
+    request, documents = await _read_request(mode, expectations, objective, focus, structure, files)
     return await _make_course(request, documents, fresh)
 
 
 @router.post("/api/courses/generate/stream", dependencies=[Depends(COURSE_LIMIT), Depends(check_budget)])
 async def generate_stream(
     mode: Mode = Form(...),
-    level: Level = Form("beginner"),
+    expectations: str = Form(""),
     objective: str = Form(""),
     focus: str = Form(""),
     structure: Structure = Form("chapters"),
@@ -55,12 +55,13 @@ async def generate_stream(
     fresh: bool = Query(False),
 ):
     """The same course, sent as one JSON event per line: progress steps, then the course (or an error)."""
-    request, documents = await _read_request(mode, level, objective, focus, structure, files)
+    request, documents = await _read_request(mode, expectations, objective, focus, structure, files)
     return StreamingResponse(_course_events(request, documents, fresh), media_type="application/x-ndjson", headers=STREAM_HEADERS)
 
 
-async def _read_request(mode, level, objective, focus, structure, files) -> tuple[CourseRequest, List[Document]]:
-    request = CourseRequest(mode=mode, level=level, objective=objective, focus=focus, structure=structure)
+async def _read_request(mode, expectations, objective, focus, structure, files) -> tuple[CourseRequest, List[Document]]:
+    request = CourseRequest(mode=mode, objective=objective, expectations=expectations, focus=focus, structure=structure)
+    refuse_orders(request.expectations)
     if mode == "goal":
         if len(request.objective) < 3:
             raise HTTPException(422, "Describe what you want to learn")
@@ -70,11 +71,12 @@ async def _read_request(mode, level, objective, focus, structure, files) -> tupl
 
 @router.post("/api/courses/topic", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
 async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
-    key = (body.level, body.objective.casefold(), body.module.casefold(), body.topic.casefold(), body.outline, body.previous)
+    refuse_orders(body.expectations)
+    key = (body.objective.casefold(), body.expectations.casefold(), body.module.casefold(), body.topic.casefold(), body.outline, body.previous)
     cached = None if fresh else await TOPICS.get(key)
     if cached:
         return cached
-    request = CourseRequest(mode="goal", level=body.level, objective=body.objective)
+    request = CourseRequest(mode="goal", objective=body.objective, expectations=body.expectations)
     outline = OutlineTopic(title=body.topic, planet="", summary=body.summary)
     content = await write_topic(body.module, outline, request, "", body.outline, body.previous)
     seen: set = set()
@@ -96,7 +98,7 @@ async def generate_module_quiz(body: ModuleQuizRequest):
 
 @router.post("/api/courses/placement", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
 async def generate_placement(body: PlacementRequest, fresh: bool = Query(False)):
-    """Five multiple-choice questions, easy to hard, for a learner who is unsure which level to pick."""
+    """Five multiple-choice questions, easy to hard, for a learner who is unsure what to expect of the course."""
     if len(body.objective) < 3:
         raise HTTPException(422, "Describe what you want to learn")
     key = ("placement", body.objective.casefold())
@@ -109,9 +111,10 @@ async def generate_placement(body: PlacementRequest, fresh: bool = Query(False))
     return result
 
 
-@router.post("/api/courses/placement/level", dependencies=[Depends(TOPIC_LIMIT)])
-async def placement_level(body: PlacementResult):
-    return {"level": recommend_level(body.answers)}
+@router.post("/api/courses/placement/note", dependencies=[Depends(TOPIC_LIMIT)])
+async def placement_note(body: PlacementResult):
+    """A sentence about where the learner starts, for the course expectations."""
+    return {"note": starting_point(body.answers)}
 
 
 @router.delete("/api/courses/documents/{key}")
@@ -161,12 +164,12 @@ async def _course_events(request: CourseRequest, documents: List[Document], fres
 
 async def _course_from_goal(request: CourseRequest, fresh: bool, report: Report) -> dict:
     """The outline now; each topic, with its question bank, is written when the learner opens it."""
-    key = (request.level, request.objective.casefold())
+    key = (request.objective.casefold(), request.expectations.casefold())
     cached = None if fresh else await COURSES.get(key)
     if cached:
         logger.info("Course %s served from the cache", _fingerprint(request.objective))
         return {**cached, "id": new_course_id(), "objective": request.objective}
-    outline = fit_outline(await _while_checking(request.objective, plan_outline(request, report)))
+    outline = fit_outline(await _while_checking(f"{request.objective} {request.expectations}", plan_outline(request, report)))
     course = _dump(assemble_lazy_course(outline, request))
     await COURSES.put(key, course)
     return course

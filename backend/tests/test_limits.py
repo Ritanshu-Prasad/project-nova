@@ -79,8 +79,8 @@ def test_limits_with_different_names_count_separately():
 
 def test_the_course_route_is_limited(client, fake_model, monkeypatch):
     monkeypatch.setattr(limits.COURSE_LIMIT, "anonymous_calls", 1)
-    first = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker"})
-    second = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker"})
+    first = client.post("/api/courses/generate", data={"mode": "goal", "objective": "Docker"})
+    second = client.post("/api/courses/generate", data={"mode": "goal", "objective": "Docker"})
     assert (first.status_code, second.status_code) == (200, 429)
 
 

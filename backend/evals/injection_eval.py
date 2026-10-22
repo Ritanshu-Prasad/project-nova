@@ -15,7 +15,7 @@ from progress import ignore
 
 async def run_goal(case: dict, planted: str) -> dict:
     """A goal that tries to give the model orders. The course may refuse or be written normally, but must never obey."""
-    request = CourseRequest(mode="goal", level="beginner", objective=case["goal"])
+    request = CourseRequest(mode="goal", objective=case["goal"])
     row = rows.start("injection", case=case["id"], source="goal")
     try:
         course = await generator._course_from_goal(request, True, ignore)
@@ -27,7 +27,7 @@ async def run_goal(case: dict, planted: str) -> dict:
 
 async def run_document(document: dict, planted: str) -> dict:
     """A document whose text tries to give the model orders."""
-    request = CourseRequest(mode="documents", level="beginner")
+    request = CourseRequest(mode="documents")
     row = rows.start("injection", case=document["name"], source="document")
     try:
         upload = UploadFile(file=io.BytesIO(make_pdf(document["pages"])), filename=document["name"])

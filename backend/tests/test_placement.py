@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 import placement
-from placement import PlacementAnswer, PlacementQuiz, PlacementRequest, PlacementResult, recommend_level, write_placement
+from placement import STARTING_POINTS, PlacementAnswer, PlacementQuiz, PlacementRequest, PlacementResult, starting_point, write_placement
 from samples import mcq
 
 
@@ -91,24 +91,24 @@ def test_an_oversized_goal_is_rejected():
         PlacementRequest(objective="x" * 600)
 
 
-# --- Recommending a level ---
+# --- Where the learner starts ---
 
-def test_getting_everything_right_means_advanced():
-    assert recommend_level(answers((1, True), (1, True), (2, True), (2, True), (3, True))) == "advanced"
-
-
-def test_getting_everything_wrong_means_beginner():
-    assert recommend_level(answers((1, False), (1, False), (2, False), (2, False), (3, False))) == "beginner"
+def test_getting_everything_right_means_a_strong_start():
+    assert starting_point(answers((1, True), (1, True), (2, True), (2, True), (3, True))) == STARTING_POINTS["strong"]
 
 
-def test_the_easy_questions_alone_mean_intermediate():
-    assert recommend_level(answers((1, True), (1, True), (2, True), (2, False), (3, False))) == "intermediate"
+def test_getting_everything_wrong_means_a_new_start():
+    assert starting_point(answers((1, False), (1, False), (2, False), (2, False), (3, False))) == STARTING_POINTS["new"]
+
+
+def test_the_easy_questions_alone_mean_some_knowledge():
+    assert starting_point(answers((1, True), (1, True), (2, True), (2, False), (3, False))) == STARTING_POINTS["some"]
 
 
 def test_harder_questions_count_for_more():
-    assert recommend_level(answers((1, False), (1, False), (2, True), (2, False), (3, True))) == "intermediate"
-    assert recommend_level(answers((1, False), (1, False), (2, True), (2, True), (3, True))) == "advanced"
-    assert recommend_level(answers((1, True), (1, True), (2, False), (2, False), (3, False))) == "beginner"
+    assert starting_point(answers((1, False), (1, False), (2, True), (2, False), (3, True))) == STARTING_POINTS["some"]
+    assert starting_point(answers((1, False), (1, False), (2, True), (2, True), (3, True))) == STARTING_POINTS["strong"]
+    assert starting_point(answers((1, True), (1, True), (2, False), (2, False), (3, False))) == STARTING_POINTS["new"]
 
 
 def share_of(earned: int, total: int) -> list:
@@ -116,17 +116,17 @@ def share_of(earned: int, total: int) -> list:
     return [PlacementAnswer(difficulty=1, correct=True)] * earned + [PlacementAnswer(difficulty=1, correct=False)] * (total - earned)
 
 
-@pytest.mark.parametrize("earned, total, level", [(39, 100, "beginner"), (2, 5, "intermediate"), (74, 100, "intermediate"), (3, 4, "advanced")])
-def test_the_cut_offs_include_their_lower_edge(earned, total, level):
-    assert recommend_level(share_of(earned, total)) == level
+@pytest.mark.parametrize("earned, total, start", [(39, 100, "new"), (2, 5, "some"), (74, 100, "some"), (3, 4, "strong")])
+def test_the_cut_offs_include_their_lower_edge(earned, total, start):
+    assert starting_point(share_of(earned, total)) == STARTING_POINTS[start]
 
 
-def test_no_answers_means_beginner():
-    assert recommend_level([]) == "beginner"
+def test_no_answers_means_a_new_start():
+    assert starting_point([]) == STARTING_POINTS["new"]
 
 
 def test_the_cut_offs_are_ordered():
-    assert 0 < placement.INTERMEDIATE_FROM < placement.ADVANCED_FROM < 1
+    assert 0 < placement.SOME_FROM < placement.STRONG_FROM < 1
 
 
 # --- The result body ---
@@ -167,10 +167,10 @@ def test_a_harmful_goal_gets_no_placement_quiz(client, fake_model, monkeypatch):
     assert response.status_code == 422 and response.json()["detail"] == "No."
 
 
-def test_the_level_route_recommends_a_level(client, fake_model):
+def test_the_note_route_describes_where_the_learner_starts(client, fake_model):
     body = {"answers": [{"difficulty": 1, "correct": True}, {"difficulty": 2, "correct": True}, {"difficulty": 3, "correct": True}]}
-    assert client.post("/api/courses/placement/level", json=body).json() == {"level": "advanced"}
+    assert client.post("/api/courses/placement/note", json=body).json() == {"note": STARTING_POINTS["strong"]}
 
 
-def test_the_level_route_needs_answers(client, fake_model):
-    assert client.post("/api/courses/placement/level", json={"answers": []}).status_code == 422
+def test_the_note_route_needs_answers(client, fake_model):
+    assert client.post("/api/courses/placement/note", json={"answers": []}).status_code == 422

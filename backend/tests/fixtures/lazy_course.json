@@ -3,7 +3,6 @@
   "title": "Sample Course",
   "subtitle": "A sample",
   "objective": "Docker networking",
-  "level": "beginner",
   "source": "ai",
   "modules": [
     {
@@ -85,7 +84,7 @@
   ],
   "meta": {
     "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
-    "promptVersion": "2026-10-c",
+    "promptVersion": "2026-10-d",
     "createdAt": 0,
     "calls": 0,
     "tokens": 0,

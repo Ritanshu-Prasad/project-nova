@@ -27,7 +27,7 @@ class BlindAnswers(BaseModel):
     answers: List[BlindAnswer]
 
 
-async def drop_disputed(questions: List[Question], level: str, context: str = "", minimum: int = MIN_QUESTIONS) -> List[Question]:
+async def drop_disputed(questions: List[Question], context: str = "", minimum: int = MIN_QUESTIONS) -> List[Question]:
     """Has the model answer the questions without seeing the key, and drops those where every attempt disagrees.
 
     A key the model cannot reproduce is more likely wrong than the question is hard, and asking twice keeps one
@@ -41,7 +41,7 @@ async def drop_disputed(questions: List[Question], level: str, context: str = ""
     if not checkable:
         return questions
     try:
-        votes = await asyncio.gather(*(_vote(level, checkable, context) for _ in range(VOTES)))
+        votes = await asyncio.gather(*(_vote(checkable, context) for _ in range(VOTES)))
     except HTTPException as error:
         logger.warning("Answer check skipped: %s", error.detail)
         return questions
@@ -52,9 +52,9 @@ async def drop_disputed(questions: List[Question], level: str, context: str = ""
     return kept if len(kept) >= minimum else questions
 
 
-async def _vote(level: str, checkable: list, context: str) -> dict:
+async def _vote(checkable: list, context: str) -> dict:
     tokens = BASE_TOKENS + TOKENS_PER_QUESTION * len(checkable)
-    reply = await llm.ask(BlindAnswers, answer_system(level), _render(checkable, context), tokens, kind="answers")
+    reply = await llm.ask(BlindAnswers, answer_system(), _render(checkable, context), tokens, kind="answers")
     return {answer.number: set(answer.choice) for answer in reply.answers}
 
 
@@ -78,11 +78,11 @@ def _key(question: Question) -> set:
     return {0 if question.answer else 1}
 
 
-async def agreement(questions: List[Question], level: str, context: str = "") -> float:
+async def agreement(questions: List[Question], context: str = "") -> float:
     """The share of checkable questions whose key the model reproduces blind; 1.0 when none can be checked."""
     checkable = [(position, question) for position, question in enumerate(questions) if question.type in CHECKABLE]
     if not checkable:
         return 1.0
-    vote = await _vote(level, checkable, context)
+    vote = await _vote(checkable, context)
     agreeing = sum(1 for number, (_, question) in enumerate(checkable, start=1) if vote.get(number) == _key(question))
     return agreeing / len(checkable)

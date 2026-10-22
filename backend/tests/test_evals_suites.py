@@ -24,7 +24,7 @@ def run(coro):
 # --- Cases ---
 
 def test_the_case_files_have_what_the_suites_need():
-    assert GOALS["levels"] == ["beginner", "intermediate", "advanced"] and all(case["id"] and case["goal"] for case in GOALS["goals"])
+    assert [style["id"] for style in GOALS["styles"]] == ["overview", "practical", "deep"] and all(style["expectations"] for style in GOALS["styles"]) and all(case["id"] and case["goal"] for case in GOALS["goals"])
     assert all(case["name"].endswith(".pdf") and case["pages"] for case in DOCUMENTS["documents"])
     assert all(case["expect"] in {"allow", "refuse"} and case["kind"] in {"benign", "sensitive", "harmful", "injection"} for case in cases.load("safety")["goals"])
     attacks = cases.load("injection")
@@ -64,37 +64,37 @@ def test_the_graded_questions_of_a_spoiler_case_belong_to_its_lesson():
 # --- Goal runs ---
 
 def test_a_goal_run_reports_quality_and_cost(fake_model):
-    row = run(run_goal(GOALS["goals"][0], "beginner", judge=False))
-    assert row["ok"] and row["suite"] == "goals" and row["kind"] == "goal" and row["level"] == "beginner"
+    row = run(run_goal(GOALS["goals"][0], GOALS["styles"][0], judge=False))
+    assert row["ok"] and row["suite"] == "goals" and row["kind"] == "goal" and row["style"] == "overview"
     assert row["questions"] == 8 and row["duplicates"] == 0.0 and 0.0 <= row["agreement"] <= 1.0 and row["grade"] > 0
-    assert {"seconds", "calls", "prompt_tokens", "completion_tokens", "tokens", "cost_usd", "retries", "retry_rate", "first_try", "kind_seconds", "mix", "grade_ok"} <= set(row)
+    assert {"seconds", "calls", "prompt_tokens", "completion_tokens", "tokens", "cost_usd", "retries", "retry_rate", "first_try", "kind_seconds", "mix", "words"} <= set(row)
 
 
 def test_a_goal_run_can_include_reviews_of_the_lesson_and_the_questions(fake_model):
-    row = run(run_goal(GOALS["goals"][0], "advanced", judge=True))
+    row = run(run_goal(GOALS["goals"][0], GOALS["styles"][2], judge=True))
     assert row["judge"] == 4.5 and row["judge_notes"] == "none" and row["questions_judge"] == pytest.approx(13 / 3)
 
 
 def test_a_failing_run_is_reported_not_raised(fake_model):
     fake_model.replies = [HTTPException(503, "busy")]
-    row = run(run_goal(GOALS["goals"][0], "beginner", judge=False))
+    row = run(run_goal(GOALS["goals"][0], GOALS["styles"][0], judge=False))
     assert row["ok"] is False and row["error"] == "busy"
 
 
 def test_the_row_has_no_leftover_timer(fake_model):
-    assert "_started" not in run(run_goal(GOALS["goals"][0], "beginner", judge=False))
+    assert "_started" not in run(run_goal(GOALS["goals"][0], GOALS["styles"][0], judge=False))
 
 
 def test_a_document_run_builds_a_course_and_checks_its_quotes(fake_model):
-    row = run(run_document(DOCUMENTS["documents"][0], "intermediate"))
+    row = run(run_document(DOCUMENTS["documents"][0]))
     assert row["ok"] and row["modules"] >= 1 and row["topics"] >= 1 and row["citations"] == 1.0 and row["suite"] == "goals"
 
 
 def test_a_document_run_restores_the_verifier_even_when_it_fails(fake_model):
     original = generator.verify_sources
-    run(run_document(DOCUMENTS["documents"][0], "intermediate"))
+    run(run_document(DOCUMENTS["documents"][0]))
     fake_model.replies = [HTTPException(503, "busy")] * 10
-    row = run(run_document(DOCUMENTS["documents"][0], "intermediate"))
+    row = run(run_document(DOCUMENTS["documents"][0]))
     assert row["ok"] is False and generator.verify_sources is original
 
 

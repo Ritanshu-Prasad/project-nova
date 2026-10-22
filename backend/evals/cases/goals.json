@@ -1,8 +1,17 @@
 {
-  "levels": [
-    "beginner",
-    "intermediate",
-    "advanced"
+  "styles": [
+    {
+      "id": "overview",
+      "expectations": "I only have an hour and want the big picture, nothing too detailed."
+    },
+    {
+      "id": "practical",
+      "expectations": "I want to be able to do things with it; keep it practical and hands-on."
+    },
+    {
+      "id": "deep",
+      "expectations": "I want a thorough, detailed understanding of how and why it works."
+    }
   ],
   "goals": [
     {

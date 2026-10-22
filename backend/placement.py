@@ -4,7 +4,7 @@ from pydantic import BaseModel, BeforeValidator, Field, field_validator
 
 import llm
 from answer_check import drop_disputed
-from course_models import Level, Mcq, drop_invalid
+from course_models import Mcq, drop_invalid
 from course_requests import MAX_OBJECTIVE_CHARS
 from prompts import placement_system, sanitise, wrap_goal
 
@@ -12,8 +12,8 @@ PLACEMENT_QUESTIONS = 5
 MIN_PLACEMENT_QUESTIONS = 4
 PLACEMENT_TOKENS = 1500
 DIFFICULTY_BY_COUNT = {5: [1, 1, 2, 2, 3], 4: [1, 2, 2, 3]}
-INTERMEDIATE_FROM = 0.4
-ADVANCED_FROM = 0.75
+SOME_FROM = 0.4
+STRONG_FROM = 0.75
 
 
 class PlacementQuiz(BaseModel):
@@ -42,15 +42,22 @@ class PlacementResult(BaseModel):
 async def write_placement(objective: str) -> List[Mcq]:
     """Five questions from easy to hard. The model's own difficulty labels are ignored: it labels nearly everything easy."""
     quiz = await llm.ask(PlacementQuiz, placement_system(), wrap_goal(objective), PLACEMENT_TOKENS, kind="placement")
-    checked = await drop_disputed(quiz.questions[:PLACEMENT_QUESTIONS], "intermediate", minimum=MIN_PLACEMENT_QUESTIONS)
+    checked = await drop_disputed(quiz.questions[:PLACEMENT_QUESTIONS], minimum=MIN_PLACEMENT_QUESTIONS)
     return [question.model_copy(update={"difficulty": difficulty}) for question, difficulty in zip(checked, DIFFICULTY_BY_COUNT[len(checked)])]
 
 
-def recommend_level(answers: List[PlacementAnswer]) -> Level:
-    """Harder questions count for more: the share of the available difficulty points the learner earned."""
+STARTING_POINTS = {
+    "new": "I am new to this and need the basics explained from scratch.",
+    "some": "I know the basics and want to go deeper into how it works.",
+    "strong": "I am already experienced and want detailed, advanced coverage.",
+}
+
+
+def starting_point(answers: List[PlacementAnswer]) -> str:
+    """A sentence about where the learner starts, in their own voice, for the course expectations. Harder questions count for more."""
     available = sum(answer.difficulty for answer in answers)
     earned = sum(answer.difficulty for answer in answers if answer.correct)
     share = earned / available if available else 0.0
-    if share >= ADVANCED_FROM:
-        return "advanced"
-    return "intermediate" if share >= INTERMEDIATE_FROM else "beginner"
+    if share >= STRONG_FROM:
+        return STARTING_POINTS["strong"]
+    return STARTING_POINTS["some"] if share >= SOME_FROM else STARTING_POINTS["new"]

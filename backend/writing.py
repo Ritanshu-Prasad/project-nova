@@ -52,7 +52,7 @@ def bank_key(objective: str, module_title: str, topic_title: str) -> tuple:
 
 def _expectations(request: CourseRequest, module_title: str, topic: OutlineTopic, outline: Sequence[str], previous: str) -> str:
     goal = request.objective or request.focus
-    parts = [f"The learner's goal: {goal}." if goal else "", f'This is the topic "{topic.title}" ({topic.summary}) of the module "{module_title}".']
+    parts = [f"The learner's goal: {goal}." if goal else "", f"The learner's expectations: {request.expectations}." if request.expectations else "", f'This is the topic "{topic.title}" ({topic.summary}) of the module "{module_title}".']
     if outline:
         parts.append("Course outline: " + "; ".join(outline) + ".")
     if previous:
@@ -63,7 +63,7 @@ def _expectations(request: CourseRequest, module_title: str, topic: OutlineTopic
 async def _undisputed(questions: list, context: str = "") -> list:
     """The bank questions whose key the model reproduces when it answers blind; the check works on the app's question shape."""
     converted = [to_question(question) for question in questions]
-    kept = {id(question) for question in await drop_disputed(converted, "intermediate", context)}
+    kept = {id(question) for question in await drop_disputed(converted, context)}
     return [question for question, shaped in zip(questions, converted) if id(shaped) in kept]
 
 

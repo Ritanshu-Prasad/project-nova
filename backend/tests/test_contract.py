@@ -37,18 +37,18 @@ def fixed_draws():
 
 def test_lazy_course_matches_the_frontend_sample(client, fake_model):
     fake_model.replies = [outline_json(modules=2, topics=2, scope="narrow")]
-    response = client.post("/api/courses/generate", data={"mode": "goal", "level": "beginner", "objective": "Docker networking"})
+    response = client.post("/api/courses/generate", data={"mode": "goal", "objective": "Docker networking"})
     check("lazy_course", response.json())
 
 
 def test_documents_course_matches_the_frontend_sample(client, fake_model):
     fake_model.replies = [module_json(topics=1, title="Bridges")]
     pdf = make_pdf(["Bridges connect containers."], bookmarks=[("Whole guide", 1)])
-    response = client.post("/api/courses/generate", data={"mode": "documents", "level": "beginner"}, files=[("files", ("guide.pdf", pdf, "application/pdf"))])
+    response = client.post("/api/courses/generate", data={"mode": "documents"}, files=[("files", ("guide.pdf", pdf, "application/pdf"))])
     check("documents_course", response.json())
 
 
-TOPIC = {"level": "beginner", "objective": "Docker networking", "course": "Docker", "module": "Basics", "topic": "Bridges", "summary": "About bridges"}
+TOPIC = {"objective": "Docker networking", "course": "Docker", "module": "Basics", "topic": "Bridges", "summary": "About bridges"}
 
 
 def test_topic_matches_the_frontend_sample(client, fake_model):
@@ -59,7 +59,7 @@ def test_topic_matches_the_frontend_sample(client, fake_model):
 
 def test_module_quiz_matches_the_frontend_sample(client, fake_model):
     client.post("/api/courses/topic", json=TOPIC)
-    body = {"level": "beginner", "objective": "Docker networking", "module": "Basics", "topics": [{"title": "Bridges"}]}
+    body = {"objective": "Docker networking", "module": "Basics", "topics": [{"title": "Bridges"}]}
     response = client.post("/api/courses/module-quiz", json=body)
     assert response.status_code == 200 and response.json()["quiz"]
     check("module_quiz", response.json())

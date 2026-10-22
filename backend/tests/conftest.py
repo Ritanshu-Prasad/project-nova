@@ -37,7 +37,7 @@ def reply_for(system: str, call_number: int, user: str = "") -> dict:
     if "stayed on a lesson" in system:
         return {"answered": False}
     if "strict teaching reviewer" in system:
-        return {"accuracy": 4, "clarity": 5, "level_fit": 4, "alignment": 5, "notes": "none"}
+        return {"accuracy": 4, "clarity": 5, "scope_fit": 4, "alignment": 5, "notes": "none"}
     if "Turn one part of a document" in system:
         return module_json()
     if "curriculum architect" in system:
