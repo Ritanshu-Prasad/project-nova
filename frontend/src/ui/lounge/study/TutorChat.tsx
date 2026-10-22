@@ -141,7 +141,7 @@ export default function TutorChat({ active, variant = 'dock', onClose }: { activ
             }
           }}
           placeholder={busy ? 'NOVA is thinking…' : 'Ask about this lesson…'}
-          className="max-h-28 min-h-10 flex-1 resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm leading-snug text-white outline-none placeholder:text-white/35 focus:border-[var(--user)]"
+          className="max-h-28 min-h-10 flex-1 resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm leading-snug text-white outline-none placeholder:text-white/60 focus:border-[var(--user)]"
         />
         <button type="submit" disabled={busy || !text.trim()} aria-label="Send" className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl text-[var(--user-ink)] transition hover:brightness-110 disabled:cursor-default disabled:opacity-35" style={{ background: 'var(--user)' }}>
           <SendHorizontal size={17} />
@@ -180,10 +180,10 @@ function Header({ expanded, onToggle, onClear, inset }: { expanded: boolean; onT
       </span>
       <div className="min-w-0 flex-1">
         <div className="font-display text-base font-semibold text-white">Ask NOVA</div>
-        <div className="truncate text-xs text-white/45">{hasTutorApi ? 'AI tutor for this lesson' : 'Offline tutor · answers from this lesson'}</div>
+        <div className="truncate text-xs text-white/60">{hasTutorApi ? 'AI tutor for this lesson' : 'Offline tutor · answers from this lesson'}</div>
       </div>
       {onClear && (
-        <button type="button" aria-label="Clear chat" title="Clear chat" onClick={onClear} className="cursor-pointer rounded-lg p-1.5 text-white/45 transition hover:bg-white/10 hover:text-white">
+        <button type="button" aria-label="Clear chat" title="Clear chat" onClick={onClear} className="cursor-pointer rounded-lg p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white">
           <RotateCcw size={15} />
         </button>
       )}
@@ -242,7 +242,7 @@ function Md({ text }: { text: string }) {
       const ordered = /^\s*\d/.test(l);
       const items: string[] = [];
       while (i < lines.length && LIST.test(lines[i])) items.push(lines[i++].replace(LIST, ''));
-      const cls = `space-y-1 pl-5 ${ordered ? 'list-decimal' : 'list-disc'} marker:text-white/40`;
+      const cls = `space-y-1 pl-5 ${ordered ? 'list-decimal' : 'list-disc'} marker:text-white/60`;
       const lis = items.map((it, k) => <li key={k}>{inline(it)}</li>);
       out.push(
         ordered ? (

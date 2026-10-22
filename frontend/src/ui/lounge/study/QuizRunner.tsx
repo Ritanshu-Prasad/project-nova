@@ -60,7 +60,7 @@ function optionCls(state: 'idle' | 'right' | 'wrong' | 'dim' | 'selected') {
     case 'wrong':
       return 'border-rose-400/70 bg-rose-400/15 text-white';
     case 'dim':
-      return 'border-white/5 bg-white/[0.02] text-white/40';
+      return 'border-white/5 bg-white/[0.02] text-white/60';
   }
 }
 
@@ -365,7 +365,7 @@ function CodeAnswer({ q, answered, onSubmit }: { q: Extract<Question, { type: 'c
             ))}
           </ul>
           <div>
-            <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-white/40">Model solution</div>
+            <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-white/60">Model solution</div>
             <pre className="overflow-x-auto rounded-lg bg-black/40 p-3 font-mono text-sm text-sky-100/90 [font-variant-ligatures:none]">{q.solution}</pre>
           </div>
         </div>
@@ -401,7 +401,7 @@ function OrderAnswer({ q, answered, onSubmit }: { q: Extract<Question, { type: '
               dragListener={!answered}
               className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-base ${answered ? (ok ? 'border-emerald-400/60 bg-emerald-400/10' : 'border-rose-400/60 bg-rose-400/10') : 'cursor-grab border-white/10 bg-white/[0.04] active:cursor-grabbing'}`}
             >
-              {!answered && <GripVertical size={16} className="shrink-0 text-white/35" />}
+              {!answered && <GripVertical size={16} className="shrink-0 text-white/60" />}
               <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-semibold text-white/80">{i + 1}</span>
               <span className="flex-1 text-white/90">{it}</span>
               {!answered && (

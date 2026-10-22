@@ -32,7 +32,7 @@ export default function ReportQuestion({ question }: { question: string }) {
       </div>
     );
   return (
-    <button type="button" onClick={() => setPhase('choosing')} className="flex cursor-pointer items-center gap-1.5 text-xs text-white/45 transition hover:text-white/80">
+    <button type="button" onClick={() => setPhase('choosing')} className="flex cursor-pointer items-center gap-1.5 text-xs text-white/60 transition hover:text-white/80">
       <Flag size={12} /> {phase === 'error' ? 'Could not send, try again' : 'Report this question'}
     </button>
   );

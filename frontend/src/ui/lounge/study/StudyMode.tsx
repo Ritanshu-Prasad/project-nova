@@ -94,14 +94,14 @@ export default function StudyMode() {
     >
       <header className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] px-4 py-3 sm:px-6">
         <button type="button" onClick={() => useHub.getState().go('hub')} className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-sm font-medium text-white/75 transition hover:bg-white/[0.12] hover:text-white">
-          <ArrowLeft size={14} /> Lounge <kbd className="ml-1 hidden text-[11px] text-white/40 sm:inline">Esc</kbd>
+          <ArrowLeft size={14} /> Lounge <kbd className="ml-1 hidden text-[11px] text-white/60 sm:inline">Esc</kbd>
         </button>
         <IconBtn label="Toggle course outline" onClick={() => setOutlineOpen((v) => !v)} className="hidden lg:grid">
           <PanelLeft size={17} />
         </IconBtn>
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-base font-semibold text-white">{active.course.title}</div>
-          <div className="truncate text-sm text-white/45">
+          <div className="truncate text-sm text-white/60">
             Module {item.moduleIndex + 1} · {active.course.modules[item.moduleIndex].title}
           </div>
         </div>
@@ -260,10 +260,10 @@ function Outline({ active }: { active: ActiveCourse }) {
               <button type="button" onClick={() => setOpen((o) => ({ ...o, [mi]: !o[mi] }))} aria-expanded={isOpen} className="flex w-full cursor-pointer items-center gap-2 px-5 py-3 text-left transition hover:bg-white/[0.03]">
                 {isOpen ? <ChevronDown size={15} className="shrink-0 text-white/50" /> : <ChevronRight size={15} className="shrink-0 text-white/50" />}
                 <span className="min-w-0 flex-1">
-                  <span className="block text-xs text-white/40">Module {mi + 1}</span>
+                  <span className="block text-xs text-white/60">Module {mi + 1}</span>
                   <span className="block truncate font-display text-base font-semibold text-white">{m.title}</span>
                 </span>
-                <span className="text-xs text-white/45">
+                <span className="text-xs text-white/60">
                   {doneCount}/{items.length}
                 </span>
               </button>
@@ -305,13 +305,13 @@ function OutlineRow({ active, it, locked }: { active: ActiveCourse; it: OutlineI
         <span className="min-w-0 flex-1 truncate">
           {it.kind === 'topic' ? (
             <>
-              <span className="text-white/40">{itemNumber(active, it.topic)}</span> {it.topic.title}
+              <span className="text-white/60">{itemNumber(active, it.topic)}</span> {it.topic.title}
             </>
           ) : (
             <span className="font-semibold">Module quiz</span>
           )}
         </span>
-        <span className="text-xs text-white/35">{it.kind === 'topic' ? `${it.topic.lesson.minutes}m` : best !== undefined ? `${Math.round(best * 100)}%` : `${quizSizeLabel(it.pool.length, LESSON_QUIZ.min, LESSON_QUIZ.max)} Q`}</span>
+        <span className="text-xs text-white/60">{it.kind === 'topic' ? `${it.topic.lesson.minutes}m` : best !== undefined ? `${Math.round(best * 100)}%` : `${quizSizeLabel(it.pool.length, LESSON_QUIZ.min, LESSON_QUIZ.max)} Q`}</span>
       </button>
     </li>
   );
@@ -427,7 +427,7 @@ function Section({ def, defaultOpen }: { def: SectionDef; defaultOpen: boolean }
         <def.icon size={16} className="shrink-0" style={{ color: 'var(--user)' }} />
         <span className="min-w-0 flex-1 truncate font-display text-base font-semibold text-white">{def.title}</span>
         {def.count ? <span className="rounded-full bg-white/[0.07] px-2 text-xs text-white/55">{def.count}</span> : null}
-        {open ? <ChevronDown size={15} className="text-white/45" /> : <ChevronRight size={15} className="text-white/45" />}
+        {open ? <ChevronDown size={15} className="text-white/60" /> : <ChevronRight size={15} className="text-white/60" />}
       </button>
       <AnimatePresence initial={false}>
         {open && (
@@ -458,7 +458,7 @@ function Rail({ topic }: { topic: PlacedTopic | null }) {
             <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded border border-white/25" style={done.includes(i) ? { background: 'var(--user)', borderColor: 'var(--user)' } : undefined}>
               {done.includes(i) && <Check size={10} className="text-[var(--user-ink)]" strokeWidth={3} />}
             </span>
-            <span className={done.includes(i) ? 'text-white/40 line-through' : ''}>{o}</span>
+            <span className={done.includes(i) ? 'text-white/60 line-through' : ''}>{o}</span>
           </button>
         </li>
       ))}
@@ -467,7 +467,7 @@ function Rail({ topic }: { topic: PlacedTopic | null }) {
   const defs = sectionsFor(topic, checklist);
   return (
     <div className="space-y-3">
-      <div className="px-1 text-xs text-white/40">{defs.length} sections for this topic</div>
+      <div className="px-1 text-xs text-white/60">{defs.length} sections for this topic</div>
       {defs.map((d, i) => (
         <Section key={d.title} def={d} defaultOpen={i < 2} />
       ))}
@@ -493,7 +493,7 @@ function Notes({ topicId }: { topicId: string }) {
         placeholder="Write what clicked, questions to ask, or a quick summary in your own words…"
         className="w-full resize-y rounded-xl border border-white/10 bg-black/30 p-3 text-sm leading-relaxed text-white outline-none placeholder:text-white/30 focus:border-[var(--user)]"
       />
-      <div className="mt-1 text-xs text-white/35">Saved automatically</div>
+      <div className="mt-1 text-xs text-white/60">Saved automatically</div>
     </>
   );
 }
