@@ -22,7 +22,7 @@ interface Resp {
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9α-ωλ]+/gi, ' ').trim();
 
-export function answerText(q: Question): string {
+function answerText(q: Question): string {
   switch (q.type) {
     case 'mcq':
       return q.options[q.answer];

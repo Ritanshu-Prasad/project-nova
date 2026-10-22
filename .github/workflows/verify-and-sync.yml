@@ -45,12 +45,23 @@ jobs:
       - name: Install Backend Dependencies
         run: pip install -r backend/requirements-dev.txt
 
+      - name: Lint The Backend
+        run: python -m pyflakes backend/*.py backend/evals/*.py backend/tests/*.py
+
       - name: Run Backend Tests
         run: python -m pytest backend/tests -q
 
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Lint The Frontend
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run The Frontend Unit Tests
+        working-directory: frontend
+        run: npm test
 
       - name: Check Backend Output Against The Frontend Validators
         working-directory: frontend

@@ -232,7 +232,11 @@ const itemNumber = (active: ActiveCourse, t: PlacedTopic) => `${t.moduleIndex + 
 function Outline({ active }: { active: ActiveCourse }) {
   const f = frontier(active.entry, active.outline);
   const [open, setOpen] = useState<Record<number, boolean>>(() => ({ [active.item.moduleIndex]: true }));
-  useEffect(() => setOpen((o) => ({ ...o, [active.item.moduleIndex]: true })), [active.item.moduleIndex]);
+  const [openedFor, setOpenedFor] = useState(active.item.moduleIndex);
+  if (openedFor !== active.item.moduleIndex) {
+    setOpenedFor(active.item.moduleIndex);
+    setOpen((o) => ({ ...o, [active.item.moduleIndex]: true }));
+  }
   const pct = Math.round((active.cleared / active.topics.length) * 100);
 
   return (

@@ -23,6 +23,7 @@ import { NOISE_GLSL } from '../shaders/noise';
 import Door from './Door';
 import { FLOOR_Y, HOLO_CENTER, LOUNGE, TABLE, plateTexture, signTexture, softDot } from './layout';
 import Pet from './Pet';
+import { seededRandom } from '../../core/seeded';
 
 const [CX, , CZ] = LOUNGE.center;
 const A = LOUNGE.apothem;
@@ -457,14 +458,15 @@ void main() {
 /** Slow floating dust motes catching the light. */
 function Dust() {
   const res = useMemo(() => {
+    const random = seededRandom(303);
     const n = 650;
     const pos = new Float32Array(n * 3);
     const seed = new Float32Array(n);
     for (let i = 0; i < n; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const r = Math.sqrt(Math.random()) * (A - 0.5);
-      pos.set([CX + Math.cos(a) * r, FLOOR_Y + 0.2 + Math.random() * (H - 0.4), CZ + Math.sin(a) * r], i * 3);
-      seed[i] = Math.random();
+      const a = random() * Math.PI * 2;
+      const r = Math.sqrt(random()) * (A - 0.5);
+      pos.set([CX + Math.cos(a) * r, FLOOR_Y + 0.2 + random() * (H - 0.4), CZ + Math.sin(a) * r], i * 3);
+      seed[i] = random();
     }
     const g = new BufferGeometry();
     g.setAttribute('position', new BufferAttribute(pos, 3));

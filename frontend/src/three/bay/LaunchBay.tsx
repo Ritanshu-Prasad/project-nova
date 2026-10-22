@@ -88,7 +88,7 @@ export default function LaunchBay() {
   const flood2 = useRef<PointLight>(null);
   const strobe = useRef<PointLight>(null);
 
-  const hazard = useMemo(hazardTexture, []);
+  const hazard = useMemo(() => hazardTexture(), []);
   const sign = useMemo(() => signTexture(['BAY 07', 'NOVA FLIGHT ACADEMY · CATAPULT ZONE']), []);
   const chaseCount = Math.floor((DOOR_Z - BAY.exitZ) / CHASE_SPACING) * 2;
   const bankCount = BANK_Z.length * FIXTURE_X.length;

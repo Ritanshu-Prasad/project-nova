@@ -18,6 +18,8 @@ import RankEmblem from './RankEmblem';
 import { ProfileSection, SkillJourneySection } from './sections';
 import StudyMode from './study/StudyMode';
 
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
 type DockKey = Station | 'new';
 
 /** Which shortcut (Settings → keyboard) opens each dock card. */
@@ -144,7 +146,7 @@ function Overview({ active }: { active: ActiveCourse }) {
   const pct = Math.round((cleared / n) * 100);
   const ni = next ? outline.indexOf(next) : outline.length;
   const upNext = outline.slice(ni + 1, ni + 3);
-  const todayCount = stats.day === new Date().toISOString().slice(0, 10) ? stats.dayQuizzes : 0;
+  const todayCount = stats.day === todayKey() ? stats.dayQuizzes : 0;
   const nextModule = next ? course.modules[next.moduleIndex] : null;
   const rank = rankOf(skill.mmr);
 

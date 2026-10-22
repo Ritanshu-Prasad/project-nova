@@ -4,6 +4,7 @@ import { AdditiveBlending, BackSide, Color, Object3D, ShaderMaterial, type Insta
 import { smoothstep } from '../../core/math';
 import { rt } from '../../core/runtime';
 import { NOISE_GLSL } from '../shaders/noise';
+import { seededRandom } from '../../core/seeded';
 
 const COUNT = 700;
 const NEAR = 20;
@@ -41,12 +42,14 @@ export default function Warp() {
   const glow = useRef<Mesh>(null);
 
   const seeds = useMemo(
-    () =>
-      Array.from({ length: COUNT }, () => {
-        const a = Math.random() * Math.PI * 2;
-        const r = 2 + Math.pow(Math.random(), 0.6) * 58;
-        return { x: Math.cos(a) * r, y: Math.sin(a) * r, z: FAR + Math.random() * (NEAR - FAR), s: 0.5 + Math.random() };
-      }),
+    () => {
+      const random = seededRandom(202);
+      return Array.from({ length: COUNT }, () => {
+        const a = random() * Math.PI * 2;
+        const r = 2 + Math.pow(random(), 0.6) * 58;
+        return { x: Math.cos(a) * r, y: Math.sin(a) * r, z: FAR + random() * (NEAR - FAR), s: 0.5 + random() };
+      });
+    },
     [],
   );
 

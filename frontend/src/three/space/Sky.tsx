@@ -5,6 +5,7 @@ import { damp } from '../../core/math';
 import { rt } from '../../core/runtime';
 import { useNova } from '../../core/store';
 import { NOISE_GLSL } from '../shaders/noise';
+import { seededRandom } from '../../core/seeded';
 
 const NEBULA_VERT = /* glsl */ `
 varying vec3 vDir;
@@ -75,19 +76,20 @@ export default function Sky() {
   );
 
   const stars = useMemo(() => {
+    const random = seededRandom(101);
     const n = 5000;
     const pos = new Float32Array(n * 3);
     const size = new Float32Array(n);
     const col = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
-      const u = Math.random() * 2 - 1;
-      const th = Math.random() * Math.PI * 2;
+      const u = random() * 2 - 1;
+      const th = random() * Math.PI * 2;
       const r = Math.sqrt(1 - u * u) * 1500;
       pos.set([Math.cos(th) * r, u * 1500, Math.sin(th) * r], i * 3);
-      const big = Math.random() < 0.02;
-      size[i] = big ? 3 + Math.random() * 2.5 : 1 + Math.random() * 1.6;
-      const temp = Math.random();
-      const b = big ? 1.6 : 0.5 + Math.random() * 0.6;
+      const big = random() < 0.02;
+      size[i] = big ? 3 + random() * 2.5 : 1 + random() * 1.6;
+      const temp = random();
+      const b = big ? 1.6 : 0.5 + random() * 0.6;
       col.set(temp < 0.3 ? [b, b * 0.85, b * 0.7] : temp < 0.7 ? [b, b, b] : [b * 0.7, b * 0.85, b], i * 3);
     }
     const g = new BufferGeometry();
