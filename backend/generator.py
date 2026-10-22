@@ -19,11 +19,13 @@ from placement import PlacementRequest, PlacementResult, recommend_level, write_
 from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
 from progress import Report, ignore
 from safety import check_goal
+from socratic_forge import router as socratic_router
 import usage
 from usage import check_budget
 from writing import keep_written, write_all_topics, write_module_quiz, write_module_quiz_from_lessons, write_topic
 
 router = APIRouter()
+router.include_router(socratic_router)
 STREAM_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 logger = logging.getLogger("nova.generator")
 

@@ -196,3 +196,76 @@ export async function generateCourse(req: GenerateRequest, progress: ProgressFn)
   await pause(350);
   return { course, via: 'local' };
 }
+
+
+// --- Socratic Course Architect ---
+
+export interface InterviewTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface InterviewResponse {
+  question: string;
+  turn: number;
+  maxTurns: number;
+  readyForBlueprint: boolean;
+  suggestions: string[];
+  summarySoFar: string;
+}
+
+export interface BlueprintTopic {
+  title: string;
+  planet: string;
+  kind: string;
+  summary: string;
+  minutes: number;
+}
+
+export interface BlueprintModule {
+  title: string;
+  topics: BlueprintTopic[];
+}
+
+export interface BlueprintOutline {
+  title: string;
+  subtitle: string;
+  modules: BlueprintModule[];
+}
+
+export async function askInterviewTurn(objective: string, level: Level, history: InterviewTurn[]): Promise<InterviewResponse> {
+  const res = await fetch(`${API}/api/courses/forge/interview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ objective, level, history }),
+  });
+  if (!res.ok) throw new Error(`Interview failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function requestBlueprint(objective: string, level: Level, interviewSummary: string): Promise<BlueprintOutline> {
+  const res = await fetch(`${API}/api/courses/forge/blueprint`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ objective, level, interviewSummary }),
+  });
+  if (!res.ok) throw new Error(`Blueprint generation failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function finalizeBlueprintCourse(data: {
+  objective: string;
+  level: Level;
+  title: string;
+  subtitle?: string;
+  modules: BlueprintModule[];
+}): Promise<Course> {
+  const res = await fetch(`${API}/api/courses/forge/finalize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`Course finalization failed: ${res.statusText}`);
+  return normalizeCourse(await res.json());
+}
+

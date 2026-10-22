@@ -22,6 +22,15 @@ def reply_for(system: str, call_number: int, user: str = "") -> dict:
     """A valid model answer for whichever prompt was sent; every question list has its own distinct questions."""
     if "review learning goals" in system:
         return {"allowed": True, "reason": ""}
+    if "Socratic Course Architect" in system:
+        return {
+            "question": "What programming languages or math backgrounds do you have?",
+            "turn": 1,
+            "maxTurns": 3,
+            "readyForBlueprint": False,
+            "suggestions": ["Python beginner", "Experienced in C++", "From scratch"],
+            "summarySoFar": "Learner wants hands-on systems programming",
+        }
     if "placement quiz" in system:
         return {"questions": [{**mcq(n), "difficulty": difficulty} for n, difficulty in enumerate([3, 1, 2, 1, 2])]}
     if "careful student" in system:
