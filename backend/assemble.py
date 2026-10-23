@@ -9,7 +9,7 @@ import usage
 from course_models import Course, CourseDocument, CourseMeta, Lesson, LessonStub, Module, Question, Topic, TopicStub
 from course_requests import CourseRequest
 from pdf_parser import Document
-from planning import Outline, OutlineTopic
+from planning import Outline, OutlineModule, OutlineTopic
 from prompts import PROMPT_VERSION
 from writing import TopicContent
 
@@ -52,23 +52,23 @@ def assemble_course(outline: Outline, contents: List[List[TopicContent]], reques
 
 def assemble_lazy_course(outline: Outline, request: CourseRequest) -> Course:
     """The outline; every topic is an empty placeholder to be written later, and a module's quiz is drawn once its topics are."""
-    modules = [
-        Module(
-            id=f"mod-{m}",
-            title=module.title,
-            topics=[_stub(m, t, topic) for t, topic in enumerate(module.topics, start=1)],
-        )
-        for m, module in enumerate(outline.modules, start=1)
-    ]
     return Course(
         id=new_course_id(),
         title=outline.title,
         subtitle=outline.subtitle,
         objective=request.objective,
         source="ai",
-        modules=modules,
+        modules=lazy_modules(outline.modules),
         meta=_meta(outline),
     )
+
+
+def lazy_modules(planned: List[OutlineModule]) -> List[Module]:
+    """Planned modules as the app holds them before any lesson is written: numbered ids and empty topics."""
+    return [
+        Module(id=f"mod-{m}", title=module.title, topics=[_stub(m, t, topic) for t, topic in enumerate(module.topics, start=1)])
+        for m, module in enumerate(planned, start=1)
+    ]
 
 
 def _meta(outline: Outline | None = None) -> CourseMeta:

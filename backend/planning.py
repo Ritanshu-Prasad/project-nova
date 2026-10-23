@@ -7,11 +7,11 @@ from pydantic import BaseModel, Field, field_validator
 import llm
 from chunking import Group, build_overview
 from course_models import TopicKind
-from course_requests import MAX_TITLE_CHARS, CourseRequest, describe_request
+from course_requests import MAX_TITLE_CHARS, CourseRequest, RevisionRequest, describe_request, describe_revision
 from pdf_parser import Document
 from text_clean import Clean, Heading
 from progress import Report, ignore
-from prompts import module_system, outline_system
+from prompts import module_system, outline_system, revise_outline_system
 
 MAX_MODULES = 6
 MAX_TOPICS_PER_MODULE = 5
@@ -55,6 +55,19 @@ class Outline(BaseModel):
 async def plan_outline(request: CourseRequest, report: Report = ignore) -> Outline:
     report("outline", "Planning your modules")
     return await llm.ask(Outline, outline_system(), describe_request(request, ""), OUTLINE_TOKENS, kind="outline")
+
+
+class OutlineRevision(BaseModel):
+    """The plan after the learner's request, and a sentence saying what was done."""
+    reply: Clean = Field(min_length=1, max_length=400)
+    modules: List[OutlineModule] = Field(min_length=1)
+
+
+async def revise_outline(request: RevisionRequest) -> OutlineRevision:
+    """The plan changed as the learner asked, still within the size limits and with every planet named once."""
+    revision = await llm.ask(OutlineRevision, revise_outline_system(), describe_revision(request), OUTLINE_TOKENS, kind="outline")
+    fitted = fit_outline(Outline(title=request.title, modules=revision.modules))
+    return OutlineRevision(reply=revision.reply, modules=fitted.modules)
 
 
 def fit_outline(outline: Outline) -> Outline:

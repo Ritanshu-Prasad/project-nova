@@ -8,16 +8,16 @@ from typing import AsyncIterator, List
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
-from assemble import assemble_course, assemble_lazy_course, dedupe_questions, new_course_id, verify_sources
+from assemble import assemble_course, assemble_lazy_course, dedupe_questions, lazy_modules, new_course_id, verify_sources
 from cache import BANKS, COURSES, TOPICS
 from chunking import build_topic_context, focus_terms, group_sections
 from course_models import Course
-from course_requests import CourseRequest, Mode, ModuleQuizRequest, Structure, TopicRequest
+from course_requests import CourseRequest, Mode, ModuleQuizRequest, RevisionRequest, Structure, TopicRequest
 from document_store import delete_pages, is_valid_key, save_pages
 from limits import COURSE_LIMIT, TOPIC_LIMIT
 from pdf_parser import Document, read_documents, split_sections
 from placement import PlacementRequest, PlacementResult, starting_point, write_placement
-from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline
+from planning import OutlineTopic, fit_outline, plan_document_outline, plan_outline, revise_outline
 from progress import Report, ignore
 from safety import check_goal, refuse_orders
 import traces
@@ -98,6 +98,15 @@ async def generate_module_quiz(body: ModuleQuizRequest):
     """The module's quiz, drawn from the question banks of the topics the learner was taught; empty when those banks are gone, and the app then builds one from its topics."""
     banks = [bank for taught in body.topics if (bank := await BANKS.get(bank_key(body.objective, body.module, taught.title)))]
     return {"quiz": [q.model_dump(exclude_none=True) for q in dedupe_questions(await module_quiz(banks), set())] if banks else []}
+
+
+@router.post("/api/courses/outline/revise", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
+async def revise_plan(body: RevisionRequest):
+    """The course plan changed as the learner asked in the plan screen's chat: a sentence about what changed, and the whole new list of modules."""
+    refuse_orders(body.message)
+    refuse_orders(body.expectations)
+    revision = await revise_outline(body)
+    return {"reply": revision.reply, "modules": [module.model_dump(by_alias=True, exclude_none=True) for module in lazy_modules(revision.modules)]}
 
 
 @router.post("/api/courses/placement", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
