@@ -122,6 +122,9 @@ store = _make_store()
 
 
 def _store():
+    global store
+    if store is None:
+        store = _make_store()
     if store is None:
         raise HTTPException(503, "Account storage is not configured (set DATABASE_URL, or add Upstash Redis to the Vercel project)")
     return store
