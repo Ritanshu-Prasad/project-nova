@@ -153,7 +153,7 @@ function Overview({ active }: { active: ActiveCourse }) {
   const rank = rankOf(skill.mmr);
 
   const dock: DockItem[] = [
-    { key: 'new', hotkey: 5, tier: 3, icon: Plus, title: 'New course', sub: 'Goal or PDFs' },
+    { key: 'new', hotkey: 5, tier: 3, icon: Plus, title: 'New course', sub: 'Goals' },
     {
       key: 'quiz',
       hotkey: 2,
@@ -203,7 +203,7 @@ function Overview({ active }: { active: ActiveCourse }) {
       icon: TrendingUp,
       badgeNode: <RankEmblem rank={rank} size={48} />,
       title: 'Skill journey',
-      sub: `${rank.label} · ${skill.mmr.toLocaleString('en-IN')} MMR`,
+      sub: `${rank.label} · ${skill.mmr.toLocaleString('en-IN')} RR`,
       extra: (
         <span className="flex items-center gap-2 text-xs text-white/55">
           <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
@@ -290,11 +290,11 @@ function Overview({ active }: { active: ActiveCourse }) {
       {/* Today */}
       <motion.section initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.4, delay: 0.05 }} className="card pointer-events-auto absolute right-6 top-24 hidden w-[300px] p-5 lg:block">
         <div className="chip-label">Today</div>
-        <div className="mt-2 flex items-center gap-3">
+        <div className="mt-2 flex items-start gap-3">
           <button type="button" onClick={() => choose('profile')} aria-label="Open profile" title="Open profile" className="group cursor-pointer transition hover:scale-105 active:scale-95">
             <PilotAvatar size={38} className="rounded-2xl transition group-hover:ring-2 group-hover:ring-[var(--user)]" />
           </button>
-          <h2 className="min-w-0 truncate font-display text-xl font-bold text-white">
+          <h2 className="min-w-0 break-words font-display text-xl font-bold leading-snug text-white">
             {greeting()}, <span style={{ color: 'var(--user)' }}>{callsign}</span>
           </h2>
         </div>
@@ -318,7 +318,7 @@ function Overview({ active }: { active: ActiveCourse }) {
           </div>
           <div className="rounded-xl bg-white/[0.04] px-3 py-2">
             <div className="text-[11px] text-white/50">{rank.label}</div>
-            <div className="font-display text-lg font-bold text-white">{skill.mmr.toLocaleString('en-IN')} <span className="text-xs font-normal text-white/50">MMR</span></div>
+            <div className="font-display text-lg font-bold text-white">{skill.mmr.toLocaleString('en-IN')} <span className="text-xs font-normal text-white/50">RR</span></div>
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs text-white/55">

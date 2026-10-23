@@ -106,11 +106,13 @@ function useTheme() {
   }, []);
 }
 
-/** No start button: the pilot wakes as soon as the scene is ready (or after a short safety timeout). */
+/** No start button: once the warning is answered, the pilot wakes as soon as the scene is ready (or after a short safety timeout). */
 function useAutoWake() {
   const ready = useNova((s) => s.sceneReady || s.webglFailed);
+  const accepted = useNova((s) => s.warningAccepted);
   useEffect(() => {
-    if (new URLSearchParams(location.search).has('jump')) return;
+    // Nothing starts (and nothing flashes) until the visitor has answered the photosensitivity warning.
+    if (!accepted || new URLSearchParams(location.search).has('jump')) return;
     const go = () => useNova.getState().phase === 'gate' && director.wake();
     if (ready) {
       const id = setTimeout(go, 400);
@@ -118,7 +120,7 @@ function useAutoWake() {
     }
     const id = setTimeout(go, 6000);
     return () => clearTimeout(id);
-  }, [ready]);
+  }, [ready, accepted]);
 }
 
 /** DEV: `window.__nova` for QA scripts, and `?jump=<phase>` to start mid-timeline. */

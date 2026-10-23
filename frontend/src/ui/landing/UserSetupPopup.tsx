@@ -123,6 +123,7 @@ export default function UserSetupPopup() {
                 <input
                   type="text"
                   id="username"
+                  maxLength={24}
                   autoComplete="off"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}

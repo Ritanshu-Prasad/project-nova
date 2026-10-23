@@ -21,7 +21,7 @@
 
 Online self-directed education suffers from a notorious completion crisis: passive video lectures, rigid one-size-fits-all curricula, and multiple-choice trivia leave learners disengaged and unprepared for practical problem-solving.
 
-**Project NOVA** transforms self-directed learning into an interplanetary expedition. Powered by **NVIDIA Nemotron** on **Nebius AI Studio**, NOVA autonomously deconstructs any ambitious learning goal into a structured multi-planetary curriculum. Every station along the journey features interactive lessons, deep Socratic tutoring with zero-spoiler safety guards, application-driven multi-format quizzes, and a 7-tier spaceship progression ladder (Probe → Titan) driven by real-time MMR (Matchmaking Rating) and spaced-repetition retention curves.
+**Project NOVA** transforms self-directed learning into an interplanetary expedition. Powered by **NVIDIA Nemotron** on **Nebius AI Studio**, NOVA autonomously deconstructs any ambitious learning goal into a structured multi-planetary curriculum. Every station along the journey features interactive lessons, deep Socratic tutoring with zero-spoiler safety guards, application-driven multi-format quizzes, and a 7-tier spaceship progression ladder (Probe → Titan) driven by real-time RR (Matchmaking Rating) and spaced-repetition retention curves.
 
 > [!IMPORTANT]
 > **Hackathon Track Alignment:**
@@ -73,7 +73,7 @@ flowchart TD
 
     subgraph Persistence ["Persistence & Fleet Sync"]
         RedisStore["Upstash Redis / PostgreSQL"]
-        Leaderboard["Fleet MMR Ladder & Anti-Cheat Sync"]
+        Leaderboard["Fleet RR Ladder & Anti-Cheat Sync"]
     end
 
     UI --> PresetRouter
@@ -103,8 +103,8 @@ flowchart TD
 | **Autonomous Curriculum Architect** | Transforms any learning objective into structured modules and bite-sized planetary stations. | NVIDIA Nemotron on Nebius AI Studio |
 | **Application-Driven Assessment Forge** | Multi-format quiz engine: MCQs, Multi-Select, True/False, Fill-in-the-Blank, and live executable code challenges. | Nemotron reasoning + Regex validation |
 | **Socratic AI Tutor & Anti-Spoiler** | Real-time streaming tutor that answers questions, guides problem-solving, and prevents answer leaks. | Nebius streaming + Socratic guardrails |
-| **7-Tier Spacecraft MMR Ladder** | Elo-style skill rating ladder (*Probe → Scout → Corvet → Frigate → Cruiser → Battleship → Titan*) with spaced repetition. | Dynamic MMR calibration + Ebbinghaus curve |
-| **Fleet Leaderboard & Crew Rankings** | Real-time global crew standings comparing pilot XP, MMR, cleared planets, and daily streaks. | Upstash Redis REST / Neon PostgreSQL |
+| **7-Tier Spacecraft RR Ladder** | Elo-style skill rating ladder (*Probe → Scout → Corvet → Frigate → Cruiser → Battleship → Titan*) with spaced repetition. | Dynamic RR calibration + Ebbinghaus curve |
+| **Fleet Leaderboard & Crew Rankings** | Real-time global crew standings comparing pilot XP, RR, cleared planets, and daily streaks. | Upstash Redis REST / Neon PostgreSQL |
 | **Avatar Studio & Doodle Pad** | Upload custom flight patches or hand-draw pilot callsigns and avatars directly on an HTML5 canvas. | Canvas API + Local/Remote pilot store |
 | **Preset Masterclasses** | Pre-authored textbook-quality courses for instant access without triggering models or token consumption. | In-memory authored content chunks |
 

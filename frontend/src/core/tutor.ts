@@ -15,7 +15,7 @@ import { practiceQuestions, questionsFor } from './quizBuilder';
  * formulas, recaps and quick "quiz me" rounds it can mark.
  *
  * "Quiz me" is the Practice Arena: new questions, never the graded ones (the model is told which to avoid; the offline
- * tutor builds its own from the lesson). Practice earns no MMR.
+ * tutor builds its own from the lesson). Practice earns no RR.
  */
 export interface ChatMsg {
   role: 'user' | 'assistant';
@@ -202,7 +202,7 @@ function offlineAnswer(key: string, q: string, t: PlacedTopic, course?: Course):
       const item: Question = raw.type === 'mcq' ? { ...raw, options: order.map((i) => raw.options[i]), answer: order.indexOf(raw.answer) } : raw;
       pendingQuiz.set(key, item);
       const opts = item.type === 'mcq' ? '\n' + item.options.map((o, i) => `- **${'ABCD'[i]}** ${o}`).join('\n') : item.type === 'truefalse' ? '\n- True\n- False' : '';
-      return `**Practice Arena** — no MMR here, so have a go:\n\n**${item.q.replace(/^Practice\s*[:—-]\s*(.)/, (_, c: string) => c.toUpperCase())}**${opts}\n\nReply with your answer and I’ll check it.`;
+      return `**Practice Arena** — no RR here, so have a go:\n\n**${item.q.replace(/^Practice\s*[:—-]\s*(.)/, (_, c: string) => c.toUpperCase())}**${opts}\n\nReply with your answer and I’ll check it.`;
     }
     return 'I can’t build a fresh practice question from this lesson — try the module quiz, or ask me to **explain it simply** or give an **example**.';
   }

@@ -195,7 +195,7 @@ def tutor_system(topic: str, module: str, course: str, rank: str, lesson: str, g
             "Use `backticks` for formulas and code. Do not use LaTeX.",
             "If asked to quiz them, this is the Practice Arena: write brand-new questions of your own that test the same concepts from a different angle. "
             "Ask one question at a time (multiple choice with options A to D, or a short answer), wait for their reply, "
-            "then say whether it is right and explain why in a sentence or two. Practice answers earn no MMR, so it is a safe place to try.",
+            "then say whether it is right and explain why in a sentence or two. Practice answers earn no RR, so it is a safe place to try.",
             "If a question is not about this lesson or its subject, do not answer it: politely say you can only help with this lesson and steer back.",
             *([DOCUMENT_RULE, "When you use the document excerpts, say which page they come from."] if sources else []),
         ),

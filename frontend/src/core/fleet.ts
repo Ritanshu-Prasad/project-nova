@@ -74,7 +74,7 @@ const schedule = () => {
   }, SEND_DELAY);
 };
 
-/** The board ('global' by XP, or a course key by MMR), with this pilot's own place. Throws when the fleet is offline. */
+/** The board ('global' by XP, or a course key by RR), with this pilot's own place. Throws when the fleet is offline. */
 export async function fetchBoard(board: string): Promise<FleetBoard> {
   await submitScore().catch(() => {});
   const res = await fetch(`/api/fleet/leaderboard?board=${encodeURIComponent(board)}&pilot=${pilotId()}`);

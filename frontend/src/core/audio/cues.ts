@@ -343,7 +343,7 @@ const hudBoot: CueBuilder = (bus, t) => {
   v.done();
 };
 
-/** MMR core: a deep rising "vwoom" (40 → 90 Hz), arcing crackle and a shimmering tail. */
+/** RR core: a deep rising "vwoom" (40 → 90 Hz), arcing crackle and a shimmering tail. */
 const coreIgnite: CueBuilder = (bus, t) => {
   const v = new Voice(bus);
   const out = output(v, bus.world, LEVEL.coreIgnite, 0.35);

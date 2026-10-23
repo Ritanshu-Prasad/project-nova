@@ -96,7 +96,7 @@ function Cockpit() {
       <div className="absolute inset-x-0 bottom-0 h-[26%]" style={{ background: 'linear-gradient(180deg, #1a2230 0%, #0b1018 8%, #06090e 100%)', clipPath: 'polygon(0 22%, 18% 0, 82% 0, 100% 22%, 100% 100%, 0 100%)' }}>
         <div className="absolute inset-x-[18%] top-0 h-px bg-cyan-300/30" />
         <div className="absolute left-1/2 top-[18%] flex -translate-x-1/2 gap-[2vw]">
-          {['PLACEMENT SCAN', 'MMR ENGINE', 'SINGLE FEED'].map((t) => (
+          {['PLACEMENT SCAN', 'RR ENGINE', 'SINGLE FEED'].map((t) => (
             <div
               key={t}
               {...screen(true)}

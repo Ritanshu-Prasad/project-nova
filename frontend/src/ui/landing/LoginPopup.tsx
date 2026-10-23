@@ -99,7 +99,7 @@ export default function LoginPopup() {
               Sign in to save your rank, streaks and progress. Your first course starts right after.
             </p>
             <div className="mt-5 grid grid-cols-3 gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-blue-100/70">
-              {['LV 1', 'Unranked', 'MMR —'].map((s) => (
+              {['LV 1', 'Unranked', 'RR —'].map((s) => (
                 <div key={s} className="rounded-[2px] bg-blue-500/10 px-2 py-2 text-center ring-1 ring-inset ring-blue-400/25">{s}</div>
               ))}
             </div>

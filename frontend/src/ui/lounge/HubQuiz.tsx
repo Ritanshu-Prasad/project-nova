@@ -107,7 +107,7 @@ export function HubQuizStation() {
           </button>
           {run && (
             <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${run.practice ? 'bg-white/[0.06] text-white/60' : 'bg-amber-300/15 text-amber-200'}`}>
-              <Zap size={13} /> {run.practice ? 'Practice · no MMR' : `×${run.regular} MMR`}
+              <Zap size={13} /> {run.practice ? 'Practice · no RR' : `×${run.regular} RR`}
             </span>
           )}
         </div>
@@ -150,11 +150,11 @@ export function HubQuizStation() {
             <p className="mt-1 text-base text-white/65">
               {result.correct} of {result.total} correct ·{' '}
               {run.practice ? (
-                'no MMR on retakes'
+                'no RR on retakes'
               ) : (
                 <span className={result.delta >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
                   {result.delta >= 0 ? '+' : ''}
-                  {result.delta} MMR
+                  {result.delta} RR
                 </span>
               )}
             </p>
@@ -215,7 +215,7 @@ function Brief({ q, onEngage }: { q: HubQuiz; onEngage: () => void }) {
           <div className="text-sm text-white/50">Formed {when(q.formedAt)}</div>
         </div>
       </div>
-      <p className="mt-4 text-base text-white/70">A big quiz on everything you’ve completed. Heavy MMR both ways — right answers pay a multiple, wrong ones cost one.</p>
+      <p className="mt-4 text-base text-white/70">A big quiz on everything you’ve completed. Heavy RR both ways — right answers pay a multiple, wrong ones cost one.</p>
 
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
         {[
@@ -263,7 +263,7 @@ function Archive({ past, onRetake }: { past: HubQuiz[]; onRetake: (q: HubQuiz) =
   return (
     <div className="mt-8 border-t border-white/[0.07] pt-5">
       <div className="chip-label mb-3">
-        <History size={12} /> Finished quizzes · retake for practice (no MMR)
+        <History size={12} /> Finished quizzes · retake for practice (no RR)
       </div>
       <ul className="space-y-2">
         {past.map((q) => (
@@ -274,7 +274,7 @@ function Archive({ past, onRetake }: { past: HubQuiz[]; onRetake: (q: HubQuiz) =
                 {when(q.result!.at)} · {q.result!.correct}/{q.result!.total} ·{' '}
                 <span className={q.result!.delta >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
                   {q.result!.delta >= 0 ? '+' : ''}
-                  {q.result!.delta} MMR
+                  {q.result!.delta} RR
                 </span>
               </div>
             </div>
@@ -352,7 +352,7 @@ export function QuizArrival({ q }: { q: HubQuiz }) {
           <p className="mt-1 text-sm text-white/70">
             {q.questions.length} questions on what you’ve completed. Take it within <span className="font-semibold tabular-nums text-amber-200">{duration(secs)}</span> for{' '}
             <span className="font-semibold text-amber-200">
-              ×{HUB_QUIZ.fresh.regular} MMR (timed ×{HUB_QUIZ.fresh.timed})
+              ×{HUB_QUIZ.fresh.regular} RR (timed ×{HUB_QUIZ.fresh.timed})
             </span>{' '}
             — or save it for later.
           </p>

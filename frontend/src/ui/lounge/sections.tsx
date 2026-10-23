@@ -23,7 +23,7 @@ function Label({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 }
 
 /**
- * Skill journey for the active course: where this course's MMR puts the pilot on the ship ladder (every course
+ * Skill journey for the active course: where this course's RR puts the pilot on the ship ladder (every course
  * starts at Probe III), how it has moved, mastery per module, and the course route.
  */
 export function SkillJourneySection() {
@@ -46,13 +46,13 @@ export function SkillJourneySection() {
             {rank.label}
           </h2>
           <div className="text-sm text-white/60">
-            {rank.tier.metal} tier · {skill.mmr.toLocaleString('en-IN')} MMR in this course — {rank.tier.blurb}
+            {rank.tier.metal} tier · {skill.mmr.toLocaleString('en-IN')} RR in this course — {rank.tier.blurb}
           </div>
           {rank.nextLabel ? (
             <div className="mt-3 max-w-md">
               <div className="flex justify-between text-xs text-white/55">
                 <span>
-                  {rank.toNext} MMR to <span className="font-semibold text-white">{rank.nextLabel}</span>
+                  {rank.toNext} RR to <span className="font-semibold text-white">{rank.nextLabel}</span>
                 </span>
                 <span>{Math.round(rank.progress * 100)}%</span>
               </div>
@@ -82,7 +82,7 @@ export function SkillJourneySection() {
 
       <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
         <div className="rounded-2xl bg-white/[0.04] p-4">
-          <Label icon={<TrendingUp size={12} />}>MMR over time</Label>
+          <Label icon={<TrendingUp size={12} />}>RR over time</Label>
           <MmrChart values={skill.history} />
         </div>
         {active && <ModuleSkills active={active} />}
@@ -92,7 +92,7 @@ export function SkillJourneySection() {
       <FleetLeaderboard active={active} />
       <p className="flex items-start gap-2 text-sm text-white/55">
         <Sparkles size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
-        Every course has its own ladder, scaled to its size. Complete modules to advance toward Master. Pop quizzes award up to ×2.5 MMR, and achieving 100% on module quiz retakes earns a +20 MMR mastery bonus.
+        Every course has its own ladder, scaled to its size. Complete modules to advance toward Master. Pop quizzes award up to ×2.5 RR, and achieving 100% on module quiz retakes earns a +20 RR mastery bonus.
       </p>
     </div>
   );
@@ -135,7 +135,7 @@ function RankLadder({ mmr }: { mmr: number }) {
   );
 }
 
-/** MMR history over the ladder's tier bands. */
+/** RR history over the ladder's tier bands. */
 function MmrChart({ values }: { values: number[] }) {
   if (values.length < 2) return <div className="grid h-40 place-items-center text-center text-sm text-white/45">Answer a few questions and your skill curve appears here.</div>;
   const lo = Math.min(...values) - 40;
@@ -222,7 +222,7 @@ function CourseRoute({ active }: { active: ActiveCourse }) {
           ? 'All planets cleared — what a journey!'
           : next.kind === 'quiz'
             ? `Checkpoint: pass the Module ${next.moduleIndex + 1} quiz to fly on to the next planet.`
-            : `Next stop: Planet ${next.moduleIndex + 1} (${course.modules[next.moduleIndex]?.title || next.topic.planet}) — ${next.topic.title}. Click an unlocked planet to study it.`}
+            : `Next stop: ${course.modules[next.moduleIndex]?.title || next.topic.planet} — ${next.topic.title}. Click an unlocked planet to study it.`}
       </p>
     </div>
   );
@@ -253,7 +253,7 @@ export function ProfileSection() {
           <div className="chip-label">
             <UserRound size={12} /> Pilot profile
           </div>
-          <h2 className="truncate font-display text-2xl font-bold text-white">{callsign}</h2>
+          <h2 className="break-words font-display text-2xl font-bold leading-snug text-white">{callsign}</h2>
           <div className="mt-1.5 flex items-center gap-2 text-xs text-white/60">
             Level {level}
             <span className="h-1.5 w-28 overflow-hidden rounded-full bg-white/10">
@@ -275,7 +275,7 @@ export function ProfileSection() {
         <RankEmblem rank={rank} size={40} />
         <span className="min-w-0 flex-1">
           <span className="block font-display text-base font-semibold text-white">{rank.label}</span>
-          <span className="block text-xs text-white/55">{rank.nextLabel ? `${rank.toNext} MMR to ${rank.nextLabel}` : 'Top of the ladder'} · this course</span>
+          <span className="block text-xs text-white/55">{rank.nextLabel ? `${rank.toNext} RR to ${rank.nextLabel}` : 'Top of the ladder'} · this course</span>
         </span>
         <TrendingUp size={16} className="text-white/45" />
       </button>
@@ -356,7 +356,7 @@ export function ProfileSection() {
   );
 }
 
-/** Other pilots' standings: everyone by XP, or the current demo course by MMR. */
+/** Other pilots' standings: everyone by XP, or the current demo course by RR. */
 function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
   const callsign = useProfile((s) => s.callsign) || 'Pilot';
   const stats = useCourse((s) => s.stats);
@@ -375,7 +375,7 @@ function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
     };
   }, [board]);
 
-  const tabs = [{ key: 'global', label: 'All pilots · XP' }, ...(demo ? [{ key: demo.key, label: `${demo.title} · MMR` }] : [])];
+  const tabs = [{ key: 'global', label: 'All pilots · XP' }, ...(demo ? [{ key: demo.key, label: `${demo.title} · RR` }] : [])];
   const data = loading ? undefined : result?.data;
   return (
     <div className="rounded-2xl bg-white/[0.04] p-4">
@@ -413,7 +413,7 @@ function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
                 </span>
                 <span className="text-xs text-white/45">LV {r.level}</span>
                 <span className="w-20 text-right font-display font-bold text-white">
-                  {r.score.toLocaleString('en-IN')} <span className="text-[10px] font-normal text-white/45">{board === 'global' ? 'XP' : 'MMR'}</span>
+                  {r.score.toLocaleString('en-IN')} <span className="text-[10px] font-normal text-white/45">{board === 'global' ? 'XP' : 'RR'}</span>
                 </span>
               </li>
             ))}
@@ -429,7 +429,7 @@ function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
                   </span>
                   <span className="text-xs text-white/45">LV {levelOf(stats.xp)}</span>
                   <span className="w-20 text-right font-display font-bold text-white">
-                    {data.you.score.toLocaleString('en-IN')} <span className="text-[10px] font-normal text-white/45">{board === 'global' ? 'XP' : 'MMR'}</span>
+                    {data.you.score.toLocaleString('en-IN')} <span className="text-[10px] font-normal text-white/45">{board === 'global' ? 'XP' : 'RR'}</span>
                   </span>
                 </li>
               </>

@@ -78,7 +78,7 @@ export function useGlobalInput(): void {
         toggleSystem(SYSTEM_ORDER[DIGITS.indexOf(e.code)]);
       } else if (actionFor(e.code) === 'mute') {
         s.toggleSound();
-      } else if (e.code === 'Enter' && s.phase === 'gate') {
+      } else if (e.code === 'Enter' && s.phase === 'gate' && s.warningAccepted) {
         wake();
       } else if (e.code === 'Escape') {
         if (s.activePillar !== null) s.setActivePillar(null);

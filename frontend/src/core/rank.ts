@@ -1,5 +1,5 @@
 /**
- * MMR ranks on a spaceship scale — Iron → Bronze → Silver → Gold → Platinum → Diamond → Master.
+ * RR ranks on a spaceship scale — Iron → Bronze → Silver → Gold → Platinum → Diamond → Master.
  * Every tier below Master has three divisions (III → II → I), so progress is felt every few answers.
  */
 export interface Tier {
@@ -7,7 +7,7 @@ export interface Tier {
   name: string;
   /** Classic ladder equivalent, for players who think in metals. */
   metal: string;
-  /** MMR needed to enter the tier. */
+  /** RR needed to enter the tier. */
   min: number;
   color: string;
   blurb: string;
@@ -37,7 +37,7 @@ export interface Rank {
   step: number;
   /** 0–1 through the current division. */
   progress: number;
-  /** MMR still needed for the next division. */
+  /** RR still needed for the next division. */
   toNext: number;
   nextLabel: string | null;
 }

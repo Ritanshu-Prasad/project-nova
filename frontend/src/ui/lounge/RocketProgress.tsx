@@ -284,18 +284,17 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
         minHeight: canvasHeight + 10,
       }}
     >
-      {/* Replay flight button */}
-      <button
-        type="button"
-        onClick={replayFlight}
-        title="Replay spaceship journey"
-        className="absolute right-3 top-3 z-30 flex items-center gap-1.5 rounded-lg border border-cyan-500/20 bg-slate-900/70 px-2.5 py-1 text-[11px] font-mono text-cyan-300 transition-all hover:border-cyan-400/40 hover:bg-cyan-950/40 hover:text-cyan-200"
-      >
-        <RotateCcw size={11} className={isFlying ? 'animate-spin' : ''} />
-        <span>Replay flight</span>
-      </button>
-
       <div className="relative" style={{ width: Math.max(780, totalSvgWidth), height: canvasHeight }}>
+        {/* Replay flight button — inside the scrolling route, so it travels with it as you scroll left or right */}
+        <button
+          type="button"
+          onClick={replayFlight}
+          title="Replay spaceship journey"
+          className="absolute left-3 top-3 z-30 flex items-center gap-1.5 rounded-lg border border-cyan-500/20 bg-slate-900/70 px-2.5 py-1 text-[11px] font-mono text-cyan-300 transition-all hover:border-cyan-400/40 hover:bg-cyan-950/40 hover:text-cyan-200"
+        >
+          <RotateCcw size={11} className={isFlying ? 'animate-spin' : ''} />
+          <span>Replay flight</span>
+        </button>
         {/* SVG Route Trajectory Curves & Stars */}
         <svg
           className="pointer-events-none absolute inset-0 size-full overflow-visible"
@@ -482,7 +481,7 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
                 type="button"
                 disabled={locked || !onSelect || !firstUnclearedTopic}
                 onClick={() => firstUnclearedTopic && onSelect?.(firstUnclearedTopic.id)}
-                aria-label={`Planet ${i + 1}: ${m.title} — ${status}`}
+                aria-label={`${m.title} — ${status}`}
                 className={`relative grid place-items-center rounded-full transition-transform duration-200 enabled:cursor-pointer enabled:hover:scale-110 ${
                   locked ? 'opacity-60 cursor-not-allowed' : ''
                 }`}
@@ -527,15 +526,12 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
                 >
                   {m.title}
                 </div>
-                <div className="text-[10px] text-white/40 font-mono mt-0.5">
-                  Planet {i + 1}
-                </div>
               </div>
 
               {/* Hover tooltip */}
               <div className="pointer-events-none absolute bottom-[calc(100%+16px)] left-1/2 z-40 w-max max-w-[240px] -translate-x-1/2 rounded-xl border border-white/10 bg-[#0d1220]/95 px-3 py-2 text-left opacity-0 shadow-2xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                 <div className="text-[13px] font-semibold text-white">
-                  Planet {i + 1} · {m.title}
+                  {m.title}
                 </div>
                 <div className="mt-0.5 text-[11px] text-white/60">
                   {clearedTopics}/{totalTopics} topics cleared · {status} · {moduleMinutes} min

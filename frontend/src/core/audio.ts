@@ -18,7 +18,7 @@ export type Cue =
   | 'powerUp' // main power whine + clunk
   | 'lightsOn' // hangar flood-light relay "ka-chunk" (arg = bank index)
   | 'hudBoot' // neural link: digital chirps
-  | 'coreIgnite' // MMR core: deep rising "vwoom"
+  | 'coreIgnite' // RR core: deep rising "vwoom"
   | 'doorOpen' // blast doors: hydraulic hiss + servo rumble + clearance tone
   | 'denied' // wrong order / unavailable
   | 'countdown' // arg = 3 | 2 | 1

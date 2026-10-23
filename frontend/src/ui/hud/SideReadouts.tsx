@@ -127,7 +127,7 @@ export function LeftReadouts() {
   );
 }
 
-/** Right column: neural sync, pilot rank, MMR, sector. */
+/** Right column: neural sync, pilot rank, RR, sector. */
 export function RightReadouts() {
   const world = useNova((s) => s.world);
   const syncRef = useRef<HTMLSpanElement>(null);

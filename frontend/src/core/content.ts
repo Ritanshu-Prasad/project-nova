@@ -9,6 +9,16 @@ export const BRAND = {
   tagline: 'Wake up. Level up.',
 } as const;
 
+/** Shown before the intro: the cinematic flashes and flickers. */
+export const WARNING = {
+  title: 'Photosensitivity warning',
+  body: 'This experience has flashing lights, flickering and fast-moving effects during the intro. These can trigger seizures in people with photosensitive epilepsy or other light-sensitive conditions.',
+  advice: 'If you or anyone in your family has epilepsy or a seizure condition, we recommend you skip the intro.',
+  skip: 'Skip the intro (recommended if you have epilepsy)',
+  play: 'I understand — play the intro',
+  note: 'Skipping also turns on reduced effects. You can change this any time from the gear in the top bar.',
+} as const;
+
 export const GATE = {
   lines: ['CRYO-STASIS · POD 07', 'SUBJECT: UNREGISTERED PLAYER', 'VITAL SIGNS DETECTED'],
   wake: 'Wake up',
@@ -29,7 +39,7 @@ export const PREFLIGHT = {
   items: {
     power: { label: 'Restore main power', switchLabel: 'MAIN PWR', key: '1', done: 'Main power online' },
     neural: { label: 'Engage the neural link', switchLabel: 'NEURAL LINK', key: '2', done: 'Neural link synced' },
-    core: { label: 'Ignite the MMR core', switchLabel: 'MMR CORE', key: '3', done: 'MMR core stable' },
+    core: { label: 'Ignite the RR core', switchLabel: 'RR CORE', key: '3', done: 'RR core stable' },
   } satisfies Record<'power' | 'neural' | 'core', SystemCopy>,
   denied: 'Bring systems online in order.',
   complete: 'Quest complete — launch clearance granted.',
@@ -82,14 +92,14 @@ export const PILLARS: Pillar[] = [
     screenTitle: 'PLACEMENT SCAN',
     short: 'Find your true level in minutes.',
     body: 'A short diagnostic sets your baseline — Beginner, Intermediate or Advanced — before a single lesson starts. No self-rating, no guessing.',
-    bullets: ['Adaptive diagnostic quiz', 'Baseline + starting MMR', 'Retake any time'],
+    bullets: ['Adaptive diagnostic quiz', 'Baseline + starting RR', 'Retake any time'],
     screenLines: ['BASELINE: ???', 'DIAGNOSTIC READY', 'EST. 4 MIN'],
   },
   {
     key: 'mmr',
     code: '02',
-    title: 'Adaptive MMR',
-    screenTitle: 'MMR ENGINE',
+    title: 'Adaptive RR',
+    screenTitle: 'RR ENGINE',
     short: 'Every answer is a match.',
     body: 'NOVA rates you like a competitive player. Answer right and fast and the next challenge hits harder; miss, and the System recalibrates — always one step past your comfort zone.',
     bullets: ['Elo-style rating after every answer', 'Weighs accuracy and time-to-answer', 'Keeps you in the flow zone'],

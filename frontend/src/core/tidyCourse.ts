@@ -1,3 +1,5 @@
+import { formatCode } from './codeFormat';
+import { isFillerLabel, stripStepLabel } from './labels';
 import type { Block, Course, Question, Topic } from './courseSchema';
 
 /**
@@ -50,7 +52,7 @@ export function tidyCourse(course: Course): Course {
         title: m.title.replace(/^(\s*\d+\s*[.):-]\s+)+/, '') || m.title,
         topics: m.topics.map((t) => {
           const blocks = t.lesson.blocks.filter((b) => !boilerplate(b)).map(cleanBlock).filter((b): b is Block => b !== null);
-          return { ...t, planet: planet(t.planet), lesson: { ...t.lesson, blocks: blocks.length ? blocks : t.lesson.blocks }, quiz: t.quiz.map(cleanQuestion), practice: t.practice?.map(cleanQuestion) };
+          return { ...t, planet: planet(t.planet), lesson: { ...t.lesson, blocks: blocks.length ? blocks : t.lesson.blocks }, quiz: cleanQuestions(t.quiz), practice: t.practice && cleanQuestions(t.practice) };
         }),
       })),
   };
@@ -59,15 +61,29 @@ export function tidyCourse(course: Course): Course {
 /** The same clean-up for one topic's content, as it arrives from a lazy fetch. */
 export function tidyTopicContent<T extends Pick<Topic, 'lesson' | 'quiz' | 'practice'>>(c: T): T {
   const blocks = c.lesson.blocks.map(cleanBlock).filter((b): b is Block => b !== null);
-  return { ...c, lesson: { ...c.lesson, blocks }, quiz: c.quiz.map(cleanQuestion), practice: c.practice?.map(cleanQuestion) };
+  return { ...c, lesson: { ...c.lesson, blocks }, quiz: cleanQuestions(c.quiz), practice: c.practice && cleanQuestions(c.practice) };
 }
 
 function cleanBlock(b: Block): Block | null {
+  // A code example that arrived on one line is put back on several (code questions are left alone: their checks read the solution).
+  if (b.type === 'code') return { ...b, code: formatCode(b.code, b.language) };
   if (b.type !== 'keyTerms') return b;
-  const terms = b.terms.filter((x) => x.term.trim() && x.def.trim() && !/^concept$/i.test(x.term.trim()) && !/^see summary\.?$/i.test(x.def.trim()));
+  const terms = b.terms.filter((x) => x.term.trim() && x.def.trim() && !/^concept$/i.test(x.term.trim()) && !isFillerLabel(x.term) && !/^see summary\.?$/i.test(x.def.trim()));
   return terms.length ? { ...b, terms } : null;
 }
 
-function cleanQuestion(q: Question): Question {
-  return q.type === 'fill' && q.q.includes('{{') ? { ...q, q: q.q.replace(/\{\{[^}]*\}\}/g, '____') } : q;
+/** Questions as the learner should see them: no leftover {{markers}}, no "Step 2:" in ordering options, no filler in matching. */
+function cleanQuestions(qs: Question[]): Question[] {
+  return qs.map(cleanQuestion).filter((q): q is Question => q !== null);
+}
+
+function cleanQuestion(q: Question): Question | null {
+  if (q.type === 'fill') return q.q.includes('{{') ? { ...q, q: q.q.replace(/\{\{[^}]*\}\}/g, '____') } : q;
+  if (q.type === 'order') return q.items.some((x) => stripStepLabel(x) !== x) ? { ...q, items: q.items.map(stripStepLabel) } : q;
+  if (q.type === 'match') {
+    const pairs = q.pairs.filter(([left, right]) => !isFillerLabel(left) && !isFillerLabel(right));
+    if (pairs.length === q.pairs.length) return q;
+    return pairs.length >= 3 ? { ...q, pairs } : null;
+  }
+  return q;
 }

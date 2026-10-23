@@ -23,7 +23,7 @@ export interface SystemWindowProps {
 }
 
 const EASE_OUT = [0.2, 0.8, 0.25, 1] as const;
-const KEEP_UPPER = /^(MMR|RAG|PVE|AI|LV|HUD|OK)$/i;
+const KEEP_UPPER = /^(MMR|RR|RAG|PVE|AI|LV|HUD|OK)$/i;
 
 /** "QUEST COMPLETE" → "Quest complete" (acronyms kept). Mixed-case titles pass through. */
 function friendlyTitle(title: string): string {

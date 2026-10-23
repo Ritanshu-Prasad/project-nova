@@ -11,7 +11,7 @@ type QuizItem = Extract<OutlineItem, { kind: 'quiz' }>;
 
 /**
  * The lesson quiz at the end of each module: a small, untimed check of 3–5 questions on this module's topics,
- * drawn fresh each attempt. Normal MMR up or down, no fanfare — pass to unlock the next module (and the hub quiz).
+ * drawn fresh each attempt. Normal RR up or down, no fanfare — pass to unlock the next module (and the hub quiz).
  */
 export default function ModuleQuiz({ item, active }: { item: QuizItem; active: ActiveCourse }) {
   const [stage, setStage] = useState<'intro' | 'run' | 'done'>('intro');
@@ -92,7 +92,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
               {result.correct} of {result.total} correct ({Math.round((result.correct / result.total) * 100)}%) ·{' '}
               <span className={result.delta >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
                 {result.delta >= 0 ? '+' : ''}
-                {result.delta} MMR
+                {result.delta} RR
               </span>
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">

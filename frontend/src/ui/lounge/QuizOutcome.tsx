@@ -10,11 +10,11 @@ import { useNova } from '../../core/store';
 import RankEmblem from './RankEmblem';
 
 export interface Outcome {
-  /** Net MMR change of the quiz. */
+  /** Net RR change of the quiz. */
   delta: number;
   correct: number;
   total: number;
-  /** Active course MMR before and after. */
+  /** Active course RR before and after. */
   before: number;
   after: number;
   /** Multipliers that applied, e.g. "×2 · timed ×2.5" (hub quizzes). */
@@ -30,7 +30,7 @@ const COPY: Record<Mode, { title: string; line: string; tint: string }> = {
 };
 
 /**
- * The after-quiz moment: a galactic victory (warp burst) or defeat (black-hole pull), the MMR counting up or
+ * The after-quiz moment: a galactic victory (warp burst) or defeat (black-hole pull), the RR counting up or
  * down, and the rank bar moving — with a promotion or demotion called out. Shown only once the quiz is over.
  */
 export default function QuizOutcome({ outcome, onDone }: { outcome: Outcome; onDone: () => void }) {
@@ -79,7 +79,7 @@ export default function QuizOutcome({ outcome, onDone }: { outcome: Outcome; onD
   return (
     <motion.div
       role="dialog"
-      aria-label={`${copy.title}: ${outcome.delta >= 0 ? '+' : ''}${outcome.delta} MMR`}
+      aria-label={`${copy.title}: ${outcome.delta >= 0 ? '+' : ''}${outcome.delta} RR`}
       className="pointer-events-auto fixed inset-0 grid place-items-center overflow-hidden font-sans"
       style={{ zIndex: Z.notices + 2 }}
       initial={{ opacity: 0 }}
@@ -116,7 +116,7 @@ export default function QuizOutcome({ outcome, onDone }: { outcome: Outcome; onD
         </h2>
         <div className={`mt-3 font-display text-4xl font-bold tabular-nums ${mode === 'defeat' ? 'text-rose-300' : mode === 'victory' ? 'text-emerald-300' : 'text-sky-200'}`}>
           {shown > 0 ? '+' : shown < 0 ? '−' : '±'}
-          {Math.abs(shown)} MMR
+          {Math.abs(shown)} RR
         </div>
         <p className="mt-2 text-base text-white/70">
           {outcome.correct} of {outcome.total} correct
@@ -127,7 +127,7 @@ export default function QuizOutcome({ outcome, onDone }: { outcome: Outcome; onD
         <div className="mt-6 w-full rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left">
           <div className="flex items-center justify-between text-sm">
             <span className="font-semibold text-white">{b.label}</span>
-            <span className="tabular-nums text-white/60">{outcome.after.toLocaleString('en-IN')} MMR</span>
+            <span className="tabular-nums text-white/60">{outcome.after.toLocaleString('en-IN')} RR</span>
           </div>
           <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
             <motion.div
@@ -138,7 +138,7 @@ export default function QuizOutcome({ outcome, onDone }: { outcome: Outcome; onD
               transition={{ duration: 1.2, delay: 0.9, ease: 'easeInOut' }}
             />
           </div>
-          <div className="mt-1.5 text-xs text-white/50">{b.nextLabel ? `${b.toNext} MMR to ${b.nextLabel}` : 'Top of the ladder'}</div>
+          <div className="mt-1.5 text-xs text-white/50">{b.nextLabel ? `${b.toNext} RR to ${b.nextLabel}` : 'Top of the ladder'}</div>
         </div>
 
         {(promoted || demoted) && (

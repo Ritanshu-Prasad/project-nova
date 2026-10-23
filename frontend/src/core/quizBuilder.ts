@@ -1,4 +1,5 @@
 import { flatTopics, type Block, type Course, type PlacedTopic, type Question } from './courseSchema';
+import { isFillerLabel, stripStepLabel } from './labels';
 import { prettyMath } from './mathText';
 
 /**
@@ -220,8 +221,8 @@ function generateBanks(course: Course): Map<string, Question[]> {
   const textDefs = new Map(topics.map((t) => [t.id, textDefinitions(t)]));
   const markedTerms = new Map(topics.map((t) => [t.id, termsMarkedIn(t)]));
   const terms = topics.flatMap((t) => {
-    const key = blocksOf(t, 'keyTerms').flatMap((b) => b.terms.map((x) => ({ ...x, topic: t.id })));
-    const fromText = (textDefs.get(t.id) ?? []).filter((d) => !key.some((k) => k.term.toLowerCase() === d.term.toLowerCase())).map((d) => ({ term: d.term, def: d.def, topic: t.id }));
+    const key = blocksOf(t, 'keyTerms').flatMap((b) => b.terms.filter((x) => !isFillerLabel(x.term)).map((x) => ({ ...x, topic: t.id })));
+    const fromText = (textDefs.get(t.id) ?? []).filter((d) => !isFillerLabel(d.term) && !key.some((k) => k.term.toLowerCase() === d.term.toLowerCase())).map((d) => ({ term: d.term, def: d.def, topic: t.id }));
     return [...key, ...fromText];
   });
   // Authored questions pasted into many topics are generic; they are kept only where a topic has little else.
@@ -255,7 +256,8 @@ function generateBanks(course: Course): Map<string, Question[]> {
     }
     // Ordering: the lesson's steps.
     for (const s of blocksOf(t, 'steps').filter((b) => b.steps.length >= 3).slice(0, 1)) {
-      gen.push({ type: 'order', q: `Put these steps in order: ${s.title ?? t.title}.`, items: s.steps.slice(0, 6), why: `The order: ${s.steps.slice(0, 6).join(' → ')}.`, difficulty: 2 });
+      const items = s.steps.slice(0, 6).map(stripStepLabel);
+      gen.push({ type: 'order', q: `Put these steps in order: ${s.title && !isFillerLabel(s.title) ? s.title : t.title}.`, items, why: `The order: ${items.join(' → ')}.`, difficulty: 2 });
     }
     // Multiple select: takeaways of this topic vs. other topics'.
     const myPoints = points.filter((x) => x.topic === t.id).map((x) => x.p);

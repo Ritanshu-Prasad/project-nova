@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
-import { ArrowDown, ArrowRight, ArrowUp, Check, Code2, Flame, GripVertical, Lightbulb, Timer, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUp, Check, Code2, Flame, Lightbulb, Timer, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { audio } from '../../../core/audio';
 import { shuffledIndices, useCourse } from '../../../core/course';
@@ -68,9 +68,9 @@ interface Props {
   questions: Question[];
   /** Seconds per question (null = untimed); a timeout counts as a miss. */
   limits?: (number | null)[];
-  /** MMR multipliers per question (hub quizzes): gain when right, loss when wrong. Default ×1 / ×1. */
+  /** RR multipliers per question (hub quizzes): gain when right, loss when wrong. Default ×1 / ×1. */
   rates?: { gain: number; loss: number }[];
-  /** Practice (a retake): answers are checked but score no MMR. */
+  /** Practice (a retake): answers are checked but score no RR. */
   practice?: boolean;
   /** Called after each answer (lets a quiz left halfway still count what was answered). */
   onAnswer?: (index: number, correct: boolean, delta: number) => void;
@@ -82,7 +82,7 @@ interface Props {
 
 /**
  * Runs a list of questions of any format: answer, instant right/wrong feedback, next — then reports the result.
- * MMR is scored as you go but only revealed after the quiz, so the pilot can focus on the questions.
+ * RR is scored as you go but only revealed after the quiz, so the pilot can focus on the questions.
  */
 export default function QuizRunner({ questions, limits, rates, practice = false, progress = 0, hints = true, onComplete, onAnswer }: Props) {
   const streak = useCourse((s) => s.stats.streak);
@@ -170,7 +170,7 @@ export default function QuizRunner({ questions, limits, rates, practice = false,
             </span>
             {hints && !limit && (q.type === 'mcq' || q.type === 'multi') && !answered && (
               <button type="button" onClick={takeHint} disabled={hidden.length > 0} className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-white/70 transition enabled:hover:bg-white/[0.12] disabled:opacity-40">
-                <Lightbulb size={12} /> {hidden.length ? 'Hint used' : 'Hint (costs some MMR)'}
+                <Lightbulb size={12} /> {hidden.length ? 'Hint used' : 'Hint (costs some RR)'}
               </button>
             )}
             {limit && (
@@ -401,8 +401,6 @@ function OrderAnswer({ q, answered, onSubmit }: { q: Extract<Question, { type: '
               dragListener={!answered}
               className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-base ${answered ? (ok ? 'border-emerald-400/60 bg-emerald-400/10' : 'border-rose-400/60 bg-rose-400/10') : 'cursor-grab border-white/10 bg-white/[0.04] active:cursor-grabbing'}`}
             >
-              {!answered && <GripVertical size={16} className="shrink-0 text-white/60" />}
-              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-xs font-semibold text-white/80">{i + 1}</span>
               <span className="flex-1 text-white/90">{it}</span>
               {!answered && (
                 <span className="flex gap-1">

@@ -13,9 +13,9 @@ import { useNova } from './store';
  *   (at random) after the last one was taken, and waits until the pilot takes it (an alert, a pill, the dock card).
  * - Its questions come only from the topics the pilot had completed when it formed.
  * - 5–10 mixed questions; a full 10-question quiz ends with three timed questions.
- * - Heavy MMR both ways: within 24 h of forming, correct answers pay 2× (timed ones 2.5×); after that 1.75×
- *   (timed 2×). Wrong answers cost the same multiple — except timed questions, which never cost MMR.
- * - A finished quiz stays in the archive and can be retaken as practice, for no MMR.
+ * - Heavy RR both ways: within 24 h of forming, correct answers pay 2× (timed ones 2.5×); after that 1.75×
+ *   (timed 2×). Wrong answers cost the same multiple — except timed questions, which never cost RR.
+ * - A finished quiz stays in the archive and can be retaken as practice, for no RR.
  */
 export const HUB_QUIZ = {
   windowMs: 24 * 3600_000,
@@ -42,11 +42,11 @@ export interface HubQuiz {
 
 export interface QuizRun {
   quizId: string;
-  /** A retake of a finished quiz — no MMR. */
+  /** A retake of a finished quiz — no RR. */
   practice: boolean;
   regular: number;
   timed: number;
-  /** MMR multipliers per question. */
+  /** RR multipliers per question. */
   rates: { gain: number; loss: number }[];
 }
 
@@ -104,7 +104,7 @@ export const useHubQuiz = create<State>()((set, get) => ({
   form: (e) => {
     const pool = hubPool(e);
     if (!pool.length) return null;
-    // Favour questions the pilot has not already answered correctly (repeats of those earn no MMR).
+    // Favour questions the pilot has not already answered correctly (repeats of those earn no RR).
     const built = buildQuiz(pool, { prefer: (x) => !e.skill.questionHistory?.[x.q.q] });
     const quiz: HubQuiz = { id: `hq-${Date.now().toString(36)}`, courseId: e.course.id, formedAt: Date.now(), title: coverage(e), questions: built.questions, limits: built.limits, seen: false };
     // Keep the archive bounded: the newest 12 per course.

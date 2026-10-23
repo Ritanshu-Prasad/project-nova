@@ -43,7 +43,7 @@ export const READOUT = {
   sync: 'Neural sync',
   pilot: 'Pilot',
   pilotValue: 'LV 1 · UNRANKED',
-  mmr: 'MMR',
+  mmr: 'RR',
   mmrValue: '—',
   mmrNote: 'calibration pending',
   sector: 'Sector',

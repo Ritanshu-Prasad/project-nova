@@ -44,6 +44,8 @@ interface NovaState {
   reducedMotion: boolean;
   /** Persisted: the visitor has completed (or skipped) the intro before. */
   introSeen: boolean;
+  /** The visitor has answered the photosensitivity warning shown before the intro. Never saved: it is asked every time. */
+  warningAccepted: boolean;
   /** The WebGL scene has compiled and rendered its first frames. */
   sceneReady: boolean;
   /** WebGL unavailable or crashed; the DOM experience runs over a CSS fallback. */
@@ -78,6 +80,7 @@ interface NovaState {
   toggleSound: () => void;
   setReducedMotion: (on: boolean) => void;
   setIntroSeen: (seen: boolean) => void;
+  setWarningAccepted: (accepted: boolean) => void;
   setSceneReady: (ready: boolean) => void;
   setWebglFailed: (failed: boolean) => void;
   setActivePillar: (index: number | null) => void;
@@ -158,6 +161,8 @@ export const useNova = create<NovaState>()((set, get) => ({
   isLoggedIn: readFlag('nova.isLoggedIn', false),
   // DEV MODE OVERRIDE: the intro is never marked as seen.
   introSeen: false, // readFlag(LS_INTRO, false),
+  // Asked on every visit before the intro plays; the dev ?jump= shortcut skips it.
+  warningAccepted: typeof location !== 'undefined' && new URLSearchParams(location.search).has('jump'),
   
   themeColor: readItem('nova.themeColor', '#06b6d4') || '#06b6d4',
   activeObjective: readItem('nova.activeObjective', null),
@@ -172,6 +177,7 @@ export const useNova = create<NovaState>()((set, get) => ({
   },
   toggleSound: () => get().setSoundOn(!get().soundOn),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+  setWarningAccepted: (warningAccepted) => set({ warningAccepted }),
   setIntroSeen: (introSeen) => {
     writeFlag(LS_INTRO, introSeen);
     set({ introSeen });

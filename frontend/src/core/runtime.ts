@@ -30,7 +30,7 @@ const initial = () => ({
   bayLights: 0,
   /** Canopy HUD visibility (neural link). */
   hud: 0,
-  /** MMR reactor core spin-up. */
+  /** RR reactor core spin-up. */
   core: 0,
   /** Hangar blast doors: 0 = closed, 1 = fully open. */
   doors: 0,

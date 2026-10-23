@@ -18,7 +18,7 @@ const CONFETTI = Array.from({ length: 36 }, (_, i) => ({ left: (i * 37) % 100, d
 
 /**
  * The graduation screen: opens by itself the first time a course is finished (and from Profile afterwards).
- * Certificate with the final rank, MMR and stats, plus downloads for the certificate and the pilot's study notes.
+ * Certificate with the final rank, RR and stats, plus downloads for the certificate and the pilot's study notes.
  */
 export default function Graduation() {
   const courseId = useCourse((s) => s.graduation);
@@ -104,7 +104,7 @@ export default function Graduation() {
               </div>
             </div>
             {[
-              ['MMR', String(facts.mmr)],
+              ['RR', String(facts.mmr)],
               ['Planets', String(facts.planets)],
               ['Accuracy', facts.accuracy === null ? '—' : `${facts.accuracy}%`],
             ].map(([label, value]) => (

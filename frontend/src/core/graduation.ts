@@ -48,7 +48,7 @@ export function download(filename: string, data: Blob): void {
 
 /** The pilot's study notes for a course, with each lesson's key takeaways, as a Markdown file. */
 export function studyNotesMarkdown(e: LibraryEntry, f: GraduationFacts): string {
-  const out = [`# ${f.course} — study notes`, '', `${f.pilot} · completed ${f.date} · final rank ${f.rank} (${f.mmr} MMR)`, ''];
+  const out = [`# ${f.course} — study notes`, '', `${f.pilot} · completed ${f.date} · final rank ${f.rank} (${f.mmr} RR)`, ''];
   const topics = flatTopics(e.course);
   const written = topics.filter((t) => e.progress[t.id]?.notes?.trim()).length;
   out.push(written ? `Your notes on ${written} of ${topics.length} topics, with the key takeaways of every lesson.` : `Key takeaways of every lesson (you didn’t write notes in this course — add some in the notes panel next time).`, '');
@@ -116,7 +116,7 @@ export async function certificatePng(f: GraduationFacts, accent: string): Promis
 
   const stats: [string, string][] = [
     ['FINAL RANK', f.rank],
-    ['MMR', String(f.mmr)],
+    ['RR', String(f.mmr)],
     ['PLANETS', String(f.planets)],
     ['ACCURACY', f.accuracy === null ? '—' : `${f.accuracy}%`],
   ];

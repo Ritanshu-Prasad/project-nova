@@ -175,7 +175,7 @@ export function drawScreen(s: Screen, i: number, t: number): void {
       const on = st.systems[k];
       c.font = `500 18px ${MONO}`;
       c.fillStyle = on ? '#34d399' : 'rgba(245,158,11,0.9)';
-      c.fillText(`${['MAIN PWR', 'NEURAL LINK', 'MMR CORE'][n]}`, 26, 110 + n * 56);
+      c.fillText(`${['MAIN PWR', 'NEURAL LINK', 'RR CORE'][n]}`, 26, 110 + n * 56);
       c.fillText(on ? 'ONLINE' : 'OFFLINE', 360, 110 + n * 56);
       bar(c, 26, 122 + n * 56, 460, on ? 1 : 0.05, on ? '#34d399' : '#f59e0b');
     });
