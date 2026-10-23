@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://nova-badies.vercel.app/)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://project-nova-ai.vercel.app/)
 [![Nebius AI Studio](https://img.shields.io/badge/Inference-Nebius_AI_Studio-blueviolet?style=for-the-badge&logo=cloud)](https://studio.nebius.ai/)
 [![NVIDIA Nemotron](https://img.shields.io/badge/Model-NVIDIA_Nemotron-76B900?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/)
 [![React 19](https://img.shields.io/badge/Frontend-React_19_%2B_Three.js-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
@@ -11,7 +11,7 @@
 
 **Autonomous, Gamified 3D Learning Platform Built for the Nebius x NVIDIA Global AI Hackathon**
 
-[Live Demo](https://nova-badies.vercel.app/) • [Architecture](#-architecture) • [Nebius & NVIDIA Integration](#-nebius-ai-studio--nvidia-nemotron-integration) • [Quick Start](#-quick-start) • [Evaluation](#-testing--evaluations)
+[Live Demo](https://project-nova-ai.vercel.app/) • [Architecture](#-architecture) • [Nebius & NVIDIA Integration](#-nebius-ai-studio--nvidia-nemotron-integration) • [Quick Start](#-quick-start) • [Evaluation](#-testing--evaluations)
 
 </div>
 
