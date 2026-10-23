@@ -16,6 +16,12 @@ import llm  # noqa: E402
 import shared  # noqa: E402
 from evals.pdfs import make_pdf  # noqa: E402,F401
 from samples import bank_batch_json, lesson_json, mcq, module_content_json, module_json, outline_json, questions  # noqa: E402
+from tutor import CHAT_BURST_LIMIT
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    CHAT_BURST_LIMIT._history.clear()
 
 
 def reply_for(system: str, call_number: int, user: str = "") -> dict:

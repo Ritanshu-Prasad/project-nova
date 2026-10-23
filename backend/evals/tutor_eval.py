@@ -19,7 +19,7 @@ def client() -> httpx.AsyncClient:
     """The real tutor route, called in-process."""
     app = FastAPI()
     app.include_router(tutor.router)
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://eval", timeout=120)
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://eval", headers={"X-Nova": "1"}, timeout=120)
 
 
 async def ask(http: httpx.AsyncClient, message: str, context: dict) -> str:

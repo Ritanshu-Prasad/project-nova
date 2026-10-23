@@ -12,10 +12,12 @@ import llm
 from document_store import is_valid_key, load_index
 from limits import TUTOR_LIMIT
 from prompts import GRADED_REMINDER, sanitise, tutor_system
+from security import SlidingWindowRateLimiter, require_csrf, sanitize_prompt_text, wrap_untrusted_context
 from spoilers import find_clash, is_quiz_chat
 from usage import check_budget
 
 router = APIRouter()
+CHAT_BURST_LIMIT = SlidingWindowRateLimiter(15, 60, "tutor_chat")  # 15 requests / minute
 logger = logging.getLogger("nova.tutor")
 
 TIMEOUT = httpx.Timeout(60.0, connect=10.0)
@@ -59,7 +61,7 @@ class TutorRequest(BaseModel):
 
 # --- Route ---
 
-@router.post("/api/tutor/chat", dependencies=[Depends(TUTOR_LIMIT), Depends(check_budget)])
+@router.post("/api/tutor/chat", dependencies=[Depends(require_csrf), Depends(CHAT_BURST_LIMIT), Depends(TUTOR_LIMIT), Depends(check_budget)])
 async def tutor_chat(body: TutorRequest):
     if not llm.api_key():
         raise HTTPException(503, "Tutor model is not configured")
@@ -78,7 +80,7 @@ async def tutor_chat(body: TutorRequest):
 
 
 def _history(body: TutorRequest) -> list:
-    history = [message.model_dump() for message in body.messages[-HISTORY_MESSAGES:]]
+    history = [{**message.model_dump(), "content": sanitize_prompt_text(message.content)} for message in body.messages[-HISTORY_MESSAGES:]]
     if body.context.avoid:
         history[-1]["content"] += f"\n\n{GRADED_REMINDER}"
     return history
@@ -90,8 +92,8 @@ async def _system_prompt(context: TutorContext, question: str) -> str:
         module=sanitise(context.module, LABEL_CHARS) or "-",
         course=sanitise(context.course, LABEL_CHARS) or "-",
         rank=sanitise(context.rank, LABEL_CHARS) or "new pilot",
-        lesson=context.lesson[:LESSON_CHARS],
-        graded=[graded[:GRADED_CHARS] for graded in context.avoid[:GRADED_SHOWN]],
+        lesson=wrap_untrusted_context(context.lesson[:LESSON_CHARS]),
+        graded=[sanitize_prompt_text(graded, GRADED_CHARS) for graded in context.avoid[:GRADED_SHOWN]],
         sources=await _document_sources(context, question),
     )
 

@@ -11,15 +11,15 @@ Storage is the same as accounts (Upstash Redis in production, a local file in de
 sign-in requirement yet, so scores are self-reported — fine for a demo, not for prizes.
 """
 
-import asyncio
 import hashlib
 import json
 import re
 import time
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from accounts import _require_csrf, _store
+from accounts import _store
+from security import ScoreConcurrencyGuard, require_csrf
 
 router = APIRouter()
 
@@ -45,7 +45,8 @@ def level_of(xp: int) -> int:
         return 1
     return bisect.bisect_right(LEVEL_THRESHOLDS, xp)
 
-_lock = asyncio.Lock()
+
+guard = ScoreConcurrencyGuard(max_delta=5000)  # lock + per-submission XP clamp + string sanitizing
 _last_submissions: dict[str, float] = {}
 
 
@@ -54,8 +55,7 @@ def _hash(pilot_id: str) -> str:
 
 
 def _clean_name(s: object, n: int) -> str:
-    text = re.sub(r"[\x00-\x1f\x7f<>]", "", str(s or "")).strip()
-    return text[:n]
+    return guard.sanitize_string(s, n)
 
 
 async def _load_board() -> dict:
@@ -67,9 +67,8 @@ async def _load_board() -> dict:
     return board if isinstance(board, dict) else {}
 
 
-@router.post("/api/fleet/score")
+@router.post("/api/fleet/score", dependencies=[Depends(require_csrf)])
 async def post_score(request: Request):
-    _require_csrf(request)
     try:
         body = await request.json()
     except (ValueError, json.JSONDecodeError):
@@ -100,7 +99,7 @@ async def post_score(request: Request):
 
     pilot_hash = _hash(body["pilotId"])
 
-    async with _lock:
+    async with guard.lock:
         now = time.time()
         if now - _last_submissions.get(pilot_hash, 0.0) < SUBMISSION_THROTTLE_SECONDS:
             raise HTTPException(429, "Submitting too fast; please wait 5 seconds")
@@ -136,7 +135,7 @@ async def post_score(request: Request):
             if xp - prev_xp > MAX_XP_DELTA:
                 raise HTTPException(400, f"Initial XP exceeds maximum allowed delta ({MAX_XP_DELTA})")
 
-        final_xp = max(xp, prev_xp)
+        final_xp = guard.clamp_delta(prev_xp if (existing or prev_xp) else None, xp)
         board[pilot_hash] = {
             "callsign": callsign,
             "avatar": avatar,

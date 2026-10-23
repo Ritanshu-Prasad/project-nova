@@ -232,7 +232,7 @@ def tutor_world(monkeypatch):
     def make_tutor_client():
         app = FastAPI()
         app.include_router(tutor.router)
-        return real(transport=httpx.ASGITransport(app=app), base_url="http://eval")
+        return real(transport=httpx.ASGITransport(app=app), base_url="http://eval", headers={"X-Nova": "1"})
 
     monkeypatch.setattr(tutor.httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(upstream), **kw))
     monkeypatch.setattr(tutor_eval, "client", make_tutor_client)

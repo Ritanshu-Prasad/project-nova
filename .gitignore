@@ -34,3 +34,16 @@ Thumbs.db
 *.sw?
 
 .venv/
+
+# ==============================================================================
+# Graphify & AI Assistant Files
+# ==============================================================================
+graphify-out/
+.graphify*
+.cloud-cta-shown
+.claude/
+.gemini/
+.agents/
+CLAUDE.local.md
+.mcp.json
+*.task.log

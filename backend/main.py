@@ -2,7 +2,6 @@ import os
 import sys
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # sibling modules on serverless runtimes too
 from accounts import router as accounts_router  # noqa: E402
@@ -14,7 +13,9 @@ from fleet import router as fleet_router  # noqa: E402
 from generator import router as generator_router  # noqa: E402
 from observability import add_request_logging, configure_logging, log_startup, router as health_router  # noqa: E402
 from tutor import router as tutor_router  # noqa: E402
+from security import SecurityHeadersMiddleware, configure_cors, validate_secrets_on_startup  # noqa: E402
 
+validate_secrets_on_startup()
 configure_logging()
 log_startup()
 app = FastAPI(title="Project Nova API")
@@ -45,14 +46,10 @@ parsed_origins = (
 )
 ALLOWED_ORIGINS = parsed_origins if parsed_origins else DEFAULT_ORIGINS
 
-# Allow requests from our Vite frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Allow requests from our Vite frontend (explicit origins, methods and headers) and add security headers
+os.environ["ALLOWED_ORIGINS"] = ",".join(ALLOWED_ORIGINS)
+configure_cors(app)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.get("/")

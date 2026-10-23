@@ -24,13 +24,15 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import time
 from pathlib import Path
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request, Response
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
+from security import ProgressPayload, is_dev_backdoor_enabled, require_csrf
 
 router = APIRouter()
 
@@ -39,6 +41,8 @@ COOKIE = "nova_session"
 SESSION_DAYS = 30
 # Vercel functions accept request bodies up to 4.5 MB; leave headroom.
 MAX_SAVE_BYTES = 4_000_000
+EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+\-]{1,64}@[A-Za-z0-9.\-]{1,255}\.[A-Za-z]{2,24}$")
+NAME_RE = re.compile(r"^[\w .'\-]{1,60}$")
 
 
 # ── Storage ────────────────────────────────────────────────────────────────
@@ -224,12 +228,6 @@ def _set_session(response: Response, request: Request, sub: str) -> None:
     )
 
 
-def _require_csrf(request: Request) -> None:
-    # Cross-site pages can't add custom headers without a CORS preflight; the session cookie is also SameSite=Lax.
-    if request.headers.get("x-nova") != "1":
-        raise HTTPException(403, "Missing X-Nova header")
-
-
 def signed_in_sub(request: Request) -> str | None:
     """Who the cookie says is signed in, without checking the account (for rate limits, which only need a name)."""
     try:
@@ -309,9 +307,8 @@ async def _google_profile(access_token: str) -> dict:
 # ── Routes ─────────────────────────────────────────────────────────────────
 
 
-@router.post("/api/auth/google")
+@router.post("/api/auth/google", dependencies=[Depends(require_csrf)])
 async def auth_google(request: Request, response: Response):
-    _require_csrf(request)
     body = await request.json()
     token = body.get("accessToken") if isinstance(body, dict) else None
     if not isinstance(token, str) or not token:
@@ -327,13 +324,17 @@ async def auth_google(request: Request, response: Response):
 @router.post("/api/auth/dev")
 async def auth_dev(request: Request, response: Response):
     """Local testing only — a fake account without Google."""
-    if os.getenv("NOVA_DEV_LOGIN") != "1" or ON_VERCEL:
+    if not is_dev_backdoor_enabled():
         raise HTTPException(404, "Not found")
-    _require_csrf(request)
+    await require_csrf(request)
     body = await request.json()
+    body = body if isinstance(body, dict) else {}
     email = str(body.get("email") or "pilot@example.com")
+    name = str(body.get("name") or "Test Pilot")
+    if not EMAIL_RE.match(email) or not NAME_RE.match(name):
+        raise HTTPException(400, "Invalid email or name")
     sub = f"dev:{email}"
-    _, is_new = await _upsert_user(sub, email, str(body.get("name") or "Test Pilot"), "")
+    _, is_new = await _upsert_user(sub, email, name, "")
     _set_session(response, request, sub)
     reply = await _account_reply(sub)
     return {**reply, "isNew": is_new}
@@ -344,16 +345,14 @@ async def auth_me(request: Request):
     return await _account_reply(await _current_sub(request))
 
 
-@router.post("/api/auth/logout")
+@router.post("/api/auth/logout", dependencies=[Depends(require_csrf)])
 async def auth_logout(request: Request, response: Response):
-    _require_csrf(request)
     response.delete_cookie(COOKIE, path="/")
     return {"ok": True}
 
 
-@router.post("/api/auth/logout-all")
+@router.post("/api/auth/logout-all", dependencies=[Depends(require_csrf)])
 async def auth_logout_all(request: Request, response: Response):
-    _require_csrf(request)
     sub = await _current_sub(request)
     user = await _load_json(_user_key(sub))
     await _store().set(_user_key(sub), json.dumps({**user, "sessionsValidFrom": _now_ms()}))
@@ -368,15 +367,8 @@ async def get_progress(request: Request):
     return save or {"savedAt": None, "save": None}
 
 
-class ProgressPayload(BaseModel):
-    savedAt: int | float
-    save: dict
-    base: int | float | None = None
-
-
-@router.put("/api/progress")
+@router.put("/api/progress", dependencies=[Depends(require_csrf)])
 async def put_progress(payload: ProgressPayload, request: Request):
-    _require_csrf(request)
     sub = await _current_sub(request)
     raw = await request.body()
     if len(raw) > MAX_SAVE_BYTES:
@@ -385,5 +377,5 @@ async def put_progress(payload: ProgressPayload, request: Request):
     if current and current.get("savedAt") != payload.base:
         # This copy wasn't made from the latest save (another device saved since); the client downloads that one.
         raise HTTPException(409, "A newer save exists")
-    await _store().set(_save_key(sub), json.dumps({"savedAt": payload.savedAt, "save": payload.save}))
+    await _store().set(_save_key(sub), json.dumps({"savedAt": payload.savedAt, "save": payload.save.model_dump()}))
     return {"savedAt": payload.savedAt}

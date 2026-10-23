@@ -25,7 +25,7 @@ def chat(content: str = "Explain this lesson", **context) -> dict:
 def client():
     app = FastAPI()
     app.include_router(tutor.router)
-    return TestClient(app)
+    return TestClient(app, headers={"X-Nova": "1"})
 
 
 @pytest.fixture(autouse=True)
