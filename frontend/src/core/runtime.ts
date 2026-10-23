@@ -58,6 +58,8 @@ const initial = () => ({
   shipZ: 0,
   /** Ship speed in world units per second (for streak length, strobing lights). */
   shipSpeed: 0,
+  /** Launching from where the ship hangs in space (no launch rail): the ship's forward offset is scaled down (SPACE_LAUNCH). */
+  spaceLaunch: false,
 
   // ── Arrival / landing ────────────────────────────────────────────────
   /** Glide into the arrival point: 0 = ARRIVAL.backoff units behind it, 1 = parked. */

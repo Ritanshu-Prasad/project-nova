@@ -31,6 +31,12 @@ export const ARRIVAL = {
   backoff: 190,
 } as const;
 
+/**
+ * Launching from space instead of the hangar: the launch timeline's forward motion (the rail is 250 u long, ≈345 u/s at the end)
+ * is scaled so the ship doesn't fly into the planet. Streaks and flashes still follow the full speed.
+ */
+export const SPACE_LAUNCH = { scale: 0.12 } as const;
+
 /** Camera defaults. The base FOV widens on narrow / portrait screens so the cockpit still frames the view. */
 export const CAMERA = {
   near: 0.03,

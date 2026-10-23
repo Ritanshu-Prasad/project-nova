@@ -339,8 +339,8 @@ export function ProfileSection() {
           <Clapperboard size={18} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-white">Relive your first launch</span>
-          <span className="block text-xs text-white/50">Watch the wake-up and launch again — you’ll land right back here.</span>
+          <span className="block text-sm font-semibold text-white">Launch to the next planet</span>
+          <span className="block text-xs text-white/50">Walk back to the cockpit, flip the switches and jump from where you are — you’ll land back here.</span>
         </span>
       </button>
       <button type="button" onClick={() => useSettings.getState().setOpen(true)} className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl bg-white/[0.04] px-4 py-3 text-left text-sm text-white/85 transition hover:bg-white/[0.07]">

@@ -13,6 +13,7 @@ export const PILOT_KEYS = [
   'nova.tutor.v1',
   'nova.callsign',
   'nova.avatar',
+  'nova.planet',
   'nova.pilotId',
   'nova.themeColor',
   'nova.activeObjective',

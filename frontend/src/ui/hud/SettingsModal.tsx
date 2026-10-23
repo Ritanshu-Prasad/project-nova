@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Gauge, Keyboard, RotateCcw, Sparkles, Volume2, X } from 'lucide-react';
+import { Gauge, Keyboard, RotateCcw, Rocket, Sparkles, Volume2, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
+import { relaunch, replayFullIntro } from '../../core/hub';
 import { LEVEL_LABEL, LEVELS, useGraphics, type Choice } from '../../core/graphics';
 import { Z } from '../../core/layers';
 import { ACTIONS, keyLabel, RESERVED, useSettings, type Action, type Motion } from '../../core/settings';
@@ -84,6 +85,19 @@ function Panel() {
           </Row>
           <Row label="Interface sounds" hint="Chimes, clicks and alerts">
             <Toggle on={s.uiSounds} onChange={() => (s.set({ uiSounds: !s.uiSounds }), audio.play('chime'))} label="Interface sounds" />
+          </Row>
+        </Section>
+
+        <Section icon={<Rocket size={14} />} title="Flight">
+          <Row label="Launch to the next planet" hint="Walk back to the seat, flip the 3 switches and jump from here">
+            <button type="button" onClick={() => (close(), relaunch())} className="cursor-pointer rounded-lg bg-cyan-400/20 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-cyan-300/40 transition hover:bg-cyan-400/30">
+              Launch
+            </button>
+          </Row>
+          <Row label="Replay the full intro" hint="The wake-up in the hangar and the launch down the launch pad">
+            <button type="button" onClick={() => (close(), replayFullIntro())} className="cursor-pointer rounded-lg bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-white/80 ring-1 ring-white/10 transition hover:text-white hover:ring-white/30">
+              Replay
+            </button>
           </Row>
         </Section>
 

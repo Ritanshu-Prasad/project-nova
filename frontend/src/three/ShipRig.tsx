@@ -4,7 +4,7 @@ import { useRef, type ReactNode } from 'react';
 import type { Group, PerspectiveCamera as Cam } from 'three';
 import { clamp, damp, lerp, wobble } from '../core/math';
 import { rt } from '../core/runtime';
-import { ARRIVAL, CAMERA } from '../core/scene';
+import { ARRIVAL, CAMERA, SPACE_LAUNCH } from '../core/scene';
 import { useHub } from '../core/hub';
 import { useDeck } from '../core/journey';
 import { useNova, type Phase } from '../core/store';
@@ -45,7 +45,7 @@ export default function ShipRig({ children }: { children?: ReactNode }) {
     ship.current.position.set(
       0,
       landed ? Math.sin(t * 1.6) * 0.03 : 0,
-      st.world === 'bay' ? rt.shipZ : ARRIVAL.backoff * (1 - rt.approach),
+      st.world === 'bay' ? rt.shipZ : rt.spaceLaunch ? rt.shipZ * SPACE_LAUNCH.scale : ARRIVAL.backoff * (1 - rt.approach),
     );
     ship.current.rotation.z = landed ? Math.sin(t * 0.9) * 0.005 : 0;
 

@@ -8,6 +8,7 @@ import { rt } from './runtime';
  * Ticked every frame by the director loop; it only writes rt.stand / turn / door / walk / holo.
  *
  *   cockpit ─goToLounge()→ transit (≈6.6 s) → lounge
+ *   lounge ─goToCockpit()→ transit (the same timeline played backwards) → cockpit
  */
 export type Deck = 'cockpit' | 'transit' | 'lounge';
 
@@ -28,7 +29,31 @@ export const JOURNEY = {
 
 const clock = () => performance.now() / 1000;
 
+/** Where the pilot is `s` seconds into the walk from the seat to the lounge (0 = in the seat, JOURNEY.total = in the lounge). */
+export interface WalkPose {
+  turn: number;
+  stand: number;
+  door: number;
+  walk: number;
+}
+
+export function walkAt(s: number): WalkPose {
+  return {
+    turn: easeInOutCubic(clamp(s / JOURNEY.turn)),
+    stand: smoothstep(0, 1.2, s),
+    door: kf(s, [
+      [JOURNEY.unlock, 0],
+      [JOURNEY.unlock + 0.25, 0.12],
+      [JOURNEY.open[0], 0.15],
+      [JOURNEY.open[1], 1],
+    ]),
+    walk: easeInOutCubic(clamp((s - JOURNEY.walk[0]) / (JOURNEY.walk[1] - JOURNEY.walk[0]))),
+  };
+}
+
 let start: number | null = null;
+/** 1 = seat → lounge, -1 = lounge → seat (the same timeline backwards). */
+let direction: 1 | -1 = 1;
 let onArrive: (() => void) | null = null;
 const fired = new Set<string>();
 
@@ -45,9 +70,33 @@ export function goToLounge(then?: () => void): void {
     return;
   }
   start = clock();
+  direction = 1;
   onArrive = then ?? null;
   fired.clear();
   useDeck.setState({ deck: 'transit' });
+}
+
+/**
+ * Walk from the lounge back to the pilot seat — the walk to the lounge played in reverse: out through the corridor,
+ * the bulkhead door closing, turning and sitting down. Already in the seat → calls `then` right away. `delayMs` gives a
+ * station walk time to settle at the hub spot, where the reverse walk starts.
+ */
+export function goToCockpit(then?: () => void, delayMs = 0): void {
+  if (useDeck.getState().deck !== 'lounge') {
+    then?.();
+    return;
+  }
+  const begin = () => {
+    if (useDeck.getState().deck !== 'lounge') return;
+    Object.assign(rt, walkAt(JOURNEY.total));
+    start = clock();
+    direction = -1;
+    onArrive = then ?? null;
+    fired.clear();
+    useDeck.setState({ deck: 'transit' });
+  };
+  if (delayMs > 0) setTimeout(begin, delayMs);
+  else begin();
 }
 
 /** Skip the walk (e.g. reduced motion or a returning player): appear in the lounge. */
@@ -75,27 +124,29 @@ export function tickJourney(dt: number): void {
   if (start === null) return;
   const t = clock() - start;
   const fast = rt.reducedMotion ? 2.2 : 1;
-  const s = t * fast;
+  // Walking back plays the same timeline from its end to its start.
+  const s = direction === 1 ? t * fast : JOURNEY.total - t * fast;
 
-  rt.turn = easeInOutCubic(clamp(s / JOURNEY.turn));
-  rt.stand = smoothstep(0, 1.2, s);
-  rt.door = kf(s, [
-    [JOURNEY.unlock, 0],
-    [JOURNEY.unlock + 0.25, 0.12],
-    [JOURNEY.open[0], 0.15],
-    [JOURNEY.open[1], 1],
-  ]);
-  rt.walk = easeInOutCubic(clamp((s - JOURNEY.walk[0]) / (JOURNEY.walk[1] - JOURNEY.walk[0])));
+  Object.assign(rt, walkAt(clamp(s, 0, JOURNEY.total)));
 
-  if (s >= 0.1) once('stand', () => audio.play('switch'));
-  if (s >= JOURNEY.unlock) once('unlock', () => audio.play('powerUp'));
-  if (s >= JOURNEY.open[0]) once('open', () => audio.play('doorOpen'));
-  if (s >= JOURNEY.total) {
-    start = null;
-    useDeck.setState({ deck: 'lounge' });
-    audio.play('arrive');
-    const fn = onArrive;
-    onArrive = null;
-    fn?.();
+  if (direction === 1) {
+    if (s >= 0.1) once('stand', () => audio.play('switch'));
+    if (s >= JOURNEY.unlock) once('unlock', () => audio.play('powerUp'));
+    if (s >= JOURNEY.open[0]) once('open', () => audio.play('doorOpen'));
+    if (s >= JOURNEY.total) finish('lounge', 'arrive');
+  } else {
+    if (s <= JOURNEY.open[1]) once('close', () => audio.play('doorOpen'));
+    if (s <= JOURNEY.unlock) once('lock', () => audio.play('switch'));
+    if (s <= 0.6) once('sit', () => audio.play('powerUp'));
+    if (s <= 0) finish('cockpit', null);
   }
+}
+
+function finish(deck: Deck, cue: 'arrive' | null): void {
+  start = null;
+  useDeck.setState({ deck });
+  if (cue) audio.play(cue);
+  const fn = onArrive;
+  onArrive = null;
+  fn?.();
 }

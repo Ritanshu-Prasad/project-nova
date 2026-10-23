@@ -2,7 +2,8 @@ import { audio } from './audio';
 import { PREFLIGHT } from './content';
 import { clamp, damp, easeOutCubic, kf, lerp, smoothstep, type Keyframes } from './math';
 import { resetRuntime, rt } from './runtime';
-import { goToLounge, resetJourney, tickJourney } from './journey';
+import { goToCockpit, goToLounge, resetJourney, tickJourney } from './journey';
+import { nextPlanet, planetName } from './planets';
 import { BAY } from './scene';
 import { SYSTEM_ORDER, useNova, type Phase, type SystemKey } from './store';
 
@@ -105,6 +106,7 @@ export function enterPhase(phase: Phase): void {
       if (replayingFromLounge) {
         // A replay from the lounge: once landed, walk straight back to the lounge.
         replayingFromLounge = false;
+        store().notify({ kind: 'toast', title: `Now orbiting ${planetName()}`, ttl: 4 });
         setTimeout(() => goToLounge(), 1400);
       }
       break;
@@ -160,6 +162,7 @@ export function skipIntro(): void {
   if (s.phase === 'arrive' || s.phase === 'landed') return;
   void audio.init();
   bringEverythingOnline();
+  finishSpaceJump(); // a skipped jump from space still ends at the next planet
   enterPhase('arrive');
 }
 
@@ -169,6 +172,38 @@ let replayingFromLounge = false;
 export function replayLaunch(): void {
   replayingFromLounge = true;
   replayIntro();
+}
+
+/** Ends the in-space launch's special motion and moves to the next world of the tour (once). */
+function finishSpaceJump(): void {
+  if (!rt.spaceLaunch) return;
+  nextPlanet();
+  rt.spaceLaunch = false;
+  rt.shipZ = 0;
+}
+
+/**
+ * LAUNCH cheat / Profile / Settings: the pilot walks from the lounge back to the seat (the walk to the lounge in
+ * reverse). The ship stays where it is, in space at the current planet; it powers down and the pilot flips the three
+ * switches again and holds to launch — a jump from here, not from the launch pad — ending at the next planet.
+ */
+export function relaunchFromSpace(delayMs = 0): void {
+  if (store().phase !== 'landed') return;
+  goToCockpit(beginSpacePreflight, delayMs);
+}
+
+function beginSpacePreflight(): void {
+  const s = store();
+  resetTimelineState();
+  for (const k of SYSTEM_ORDER) s.setSystem(k, false);
+  s.setCleared(false);
+  Object.assign(rt, {
+    eyelid: 1, blur: 0, slump: 0, dizzy: 0, emergency: 1, power: 0, bayLights: 0, hud: 0, core: 0,
+    doors: 0, clearance: 0, charge: 0, holding: false, countdown: 0, warp: 0, flash: 0, engine: 0,
+    shake: 0, fovKick: 0, shipZ: 0, shipSpeed: 0, speedKms: 0, approach: 1, arrive: 1, spaceLaunch: true,
+  });
+  replayingFromLounge = true;
+  enterPhase('preflight');
 }
 
 /** Back to the hangar, eyes shut, systems offline — then wake up again. */
@@ -343,9 +378,13 @@ function tick(dt: number): void {
     case 'warp': {
       const R = rm();
       const dur = R ? TIMING.warp_rm : TIMING.warp;
-      rt.shipZ -= rt.shipSpeed * dt;
+      if (s.world === 'bay' || rt.spaceLaunch) rt.shipZ -= rt.shipSpeed * dt; // only the launch itself moves the ship; after the swap it glides in
       rt.warp = R ? kf(t, [[0, 0.35], [0.4, 1], [1.2, 1], [1.6, 0]]) : kf(t, [[0, 0.35], [0.6, 1], [2.5, 1], [3.2, 0]]);
-      if (t >= (R ? TIMING.warpSwap_rm : TIMING.warpSwap)) once('swap', () => s.setWorld('newworld'));
+      if (t >= (R ? TIMING.warpSwap_rm : TIMING.warpSwap))
+        once('swap', () => {
+          s.setWorld('newworld');
+          finishSpaceJump(); // from space: the tunnel is opaque, so the new planet replaces the old one unseen
+        });
       rt.approach = 0;
       rt.fovKick = R ? 0 : kf(t, [[0, 24], [0.6, 34], [2.5, 30], [3.1, 6], [3.4, 0]]);
       rt.shake = R ? 0 : kf(t, [[0, 0.55], [0.6, 0.35], [2.6, 0.3], [3.0, 0.65], [3.4, 0.15]]);

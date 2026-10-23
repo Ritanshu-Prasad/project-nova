@@ -1,6 +1,7 @@
 import { ENABLE_PDF_UPLOAD } from './courseApi';
 import { create } from 'zustand';
-import { replayLaunch } from './director';
+import { relaunchFromSpace, replayLaunch } from './director';
+import { useGraphics } from './graphics';
 import { useNova } from './store';
 
 /**
@@ -79,8 +80,26 @@ export function openForge(tab: ForgeTab = 'goal'): void {
   useNova.getState().setCurriculumOpen(true);
 }
 
-/** Re-watch the opening cinematic (Profile button or the LAUNCH easter egg), then land back in the lounge. */
+/** Whether there is a 3D scene to fly in (not in "No 3D" mode, and not after the scene crashed). */
+const has3d = () => useGraphics.getState().level !== 'none' && !useNova.getState().webglFailed;
+
+/**
+ * LAUNCH cheat / Profile / Settings: walk back to the pilot seat (the walk to the lounge in reverse), flip the three
+ * switches again and jump from where the ship is, to the next planet. Without 3D there is nothing to fly, so it says so.
+ */
 export function relaunch(): void {
+  if (!has3d()) {
+    useNova.getState().notify({ kind: 'toast', title: 'No 3D mode', lines: ['There is no ship view to fly in. Choose a 3D level in Settings → Graphics.'], ttl: 4 });
+    return;
+  }
+  const wasAtHub = useHub.getState().station === 'hub';
+  useHub.getState().go('hub');
+  relaunchFromSpace(wasAtHub ? 0 : 1300); // from another station the pilot first settles at the hub spot, where the reverse walk starts
+}
+
+/** Settings: watch the whole opening again — wake-up in the hangar and the launch down the launch pad — then land back in the lounge. */
+export function replayFullIntro(): void {
+  if (!has3d()) return relaunch();
   useHub.getState().go('hub');
   replayLaunch();
 }
