@@ -14,8 +14,9 @@ import { useNova } from '../../core/store';
 import { ensureTopic } from '../../core/topicLoader';
 import { HudButton } from '../common/HudButton';
 import PlacementCheck from './PlacementCheck';
+import KnowledgeCheck from './KnowledgeCheck';
 
-type Stage = 'edit' | 'forge' | 'ready' | 'error';
+type Stage = 'edit' | 'knowledgeCheck' | 'forge' | 'ready' | 'error';
 const LEVELS: { id: Level; label: string }[] = [
   { id: 'beginner', label: 'Beginner' },
   { id: 'intermediate', label: 'Intermediate' },
@@ -110,7 +111,7 @@ export default function CurriculumSetup() {
     <AnimatePresence>
       {open && (
         <motion.div key="new-course" className="pointer-events-none fixed inset-0 grid place-items-center p-4" style={{ zIndex: Z.topbar + 4 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.35, delay: 0.15 } }}>
-          <div className="pointer-events-auto absolute inset-0 bg-black/55 backdrop-blur-[3px]" onClick={() => canClose && stage === 'edit' && close()} />
+          <div className="pointer-events-auto absolute inset-0 bg-black/55 backdrop-blur-[3px]" onClick={() => canClose && (stage === 'edit' || stage === 'knowledgeCheck') && close()} />
           <motion.section
             role="dialog"
             aria-labelledby="new-course-title"
@@ -120,7 +121,7 @@ export default function CurriculumSetup() {
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 260, damping: 26 }}
           >
-            {canClose && stage === 'edit' && (
+            {canClose && (stage === 'edit' || stage === 'knowledgeCheck') && (
               <button type="button" onClick={close} aria-label="Close" className="absolute right-4 top-4 grid size-9 cursor-pointer place-items-center rounded-xl text-white/50 transition hover:bg-white/10 hover:text-white">
                 <X size={18} />
               </button>
@@ -264,10 +265,73 @@ export default function CurriculumSetup() {
                     ) : (
                       <span />
                     )}
-                    <HudButton variant="primary" size="lg" disabled={!valid} icon={<Cpu size={16} />} onClick={run}>
-                      Generate course
-                    </HudButton>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {activeTab === 'goal' && !isPreset && hasCourseApi ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={!valid}
+                            onClick={run}
+                            className="cursor-pointer px-3 py-2 text-xs text-white/50 underline-offset-4 transition hover:text-white hover:underline disabled:opacity-40"
+                          >
+                            Quick build without check
+                          </button>
+                          <HudButton
+                            variant="primary"
+                            size="lg"
+                            disabled={!valid}
+                            icon={<Sparkles size={16} />}
+                            onClick={() => (audio.play('click'), setStage('knowledgeCheck'))}
+                          >
+                            Tailor your journey
+                          </HudButton>
+                        </>
+                      ) : (
+                        <HudButton variant="primary" size="lg" disabled={!valid} icon={<Cpu size={16} />} onClick={run}>
+                          Generate course
+                        </HudButton>
+                      )}
+                    </div>
                   </div>
+                </motion.div>
+              )}
+
+              {stage === 'knowledgeCheck' && (
+                <motion.div key="knowledgeCheck" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <KnowledgeCheck
+                    objective={objective.trim()}
+                    level={level}
+                    onCourseReady={(course) => {
+                      useCourse.getState().addCourse(course);
+                      ensureTopic(course.id, course.modules[0].topics[0].id).catch(() => undefined);
+                      useNova.getState().setActiveObjective(course.objective);
+                      setBuilt(course);
+                      setStage('ready');
+                      audio.play('quest');
+                      timer.current = window.setTimeout(() => {
+                        close();
+                        const topics = course.modules.reduce((n, m) => n + m.topics.length, 0);
+                        goToLounge(() => {
+                          useHub.getState().go('hub');
+                          holoBurst(1);
+                          useNova.getState().notify({
+                            kind: 'system',
+                            title: 'Course ready',
+                            lines: [
+                              `${course.title} — ${topics} planet${topics === 1 ? '' : 's'} in ${course.modules.length} module${course.modules.length === 1 ? '' : 's'}.`,
+                              'Tailored specifically for you by your AI tutor.',
+                            ],
+                          });
+                        });
+                        setFiles([]);
+                        setObjective('');
+                        setSelectedPreset(null);
+                        setFocus('');
+                      }, 1400);
+                    }}
+                    onSkipToStandard={run}
+                    onBack={() => setStage('edit')}
+                  />
                 </motion.div>
               )}
 
