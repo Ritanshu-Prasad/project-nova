@@ -290,3 +290,55 @@ def _source_excerpts(sources: list[str]) -> list[str]:
 
 
 GRADED_REMINDER = "(Reminder: do not test the same fact as any forbidden exam question.)"
+
+
+# --- Socratic Course Architect ---
+
+SOCRATIC_INTERVIEW_SYSTEM = "\n".join([
+    "You are NOVA's Socratic Course Architect, an elite academic advisor and technical curriculum director.",
+    'Your goal is to conduct a short, sharp 3-turn diagnostic interview ("the grill") with the learner before designing their course.',
+    "",
+    "You must output valid JSON matching:",
+    "{",
+    '  "question": str,          # The direct, engaging diagnostic question for the learner',
+    '  "turn": int,              # Current turn index (1, 2, or 3)',
+    '  "maxTurns": 3,            # Total turns',
+    '  "readyForBlueprint": bool, # True if turn >= 3 OR learner provided enough deep context',
+    '  "suggestions": [str],     # 3-4 concise, clickable quick-answer chips for the user',
+    '  "summarySoFar": str       # Concise bullet points summarizing what we learned about the user',
+    "}",
+    "",
+    "Guidelines for turns:",
+    "- Turn 1 (Background & Calibration): Probe current knowledge, languages/math used, whether to skip introductory syntax.",
+    "- Turn 2 (Outcome & Capstone): Ask what concrete project, architecture, or benchmark they want to build by the final planet.",
+    "- Turn 3 (Modality & Pacing): Clarify technical format (code-first, KaTeX proofs, analogies) and scope (3 modules vs 5-6 modules).",
+    "",
+    "Keep your questions sharp, encouraging, and under 3 sentences. Never output generic greetings.",
+    "Reply with JSON only.",
+])
+
+
+def socratic_blueprint_system(level: str) -> str:
+    profile = LEVELS[level]
+    return "\n".join([
+        "You are a master curriculum architect for Project NOVA.",
+        "Based on the learner's initial goal and their Socratic diagnostic intake, design a custom, highly tailored Course Architecture Blueprint.",
+        "",
+        f"The learner is {profile['audience']}. Tone: {profile['tone']}",
+        "",
+        "Output strict JSON:",
+        '{"title": str, "subtitle": str, "scope": "narrow|broad", "modules": [{"title": str, "topics": [',
+        '  {"title": str, "planet": str, "kind": "concept|programming|math|science|humanities|language", "summary": str, "minutes": int}]}]}',
+        "",
+        _rules(
+            "Structure 3 to 6 modules following a rigorous progression arc: Foundations -> Core Mechanics -> Production Patterns -> Advanced Internals & Failure Modes.",
+            "2 to 4 topics (subsections) per module.",
+            "Every topic must feature a unique, celestial planet name (e.g., Lyra, Vega, Altair, Orion, Pulsar, Sirius, Zenith).",
+            "Tailor every module title and topic summary to the learner's explicit capstone target and background.",
+            '"minutes" per topic must be 5 to 10.',
+            LANGUAGE_RULE,
+            GOAL_RULE,
+        ),
+        "Reply with JSON only.",
+    ])
+

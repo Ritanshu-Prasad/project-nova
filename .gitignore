@@ -34,3 +34,7 @@ Thumbs.db
 *.sw?
 
 .venv/
+
+# Local Planning and Notes
+docs/ISSUE_10_*.md
+
