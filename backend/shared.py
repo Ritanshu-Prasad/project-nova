@@ -160,8 +160,10 @@ class RedisState:
 # --- Which one ---
 
 def make_state() -> MemoryState | RedisState:
-    url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
-    token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
+    raw_url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL") or ""
+    raw_token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN") or ""
+    url = raw_url.strip().strip('"\'').rstrip("/")
+    token = raw_token.strip().strip('"\'')
     return RedisState(url, token) if url and token else MemoryState()
 
 

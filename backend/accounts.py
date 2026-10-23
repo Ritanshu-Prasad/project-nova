@@ -109,8 +109,10 @@ def _make_store():
     if database_url:
         from store_sql import SqlStore
         return SqlStore(database_url)
-    url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL")
-    token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN")
+    raw_url = os.getenv("KV_REST_API_URL") or os.getenv("UPSTASH_REDIS_REST_URL") or ""
+    raw_token = os.getenv("KV_REST_API_TOKEN") or os.getenv("UPSTASH_REDIS_REST_TOKEN") or ""
+    url = raw_url.strip().strip('"\'').rstrip("/")
+    token = raw_token.strip().strip('"\'')
     if url and token:
         return RedisStore(url, token)
     if ON_VERCEL:
