@@ -3,7 +3,7 @@ import { ENABLE_PDF_UPLOAD } from '../../core/courseApi';
 import { ArrowLeft, Award, BookOpen, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
-import { activeOf, DAILY_GOAL, firstUncleared, levelOf, levelProgress, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
+import { activeOf, DAILY_GOAL, firstUncleared, levelOf, levelProgress, xpForLevel, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
 import { CODE_BUFFER, matchCode } from '../../core/finale';
 import { flatTopics } from '../../core/courseSchema';
 import { openForge, playFinale, relaunch, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
@@ -322,6 +322,7 @@ function Overview({ active }: { active: ActiveCourse }) {
           <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
             <span className="block h-full rounded-full" style={{ width: `${levelProgress(stats.xp) * 100}%`, background: 'var(--user)' }} />
           </span>
+          <span className="text-[10px] text-white/40">{stats.xp} / {xpForLevel(levelOf(stats.xp) + 1)} XP</span>
         </div>
         <p className="mt-4 flex gap-2 text-xs leading-relaxed text-white/50">
           <Sparkles size={13} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} /> Pixel says: short daily sessions beat one long cram.

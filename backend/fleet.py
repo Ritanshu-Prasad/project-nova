@@ -1,3 +1,5 @@
+import bisect
+import math
 """
 Fleet leaderboard: every pilot's standing across the demo courses, so pilots can compare ranks.
 
@@ -29,6 +31,19 @@ COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 COURSE_KEY = re.compile(r"^[a-z0-9-]{1,60}$")
 MAX_XP_DELTA = 50_000
 SUBMISSION_THROTTLE_SECONDS = 5.0
+
+LEVEL_THRESHOLDS = [0]
+_total = 0
+for _lvl in range(1, 151):
+    _total += round(100 * (1.08 ** (_lvl - 1)))
+    LEVEL_THRESHOLDS.append(_total)
+
+
+def level_of(xp: int) -> int:
+    """Calculates pilot level with a gentle exponential curve."""
+    if xp <= 0:
+        return 1
+    return bisect.bisect_right(LEVEL_THRESHOLDS, xp)
 
 _lock = asyncio.Lock()
 _last_submissions: dict[str, float] = {}
@@ -127,7 +142,7 @@ async def post_score(request: Request):
             "avatar": avatar,
             "color": color,
             "xp": final_xp,
-            "level": 1 + final_xp // 150,
+            "level": level_of(final_xp),
             "courses": list(merged_courses.values()),
             "at": int(now * 1000),
         }
@@ -170,7 +185,7 @@ async def leaderboard(board: str = "global", pilot: str = ""):
             "callsign": c_name,
             "avatar": e.get("avatar", ""),
             "color": e.get("color", "#06b6d4"),
-            "level": e.get("level", 1),
+            "level": level_of(int(e.get("xp", 0) or 0)),
             "score": score,
             "at": e.get("at", 0),
             "courses": e.get("courses", []),

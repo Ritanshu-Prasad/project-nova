@@ -489,8 +489,49 @@ export function useActiveCourse(): ActiveCourse | null {
   return useMemo(() => (entry ? activeOf(entry) : null), [entry]);
 }
 
-export const levelOf = (xp: number) => 1 + Math.floor(xp / 150);
-export const levelProgress = (xp: number) => (xp % 150) / 150;
+export const LEVEL_THRESHOLDS: number[] = [0];
+let _totalThreshold = 0;
+for (let lvl = 1; lvl <= 150; lvl++) {
+  _totalThreshold += Math.round(100 * Math.pow(1.08, lvl - 1));
+  LEVEL_THRESHOLDS.push(_totalThreshold);
+}
+
+/** The cumulative XP required to reach a specific level. Level 1 requires 0 XP. */
+export function xpForLevel(level: number): number {
+  if (level <= 1) return 0;
+  if (level >= LEVEL_THRESHOLDS.length) return LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
+  return LEVEL_THRESHOLDS[level - 1];
+}
+
+/**
+ * Calculates pilot level using a gentle exponential RPG curve:
+ * Early levels (1–5) require only ~100–130 XP each, but higher levels
+ * require progressively more XP (e.g. ~430 XP at lvl 20, ~930 XP at lvl 30).
+ */
+export function levelOf(xp: number): number {
+  if (xp <= 0) return 1;
+  let low = 0;
+  let high = LEVEL_THRESHOLDS.length - 1;
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (LEVEL_THRESHOLDS[mid] <= xp) {
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+  return low;
+}
+
+/** Progress percentage towards the next level [0.0, 1.0). */
+export function levelProgress(xp: number): number {
+  const lvl = levelOf(xp);
+  const base = xpForLevel(lvl);
+  const next = xpForLevel(lvl + 1);
+  const span = next - base;
+  if (span <= 0) return 0;
+  return Math.max(0, Math.min(0.999, (xp - base) / span));
+}
 
 /** A random order for a question's options (templates often store the correct option first) — memoise per question. */
 export function shuffledIndices(q: { q: string; options: string[] }): number[] {

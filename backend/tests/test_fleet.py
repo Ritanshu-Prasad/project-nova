@@ -130,3 +130,15 @@ def test_fleet_leaderboard_includes_avatar(client):
     board = client.get(f"/api/fleet/leaderboard?board=global&pilot={pilot}").json()
     assert board["top"][0]["callsign"] == "Phoenix"
     assert board["top"][0]["avatar"] == avatar_url
+
+def test_fleet_level_of_exponential(client):
+    assert fleet.level_of(0) == 1
+    assert fleet.level_of(-10) == 1
+    assert fleet.level_of(99) == 1
+    assert fleet.level_of(100) == 2
+    assert fleet.level_of(207) == 2
+    assert fleet.level_of(208) == 3
+    assert fleet.level_of(1248) == 9
+    assert fleet.level_of(1249) == 10
+    assert fleet.level_of(4145) == 19
+    assert fleet.level_of(4146) == 20

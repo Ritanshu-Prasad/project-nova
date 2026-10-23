@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Award, Clapperboard, Cloud, CloudOff, Settings, FileText, Image as ImageIcon, Library, LogOut, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound, Users } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { signOut, useAccount, type SyncStatus } from '../../core/account';
-import { firstUncleared, levelOf, levelProgress, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
+import { firstUncleared, levelOf, levelProgress, xpForLevel, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
 import { flatTopics } from '../../core/courseSchema';
 import { courseKey, fetchBoard, type FleetBoard } from '../../core/fleet';
 import { openForge, relaunch, useHub, useProfile } from '../../core/hub';
@@ -259,7 +259,7 @@ export function ProfileSection() {
             <span className="h-1.5 w-28 overflow-hidden rounded-full bg-white/10">
               <span className="block h-full rounded-full" style={{ width: `${levelProgress(stats.xp) * 100}%`, background: 'var(--user)' }} />
             </span>
-            {stats.xp} XP
+            {stats.xp} / {xpForLevel(level + 1)} XP
           </div>
         </div>
       </div>
