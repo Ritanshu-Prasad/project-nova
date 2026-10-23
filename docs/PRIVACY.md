@@ -3,6 +3,8 @@
 ## Learning goals
 A goal you type is sent to the AI provider (Nebius) to write your course and to check that it is not meant to cause serious harm. Finished courses are cached for one hour so that the same goal is answered faster. Goals are not written to the server logs; a short hash stands in for them.
 
+The plan screen before a course starts has a chat to change the plan. What you type there, the plan on screen and the last few chat messages are sent to the same provider to rewrite the plan. They are not stored and are not written to the server logs.
+
 ## Uploaded documents
 - PDFs are read on the server and their text is sent to the AI provider to write lessons and questions.
 - The text of your pages is kept for 30 days under a secret key so the tutor can answer questions from your documents, and then deleted automatically. Removing the course in the app deletes it straight away (`DELETE /api/courses/documents/{key}`). Without a configured Redis store (local development) it is kept in memory only and disappears when the server restarts.

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { createCourse, lessonText, mockBackend, openForge, openLesson } from './helpers';
+import { createCourse, generatePlan, lessonText, mockBackend, openForge, openLesson } from './helpers';
 
 /** What a screen reader or keyboard user would trip over: only the serious and critical findings of the usual WCAG A and AA rules. */
 async function blockers(page: Page) {
@@ -12,6 +12,13 @@ async function blockers(page: Page) {
 test('the course setup screen has no serious accessibility problems', async ({ page }) => {
   await mockBackend(page);
   await openForge(page);
+  expect(await blockers(page)).toEqual([]);
+});
+
+test('the plan screen has no serious accessibility problems', async ({ page }) => {
+  await mockBackend(page);
+  await openForge(page);
+  await generatePlan(page);
   expect(await blockers(page)).toEqual([]);
 });
 

@@ -22,6 +22,8 @@ Set `NOVA_ADMIN_TOKEN` to any long random string (for example `openssl rand -hex
 
 It shows today's calls, tokens, estimated cost, retries and failures, the budget bar when `NOVA_DAILY_TOKEN_BUDGET` is set, a table per kind of call (outline, lesson, quiz, answers, safety, tutor, ...), and a table per day with cache hits and turned-away requests.
 
+Changing a plan in the chat before a course starts is one small call of kind `outline`, so it counts with the outline calls.
+
 ## Where the numbers are kept
 Every model call adds to a counter for its day, model and kind: calls, prompt tokens, completion tokens, time and a latency bucket (up to 1 s, 3 s, 10 s, 30 s, slower), plus retries and failures. They live in the shared store (Upstash Redis when `KV_REST_API_URL` and `KV_REST_API_TOKEN` are set, otherwise in memory and lost on restart) and are kept 90 days. No prompts, goals or user identifiers are stored in the counters.
 

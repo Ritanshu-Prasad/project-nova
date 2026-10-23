@@ -22,9 +22,9 @@ export const planCourse = (() => {
   return { ...lazyCourse, modules: [...lazyCourse.modules, third], meta: { ...lazyCourse.meta, plannedModules: 3, plannedTopics: 6 } };
 })();
 
-export async function mockBackend(page: Page, options: { topicFailures?: number; topicDelayMs?: number; course?: unknown } = {}) {
+export async function mockBackend(page: Page, options: { topicFailures?: number; topicDelayMs?: number; course?: unknown; revision?: { reply: string; modules: unknown[] } | null } = {}) {
   let topicFailures = options.topicFailures ?? 0;
-  const calls = { topic: 0, moduleQuiz: 0 };
+  const calls = { topic: 0, moduleQuiz: 0, revise: [] as any[] };
 
   await page.route('**/api/**', (route) => route.fulfill({ status: 404, body: '{}' }));
   await page.route('**/api/courses/generate/stream*', (route) => {
@@ -33,6 +33,10 @@ export async function mockBackend(page: Page, options: { topicFailures?: number;
       { type: 'course', course: options.course ?? lazyCourse },
     ];
     return route.fulfill({ status: 200, contentType: 'application/x-ndjson', body: events.map((e) => JSON.stringify(e)).join('\n') + '\n' });
+  });
+  await page.route('**/api/courses/outline/revise', (route) => {
+    calls.revise.push(route.request().postDataJSON());
+    return options.revision ? json(route, options.revision) : json(route, { detail: 'busy' }, 503);
   });
   await page.route('**/api/courses/topic*', async (route) => {
     calls.topic++;
@@ -68,9 +72,17 @@ export async function openForge(page: Page) {
   await expect(page.getByText('What do you want to learn?')).toBeVisible();
 }
 
+/** Generates a course and accepts the plan as it is. */
 export async function createCourse(page: Page, goal = 'Docker networking') {
+  await generatePlan(page, goal);
+  await page.getByRole('button', { name: /start course/i }).click();
+}
+
+/** Generates a course and stops at the plan screen. */
+export async function generatePlan(page: Page, goal = 'Docker networking') {
   await page.locator('textarea').first().fill(goal);
   await page.getByRole('button', { name: /generate course/i }).click();
+  await expect(page.getByRole('button', { name: /start course/i })).toBeVisible({ timeout: 30_000 });
 }
 
 /** Opens the study screen on the course's current lesson. */

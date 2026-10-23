@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { audio } from '../../core/audio';
 import { useActiveCourse, useCourse } from '../../core/course';
 import { generateCourse, hasCourseApi, type GenerateRequest, type GenerateResult } from '../../core/courseApi';
-import { needsReview, plannedNote, topicCount, withModules } from '../../core/courseTrim';
+import { needsReview, plannedNote, topicCount } from '../../core/courseTrim';
 import type { Course } from '../../core/courseSchema';
 import { TEMPLATE_PRESETS } from '../../core/courseTemplates';
 import { useHub } from '../../core/hub';
@@ -15,6 +15,7 @@ import { useNova } from '../../core/store';
 import { ensureTopic } from '../../core/topicLoader';
 import { HudButton } from '../common/HudButton';
 import PlacementCheck from './PlacementCheck';
+import PlanReview from './PlanReview';
 
 type Stage = 'edit' | 'forge' | 'review' | 'ready' | 'error';
 const MAX_FILES = 5;
@@ -37,7 +38,6 @@ export default function CurriculumSetup() {
   const [error, setError] = useState('');
   const [built, setBuilt] = useState<Course | null>(null);
   const [pending, setPending] = useState<GenerateResult | null>(null);
-  const [keep, setKeep] = useState<ReadonlySet<string>>(new Set());
   const timer = useRef(0);
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -98,7 +98,6 @@ export default function CurriculumSetup() {
       );
       if (needsReview({ course, via, reason })) {
         setPending({ course, via, reason });
-        setKeep(new Set(course.modules.map((m) => m.id)));
         setStage('review');
         return;
       }
@@ -118,7 +117,7 @@ export default function CurriculumSetup() {
           <motion.section
             role="dialog"
             aria-labelledby="new-course-title"
-            className="card scroll-y pointer-events-auto relative max-h-[calc(100vh-32px)] w-full max-w-[760px] p-6 sm:p-8"
+            className={`card scroll-y pointer-events-auto relative max-h-[calc(100vh-32px)] w-full p-6 transition-[max-width] sm:p-8 ${stage === 'review' ? 'max-w-[1040px]' : 'max-w-[760px]'}`}
             initial={{ opacity: 0, y: 24, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -286,34 +285,7 @@ export default function CurriculumSetup() {
                 </motion.div>
               )}
 
-              {stage === 'review' && pending && (
-                <motion.div key="review" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="py-2">
-                  <div className="chip-label">Your plan</div>
-                  <h2 className="mt-0.5 font-display text-xl font-bold text-white">{pending.course.title}</h2>
-                  <p className="mt-2 text-sm text-white/65">{plannedNote(pending.course) || 'Untick any module you do not need.'}</p>
-                  <ul className="mt-4 space-y-2">
-                    {pending.course.modules.map((m) => (
-                      <li key={m.id}>
-                        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 px-4 py-3 text-sm text-white/85 transition hover:border-[var(--user)]">
-                          <input
-                            type="checkbox"
-                            checked={keep.has(m.id)}
-                            onChange={(e) => setKeep((current) => new Set(e.target.checked ? [...current, m.id] : [...current].filter((id) => id !== m.id)))}
-                            className="mt-1"
-                          />
-                          <span>
-                            {m.title}
-                            <span className="block text-xs text-white/60">{m.topics.length} topic{m.topics.length === 1 ? '' : 's'}</span>
-                          </span>
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                  <HudButton variant="primary" className="mt-5" icon={<ArrowRight size={15} />} disabled={keep.size === 0} onClick={() => openCourse({ ...pending, course: withModules(pending.course, keep) })}>
-                    Start with {keep.size} module{keep.size === 1 ? '' : 's'}
-                  </HudButton>
-                </motion.div>
-              )}
+              {stage === 'review' && pending && <PlanReview course={pending.course} expectations={expectations} onStart={(course) => openCourse({ ...pending, course })} />}
 
               {stage === 'error' && (
                 <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-2 text-center">
