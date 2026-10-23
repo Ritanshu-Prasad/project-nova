@@ -12,6 +12,7 @@ import PostFX from './PostFX';
 import ShipRig from './ShipRig';
 import Sky from './space/Sky';
 import SpaceWorld from './space/SpaceWorld';
+import Supernova from './space/Supernova';
 import Warp from './space/Warp';
 
 /** Pre-compiles both worlds (hidden ones too) so the warp-time swap never stalls, then reports ready. */
@@ -68,6 +69,7 @@ export default function Experience() {
         <Sky />
         <LaunchBay />
         <SpaceWorld />
+        <Supernova />
         <ShipRig>
           <Cockpit />
           <Lounge />

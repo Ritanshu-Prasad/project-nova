@@ -36,6 +36,7 @@ import { Z } from '../../../core/layers';
 import { prettyMath } from '../../../core/mathText';
 import { LESSON_QUIZ, quizSizeLabel } from '../../../core/quizBuilder';
 import { rankOf } from '../../../core/rank';
+import Dropdown from '../../common/Dropdown';
 import RankEmblem from '../RankEmblem';
 import { KIND_TEMPLATES } from './kinds';
 import LessonView from './LessonView';
@@ -321,18 +322,19 @@ function OutlineRow({ active, it, locked }: { active: ActiveCourse; it: OutlineI
 function MobilePicker({ active }: { active: ActiveCourse }) {
   const f = frontier(active.entry, active.outline);
   return (
-    <label className="relative mb-6 block lg:hidden">
-      <span className="sr-only">Go to</span>
-      <select value={active.item.id} onChange={(e) => useCourse.getState().open(e.target.value)} className="w-full appearance-none rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 pr-10 text-sm text-white">
-        {active.outline.map((it, i) => (
-          <option key={it.id} value={it.id} disabled={i > f} className="bg-[#0d1220]">
-            {it.kind === 'topic' ? `${itemNumber(active, it.topic)} ${it.topic.title}` : `Planet ${it.moduleIndex + 1} checkpoint`}
-            {isDone(active.entry, it) ? ' ✓' : ''}
-          </option>
-        ))}
-      </select>
-      <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/50" />
-    </label>
+    <Dropdown
+      className="mb-6 lg:hidden"
+      variant="field"
+      label="Go to"
+      value={active.item.id}
+      onChange={(id) => useCourse.getState().open(id)}
+      options={active.outline.map((it, i) => ({
+        value: it.id,
+        label: it.kind === 'topic' ? `${itemNumber(active, it.topic)} ${it.topic.title}` : `Planet ${it.moduleIndex + 1} checkpoint`,
+        disabled: i > f,
+        trailing: isDone(active.entry, it) ? <Check size={14} className="shrink-0 text-emerald-300" aria-label="Done" /> : undefined,
+      }))}
+    />
   );
 }
 

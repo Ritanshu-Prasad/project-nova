@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ENABLE_PDF_UPLOAD } from '../../core/courseApi';
-import { ArrowLeft, BookOpen, ChevronDown, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Award, BookOpen, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
-import { activeOf, DAILY_GOAL, levelOf, levelProgress, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
-import { CODE_BUFFER, matchCode, useFinale } from '../../core/finale';
+import { activeOf, DAILY_GOAL, firstUncleared, levelOf, levelProgress, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
+import { CODE_BUFFER, matchCode } from '../../core/finale';
+import { flatTopics } from '../../core/courseSchema';
 import { openForge, playFinale, relaunch, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
 import { duration, HUB_QUIZ, openHubQuiz, useCourseQuizzes, useFreshClock, useHubQuiz, useHubQuizScheduler } from '../../core/hubQuiz';
 import { LESSON_QUIZ, quizSizeLabel } from '../../core/quizBuilder';
@@ -13,10 +14,10 @@ import { useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
 import { actionFor, keyLabel, useSettings, type Action } from '../../core/settings';
 import { useNova } from '../../core/store';
+import Dropdown from '../common/Dropdown';
 import { HudButton } from '../common/HudButton';
 import PilotAvatar from '../common/PilotAvatar';
 import Graduation from './Graduation';
-import NovaBlast from './NovaBlast';
 import { HubQuizStation, QuizArrival, QuizPill } from './HubQuiz';
 import RankEmblem from './RankEmblem';
 import { ProfileSection, SkillJourneySection } from './sections';
@@ -62,7 +63,6 @@ export default function Hub() {
   const running = useHubQuiz((s) => !!s.run);
   const active = useActiveCourse();
   const graduation = useCourse((s) => s.graduation);
-  const finale = useFinale((s) => s.open);
   const visible = inLounge && !forgeOpen;
 
   useEffect(() => {
@@ -112,7 +112,6 @@ export default function Hub() {
         </AnimatePresence>
       </div>
       <AnimatePresence>{inLounge && graduation && <Graduation key={graduation} />}</AnimatePresence>
-      <AnimatePresence>{inLounge && finale && <NovaBlast key="finale" />}</AnimatePresence>
     </>
   );
 }
@@ -227,26 +226,18 @@ function Overview({ active }: { active: ActiveCourse }) {
       <motion.section initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.4 }} className="card pointer-events-auto absolute left-4 right-4 top-[72px] p-5 sm:left-6 sm:right-auto sm:top-24 sm:w-[370px]">
         <div className="flex items-center justify-between gap-2">
           <div className="chip-label">Continue learning</div>
-          <label className="relative">
-            <span className="sr-only">Switch course</span>
-            <select
-              value={course.id}
-              onChange={(e) => (e.target.value === '__new' ? openForge() : useCourse.getState().setActive(e.target.value))}
-              className="max-w-[170px] cursor-pointer appearance-none truncate rounded-full border border-white/10 bg-white/[0.05] py-1 pl-3 pr-7 text-xs text-white/75"
-            >
-              {Object.values(library)
-                .sort((a, b) => b.updatedAt - a.updatedAt)
-                .map((e) => (
-                  <option key={e.course.id} value={e.course.id} className="bg-[#0d1220]">
-                    {e.course.title}
-                  </option>
-                ))}
-              <option value="__new" className="bg-[#0d1220]">
-                + New course…
-              </option>
-            </select>
-            <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/50" />
-          </label>
+          <Dropdown
+            label="Switch course"
+            value={course.id}
+            options={Object.values(library)
+              .sort((a, b) => b.updatedAt - a.updatedAt)
+              .map((e) => {
+                const total = flatTopics(e.course).length;
+                return { value: e.course.id, label: e.course.title, hint: `${Math.round((firstUncleared(e) / Math.max(1, total)) * 100)}% · ${rankOf(e.skill.mmr).label} · ${e.course.modules.length} planet${e.course.modules.length === 1 ? '' : 's'}`, trailing: e.completedAt ? <Award size={14} className="shrink-0 text-amber-300/80" aria-label="Completed" /> : undefined };
+              })}
+            onChange={(id) => useCourse.getState().setActive(id)}
+            action={{ label: 'New course', icon: Plus, onSelect: () => openForge() }}
+          />
         </div>
         <div className="mt-3 flex items-center gap-4">
           <Ring value={cleared / n} size={68}>

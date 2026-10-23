@@ -4,7 +4,6 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import {
   AdditiveBlending,
   BackSide,
-  CanvasTexture,
   Color,
   DoubleSide,
   Object3D,
@@ -12,6 +11,7 @@ import {
   ShaderMaterial,
   Vector3,
   type Group,
+  type DirectionalLight,
   type InstancedMesh,
 } from 'three';
 import { currentQuality, fbmDefines } from '../../core/graphics';
@@ -20,6 +20,7 @@ import { rt } from '../../core/runtime';
 import { useDeck } from '../../core/journey';
 import { useNova } from '../../core/store';
 import { NOISE_GLSL } from '../shaders/noise';
+import { glowTexture } from './textures';
 import { ASTEROIDS, HERO_DIR, SUN_DISTANCE, screenDir, type Vec3 } from './layout';
 import { PLANETS, type PlanetSpec } from './planets';
 
@@ -158,20 +159,6 @@ void main() {
   gl_FragColor = vec4(col * a, a);
 }`;
 
-function glowTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const g = c.getContext('2d')!;
-  const grd = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  grd.addColorStop(0, 'rgba(255,255,255,1)');
-  grd.addColorStop(0.08, 'rgba(255,240,220,0.9)');
-  grd.addColorStop(0.3, 'rgba(255,200,150,0.25)');
-  grd.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = grd;
-  g.fillRect(0, 0, 256, 256);
-  return new CanvasTexture(c);
-}
-
 const dummy = new Object3D();
 const spinAxis = new Vector3(0, 0, 1);
 
@@ -210,6 +197,7 @@ export default function SpaceWorld() {
   const indoors = useDeck((s) => s.deck === 'lounge');
   const planet = useRef<Group>(null);
   const rocks = useRef<InstancedMesh>(null);
+  const sunLightRef = useRef<DirectionalLight>(null);
 
   const mats = useMemo(() => {
     const color = () => ({ value: new Color() });
@@ -312,12 +300,14 @@ export default function SpaceWorld() {
     mats.uniforms.uArrive.value = rt.arrive;
     if (planet.current) planet.current.rotateOnAxis(spinAxis, spec.spin * dt);
     if (rocks.current) rocks.current.rotation.y += dt * 0.004;
+    // The wave of a supernova lights the planet up as it passes.
+    if (sunLightRef.current) sunLightRef.current.intensity = (indoors ? 0 : 2.6) + 7 * rt.novaGlow;
   });
 
   const sunLight = new Color(spec.sunColor);
   return (
     <group visible={world === 'newworld'} userData={{ world: 'newworld' }}>
-      <directionalLight color={spec.sunColor} intensity={indoors ? 0 : 2.6} position={[where.sunDir[0] * 10, where.sunDir[1] * 10, where.sunDir[2] * 10]} />
+      <directionalLight ref={sunLightRef} color={spec.sunColor} intensity={indoors ? 0 : 2.6} position={[where.sunDir[0] * 10, where.sunDir[1] * 10, where.sunDir[2] * 10]} />
       <hemisphereLight args={['#6d5aa8', '#0b2530', indoors ? 0 : 0.35]} />
 
       <group position={where.position as [number, number, number]} quaternion={where.quaternion}>

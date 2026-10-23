@@ -294,6 +294,7 @@ function tick(dt: number): void {
   rt.phaseTime = t;
   rt.reducedMotion = s.reducedMotion;
   rt.pulse = Math.max(0, rt.pulse - dt * 1.2);
+  if (rt.novaOn) rt.novaT += dt; // the finale's supernova clock (see three/space/Supernova.tsx)
 
   switch (s.phase) {
     case 'gate': {

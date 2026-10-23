@@ -61,7 +61,7 @@ export default function ShipRig({ children }: { children?: ReactNode }) {
     const leanTarget = st.phase === 'launch' ? 0.06 : st.phase === 'preflight' ? -0.03 * rt.charge : 0;
     v.lean = damp(v.lean, leanTarget, st.phase === 'launch' ? 9 : 3, dt);
 
-    const sh = rm ? 0 : rt.shake;
+    const sh = rm ? 0 : rt.shake + rt.novaShake;
     const hf = t * 19;
     const sx = wobble(hf, 1.3) * 0.012 * sh;
     const sy = wobble(hf * 1.13, 4.1) * 0.012 * sh + (seated ? Math.sin(t * 1.3) * 0.004 : 0);

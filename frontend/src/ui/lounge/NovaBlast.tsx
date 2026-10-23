@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Award, BookOpen, Plus, SkipForward } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { audio } from '../../core/audio';
@@ -6,13 +6,18 @@ import { useCourse } from '../../core/course';
 import { useFinale } from '../../core/finale';
 import { currentQuality, useGraphics } from '../../core/graphics';
 import { openForge, useHub, useProfile } from '../../core/hub';
+import { goToCockpit, goToLounge, useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
+import { rt } from '../../core/runtime';
 import { useNova } from '../../core/store';
 import NovaMark from '../hud/NovaMark';
 
 /** Seconds from the start: the charge ends and the blast goes off; the headline, thank-you card and certificate note follow. */
 const FULL = { blast: 2, head: 2.7, card: 6.2, cert: 8.8 } as const;
 const CALM = { blast: 0.6, head: 0.9, card: 2.4, cert: 4.2 } as const;
+/** From the cockpit the blast is out of the window (three/space/Supernova.tsx); the same clock, with room to watch it before the words come. */
+const COCKPIT = { blast: 2, head: 4.6, card: 7.4, cert: 10.4 } as const;
+const COCKPIT_CALM = { blast: 0.8, head: 1.8, card: 3.6, cert: 6.2 } as const;
 
 const HUES = [190, 270, 330, 45, 150];
 const BASE_PARTICLES = 520;
@@ -32,11 +37,44 @@ const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 /**
+ * The finale. With 3D it plays from the pilot seat: the pilot walks back to the cockpit and the sun of the world goes
+ * supernova outside the window, then the thank-you appears over the view. Without 3D (or in the middle of a walk) it
+ * is the full-screen version below.
+ */
+export default function NovaBlast() {
+  const open = useFinale((s) => s.open);
+  const stage = useFinale((s) => s.stage);
+  const reduced = useNova((s) => s.reducedMotion);
+
+  // A finale that was just asked for decides how to play: in the cockpit if there is a 3D ship, else over the lounge.
+  useEffect(() => {
+    if (!open || stage !== 'pending') return;
+    const finale = useFinale.getState();
+    const gfx = useGraphics.getState();
+    const has3d = gfx.level !== 'none' && gfx.ready && !useNova.getState().webglFailed;
+    if (!has3d || useDeck.getState().deck === 'transit') return finale.setStage('overlay');
+    finale.setStage('walking');
+    const atHub = useHub.getState().station === 'hub';
+    useHub.getState().go('hub');
+    goToCockpit(() => {
+      if (!useFinale.getState().open) return;
+      rt.novaBlastAt = (reduced ? COCKPIT_CALM : COCKPIT).blast;
+      rt.novaT = 0;
+      rt.novaOn = true;
+      useFinale.getState().setStage('blast');
+    }, atHub ? 0 : 1300); // from another station the pilot first settles at the hub spot
+  }, [open, stage, reduced]);
+
+  return <AnimatePresence>{open && (stage === 'blast' || stage === 'overlay') && <FinaleScreen key={stage} mode={stage === 'blast' ? 'cockpit' : 'overlay'} />}</AnimatePresence>;
+}
+
+/**
  * The Nova blast: a charge, a blast (one soft flash, shock rings, a starburst, god rays), an afterglow with the
  * "course mastered" headline, a thank-you with two ways on, and — last — where to collect the certificate.
  * Reduced motion and "No 3D" get a calm version: glow and rings, no particles, no flash, no shake.
  */
-export default function NovaBlast() {
+function FinaleScreen({ mode }: { mode: 'cockpit' | 'overlay' }) {
+  const cockpit = mode === 'cockpit';
   const title = useFinale((s) => s.title);
   const courseId = useFinale((s) => s.courseId);
   const accent = useNova((s) => s.themeColor);
@@ -44,13 +82,20 @@ export default function NovaBlast() {
   const level = useGraphics((g) => g.level);
   const pilot = useProfile((s) => s.callsign) || 'Pilot';
   const calm = reduced || level === 'none';
-  const T = reduced ? CALM : FULL;
+  const T = cockpit ? (reduced ? COCKPIT_CALM : COCKPIT) : reduced ? CALM : FULL;
   const [stage, setStage] = useState(0); // 0 charge · 1 headline · 2 thank-you card · 3 certificate note
   const canvas = useRef<HTMLCanvasElement>(null);
+  const wash = useRef<HTMLDivElement>(null);
   const skipped = useRef(false);
   const primary = useRef<HTMLButtonElement>(null);
 
   const close = () => useFinale.getState().hide();
+  // From the cockpit, leaving the finale walks the pilot back to the lounge (and then wherever they chose).
+  const leave = (then?: () => void) => {
+    close();
+    if (cockpit) goToLounge(then);
+    else then?.();
+  };
   const skip = () => {
     skipped.current = true;
     setStage((s) => Math.max(s, 2));
@@ -79,18 +124,34 @@ export default function NovaBlast() {
     if (stage >= 2) primary.current?.focus({ preventScroll: true });
   }, [stage]);
 
+  const leaveRef = useRef(leave);
+  useEffect(() => {
+    leaveRef.current = leave;
+  });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.stopPropagation();
       if (stage < 2) skip();
-      else close();
+      else leaveRef.current();
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, [stage]);
 
-  // The particle show (2D canvas; skipped for calm mode).
+  // In the cockpit the window itself goes white as the wave passes: one soft wash that follows the 3D blast.
+  useEffect(() => {
+    if (!cockpit || reduced) return;
+    let raf = 0;
+    const frame = () => {
+      if (wash.current) wash.current.style.opacity = String(0.6 * rt.novaGlow);
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, [cockpit, reduced]);
+
+  // The particle show (2D canvas; only in the full-screen version).
   useEffect(() => {
     const el = canvas.current;
     if (!el || calm) return;
@@ -260,12 +321,12 @@ export default function NovaBlast() {
     };
   }, [calm, accent]);
 
-  const revisit = () => {
-    close();
-    if (!courseId) return;
-    useCourse.getState().setActive(courseId);
-    useHub.getState().go('journey');
-  };
+  const revisit = () =>
+    leave(() => {
+      if (!courseId) return;
+      useCourse.getState().setActive(courseId);
+      useHub.getState().go('journey');
+    });
 
   return (
     <motion.div
@@ -278,14 +339,24 @@ export default function NovaBlast() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.5 } }}
     >
-      <div className="nova-dim absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgb(8_10_24/0.78),rgb(2_3_10/0.94))]" aria-hidden="true" />
-      <div className="absolute inset-0 bg-black/55 transition-opacity duration-1000" style={{ opacity: stage >= 2 ? 1 : 0 }} aria-hidden="true" />
-      <div className={`absolute inset-0 ${calm ? '' : 'nova-shake'}`} aria-hidden="true">
-        {calm ? <CalmBlast accent={accent} blast={T.blast} /> : <canvas ref={canvas} className="absolute inset-0 h-full w-full" />}
-      </div>
-      {!calm && <div className="nova-flash pointer-events-none absolute inset-0" style={{ animationDelay: `${FULL.blast}s` }} aria-hidden="true" />}
+      {cockpit ? (
+        <>
+          {/* The 3D window stays visible: only a soft shade behind the words, and the wash of the wave. */}
+          <div className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: stage >= 1 ? 1 : 0, background: 'radial-gradient(ellipse at 50% 46%, rgb(2 3 10 / 0.55), rgb(2 3 10 / 0) 68%)' }} aria-hidden="true" />
+          {!reduced && <div ref={wash} className="pointer-events-none absolute inset-0" style={{ opacity: 0, background: 'radial-gradient(circle at 50% 42%, #fff 0%, rgb(255 255 255 / 0.7) 30%, rgb(220 235 255 / 0.35) 80%)' }} aria-hidden="true" />}
+        </>
+      ) : (
+        <>
+          <div className="nova-dim absolute inset-0 bg-[radial-gradient(ellipse_at_50%_42%,rgb(8_10_24/0.78),rgb(2_3_10/0.94))]" aria-hidden="true" />
+          <div className="absolute inset-0 bg-black/55 transition-opacity duration-1000" style={{ opacity: stage >= 2 ? 1 : 0 }} aria-hidden="true" />
+          <div className={`absolute inset-0 ${calm ? '' : 'nova-shake'}`} aria-hidden="true">
+            {calm ? <CalmBlast accent={accent} blast={T.blast} /> : <canvas ref={canvas} className="absolute inset-0 h-full w-full" />}
+          </div>
+          {!calm && <div className="nova-flash pointer-events-none absolute inset-0" style={{ animationDelay: `${FULL.blast}s` }} aria-hidden="true" />}
+        </>
+      )}
 
-      <div className="relative flex w-full max-w-xl flex-col items-center px-5 py-10 text-center">
+      <div className={`relative flex w-full max-w-xl flex-col items-center px-5 pb-10 text-center ${cockpit ? 'pt-24' : 'pt-10'}`}>
         <motion.div initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: stage >= 1 ? 1 : 0, scale: stage >= 1 ? 1 : 0.6 }} transition={{ duration: 0.7, type: 'spring', stiffness: 160, damping: 18 }} className="flex items-center gap-2 font-display text-sm tracking-[0.5em] text-cyan-200">
           <NovaMark className="h-6 w-6" /> NOVA
         </motion.div>
@@ -293,7 +364,7 @@ export default function NovaBlast() {
           initial={{ opacity: 0, y: 14, letterSpacing: '0.7em' }}
           animate={stage >= 1 ? { opacity: 1, y: 0, letterSpacing: '0.18em' } : {}}
           transition={{ duration: reduced ? 0.4 : 1.3, ease: [0.2, 0.8, 0.2, 1] }}
-          className="nova-title mt-3 font-display text-4xl font-bold uppercase leading-tight sm:text-6xl"
+          className={`nova-title mt-3 font-display text-4xl font-bold uppercase leading-tight ${cockpit ? 'sm:text-5xl' : 'sm:text-6xl'}`}
           style={{ ['--a' as string]: accent }}
         >
           Course mastered
@@ -303,7 +374,7 @@ export default function NovaBlast() {
         </motion.p>
 
         {stage >= 2 && (
-          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="mt-7 w-full">
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className={`mt-5 w-full ${cockpit ? 'rounded-3xl bg-[#070b16]/70 p-6 ring-1 ring-white/12 backdrop-blur-md' : ''}`}>
             <p className="text-base leading-relaxed text-white/85">
               Thank you for flying with NOVA, <span style={{ color: accent }} className="font-semibold">{pilot}</span>. Every planet is cleared and the whole journey is behind you — you should be proud.
             </p>
@@ -312,7 +383,7 @@ export default function NovaBlast() {
               <button
                 ref={primary}
                 type="button"
-                onClick={() => (close(), openForge())}
+                onClick={() => leave(() => openForge())}
                 className="flex cursor-pointer items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-[var(--user-ink)] shadow-[0_0_26px_-4px_var(--user)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 style={{ background: 'var(--user)' }}
               >
@@ -323,7 +394,7 @@ export default function NovaBlast() {
                   <BookOpen size={16} /> Revisit this course
                 </button>
               )}
-              <button type="button" onClick={close} className="cursor-pointer rounded-xl px-4 py-3 text-sm text-white/60 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+              <button type="button" onClick={() => leave()} className="cursor-pointer rounded-xl px-4 py-3 text-sm text-white/60 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white">
                 Close
               </button>
             </div>
@@ -331,7 +402,7 @@ export default function NovaBlast() {
         )}
 
         {stage >= 3 && (
-          <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }} className="mt-6 flex max-w-md items-start gap-2 rounded-xl bg-amber-300/[0.08] px-4 py-3 text-left text-xs leading-relaxed text-amber-100/90 ring-1 ring-amber-300/25" role="status">
+          <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }} className={`mt-4 flex max-w-md items-start gap-2 rounded-xl px-4 py-3 text-left text-xs leading-relaxed text-amber-100/90 ring-1 ring-amber-300/25 ${cockpit ? 'bg-[#1a1408]/85 backdrop-blur-md' : 'bg-amber-300/[0.08]'}`} role="status">
             <Award size={15} className="mt-0.5 shrink-0 text-amber-300" />
             <span>Your certificate is waiting. Revisit the course any time to collect it — from the award icon on your course in Profile, or from the last planet’s results page.</span>
           </motion.p>

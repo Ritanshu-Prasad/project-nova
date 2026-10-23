@@ -22,6 +22,7 @@ import UserSetupPopup from './ui/landing/UserSetupPopup';
 import CurriculumSetup from './ui/app/CurriculumSetup';
 import SettingsModal from './ui/hud/SettingsModal';
 import Hub from './ui/lounge/Hub';
+import NovaBlast from './ui/lounge/NovaBlast';
 import { applyTheme } from './core/theme';
 import { useHubQuiz } from './core/hubQuiz';
 import { useCourse } from './core/course';
@@ -89,6 +90,7 @@ export default function App() {
       )}
 
       <Hub />
+      <NovaBlast />
       <UserSetupPopup />
       <CurriculumSetup />
       <IntroUI />

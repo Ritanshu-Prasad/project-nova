@@ -61,6 +61,18 @@ const initial = () => ({
   /** Launching from where the ship hangs in space (no launch rail): the ship's forward offset is scaled down (SPACE_LAUNCH). */
   spaceLaunch: false,
 
+  // ── Course finale (the supernova outside the cockpit window) ──────────
+  /** The supernova is running (it keeps fading out for a moment after the finale is closed). */
+  novaOn: false,
+  /** Seconds since the supernova began charging. */
+  novaT: 0,
+  /** Second (on that clock) at which the blast goes off. */
+  novaBlastAt: 2,
+  /** Brightness of the blast wave as it sweeps over the ship, 0-1: drives bloom, sunlight on the planet and the screen wash. */
+  novaGlow: 0,
+  /** Extra camera shake while the wave passes. */
+  novaShake: 0,
+
   // ── Arrival / landing ────────────────────────────────────────────────
   /** Glide into the arrival point: 0 = ARRIVAL.backoff units behind it, 1 = parked. */
   approach: 0,
