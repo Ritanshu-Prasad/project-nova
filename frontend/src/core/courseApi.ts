@@ -1,4 +1,4 @@
-import type { Course, Question, Topic } from './courseSchema';
+import type { Course, Module, Question, Topic } from './courseSchema';
 import { normQuestion, normalizeCourse, normTopic } from './courseSchema';
 import { courseFromObjective } from './courseTemplates';
 import { courseFromPdfs, type DocStructure, type ProgressFn } from './pdfCourse';
@@ -134,6 +134,37 @@ export async function fetchModuleQuiz(req: { objective: string; module: string; 
   if (!res.ok) throw new Error(`Course API responded ${res.status}`);
   const { quiz } = await res.json();
   return (Array.isArray(quiz) ? quiz : []).map(normQuestion).filter((q: Question | null): q is Question => q !== null);
+}
+
+/** One message of the conversation about the plan. */
+export interface PlanChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
+}
+
+export interface PlanRevisionRequest {
+  objective: string;
+  expectations: string;
+  title: string;
+  modules: Module[];
+  message: string;
+  history: PlanChatMessage[];
+}
+
+/** Changes the course plan as the learner asks: POST {API}/api/courses/outline/revise. Returns a sentence about what changed and the whole new list of modules. */
+export async function reviseOutline(req: PlanRevisionRequest): Promise<{ reply: string; modules: Module[] }> {
+  const res = await fetch(`${API}/api/courses/outline/revise`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...req,
+      modules: req.modules.map((m) => ({ title: m.title, topics: m.topics.map((t) => ({ title: t.title, planet: t.planet, summary: t.summary })) })),
+      history: req.history.slice(-6),
+    }),
+  });
+  if (!res.ok) throw new Error(await failure(res));
+  const { reply, modules } = await res.json();
+  return { reply: typeof reply === 'string' ? reply : '', modules: normalizeCourse({ id: 'plan', title: req.title, modules }).modules };
 }
 
 /** Asks the backend to delete the page text it kept for a document course's tutor. Failing is fine: it expires anyway. */

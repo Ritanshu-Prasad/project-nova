@@ -1,19 +1,28 @@
 import type { GenerateResult } from './courseApi';
-import type { Course } from './courseSchema';
+import type { Course, Module } from './courseSchema';
 
-/** An AI course with at least this many modules is shown to the learner before it starts, so they can drop modules. */
-export const REVIEW_FROM_MODULES = 3;
+export const topicCount = (course: Course) => planCounts(course.modules).topics;
 
-export const topicCount = (course: Course) => course.modules.reduce((n, m) => n + m.topics.length, 0);
+export const planCounts = (modules: Module[]) => ({ modules: modules.length, topics: modules.reduce((n, m) => n + m.topics.length, 0) });
 
-/** Whether the learner should see the plan first: only an AI-written goal course of some size. */
-export const needsReview = (result: GenerateResult): boolean => result.via === 'ai' && result.course.source === 'ai' && result.course.modules.length >= REVIEW_FROM_MODULES;
+/** An AI-written goal course is shown to the learner as a plan before it starts; one built from documents or on the device is not. */
+export const needsReview = (result: GenerateResult): boolean => result.via === 'ai' && result.course.source === 'ai';
 
-/** The course with only the chosen modules, in their order; at least the first module stays so a course is never empty. */
-export function withModules(course: Course, keep: ReadonlySet<string>): Course {
-  const chosen = course.modules.filter((m) => keep.has(m.id));
-  return { ...course, modules: chosen.length ? chosen : course.modules.slice(0, 1) };
+/** The modules without one; the last module cannot be removed, so a course is never empty. */
+export function removeModule(modules: Module[], moduleId: string): Module[] {
+  return modules.length > 1 ? modules.filter((m) => m.id !== moduleId) : modules;
 }
+
+/** The modules without one topic; a module keeps at least one topic, so remove the module itself to drop the last one. */
+export function removeTopic(modules: Module[], moduleId: string, topicId: string): Module[] {
+  return modules.map((m) => (m.id === moduleId && m.topics.length > 1 ? { ...m, topics: m.topics.filter((t) => t.id !== topicId) } : m));
+}
+
+/** Whether a topic can be removed on its own. */
+export const canRemoveTopic = (module: Module) => module.topics.length > 1;
+
+/** The course with a new list of modules. */
+export const withModules = (course: Course, modules: Module[]): Course => ({ ...course, modules });
 
 /** What was planned and whether anything was cut, in a sentence; empty when the backend did not say. */
 export function plannedNote(course: Course): string {
