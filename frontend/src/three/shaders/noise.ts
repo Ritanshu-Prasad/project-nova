@@ -3,7 +3,7 @@
  *
  * snoise(vec3)  — 3D simplex noise in [-1, 1]
  *                 (Ian McEwan, Ashima Arts / Stefan Gustavson — MIT License, https://github.com/ashima/webgl-noise)
- * fbm3(vec3)    — 5-octave fractal noise built on snoise, roughly [-1, 1]
+ * fbm3(vec3)    — fractal noise, FBM_OCTAVES octaves (default 5; lower on weaker devices) built on snoise, roughly [-1, 1]
  * hash11/hash13 — cheap hashes in [0, 1) (Dave Hoskins, "Hash without Sine", MIT)
  */
 export const NOISE_GLSL = /* glsl */ `
@@ -58,10 +58,13 @@ float snoise(vec3 v) {
   return 105.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
 }
 
+#ifndef FBM_OCTAVES
+#define FBM_OCTAVES 5
+#endif
 float fbm3(vec3 p) {
   float a = 0.5;
   float s = 0.0;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < FBM_OCTAVES; i++) {
     s += a * snoise(p);
     p = p * 2.02 + vec3(17.1, 9.2, 3.7);
     a *= 0.5;

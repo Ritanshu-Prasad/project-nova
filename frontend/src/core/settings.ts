@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { Choice } from './graphics';
 import { useNova } from './store';
 
 /**
@@ -41,23 +42,26 @@ interface SettingsState {
   /** System chimes, clicks and notifications. */
   uiSounds: boolean;
   motion: Motion;
+  /** How much 3D to draw: automatic (decided from the device) or a fixed level. */
+  graphics: Choice;
   keys: Record<Action, string>;
   setOpen: (open: boolean) => void;
-  set: (patch: Partial<Pick<SettingsState, 'volume' | 'shipSounds' | 'uiSounds' | 'motion'>>) => void;
+  set: (patch: Partial<Pick<SettingsState, 'volume' | 'shipSounds' | 'uiSounds' | 'motion' | 'graphics'>>) => void;
   /** Binds a key to an action; an action that had that key takes the old one (a swap). */
   bind: (action: Action, code: string) => void;
   resetKeys: () => void;
 }
 
 const LS = 'nova.settings';
-type Saved = Pick<SettingsState, 'volume' | 'shipSounds' | 'uiSounds' | 'motion' | 'keys'>;
-const DEFAULTS: Saved = { volume: 1, shipSounds: true, uiSounds: true, motion: 'system', keys: DEFAULT_KEYS };
+type Saved = Pick<SettingsState, 'volume' | 'shipSounds' | 'uiSounds' | 'motion' | 'graphics' | 'keys'>;
+const DEFAULTS: Saved = { volume: 1, shipSounds: true, uiSounds: true, motion: 'system', graphics: 'auto', keys: DEFAULT_KEYS };
+const CHOICES = ['auto', 'high', 'medium', 'low', 'none'];
 
 function load(): Saved {
   try {
     const raw = JSON.parse(localStorage.getItem(LS) ?? 'null') as Partial<Saved> | null;
     if (!raw) return DEFAULTS;
-    return { ...DEFAULTS, ...raw, volume: Math.min(1, Math.max(0, Number(raw.volume ?? 1))), keys: { ...DEFAULT_KEYS, ...raw.keys } };
+    return { ...DEFAULTS, ...raw, graphics: CHOICES.includes(raw.graphics as string) ? (raw.graphics as Choice) : 'auto', volume: Math.min(1, Math.max(0, Number(raw.volume ?? 1))), keys: { ...DEFAULT_KEYS, ...raw.keys } };
   } catch {
     return DEFAULTS;
   }
@@ -80,7 +84,7 @@ export const useSettings = create<SettingsState>()((set, get) => ({
 
 useSettings.subscribe((s) => {
   try {
-    localStorage.setItem(LS, JSON.stringify({ volume: s.volume, shipSounds: s.shipSounds, uiSounds: s.uiSounds, motion: s.motion, keys: s.keys } satisfies Saved));
+    localStorage.setItem(LS, JSON.stringify({ volume: s.volume, shipSounds: s.shipSounds, uiSounds: s.uiSounds, motion: s.motion, graphics: s.graphics, keys: s.keys } satisfies Saved));
   } catch {
     /* ignore */
   }

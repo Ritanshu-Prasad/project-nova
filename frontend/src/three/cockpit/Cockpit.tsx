@@ -1,4 +1,5 @@
 import { RoundedBox } from '@react-three/drei';
+import { currentQuality } from '../../core/graphics';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import {
@@ -483,7 +484,7 @@ function Lights() {
     <>
       <pointLight ref={red} color="#ff2a2a" position={[0, 0.45, 0.25]} distance={3} decay={1.5} />
       <pointLight ref={cyan} color="#5eead4" position={[0, -0.15, -0.45]} distance={2} decay={1.5} />
-      <pointLight color="#8fb3c9" position={[0, 0.3, 0.6]} intensity={0.15} distance={3} />
+      {currentQuality().lights === 'all' && <pointLight color="#8fb3c9" position={[0, 0.3, 0.6]} intensity={0.15} distance={3} />}
     </>
   );
 }

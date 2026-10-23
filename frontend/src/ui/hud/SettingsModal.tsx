@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Keyboard, RotateCcw, Sparkles, Volume2, X } from 'lucide-react';
+import { Gauge, Keyboard, RotateCcw, Sparkles, Volume2, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
+import { LEVEL_LABEL, LEVELS, useGraphics, type Choice } from '../../core/graphics';
 import { Z } from '../../core/layers';
 import { ACTIONS, keyLabel, RESERVED, useSettings, type Action, type Motion } from '../../core/settings';
 import { useNova } from '../../core/store';
@@ -17,6 +18,8 @@ function Panel() {
   const soundOn = useNova((n) => n.soundOn);
   const [capturing, setCapturing] = useState<Action | null>(null);
   const [hint, setHint] = useState('');
+  const auto = useGraphics((g) => g.auto);
+  const graphicsHint = s.graphics === 'auto' ? `Auto picked ${LEVEL_LABEL[auto]} for this device` : 'Lower levels run smoother on weak devices; No 3D skips the 3D scene';
   const close = () => s.setOpen(false);
 
   useEffect(() => {
@@ -81,6 +84,25 @@ function Panel() {
           </Row>
           <Row label="Interface sounds" hint="Chimes, clicks and alerts">
             <Toggle on={s.uiSounds} onChange={() => (s.set({ uiSounds: !s.uiSounds }), audio.play('chime'))} label="Interface sounds" />
+          </Row>
+        </Section>
+
+        <Section icon={<Gauge size={14} />} title="Graphics">
+          <Row label="Graphics quality" hint={graphicsHint}>
+            <div className="flex flex-wrap overflow-hidden rounded-lg ring-1 ring-blue-400/25" role="radiogroup" aria-label="Graphics quality">
+              {(['auto', ...LEVELS] as Choice[]).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={s.graphics === c}
+                  onClick={() => s.set({ graphics: c })}
+                  className={`cursor-pointer px-2.5 py-1.5 text-xs font-semibold transition ${s.graphics === c ? 'bg-cyan-400/25 text-white' : 'text-blue-100/60 hover:text-white'}`}
+                >
+                  {c === 'auto' ? 'Auto' : LEVEL_LABEL[c]}
+                </button>
+              ))}
+            </div>
           </Row>
         </Section>
 

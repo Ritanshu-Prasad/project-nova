@@ -2,6 +2,7 @@ import { Environment, Lightformer, PerformanceMonitor } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useState } from 'react';
 import type { Object3D } from 'three';
+import { currentQuality, suggestLighter } from '../core/graphics';
 import { Z } from '../core/layers';
 import { useNova } from '../core/store';
 import LaunchBay from './bay/LaunchBay';
@@ -46,17 +47,20 @@ function Boot() {
 
 /** The WebGL scene: sky, both worlds, the ship (cockpit + warp) and post-processing. */
 export default function Experience() {
-  const [dpr, setDpr] = useState(1.5);
+  // The level is fixed while this mounts (App remounts the scene with a new key when it changes).
+  const [q] = useState(currentQuality);
+  const [dpr, setDpr] = useState<number>(q.dpr[0]);
   return (
     <div className="fixed inset-0" style={{ zIndex: Z.canvas, touchAction: 'none' }}>
       <Canvas dpr={dpr} gl={{ antialias: false, powerPreference: 'high-performance', stencil: false, preserveDrawingBuffer: import.meta.env.DEV }}>
         <PerformanceMonitor
-          // Only resolution adapts: re-creating the effect composer mid-session can blank the canvas.
-          onDecline={() => setDpr(1)}
-          onIncline={() => setDpr(1.5)}
+          // Only resolution adapts: re-creating the effect composer mid-session can blank the canvas. Already at the
+          // lowest resolution and still slow → offer the next lighter graphics level (once).
+          onDecline={() => (dpr <= q.dpr[1] ? suggestLighter() : setDpr(q.dpr[1]))}
+          onIncline={() => setDpr(q.dpr[0])}
         />
         <color attach="background" args={['#02040a']} />
-        <Environment resolution={128} frames={1}>
+        <Environment resolution={q.env} frames={1}>
           <Lightformer form="rect" intensity={1.1} color="#9bdcf5" position={[0, 4, -6]} scale={[10, 1.5, 1]} />
           <Lightformer form="rect" intensity={0.45} color="#a78bfa" position={[-6, 1, 0]} rotation-y={Math.PI / 2} scale={[8, 2, 1]} />
           <Lightformer form="ring" intensity={0.7} color="#ffffff" position={[4, 3, 4]} scale={2} />
@@ -69,7 +73,7 @@ export default function Experience() {
           <Lounge />
           <Warp />
         </ShipRig>
-        <PostFX />
+        <PostFX quality={q.post} />
         <Boot />
       </Canvas>
     </div>

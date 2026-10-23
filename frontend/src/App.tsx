@@ -27,6 +27,9 @@ import { useHubQuiz } from './core/hubQuiz';
 import { useCourse } from './core/course';
 import { useHub, useProfile } from './core/hub';
 import * as account from './core/account';
+import * as graphics from './core/graphics';
+import { useGraphics } from './core/graphics';
+import LighterGraphicsPrompt from './ui/hud/LighterGraphicsPrompt';
 
 /** The WebGL scene loads in its own chunk so the gate paints instantly. */
 const Experience = lazy(() => import('./three/Experience'));
@@ -58,15 +61,19 @@ export default function App() {
   useAutoWake();
   useTheme();
   const webglFailed = useNova((s) => s.webglFailed);
+  const level = useGraphics((s) => s.level);
+  const gfxReady = useGraphics((s) => s.ready);
+  useGraphicsLevel(level);
 
   return (
     <div className="nova-root">
-      {webglFailed ? (
+      {/* "No 3D" never downloads the 3D engine. The scene mounts once the device check is done, and again on a new level. */}
+      {webglFailed || level === 'none' || !gfxReady ? (
         <Fallback />
       ) : (
-        <ErrorBoundary fallback={<Fallback />} onError={() => useNova.getState().setWebglFailed(true)}>
+        <ErrorBoundary key={level} fallback={<Fallback />} onError={() => useNova.getState().setWebglFailed(true)}>
           <Suspense fallback={null}>
-            <Experience />
+            <Experience key={level} />
           </Suspense>
         </ErrorBoundary>
       )}
@@ -87,6 +94,7 @@ export default function App() {
       <IntroUI />
       <TopBar />
       <SettingsModal />
+      <LighterGraphicsPrompt />
       <Eyelids />
       <Gate />
       <Notifications />
@@ -94,6 +102,14 @@ export default function App() {
       <Cursor />
     </div>
   );
+}
+
+/** Checks the device once at start-up; tags the page with the level so CSS can switch off the costly effects. */
+function useGraphicsLevel(level: graphics.Level) {
+  useEffect(() => graphics.detectGraphics(), []);
+  useEffect(() => {
+    document.documentElement.dataset.gfx = level;
+  }, [level]);
 }
 
 /** The pilot's colour drives the accent everywhere (CSS variables, see core/theme.ts). */
@@ -108,7 +124,9 @@ function useTheme() {
 
 /** No start button: once the warning is answered, the pilot wakes as soon as the scene is ready (or after a short safety timeout). */
 function useAutoWake() {
-  const ready = useNova((s) => s.sceneReady || s.webglFailed);
+  const sceneDone = useNova((s) => s.sceneReady || s.webglFailed);
+  const no3d = useGraphics((s) => s.level === 'none' && s.ready); // nothing to wait for
+  const ready = sceneDone || no3d;
   const accepted = useNova((s) => s.warningAccepted);
   useEffect(() => {
     // Nothing starts (and nothing flashes) until the visitor has answered the photosensitivity warning.
@@ -127,7 +145,7 @@ function useAutoWake() {
 function useDevHooks() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile, hubQuiz: useHubQuiz, account };
+    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile, hubQuiz: useHubQuiz, account, graphics };
     const jump = new URLSearchParams(location.search).get('jump') as Phase | null;
     if (jump && PHASES.includes(jump)) director.debugJump(jump);
   }, []);

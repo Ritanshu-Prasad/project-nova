@@ -13,6 +13,7 @@ import {
   type Mesh,
   type PointLight,
 } from 'three';
+import { currentQuality, fbmDefines } from '../../core/graphics';
 import { useHub } from '../../core/hub';
 import { useDeck } from '../../core/journey';
 import { accentHex } from '../../core/theme';
@@ -332,6 +333,7 @@ function Hologram() {
         vertexShader: HOLO_VERT,
         fragmentShader: HOLO_FRAG,
         uniforms: { uTime: { value: 0 }, uBoost: { value: 0 }, uColor: { value: new Color('#5eead4').multiplyScalar(1.6) } },
+        defines: fbmDefines(),
         transparent: true,
         blending: AdditiveBlending,
         depthWrite: false,
@@ -459,7 +461,7 @@ void main() {
 function Dust() {
   const res = useMemo(() => {
     const random = seededRandom(303);
-    const n = 650;
+    const n = Math.round(650 * currentQuality().particles);
     const pos = new Float32Array(n * 3);
     const seed = new Float32Array(n);
     for (let i = 0; i < n; i++) {
@@ -564,8 +566,8 @@ function LoungeLights() {
     <>
       <hemisphereLight args={['#ffcf9e', '#20140c', 0.55]} />
       <pointLight color="#ffc58f" position={[CX, FLOOR_Y + H - 0.6, CZ]} intensity={9} distance={16} decay={1.5} />
-      <pointLight ref={holo} color="#5eead4" position={HOLO_CENTER} intensity={2.5} distance={7} decay={1.4} />
-      <pointLight color="#86a8ff" position={[CX, FLOOR_Y + 2.2, CZ + A - 1]} intensity={4} distance={10} decay={1.5} />
+      {currentQuality().lights === 'all' && <pointLight ref={holo} color="#5eead4" position={HOLO_CENTER} intensity={2.5} distance={7} decay={1.4} />}
+      {currentQuality().lights === 'all' && <pointLight color="#86a8ff" position={[CX, FLOOR_Y + 2.2, CZ + A - 1]} intensity={4} distance={10} decay={1.5} />}
     </>
   );
 }

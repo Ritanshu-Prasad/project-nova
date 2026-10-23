@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import { AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, ShaderMaterial, type Group } from 'three';
 import { damp } from '../../core/math';
+import { currentQuality, fbmDefines } from '../../core/graphics';
 import { rt } from '../../core/runtime';
 import { useNova } from '../../core/store';
 import { NOISE_GLSL } from '../shaders/noise';
@@ -68,6 +69,7 @@ export default function Sky() {
         vertexShader: NEBULA_VERT,
         fragmentShader: NEBULA_FRAG,
         uniforms: { uWorld: { value: 0 }, uWarp: { value: 0 } },
+        defines: fbmDefines(),
         side: BackSide,
         depthWrite: false,
         depthTest: false,
@@ -77,7 +79,7 @@ export default function Sky() {
 
   const stars = useMemo(() => {
     const random = seededRandom(101);
-    const n = 5000;
+    const n = Math.round(5000 * currentQuality().particles);
     const pos = new Float32Array(n * 3);
     const size = new Float32Array(n);
     const col = new Float32Array(n * 3);

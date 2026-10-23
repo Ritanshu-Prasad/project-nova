@@ -14,6 +14,7 @@ import {
   type Group,
   type InstancedMesh,
 } from 'three';
+import { currentQuality, fbmDefines } from '../../core/graphics';
 import { rt } from '../../core/runtime';
 import { useDeck } from '../../core/journey';
 import { useNova } from '../../core/store';
@@ -138,7 +139,7 @@ export default function SpaceWorld() {
   const mats = useMemo(() => {
     const uniforms = { uSun: { value: sunDir }, uTime: { value: 0 }, uArrive: { value: 0 } };
     return {
-      planet: new ShaderMaterial({ vertexShader: PLANET_VERT, fragmentShader: PLANET_FRAG, uniforms }),
+      planet: new ShaderMaterial({ vertexShader: PLANET_VERT, fragmentShader: PLANET_FRAG, uniforms, defines: fbmDefines() }),
       halo: new ShaderMaterial({
         vertexShader: PLANET_VERT,
         fragmentShader: HALO_FRAG,
@@ -152,6 +153,7 @@ export default function SpaceWorld() {
         vertexShader: RING_VERT,
         fragmentShader: RING_FRAG,
         uniforms: { uInner: { value: RINGS.inner }, uOuter: { value: RINGS.outer } },
+        defines: fbmDefines(),
         side: DoubleSide,
         transparent: true,
         depthWrite: false,
@@ -170,7 +172,8 @@ export default function SpaceWorld() {
     const v = new Vector3();
     let i = 0;
     let guard = 0;
-    while (i < ASTEROIDS.count && guard++ < 10000) {
+    const total = Math.round(ASTEROIDS.count * currentQuality().particles);
+    while (i < total && guard++ < 10000) {
       v.set(Math.random() * 2 - 1, Math.random() * 1.4 - 0.7, -Math.random() * 1.1 + 0.15).normalize();
       if (v.dot(hero) > ASTEROIDS.heroClearCos) continue;
       const d = 70 + Math.pow(Math.random(), 1.6) * 800;
@@ -231,7 +234,7 @@ export default function SpaceWorld() {
         </mesh>
       </Billboard>
 
-      <instancedMesh ref={rocks} args={[undefined, undefined, ASTEROIDS.count]}>
+      <instancedMesh ref={rocks} args={[undefined, undefined, Math.round(ASTEROIDS.count * currentQuality().particles)]}>
         <icosahedronGeometry args={[1, 1]} />
         <meshStandardMaterial color="#5b5560" roughness={0.95} flatShading />
       </instancedMesh>

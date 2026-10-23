@@ -1,12 +1,14 @@
 import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { AdditiveBlending, BackSide, Color, Object3D, ShaderMaterial, type InstancedMesh, type Mesh } from 'three';
+import { currentQuality } from '../../core/graphics';
 import { smoothstep } from '../../core/math';
 import { rt } from '../../core/runtime';
 import { NOISE_GLSL } from '../shaders/noise';
 import { seededRandom } from '../../core/seeded';
 
-const COUNT = 700;
+/** Streaks at full detail; fewer on lighter graphics levels. */
+const MAX_STREAKS = 700;
 const NEAR = 20;
 const FAR = -420;
 
@@ -37,6 +39,7 @@ const dummy = new Object3D();
 
 /** Ship-local warp: star streaks, a light tunnel and drifting space dust. */
 export default function Warp() {
+  const COUNT = useMemo(() => Math.max(60, Math.round(MAX_STREAKS * currentQuality().warp)), []);
   const streaks = useRef<InstancedMesh>(null);
   const tunnel = useRef<Mesh>(null);
   const glow = useRef<Mesh>(null);
@@ -50,7 +53,7 @@ export default function Warp() {
         return { x: Math.cos(a) * r, y: Math.sin(a) * r, z: FAR + random() * (NEAR - FAR), s: 0.5 + random() };
       });
     },
-    [],
+    [COUNT],
   );
 
   const tunnelMat = useMemo(

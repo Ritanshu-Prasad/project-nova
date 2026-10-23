@@ -3,14 +3,20 @@ import { Bloom, ChromaticAberration, EffectComposer, Noise, ToneMapping, Vignett
 import { BlendFunction, ToneMappingMode, type BloomEffect, type ChromaticAberrationEffect, type VignetteEffect } from 'postprocessing';
 import { useRef } from 'react';
 import { Vector2 } from 'three';
+import type { Quality } from '../core/graphics';
 import { rt } from '../core/runtime';
 
-/** Cinematic post: bloom, chromatic aberration, vignette, grain, ACES — all steered by `rt`. */
-export default function PostFX({ lite = false }: { lite?: boolean }) {
+/**
+ * Cinematic post, steered by `rt`. 'full': bloom, chromatic aberration, vignette, grain, ACES.
+ * 'mid': bloom, vignette, ACES (no multisampling). 'min': ACES only.
+ */
+export default function PostFX({ quality = 'full' }: { quality?: Quality['post'] }) {
   const bloom = useRef<BloomEffect>(null);
   const ca = useRef<ChromaticAberrationEffect>(null);
   const vig = useRef<VignetteEffect>(null);
   const [offset] = useRefValue(() => new Vector2(0.0006, 0.0006));
+  const full = quality === 'full';
+  const mid = quality !== 'min';
 
   useFrame(() => {
     if (bloom.current) bloom.current.intensity = 0.85 + 2.5 * rt.flash + 0.6 * rt.warp + 0.6 * rt.pulse;
@@ -21,11 +27,11 @@ export default function PostFX({ lite = false }: { lite?: boolean }) {
   });
 
   return (
-    <EffectComposer multisampling={lite ? 0 : 4}>
-      <Bloom ref={bloom} mipmapBlur luminanceThreshold={0.7} luminanceSmoothing={0.2} intensity={0.85} />
-      <ChromaticAberration ref={ca} offset={offset} radialModulation modulationOffset={0.2} />
-      <Vignette ref={vig} offset={0.3} darkness={0.6} />
-      <Noise premultiply blendFunction={BlendFunction.SCREEN} opacity={lite ? 0 : 0.035} />
+    <EffectComposer multisampling={full ? 4 : 0}>
+      {mid ? <Bloom ref={bloom} mipmapBlur luminanceThreshold={0.7} luminanceSmoothing={0.2} intensity={0.85} /> : <></>}
+      {full ? <ChromaticAberration ref={ca} offset={offset} radialModulation modulationOffset={0.2} /> : <></>}
+      {mid ? <Vignette ref={vig} offset={0.3} darkness={0.6} /> : <></>}
+      {full ? <Noise premultiply blendFunction={BlendFunction.SCREEN} opacity={0.035} /> : <></>}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
     </EffectComposer>
   );

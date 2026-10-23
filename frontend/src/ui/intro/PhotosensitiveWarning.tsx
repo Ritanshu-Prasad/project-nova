@@ -3,6 +3,7 @@ import { TriangleAlert } from 'lucide-react';
 import { audio } from '../../core/audio';
 import { WARNING } from '../../core/content';
 import { skipIntro } from '../../core/director';
+import { useGraphics } from '../../core/graphics';
 import { useSettings } from '../../core/settings';
 import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
@@ -18,8 +19,10 @@ export default function PhotosensitiveWarning() {
   const answer = (skip: boolean) => {
     void audio.init(); // a click is the gesture browsers need to start sound
     useNova.getState().setWarningAccepted(true);
-    if (!skip) return;
-    useSettings.getState().set({ motion: 'reduced' });
+    // Without 3D the pre-flight switches don't exist, so that intro is skipped too.
+    const no3d = useGraphics.getState().level === 'none' || useNova.getState().webglFailed;
+    if (!skip && !no3d) return;
+    if (skip) useSettings.getState().set({ motion: 'reduced' });
     skipIntro();
   };
 
