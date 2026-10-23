@@ -103,7 +103,7 @@ def log_startup() -> None:
         "daily_token_budget": usage.daily_limit() or "none",
         "price_per_million_in_out": f"{pricing.current_price().input_per_million}/{pricing.current_price().output_per_million}",
     }
-    logger.info("Models: generate=%s tutor=%s | %s", models["generate"], models["tutor"], " ".join(f"{name}={value}" for name, value in features.items()))
+    logger.info("Models: plan=%s generate=%s bank=%s tutor=%s | %s", models["plan"], models["generate"], models["bank"], models["tutor"], " ".join(f"{name}={value}" for name, value in features.items()))
 
 
 # --- Health ---

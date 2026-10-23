@@ -54,10 +54,10 @@ def test_a_run_writes_the_results_and_a_report(fake_model, results, capsys):
     assert "# Evaluation" in capsys.readouterr().out
 
 
-def test_the_saved_results_name_the_nano_model_and_prompt_version_without_lesson_text(fake_model, results):
+def test_the_saved_results_name_the_content_model_and_prompt_version_without_lesson_text(fake_model, results):
     main(eval_args(results, "--suite", "goals"))
     saved = json.loads(next(results.glob("*.json")).read_text())
-    assert saved["meta"]["model"] == "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B" and saved["meta"]["promptVersion"] and saved["meta"]["suites"] == "goals"
+    assert saved["meta"]["model"] == "nvidia/Nemotron-3_5-Lightning" and saved["meta"]["promptVersion"] and saved["meta"]["suites"] == "goals"
     assert saved["rows"] and all("text" not in row for row in saved["rows"]) and "goals" in saved["summary"] and "cost" in saved["summary"]
 
 

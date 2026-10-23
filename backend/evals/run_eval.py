@@ -1,9 +1,9 @@
 """Scores what the course generator and tutor really write, so a change to a prompt can be shown to help or hurt.
 
-It always uses the Nano model. Run from the backend folder:
+It uses the models the settings name (Nemotron 3.5 Lightning, with DeepSeek-V4-Flash-0731 planning, by default; NOVA_PLAN_MODEL and the other NOVA_*_MODEL settings change that). Run from the backend folder:
     python -m evals.run_eval                                  # every suite, the smoke cases
     python -m evals.run_eval --suite goals --cases full --judge --repeat 3
-    python -m evals.run_eval --baseline evals/baselines/nano.json --fail-on-regression
+    python -m evals.run_eval --baseline evals/baselines/lightning.json --fail-on-regression
     python -m evals.run_eval --history
     python -m evals.run_eval --compare old.json new.json
 """
@@ -60,9 +60,10 @@ def main(argv: list[str] | None = None) -> int:
     names = list(SUITES) if args.suite == "all" else [args.suite]
     styles = [style["id"] for style in cases.load("goals")["styles"]]
     result_rows = asyncio.run(run_suites(names, args.cases, args.judge, args.repeat))
-    meta = {"date": date.today().isoformat(), "model": llm.generate_model(), "promptVersion": PROMPT_VERSION, "cases": args.cases, "suites": args.suite, "repeat": args.repeat}
+    meta = {"date": date.today().isoformat(), "model": llm.generate_model(), "planModel": llm.plan_model(), "promptVersion": PROMPT_VERSION, "cases": args.cases, "suites": args.suite, "repeat": args.repeat}
     summary = report.build_summary(result_rows, styles)
-    stem = f"{meta['date']}-{meta['model'].split('/')[-1]}-{PROMPT_VERSION}-{args.cases}-{meta['suites']}"
+    planner = "" if meta["planModel"] == meta["model"] else f"-plan-{meta['planModel'].split('/')[-1]}"
+    stem = f"{meta['date']}-{meta['model'].split('/')[-1]}{planner}-{PROMPT_VERSION}-{args.cases}-{meta['suites']}"
     Path(args.out).mkdir(parents=True, exist_ok=True)
     (Path(args.out) / f"{stem}.json").write_text(json.dumps({"meta": meta, "summary": summary, "rows": [_without_text(row) for row in result_rows]}, indent=2))
     text = report.render_markdown(summary, meta)

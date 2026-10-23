@@ -402,11 +402,7 @@ function FleetLeaderboard({ active }: { active: ActiveCourse | null }) {
             {data.top.slice(0, 20).map((r) => (
               <li key={r.rank} className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${r.me ? 'bg-[rgb(var(--user-rgb)/0.14)] ring-1 ring-[rgb(var(--user-rgb)/0.45)]' : 'bg-white/[0.03]'}`}>
                 <span className={`w-6 text-right font-display font-bold ${r.rank <= 3 ? 'text-amber-300' : 'text-white/50'}`}>{r.rank}</span>
-                {r.me ? (
-                  <PilotAvatar size={24} className="rounded-full" />
-                ) : (
-                  <PilotAvatar size={24} className="rounded-full" name={r.callsign} src="" color={r.color} />
-                )}
+                <PilotAvatar size={24} className="rounded-full" name={r.callsign} src={r.me ? undefined : r.avatar} color={r.color} />
                 <span className="min-w-0 flex-1 truncate font-semibold text-white">
                   {r.callsign}
                   {r.me && <span className="ml-1.5 text-xs font-normal text-white/50">(you)</span>}

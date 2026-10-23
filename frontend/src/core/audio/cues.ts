@@ -29,6 +29,7 @@ const LEVEL = {
   warpIn: 0.42,
   warpOut: 0.38,
   arrive: 0.3,
+  novaBlast: 0.55,
   hover: 0.012,
   click: 0.03,
   notify: 0.04,
@@ -649,6 +650,70 @@ const arrive: CueBuilder = (bus, t) => {
   v.done();
 };
 
+/**
+ * Course finale (matches the 2 s charge of the Nova blast): a rising whoosh and sub swell, then the blast — crack, sub
+ * drop, rumble — and a bright D-major shimmer that blooms over a long tail.
+ */
+const novaBlast: CueBuilder = (bus, t) => {
+  const v = new Voice(bus);
+  const out = output(v, bus.world, LEVEL.novaBlast, 0.6);
+  const { white, pink, brown } = bus.noise;
+  const boom = t + 2;
+
+  // Charge: filtered noise climbs while a sub swells and a high sine rises with it.
+  const n = v.noise(pink, t, boom + 0.1);
+  const bp = v.filter('bandpass', 120, 1.8);
+  glide(bp.frequency, t, 120, 5200, 2);
+  const ng = v.gain(0);
+  ramp(ng.gain, t, [[0, 0], [1.6, 0.9], [2, 1], [2.05, 0]]);
+  v.chain(n, bp, ng, out);
+  const rise = v.osc('sine', 220, t, boom + 0.1);
+  glide(rise.frequency, t, 220, 1760, 2);
+  const rg = v.gain(0);
+  ramp(rg.gain, t, [[0, 0], [1.9, 0.22], [2.05, 0]]);
+  rise.connect(rg).connect(out);
+  const swellSub = v.osc('sine', 46, t, boom + 0.1);
+  const sw = v.gain(0);
+  ramp(sw.gain, t, [[0, 0], [2, 0.7], [2.05, 0]]);
+  swellSub.connect(sw).connect(out);
+
+  // The blast.
+  burst(v, out, white, boom, 1, 0.0008, 0.05, v.filter('lowpass', 9000));
+  const sub = v.osc('sine', 90, boom, boom + 4);
+  glide(sub.frequency, boom, 90, 26, 1.1);
+  const sg = v.gain(0);
+  pluck(sg.gain, boom, 1.1, 0.004, 0.7);
+  sub.connect(sg).connect(out);
+  const dirty = v.gain(0);
+  pluck(dirty.gain, boom, 0.5, 0.004, 0.35);
+  v.chain(sub, v.shaper(driveCurve(4)), v.filter('lowpass', 420), dirty, out);
+  burst(v, out, brown, boom, 1.3, 0.004, 0.4, v.filter('lowpass', 520));
+  for (const side of [-1, 1]) {
+    const w = v.noise(pink, boom, boom + 2.6);
+    const wb = v.filter('bandpass', 400, 1.1);
+    glide(wb.frequency, boom, 400, side < 0 ? 5200 : 6400, 1.8);
+    const wg = v.gain(0);
+    ramp(wg.gain, boom, [[0, 0.8], [0.6, 0.5], [2.4, 0]]);
+    v.chain(w, wb, wg, v.pan(side * 0.7), out);
+  }
+
+  // Shimmer: a rising D-major arpeggio of struck bells, then a held glassy chord.
+  [N.D6, N.Fs6, N.A6, N.D7, N.Fs7, N.A7, N.D7, N.B6].forEach((f, i) => {
+    const ts = boom + 0.12 + i * 0.16;
+    const pg = v.gain(1);
+    pg.connect(v.pan(((i % 4) / 3) * 1.4 - 0.7)).connect(out);
+    partials(v, pg, ts, f, 0.34, SOFT_BELL, 0.003);
+  });
+  const end = boom + 6;
+  [N.D3, N.A3, N.Fs5, N.A5, N.E6].forEach((f, i) => {
+    const o = v.osc('sine', f, boom, end);
+    const g = v.gain(0);
+    swell(g.gain, boom + 0.3, 0.14, 0.6, 2, 3);
+    v.chain(o, g, v.pan((i - 2) * 0.35), out);
+  });
+  v.done();
+};
+
 /** Every cue's builder. */
 export const CUES: Record<Cue, CueBuilder> = {
   heartbeat,
@@ -667,6 +732,7 @@ export const CUES: Record<Cue, CueBuilder> = {
   warpIn,
   warpOut,
   arrive,
+  novaBlast,
   hover,
   click,
   notify,
@@ -691,6 +757,7 @@ export const CUE_LENGTH: Record<Cue, number> = {
   warpIn: 2.9,
   warpOut: 3.4,
   arrive: 12,
+  novaBlast: 9,
   hover: 0.1,
   click: 0.3,
   notify: 0.5,
@@ -715,6 +782,7 @@ export const CUE_MIN_GAP: Record<Cue, number> = {
   warpIn: 1,
   warpOut: 1,
   arrive: 2,
+  novaBlast: 4,
   hover: 0.04,
   click: 0.04,
   notify: 0.1,

@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type * as J from './journey';
 
 let j: typeof J;
@@ -42,5 +42,35 @@ describe('the walk between the seat and the lounge', () => {
     let called = 0;
     j.goToCockpit(() => called++);
     expect(called).toBe(1);
+  });
+});
+
+describe('a walk that waits for the pilot to settle', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    j.resetJourney();
+  });
+
+  it('is busy while the delayed walk is pending, and a reset cancels it', () => {
+    vi.useFakeTimers();
+    j.enterLoungeNow();
+    let called = 0;
+    j.goToCockpit(() => called++, 1300);
+    expect(j.isBusy()).toBe(true);
+    j.resetJourney();
+    expect(j.isBusy()).toBe(false);
+    vi.advanceTimersByTime(2000);
+    expect(called).toBe(0);
+    expect(j.useDeck.getState().deck).toBe('cockpit');
+  });
+
+  it('is busy during the walk and idle once seated in the lounge or cockpit', () => {
+    j.enterLoungeNow();
+    expect(j.isBusy()).toBe(false);
+    j.goToCockpit();
+    expect(j.useDeck.getState().deck).toBe('transit');
+    expect(j.isBusy()).toBe(true);
+    j.resetJourney();
+    expect(j.isBusy()).toBe(false);
   });
 });

@@ -89,7 +89,7 @@ function render(report) {
       <div class="card"><b>${num(today.totals.retries)} / ${num(today.totals.failures)}</b><span>retries / failures today</span></div>
       ${limit ? `<div class="card"><b>${Math.round(budget.used_today / limit * 100)}%</b><span>of ${num(limit)} token budget</span><div class="bar"><i style="width:${Math.min(100, budget.used_today / limit * 100)}%"></i></div></div>` : ''}
     </div>
-    <p class="note">Models: ${esc(report.models.generate)} (courses), ${esc(report.models.tutor)} (tutor). Price used: ${price.input_per_million} in / ${price.output_per_million} out per million tokens.</p>
+    <p class="note">Models: ${esc(report.models.plan)} (planning), ${esc(report.models.content)} (lessons), ${esc(report.models.bank)} (questions), ${esc(report.models.tutor)} (tutor). Each call is priced with its own model (default price ${price.input_per_million} in / ${price.output_per_million} out per million tokens).</p>
     <h2>Today by kind</h2>
     <div class="scroll"><table><tr><th>kind</th><th>calls</th><th>in</th><th>out</th><th>cost</th><th>avg s</th><th>retries</th><th>failures</th></tr>
       ${Object.entries(today.kinds).map(([kind, row]) => `<tr><td>${esc(kind)}</td><td>${num(row.calls)}</td><td>${num(row.prompt_tokens)}</td><td>${num(row.completion_tokens)}</td><td>${money(row.cost_usd)}</td><td>${row.average_seconds.toFixed(1)}</td><td>${row.retries}</td><td>${row.failures}</td></tr>`).join('') || '<tr><td colspan="8">No model calls yet today.</td></tr>'}

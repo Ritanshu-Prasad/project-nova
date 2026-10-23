@@ -78,6 +78,10 @@ async def post_score(request: Request):
             continue
         courses.append({"key": c["key"], "title": _clean_name(c.get("title"), 60), "mmr": mmr})
     color = body.get("color") if COLOR.match(str(body.get("color", ""))) else "#06b6d4"
+    raw_avatar = str(body.get("avatar", "") or "").strip()
+    avatar = ""
+    if (raw_avatar.startswith("https://") or raw_avatar.startswith("data:image/")) and len(raw_avatar) <= 65_536:
+        avatar = raw_avatar
 
     pilot_hash = _hash(body["pilotId"])
 
@@ -95,6 +99,8 @@ async def post_score(request: Request):
         for h, e in list(board.items()):
             if e.get("callsign", "").strip().lower() == callsign_lower:
                 prev_xp = max(prev_xp, int(e.get("xp", 0) or 0))
+                if not avatar and e.get("avatar"):
+                    avatar = e.get("avatar")
                 for c in e.get("courses", []):
                     if c.get("key") not in merged_courses:
                         merged_courses[c["key"]] = c
@@ -103,6 +109,8 @@ async def post_score(request: Request):
 
         existing = board.get(pilot_hash)
         if existing:
+            if not avatar and existing.get("avatar"):
+                avatar = existing.get("avatar")
             prev_at = float(existing.get("at", 0) or 0) / 1000.0
             if prev_at > 0 and 0 <= (now - prev_at) < SUBMISSION_THROTTLE_SECONDS:
                 raise HTTPException(429, "Submitting too fast; please wait 5 seconds")
@@ -116,6 +124,7 @@ async def post_score(request: Request):
         final_xp = max(xp, prev_xp)
         board[pilot_hash] = {
             "callsign": callsign,
+            "avatar": avatar,
             "color": color,
             "xp": final_xp,
             "level": 1 + final_xp // 150,
@@ -159,6 +168,7 @@ async def leaderboard(board: str = "global", pilot: str = ""):
         row = {
             "key": key,
             "callsign": c_name,
+            "avatar": e.get("avatar", ""),
             "color": e.get("color", "#06b6d4"),
             "level": e.get("level", 1),
             "score": score,
@@ -170,6 +180,8 @@ async def leaderboard(board: str = "global", pilot: str = ""):
             deduped[c_key] = row
         else:
             prev = deduped[c_key]
+            if not row["avatar"] and prev.get("avatar"):
+                row["avatar"] = prev["avatar"]
             if row["score"] > prev["score"]:
                 if prev["key"] == me:
                     row["key"] = me

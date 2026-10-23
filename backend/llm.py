@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import json
 import logging
 import os
@@ -13,11 +14,19 @@ from pydantic import BaseModel, ValidationError
 
 import capture
 import usage
+from models import DEEPSEEK_MODEL, LIGHTNING_MODEL, NANO_MODEL
 
 logger = logging.getLogger("nova.llm")
 
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
-DEFAULT_MODEL = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+# What each part of the pipeline uses unless a setting says otherwise: Lightning writes everything, DeepSeek plans the course.
+DEFAULT_MODEL = LIGHTNING_MODEL
+DEFAULT_PLAN_MODEL = DEEPSEEK_MODEL
+# Models that may be used without NOVA_ALLOWED_MODELS (all three are priced in pricing.py).
+VETTED_MODELS = (NANO_MODEL, LIGHTNING_MODEL, DEEPSEEK_MODEL)
+# Calls that plan a course (its modules and topics, and changes to the plan) use the planning model, quiz calls the question model.
+PLAN_KINDS = frozenset({"outline", "module"})
+BANK_KINDS = frozenset({"quiz", "placement"})
 TIMEOUT = httpx.Timeout(120.0, connect=10.0)
 ATTEMPTS = 3
 DEFAULT_MAX_TOKENS = 5000
@@ -25,7 +34,8 @@ MAX_PARALLEL_CALLS = 16
 RETRY_DELAYS = (1.0, 3.0)
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 _gates: dict = {}
-_schema_supported = [True]
+_schema_unsupported: set = set()
+_forced_model: contextvars.ContextVar = contextvars.ContextVar("forced_model", default=None)
 _warned_settings: set = set()
 
 T = TypeVar("T", bound=BaseModel)
@@ -41,30 +51,73 @@ def base_url() -> str:
     return os.getenv("NEBIUS_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
 
 
-def generate_model() -> str:
+def plan_model() -> str:
+    """Plans the modules and topics of a course (and changes to the plan)."""
+    return _allowed(os.getenv("NOVA_PLAN_MODEL", DEFAULT_PLAN_MODEL), "NOVA_PLAN_MODEL")
+
+
+def _stage_model(specific: str) -> str:
+    """The stage's own setting, else the older NOVA_GENERATE_MODEL, else the default."""
+    if os.getenv(specific):
+        return _allowed(os.getenv(specific, ""), specific)
     return _allowed(os.getenv("NOVA_GENERATE_MODEL", DEFAULT_MODEL), "NOVA_GENERATE_MODEL")
+
+
+def content_model() -> str:
+    """Writes the lessons, and answers the smaller questions of the pipeline (code check, answer check, safety, judging)."""
+    return _stage_model("NOVA_CONTENT_MODEL")
+
+
+def bank_model() -> str:
+    """Writes the question banks and the placement quiz."""
+    return _stage_model("NOVA_BANK_MODEL")
+
+
+def generate_model() -> str:
+    """The model that writes course content (kept for code that asks for the one course model)."""
+    return content_model()
 
 
 def tutor_model() -> str:
     return _allowed(os.getenv("NOVA_TUTOR_MODEL", DEFAULT_MODEL), "NOVA_TUTOR_MODEL")
 
 
+def model_for(kind: str) -> str:
+    """The model a call of this kind goes to (a call being retried on the fallback goes there)."""
+    forced = _forced_model.get()
+    if forced:
+        return forced
+    if kind in PLAN_KINDS:
+        return plan_model()
+    if kind in BANK_KINDS:
+        return bank_model()
+    return content_model()
+
+
+def fallback_for(model: str) -> str | None:
+    """Where a call goes when its model is down or keeps giving unusable answers: the content model, unless that was the one that failed."""
+    fallback = content_model()
+    return fallback if fallback != model else None
+
+
 def models_in_use() -> dict:
     """The models requests really use, and which settings asked for a model that is not allowed."""
-    settings = {"NOVA_GENERATE_MODEL": generate_model(), "NOVA_TUTOR_MODEL": tutor_model()}
-    refused = [name for name, used in settings.items() if os.getenv(name, DEFAULT_MODEL) != used]
-    return {"generate": settings["NOVA_GENERATE_MODEL"], "tutor": settings["NOVA_TUTOR_MODEL"], "refused_settings": refused}
+    used = {"plan": plan_model(), "content": content_model(), "bank": bank_model(), "tutor": tutor_model()}
+    shown = {"NOVA_PLAN_MODEL": used["plan"], "NOVA_CONTENT_MODEL": used["content"], "NOVA_BANK_MODEL": used["bank"], "NOVA_GENERATE_MODEL": used["content"], "NOVA_TUTOR_MODEL": used["tutor"]}
+    refused = [name for name, model in shown.items() if os.getenv(name) and os.getenv(name) != model]
+    return {"generate": used["content"], **used, "refused_settings": refused}
 
 
 def _allowed(configured: str, setting: str) -> str:
-    """Only the Nano model is used unless NOVA_ALLOWED_MODELS names others on purpose, so a wrong setting cannot cost more."""
-    allowed = {DEFAULT_MODEL, *(name.strip() for name in os.getenv("NOVA_ALLOWED_MODELS", "").split(",") if name.strip())}
+    """Only the vetted models are used unless NOVA_ALLOWED_MODELS names others on purpose, so a wrong setting cannot cost more."""
+    allowed = {*VETTED_MODELS, *(name.strip() for name in os.getenv("NOVA_ALLOWED_MODELS", "").split(",") if name.strip())}
     if configured in allowed:
         return configured
+    fallback = DEFAULT_PLAN_MODEL if setting == "NOVA_PLAN_MODEL" else DEFAULT_MODEL
     if setting not in _warned_settings:
         _warned_settings.add(setting)
-        logger.error("%s=%s is not an allowed model, using %s instead (NOVA_ALLOWED_MODELS widens the list)", setting, configured, DEFAULT_MODEL)
-    return DEFAULT_MODEL
+        logger.error("%s=%s is not an allowed model, using %s instead (NOVA_ALLOWED_MODELS widens the list)", setting, configured, fallback)
+    return fallback
 
 
 # --- Requests ---
@@ -75,11 +128,23 @@ async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
     key = api_key()
     if not key:
         raise HTTPException(503, "Course model is not configured")
+    model = model_for(kind)
+    try:
+        return await _chat_json(model, key, system, user, max_tokens, thinking, schema, kind)
+    except HTTPException:
+        backup = None if _forced_model.get() else fallback_for(model)
+        if backup is None:
+            raise
+        logger.warning("%s failed for %s, trying %s", model, kind, backup)
+        usage.note(f"{kind}: {model} failed, asked {backup}")
+        return await _chat_json(backup, key, system, user, max_tokens, thinking, schema, kind)
 
+
+async def _chat_json(model: str, key: str, system: str, user: str, max_tokens: int, thinking: bool, schema: Type[BaseModel] | None, kind: str) -> dict:
     payload = {
-        "model": generate_model(),
+        "model": model,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        "response_format": _response_format(schema),
+        "response_format": _response_format(schema, model),
         "temperature": 0.4,
         "max_tokens": max_tokens,
     }
@@ -89,7 +154,7 @@ async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
     response = await _post(payload, key, kind)
     if response.status_code == 400 and payload["response_format"]["type"] == "json_schema":
         logger.warning("Endpoint rejected the JSON schema for %s, using plain JSON from now on: %.200s", kind, response.text)
-        _schema_supported[0] = False
+        _schema_unsupported.add(model)
         response = await _post({**payload, "response_format": {"type": "json_object"}}, key, kind)
     await _raise_for_upstream(response, kind, payload["model"])
     body = response.json()
@@ -104,8 +169,8 @@ async def chat_json(system: str, user: str, max_tokens: int = DEFAULT_MAX_TOKENS
         raise
 
 
-def _response_format(schema: Type[BaseModel] | None) -> dict:
-    if schema is None or not _schema_supported[0] or os.getenv("NOVA_JSON_SCHEMA") == "off":
+def _response_format(schema: Type[BaseModel] | None, model: str) -> dict:
+    if schema is None or model in _schema_unsupported or os.getenv("NOVA_JSON_SCHEMA") == "off":
         return {"type": "json_object"}
     return {"type": "json_schema", "json_schema": {"name": schema.__name__.lower(), "strict": False, "schema": _schema_of(schema)}}
 
@@ -170,14 +235,31 @@ async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT
     The model answers straight away instead of reasoning first (thinking=True or NOVA_THINKING=on lets it
     reason): on the Nano model reasoning often used up the whole token limit before the JSON began.
     """
+    asked = user
     for attempt in range(ATTEMPTS):
+        # The last try of a call whose model keeps giving unusable answers goes to the fallback model.
+        backup = fallback_for(model_for(kind)) if attempt == ATTEMPTS - 1 and ATTEMPTS > 1 else None
+        token = _forced_model.set(backup) if backup else None
         try:
-            return schema.model_validate(await chat_json(system, user, max_tokens, thinking, schema, kind))
+            return schema.model_validate(await chat_json(system, asked, max_tokens, thinking, schema, kind))
         except (ValidationError, ValueError) as error:
             logger.warning("Unusable model answer (attempt %d): %s", attempt + 1, str(error)[:300])
-            await usage.record_retry(kind, generate_model())
-    await usage.record_failure(kind, generate_model())
+            asked = user + _rejection_note(error)
+            await usage.record_retry(kind, model_for(kind))
+        finally:
+            if token is not None:
+                _forced_model.reset(token)
+    await usage.record_failure(kind, model_for(kind))
     raise HTTPException(502, "The course model returned an unusable answer")
+
+
+def _rejection_note(error: Exception) -> str:
+    """What to add to the request when the last answer was unusable, so the model can fix that instead of repeating it."""
+    if isinstance(error, ValidationError):
+        problems = [f"{'.'.join(str(part) for part in item['loc']) or 'answer'}: {item['msg'].removeprefix('Value error, ')}" for item in error.errors()[:4]]
+    else:
+        problems = [str(error)[:200]]
+    return "\n\nYour previous answer was rejected. Write the whole answer again and fix this:\n- " + "\n- ".join(problems)
 
 
 async def _raise_for_upstream(response: httpx.Response, kind: str, model: str) -> None:

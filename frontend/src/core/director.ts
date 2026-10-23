@@ -2,7 +2,7 @@ import { audio } from './audio';
 import { PREFLIGHT } from './content';
 import { clamp, damp, easeOutCubic, kf, lerp, smoothstep, type Keyframes } from './math';
 import { resetRuntime, rt } from './runtime';
-import { goToCockpit, goToLounge, resetJourney, tickJourney } from './journey';
+import { goToCockpit, goToLounge, isBusy, resetJourney, tickJourney, useDeck } from './journey';
 import { nextPlanet, planetName } from './planets';
 import { BAY } from './scene';
 import { SYSTEM_ORDER, useNova, type Phase, type SystemKey } from './store';
@@ -68,6 +68,12 @@ let clearedAt: number | null = null;
 let lastBeat = -10;
 let prevCountdown = 0;
 let litBanks = 0;
+/** The walk to the lounge that follows a landing; cancelled if anything else happens first. */
+let landedTimer: ReturnType<typeof setTimeout> | null = null;
+const cancelLandedWalk = () => {
+  if (landedTimer !== null) clearTimeout(landedTimer);
+  landedTimer = null;
+};
 
 function once(key: string, fn: () => void) {
   if (fired.has(key)) return;
@@ -79,6 +85,7 @@ const rm = () => rt.reducedMotion;
 
 /** Switches phase and fires its entry cues. */
 export function enterPhase(phase: Phase): void {
+  cancelLandedWalk();
   phaseStart = clock();
   rt.phaseTime = 0;
   fired.clear();
@@ -107,7 +114,10 @@ export function enterPhase(phase: Phase): void {
         // A replay from the lounge: once landed, walk straight back to the lounge.
         replayingFromLounge = false;
         store().notify({ kind: 'toast', title: `Now orbiting ${planetName()}`, ttl: 4 });
-        setTimeout(() => goToLounge(), 1400);
+        landedTimer = setTimeout(() => {
+          landedTimer = null;
+          goToLounge();
+        }, 1400);
       }
       break;
     default:
@@ -156,6 +166,11 @@ export function pulse(): void {
   rt.pulse = 1;
 }
 
+/** Ends every launch effect: the streak field and cockpit shake follow these values. */
+function settleMotion(): void {
+  Object.assign(rt, { shipSpeed: 0, warp: 0, flash: 0, shake: 0, fovKick: 0, spaceLaunch: false });
+}
+
 /** Jumps straight to the arrival glide with every system online. */
 export function skipIntro(): void {
   const s = store();
@@ -163,6 +178,7 @@ export function skipIntro(): void {
   void audio.init();
   bringEverythingOnline();
   finishSpaceJump(); // a skipped jump from space still ends at the next planet
+  settleMotion();
   enterPhase('arrive');
 }
 
@@ -187,9 +203,15 @@ function finishSpaceJump(): void {
  * reverse). The ship stays where it is, in space at the current planet; it powers down and the pilot flips the three
  * switches again and holds to launch — a jump from here, not from the launch pad — ending at the next planet.
  */
-export function relaunchFromSpace(delayMs = 0): void {
-  if (store().phase !== 'landed') return;
+export function relaunchFromSpace(delayMs = 0): boolean {
+  if (!canRelaunch()) return false;
   goToCockpit(beginSpacePreflight, delayMs);
+  return true;
+}
+
+/** Only from the lounge, parked at a planet, with no walk or timer in flight (a second press must not start a second flight). */
+export function canRelaunch(): boolean {
+  return store().phase === 'landed' && useDeck.getState().deck === 'lounge' && landedTimer === null && !isBusy();
 }
 
 function beginSpacePreflight(): void {
@@ -386,6 +408,7 @@ function tick(dt: number): void {
           finishSpaceJump(); // from space: the tunnel is opaque, so the new planet replaces the old one unseen
         });
       rt.approach = 0;
+      if (t >= (R ? TIMING.warpSwap_rm : TIMING.warpSwap)) rt.shipSpeed = damp(rt.shipSpeed, 0, 2.5, dt); // the rail speed dies away once the swap is done
       rt.fovKick = R ? 0 : kf(t, [[0, 24], [0.6, 34], [2.5, 30], [3.1, 6], [3.4, 0]]);
       rt.shake = R ? 0 : kf(t, [[0, 0.55], [0.6, 0.35], [2.6, 0.3], [3.0, 0.65], [3.4, 0.15]]);
       rt.flash = R ? 0 : kf(t, [[2.9, 0], [3.05, 0.75], [3.4, 0]]);
@@ -398,6 +421,7 @@ function tick(dt: number): void {
 
     case 'arrive': {
       rt.warp = 0;
+      rt.shipSpeed = damp(rt.shipSpeed, 0, 3, dt); // streaks fade out as the ship drops out of warp
       rt.flash = damp(rt.flash, 0, 6, dt);
       rt.approach = easeOutCubic(clamp(t / TIMING.approach));
       rt.arrive = smoothstep(0.3, 2.8, t);
@@ -410,6 +434,7 @@ function tick(dt: number): void {
     }
 
     case 'landed': {
+      rt.shipSpeed = 0;
       rt.approach = 1;
       rt.arrive = 1;
       rt.warp = 0;

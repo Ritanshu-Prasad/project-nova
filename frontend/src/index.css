@@ -201,6 +201,62 @@
 .nova-confetti { animation: nova-confetti-fall linear infinite; }
 @media (prefers-reduced-motion: reduce) { .nova-confetti { display: none; } }
 
+/* Nova blast (course finale): one soft flash, a short shake, and a calm fallback — never a strobe. */
+@keyframes nova-flash-once {
+  0% { opacity: 0; }
+  12% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+.nova-flash {
+  opacity: 0;
+  background: radial-gradient(circle at 50% 42%, #fff 0%, rgb(255 255 255 / 0.6) 25%, transparent 70%);
+  animation: nova-flash-once 0.9s ease-out both;
+}
+@keyframes nova-shake-once {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-5px, 3px); }
+  30% { transform: translate(4px, -4px); }
+  45% { transform: translate(-3px, -2px); }
+  60% { transform: translate(2px, 3px); }
+  80% { transform: translate(-1px, 1px); }
+}
+.nova-shake { animation: nova-shake-once 0.7s ease-out 2s both; }
+.nova-title {
+  background: linear-gradient(100deg, #fff 0%, var(--a, #22d3ee) 38%, #f472b6 62%, #fff 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px rgb(255 255 255 / 0.25));
+  animation: nova-title-sweep 6s ease-in-out infinite alternate;
+}
+@keyframes nova-title-sweep {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+@keyframes nova-calm-glow-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.nova-calm-glow {
+  background: radial-gradient(circle, rgb(255 255 255 / 0.55) 0%, color-mix(in srgb, var(--a, #22d3ee) 40%, transparent) 30%, transparent 68%);
+  opacity: 0;
+  animation: nova-calm-glow-in 1.6s ease-out var(--d, 0.6s) both;
+}
+@keyframes nova-calm-ring-out {
+  from { opacity: 0.7; transform: translate(-50%, -50%) scale(0.3); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(2.6); }
+}
+.nova-calm-ring {
+  opacity: 0;
+  border-color: var(--a, #22d3ee);
+  animation: nova-calm-ring-out 2.2s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-flash, .nova-shake, .nova-title { animation: none; }
+  .nova-flash { display: none; }
+}
+
 /* Graphics levels (core/graphics.ts sets data-gfx on <html>): blur is one of the costliest effects on weak GPUs. */
 [data-gfx='low'] *,
 [data-gfx='none'] * {

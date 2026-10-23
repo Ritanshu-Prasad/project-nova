@@ -32,7 +32,7 @@ def _authorise(request: Request) -> None:
 
 def _models() -> list[str]:
     in_use = llm.models_in_use()
-    return list(dict.fromkeys([in_use["generate"], in_use["tutor"]]))
+    return list(dict.fromkeys([in_use["plan"], in_use["content"], in_use["bank"], in_use["tutor"]]))
 
 
 # --- Routes ---
@@ -44,6 +44,7 @@ async def usage_report(request: Request, days: int = Query(7, ge=1, le=90)):
     return {
         "models": llm.models_in_use(),
         "price_per_million": asdict(pricing.current_price()),
+        "price_per_million_by_model": {model: asdict(pricing.price_for(model)) for model in _models()},
         "budget": {"daily_token_limit": usage.daily_limit() or None, "used_today": await usage.used_today()},
         "days": await usage.daily_report(days, _models()),
     }

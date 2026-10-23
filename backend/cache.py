@@ -39,7 +39,7 @@ class ResultCache:
             logger.warning("Cache write skipped: %s", error)
 
     def _key(self, parts: tuple) -> str:
-        fingerprint = json.dumps([PROMPT_VERSION, llm.generate_model(), *parts])
+        fingerprint = json.dumps([PROMPT_VERSION, llm.plan_model(), llm.content_model(), llm.bank_model(), *parts])
         return f"nova:cache:{self.name}:{hashlib.sha1(fingerprint.encode()).hexdigest()}"
 
 

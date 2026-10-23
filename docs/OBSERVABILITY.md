@@ -1,6 +1,6 @@
 # Seeing what the model does and what it costs
 
-NOVA uses one model, **NVIDIA Nemotron 3 Nano 30B-A3B on Nebius Token Factory**. Any other model in the settings is replaced by Nano and reported as an error at startup (`NOVA_ALLOWED_MODELS` widens that on purpose).
+NOVA uses three models on Nebius Token Factory: **DeepSeek-V4-Flash-0731 plans courses** (modules, topics and changes to the plan; if it is unavailable the call is asked of Lightning instead), and **NVIDIA Nemotron 3.5 Lightning** writes the lessons, the question banks and the placement quiz, checks answers and goals, and runs the tutor. Settings: `NOVA_PLAN_MODEL`, `NOVA_CONTENT_MODEL`, `NOVA_BANK_MODEL`, `NOVA_TUTOR_MODEL` (Nano is still allowed, for rolling back). Any other model in the settings is replaced by that stage's default and reported as an error at startup (`NOVA_ALLOWED_MODELS` widens that on purpose).
 
 ## Where to look
 
@@ -15,7 +15,7 @@ NOVA uses one model, **NVIDIA Nemotron 3 Nano 30B-A3B on Nebius Token Factory**.
 | How good the output is | `backend/evals` (see its README section below) |
 
 ## The price is an estimate
-Cost = input tokens × input price + output tokens × output price. The defaults, **$0.06 and $0.24 per million tokens**, are the public listing for Nemotron 3 Nano on Nebius as shown by third-party directories ([example](https://custom.typingmind.com/tools/estimate-llm-usage-costs/nebius/nvidia-nemotron-3-nano-30b-a3b)); I found no Nebius page that confirms them. Set `NOVA_PRICE_INPUT_PER_M` and `NOVA_PRICE_OUTPUT_PER_M` to the numbers in your Nebius console. Compare the admin page with Billing → Usage after a day of use to see how close it is.
+Cost = input tokens × input price + output tokens × output price. Each model is priced at its listing in the [Nebius Token Factory catalog](https://tokenfactory.nebius.com/model-catalog.md): **Nemotron 3.5 Lightning and Nemotron 3 Nano $0.06 in / $0.24 out per million tokens, DeepSeek-V4-Flash-0731 $0.14 in / $0.28 out** (its cheaper cached-input rate is not counted separately, so the estimate can only be slightly high). Every call is priced with the model it used (see `price_per_million_by_model` in the usage report). To override, set `NOVA_PRICE_INPUT_PER_M` and `NOVA_PRICE_OUTPUT_PER_M` to the numbers in your Nebius console; they then apply to every model. Compare the admin page with Billing → Usage after a day of use to see how close it is.
 
 ## The admin page
 Set `NOVA_ADMIN_TOKEN` to any long random string (for example `openssl rand -hex 24`), restart, open `http://localhost:5173/api/admin` (or `http://localhost:8000/admin`) and paste the token. It is kept in your browser tab only and sent as a header; it is never put in a URL. Without the token setting the three admin routes answer 404.
@@ -58,6 +58,7 @@ The app counts four steps: a course started, a topic finished for the first time
 After answering, a learner can press **Report this question** and say what is wrong (the marked answer, unclear wording, wrong kind of question, off topic). The question's text and the reason are kept for 7 days (newest 500 a day) and listed under **Reported by learners** on `/api/admin`, and at `GET /api/admin/reports`. Nothing that says who reported it is kept, and reports are limited per address. A reported question is the best next eval case: add its topic to `backend/evals/cases/modules.json`.
 
 ## Warnings worth watching for
-- `... is not an allowed model, using ... Nano instead`: a setting asked for another model.
+- `... is not an allowed model, using ... instead`: a setting asked for a model that is not one of the three vetted ones.
+- `... failed for outline, trying ...`: the planning model was down or kept failing, so that call was asked of Lightning (the trace remark says the same).
 - `Daily token budget is 80% used`: logged once (and posted to `NOVA_ALERT_WEBHOOK`, a Slack-style webhook, when set) when the day's tokens cross 80% of `NOVA_DAILY_TOKEN_BUDGET`; at 100% new work is refused with a 503 until the next UTC day.
 - `Unusable model answer`: the model's JSON failed validation and was asked for again; a high count means a prompt or model problem (the eval suite measures it as the first-try rate).

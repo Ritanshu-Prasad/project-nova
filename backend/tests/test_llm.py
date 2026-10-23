@@ -83,11 +83,12 @@ def test_other_errors_become_502():
 
 # --- Settings ---
 
-def test_defaults_point_at_nebius_and_the_nano_model(monkeypatch):
-    for name in ("NEBIUS_BASE_URL", "NOVA_GENERATE_MODEL", "NOVA_TUTOR_MODEL"):
+def test_defaults_point_at_nebius_lightning_writes_everything_and_deepseek_plans(monkeypatch):
+    for name in ("NEBIUS_BASE_URL", "NOVA_GENERATE_MODEL", "NOVA_TUTOR_MODEL", "NOVA_PLAN_MODEL", "NOVA_CONTENT_MODEL", "NOVA_BANK_MODEL"):
         monkeypatch.delenv(name, raising=False)
     assert llm.base_url() == "https://api.tokenfactory.nebius.com/v1"
-    assert llm.generate_model() == llm.tutor_model() == "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+    assert llm.generate_model() == llm.content_model() == llm.bank_model() == llm.tutor_model() == "nvidia/Nemotron-3_5-Lightning"
+    assert llm.plan_model() == "deepseek-ai/DeepSeek-V4-Flash-0731"
 
 
 def test_settings_follow_the_environment(monkeypatch):
@@ -98,7 +99,7 @@ def test_settings_follow_the_environment(monkeypatch):
     assert (llm.base_url(), llm.generate_model(), llm.tutor_model()) == ("https://other.test/v1", "gen/model", "tutor/model")
 
 
-# --- Nano only ---
+# --- Only the vetted models ---
 
 ULTRA = "nvidia/Nemotron-3-Ultra-550b-a55b"
 
@@ -109,10 +110,12 @@ def fresh_warnings(monkeypatch):
     monkeypatch.delenv("NOVA_ALLOWED_MODELS", raising=False)
 
 
-def test_a_model_that_is_not_allowed_is_replaced_by_nano(monkeypatch):
+def test_a_model_that_is_not_allowed_is_replaced_by_the_default(monkeypatch):
     monkeypatch.setenv("NOVA_GENERATE_MODEL", ULTRA)
     monkeypatch.setenv("NOVA_TUTOR_MODEL", ULTRA)
+    monkeypatch.setenv("NOVA_PLAN_MODEL", ULTRA)
     assert llm.generate_model() == llm.tutor_model() == llm.DEFAULT_MODEL
+    assert llm.plan_model() == llm.DEFAULT_PLAN_MODEL
 
 
 def test_the_replacement_is_reported_once_per_setting(monkeypatch, caplog):
@@ -129,7 +132,7 @@ def test_a_model_can_be_allowed_on_purpose(monkeypatch):
     assert llm.generate_model() == ULTRA and llm.tutor_model() == llm.DEFAULT_MODEL
 
 
-def test_requests_carry_the_nano_model_even_when_the_setting_is_wrong(api, monkeypatch):
+def test_requests_carry_a_vetted_model_even_when_the_setting_is_wrong(api, monkeypatch):
     monkeypatch.setenv("NOVA_GENERATE_MODEL", ULTRA)
     bodies = []
     api(lambda request: bodies.append(json.loads(request.content)) or reply())
@@ -140,7 +143,9 @@ def test_requests_carry_the_nano_model_even_when_the_setting_is_wrong(api, monke
 def test_models_in_use_lists_the_settings_that_were_refused(monkeypatch):
     monkeypatch.setenv("NOVA_TUTOR_MODEL", ULTRA)
     monkeypatch.delenv("NOVA_GENERATE_MODEL", raising=False)
-    assert llm.models_in_use() == {"generate": llm.DEFAULT_MODEL, "tutor": llm.DEFAULT_MODEL, "refused_settings": ["NOVA_TUTOR_MODEL"]}
+    for name in ("NOVA_PLAN_MODEL", "NOVA_CONTENT_MODEL", "NOVA_BANK_MODEL"):
+        monkeypatch.delenv(name, raising=False)
+    assert llm.models_in_use() == {"generate": llm.DEFAULT_MODEL, "plan": llm.DEFAULT_PLAN_MODEL, "content": llm.DEFAULT_MODEL, "bank": llm.DEFAULT_MODEL, "tutor": llm.DEFAULT_MODEL, "refused_settings": ["NOVA_TUTOR_MODEL"]}
 
 
 def test_models_in_use_is_clean_by_default(monkeypatch):
@@ -336,7 +341,7 @@ def test_thinking_can_be_allowed_everywhere(api, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def schema_supported(monkeypatch):
-    monkeypatch.setattr(llm, "_schema_supported", [True])
+    monkeypatch.setattr(llm, "_schema_unsupported", set())
     monkeypatch.delenv("NOVA_JSON_SCHEMA", raising=False)
 
 
@@ -515,3 +520,102 @@ def test_a_tutor_call_saves_its_exchange_too(api, monkeypatch, tmp_path):
     run(llm.chat_text([{"role": "system", "content": "be kind"}, {"role": "user", "content": "hi"}], llm.tutor_model()))
     saved = json.loads((tmp_path / "prompts.jsonl").read_text())
     assert (saved["kind"], saved["system"], saved["user"], saved["reply"]) == ("tutor", "be kind", "hi", "Hello")
+
+
+# --- One model per stage ---
+
+LIGHTNING = "nvidia/Nemotron-3_5-Lightning"
+DEEPSEEK = "deepseek-ai/DeepSeek-V4-Flash-0731"
+NANO = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+
+
+@pytest.fixture
+def stages(api, monkeypatch):
+    """Real requests with the default model settings; `models` lists the model of each request in order."""
+    for name in ("NOVA_ALLOWED_MODELS", "NOVA_GENERATE_MODEL", "NOVA_PLAN_MODEL", "NOVA_CONTENT_MODEL", "NOVA_BANK_MODEL"):
+        monkeypatch.delenv(name, raising=False)
+    models = []
+    return models, lambda handler: api(lambda request: (models.append(json.loads(request.content)["model"]), handler(request))[1])
+
+
+def test_planning_goes_to_deepseek_and_everything_else_to_lightning(stages):
+    models, install = stages
+    install(lambda request: reply())
+    for kind in ("outline", "module", "lesson", "quiz", "placement", "answers", "safety", "judge", "call"):
+        run(llm.chat_json("s", "u", kind=kind))
+    assert models == [DEEPSEEK, DEEPSEEK, LIGHTNING, LIGHTNING, LIGHTNING, LIGHTNING, LIGHTNING, LIGHTNING, LIGHTNING]
+
+
+def test_each_stage_has_its_own_setting_and_the_older_one_still_covers_content_and_questions(stages, monkeypatch):
+    models, install = stages
+    install(lambda request: reply())
+    monkeypatch.setenv("NOVA_PLAN_MODEL", LIGHTNING)
+    monkeypatch.setenv("NOVA_GENERATE_MODEL", NANO)
+    monkeypatch.setenv("NOVA_BANK_MODEL", DEEPSEEK)
+    for kind in ("outline", "lesson", "quiz"):
+        run(llm.chat_json("s", "u", kind=kind))
+    assert models == [LIGHTNING, NANO, DEEPSEEK]
+    monkeypatch.setenv("NOVA_CONTENT_MODEL", LIGHTNING)
+    assert llm.content_model() == LIGHTNING and llm.bank_model() == DEEPSEEK
+
+
+def test_the_three_vetted_models_need_no_allow_list_and_others_still_do(monkeypatch):
+    monkeypatch.delenv("NOVA_ALLOWED_MODELS", raising=False)
+    for model in (NANO, LIGHTNING, DEEPSEEK):
+        monkeypatch.setenv("NOVA_CONTENT_MODEL", model)
+        assert llm.content_model() == model
+    monkeypatch.setenv("NOVA_CONTENT_MODEL", ULTRA)
+    assert llm.content_model() == llm.DEFAULT_MODEL
+
+
+def test_a_planning_call_whose_model_is_down_is_asked_of_the_content_model(stages):
+    models, install = stages
+    install(lambda request: httpx.Response(500) if len(models) <= 1 else reply())
+    assert run(llm.chat_json("s", "u", kind="outline")) == {"ok": True}
+    assert models == [DEEPSEEK, LIGHTNING]
+
+
+def test_a_failure_of_the_content_model_itself_is_not_asked_again_elsewhere(stages):
+    models, install = stages
+    install(lambda request: httpx.Response(500))
+    with pytest.raises(HTTPException):
+        run(llm.chat_json("s", "u", kind="lesson"))
+    assert set(models) == {LIGHTNING}
+
+
+def test_the_fallback_is_noted_in_the_trace(stages):
+    models, install = stages
+    spent = usage.begin()
+    install(lambda request: httpx.Response(500) if len(models) <= 1 else reply())
+    run(llm.chat_json("s", "u", kind="module"))
+    assert any("failed, asked" in note for note in spent.notes)
+
+
+def test_a_plan_that_stays_unusable_is_tried_a_last_time_on_the_content_model(stages):
+    models, install = stages
+    install(lambda request: reply(content='{"questions": []}') if len(models) < llm.ATTEMPTS else reply(content='{"questions": %s}' % json.dumps(questions(8))))
+    result = run(llm.ask(QuestionList, "s", "u", kind="outline"))
+    assert len(result.questions) == 8
+    assert models == [DEEPSEEK] * (llm.ATTEMPTS - 1) + [LIGHTNING]
+
+
+def test_a_content_call_that_stays_unusable_is_not_moved_to_another_model(stages):
+    models, install = stages
+    install(lambda request: reply(content='{"questions": []}'))
+    with pytest.raises(HTTPException):
+        run(llm.ask(QuestionList, "s", "u", kind="lesson"))
+    assert set(models) == {LIGHTNING} and len(models) == llm.ATTEMPTS
+
+
+def test_one_model_refusing_schemas_does_not_switch_them_off_for_the_others(stages):
+    models, install = stages
+
+    def handler(request):
+        body = json.loads(request.content)
+        return httpx.Response(400) if body["model"] == DEEPSEEK and body["response_format"]["type"] == "json_schema" else reply()
+
+    install(handler)
+    run(llm.chat_json("s", "u", schema=QuestionList, kind="outline"))
+    assert llm._schema_unsupported == {DEEPSEEK}
+    assert llm._response_format(QuestionList, LIGHTNING)["type"] == "json_schema"
+    assert llm._response_format(QuestionList, DEEPSEEK)["type"] == "json_object"

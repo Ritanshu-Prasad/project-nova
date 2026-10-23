@@ -1,7 +1,7 @@
 name: Evaluate Course Generation
 
-# Writes a few real courses and tutor answers with the Nano model and scores them (see backend/evals/run_eval.py),
-# then compares the numbers with backend/evals/baselines/nano.json and fails when a threshold is broken.
+# Writes a few real courses and tutor answers with the configured models (Lightning, and DeepSeek for planning, by default) and scores them (see backend/evals/run_eval.py),
+# then compares the numbers with backend/evals/baselines/lightning.json and fails when a threshold is broken.
 # It spends model tokens, so it only runs by hand or once a week, and needs the NEBIUS_API_KEY secret.
 on:
   workflow_dispatch:
@@ -56,7 +56,7 @@ jobs:
             --suite "${{ inputs.suite || 'all' }}" \
             --cases "${{ inputs.cases || 'smoke' }}" \
             ${{ inputs.judge && '--judge' || '' }} \
-            --baseline evals/baselines/nano.json --fail-on-regression | tee "$GITHUB_STEP_SUMMARY"
+            --baseline evals/baselines/lightning.json --fail-on-regression | tee "$GITHUB_STEP_SUMMARY"
 
       - name: Keep The Results
         uses: actions/upload-artifact@v4

@@ -109,7 +109,7 @@ def test_the_request_uses_the_tutor_model_key_and_streaming(client, upstream):
     body = json.loads(request.content)
     assert str(request.url) == "https://example.test/v1/chat/completions"
     assert request.headers["authorization"] == "Bearer test-key"
-    assert body["model"] == "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B" and body["stream"] is True
+    assert body["model"] == "nvidia/Nemotron-3_5-Lightning" and body["stream"] is True
 
 
 def test_the_model_can_be_changed_with_an_environment_variable(client, upstream, monkeypatch):

@@ -30,6 +30,7 @@ class RequestUsage:
         self.calls = 0
         self.prompt_tokens = 0
         self.completion_tokens = 0
+        self.cost = 0.0
         self.retries = 0
         self.failures = 0
         self.seconds_by_kind: dict[str, list[float]] = {}
@@ -43,7 +44,7 @@ class RequestUsage:
 
     @property
     def cost_usd(self) -> float:
-        return pricing.cost_usd(self.prompt_tokens, self.completion_tokens)
+        return self.cost
 
     def as_dict(self) -> dict:
         return {"calls": self.calls, "prompt_tokens": self.prompt_tokens, "completion_tokens": self.completion_tokens, "cost_usd": round(self.cost_usd, 6), "retries": self.retries, "failures": self.failures}
@@ -103,6 +104,7 @@ async def record_call(kind: str, model: str, tokens_used: dict | None, seconds: 
         spent.calls += 1
         spent.prompt_tokens += prompt
         spent.completion_tokens += completion
+        spent.cost += pricing.cost_usd(prompt, completion, model=model)
         spent.seconds_by_kind.setdefault(kind, []).append(seconds)
         spent.call_log.append({"kind": kind, "model": model, "prompt_tokens": prompt, "completion_tokens": completion, "seconds": round(seconds, 2), "ok": True})
     logger.debug("model call %s: %d tokens in %.1f s", kind, prompt + completion, seconds)
@@ -183,21 +185,21 @@ async def _report_day(day: str, models: list[str]) -> dict:
             logger.warning("Usage not read: %s", error)
             counters = {}
         for kind in KINDS:
-            row = _kind_row(kind, counters)
+            row = _kind_row(kind, counters, model)
             if row["calls"] or row["failures"] or row["retries"]:
                 kinds[kind] = _merge(kinds.get(kind), row)
     totals = _merge_all(list(kinds.values()))
     return {"day": day, "kinds": kinds, "totals": totals, "events": await _events(day)}
 
 
-def _kind_row(kind: str, counters: dict[str, int]) -> dict:
+def _kind_row(kind: str, counters: dict[str, int], model: str | None = None) -> dict:
     get = lambda name: counters.get(f"{kind}:{name}", 0)
     calls = get("calls")
     return {
         "calls": calls,
         "prompt_tokens": get("prompt"),
         "completion_tokens": get("completion"),
-        "cost_usd": pricing.cost_usd(get("prompt"), get("completion")),
+        "cost_usd": pricing.cost_usd(get("prompt"), get("completion"), model=model),
         "seconds": get("millis") / 1000,
         "average_seconds": get("millis") / 1000 / calls if calls else 0.0,
         "latency": {f"le_{edge}": get(f"le_{edge}") for edge in LATENCY_EDGES} | {"le_inf": get("le_inf")},

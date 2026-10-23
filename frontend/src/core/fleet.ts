@@ -12,6 +12,7 @@ import { useNova } from './store';
 export interface FleetRow {
   rank: number;
   callsign: string;
+  avatar?: string;
   color: string;
   level: number;
   score: number;
@@ -117,7 +118,8 @@ function scoreBody(): string | null {
   const callsign = useProfile.getState().callsign.trim();
   if (!id || callsign.length < 2 || !useNova.getState().isLoggedIn) return null;
   const xp = totalLibraryXp();
-  return JSON.stringify({ pilotId: id, callsign, color: useNova.getState().themeColor, xp, courses: demoCourses() });
+  const avatar = useProfile.getState().avatar || useAccount.getState().user?.picture || '';
+  return JSON.stringify({ pilotId: id, callsign, avatar, color: useNova.getState().themeColor, xp, courses: demoCourses() });
 }
 
 let lastSent = '';
@@ -148,5 +150,5 @@ export async function fetchBoard(board: string): Promise<FleetBoard> {
 }
 
 useCourse.subscribe((s, p) => (s.stats.xp !== p.stats.xp || s.library !== p.library) && schedule());
-useProfile.subscribe((s, p) => s.callsign !== p.callsign && schedule());
-useAccount.subscribe((s, p) => s.user?.sub !== p.user?.sub && schedule());
+useProfile.subscribe((s, p) => (s.callsign !== p.callsign || s.avatar !== p.avatar) && schedule());
+useAccount.subscribe((s, p) => (s.user?.sub !== p.user?.sub || s.user?.picture !== p.user?.picture) && schedule());

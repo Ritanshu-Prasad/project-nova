@@ -36,3 +36,33 @@ def test_a_price_can_be_given_directly():
 
 def test_a_typical_nano_course_costs_a_fraction_of_a_cent():
     assert cost_usd(4000, 1000) < 0.001
+
+
+# --- Each model has its own price ---
+
+def test_models_are_priced_by_their_catalog_listing():
+    assert pricing.price_for("nvidia/Nemotron-3_5-Lightning") == Price(0.06, 0.24)
+    assert pricing.price_for("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B") == Price(0.06, 0.24)
+    assert pricing.price_for("deepseek-ai/DeepSeek-V4-Flash-0731") == Price(0.14, 0.28)
+    assert cost_usd(1_000_000, 1_000_000, model="deepseek-ai/DeepSeek-V4-Flash-0731") == pytest.approx(0.42)
+
+
+def test_an_unlisted_model_is_priced_like_the_default():
+    assert pricing.price_for("some/other-model") == current_price() == pricing.price_for(None)
+
+
+def test_a_price_set_in_the_environment_applies_to_every_model(monkeypatch):
+    monkeypatch.setenv("NOVA_PRICE_INPUT_PER_M", "1")
+    monkeypatch.setenv("NOVA_PRICE_OUTPUT_PER_M", "2")
+    assert pricing.price_for("deepseek-ai/DeepSeek-V4-Flash-0731") == pricing.price_for("nvidia/Nemotron-3_5-Lightning") == Price(1, 2)
+
+
+def test_a_request_is_priced_call_by_call_with_each_calls_model():
+    import asyncio
+
+    import usage
+
+    spent = usage.begin()
+    asyncio.run(usage.record_call("outline", "deepseek-ai/DeepSeek-V4-Flash-0731", {"prompt_tokens": 1_000_000, "completion_tokens": 0}, 1.0))
+    asyncio.run(usage.record_call("lesson", "nvidia/Nemotron-3_5-Lightning", {"prompt_tokens": 1_000_000, "completion_tokens": 0}, 1.0))
+    assert spent.cost_usd == pytest.approx(0.14 + 0.06)

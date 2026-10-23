@@ -127,16 +127,17 @@ def test_health_is_degraded_when_redis_is_unreachable(client, monkeypatch):
 # --- Models and the startup line ---
 
 def test_health_names_the_models_in_use(client, monkeypatch):
-    monkeypatch.delenv("NOVA_GENERATE_MODEL", raising=False)
-    monkeypatch.delenv("NOVA_TUTOR_MODEL", raising=False)
+    for name in ("NOVA_GENERATE_MODEL", "NOVA_TUTOR_MODEL", "NOVA_PLAN_MODEL", "NOVA_CONTENT_MODEL", "NOVA_BANK_MODEL"):
+        monkeypatch.delenv(name, raising=False)
     models = client.get("/api/health").json()["models"]
-    assert models == {"generate": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", "tutor": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", "refused_settings": []}
+    lightning = "nvidia/Nemotron-3_5-Lightning"
+    assert models == {"generate": lightning, "plan": "deepseek-ai/DeepSeek-V4-Flash-0731", "content": lightning, "bank": lightning, "tutor": lightning, "refused_settings": []}
 
 
 def test_health_shows_a_refused_model_setting(client, monkeypatch):
     monkeypatch.setenv("NOVA_GENERATE_MODEL", "nvidia/Nemotron-3-Ultra-550b-a55b")
     models = client.get("/api/health").json()["models"]
-    assert models["generate"].endswith("Nano-30B-A3B") and models["refused_settings"] == ["NOVA_GENERATE_MODEL"]
+    assert models["generate"] == "nvidia/Nemotron-3_5-Lightning" and models["refused_settings"] == ["NOVA_GENERATE_MODEL"]
 
 
 def startup_lines(caplog) -> list:
@@ -146,10 +147,11 @@ def startup_lines(caplog) -> list:
 
 
 def test_the_startup_line_lists_models_and_features(caplog, monkeypatch):
-    monkeypatch.delenv("NOVA_GENERATE_MODEL", raising=False)
+    for name in ("NOVA_GENERATE_MODEL", "NOVA_PLAN_MODEL", "NOVA_CONTENT_MODEL", "NOVA_BANK_MODEL", "NOVA_TUTOR_MODEL"):
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("NOVA_CACHE", "off")
     line = startup_lines(caplog)[0]
-    assert "generate=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B" in line and "cache=False" in line and "store=memory" in line
+    assert "plan=deepseek-ai/DeepSeek-V4-Flash-0731 generate=nvidia/Nemotron-3_5-Lightning bank=nvidia/Nemotron-3_5-Lightning tutor=nvidia/Nemotron-3_5-Lightning" in line and "cache=False" in line and "store=memory" in line
     assert "json_schema=True" in line and "daily_token_budget=none" in line
 
 

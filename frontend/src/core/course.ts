@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { create } from 'zustand';
 import { forgetDocuments } from './courseApi';
 import { flushAnswers, noteAnswer } from './feedback';
+import { useFinale } from './finale';
 import { flatTopics, type Course, type Module, type PlacedTopic, type Question, type Topic } from './courseSchema';
 import { LESSON_QUIZ, questionsFor, type RatedQuestion } from './quizBuilder';
 import { tidyCourse, tidyTopicContent } from './tidyCourse';
@@ -202,7 +203,7 @@ interface CourseState {
   answer: (correct: boolean, opts?: AnswerOpts) => number;
   finishModuleQuiz: (moduleId: string, correct: number, total: number) => { passed: boolean; nextId: string | null };
   finishHubQuiz: (correct: number, total: number) => void;
-  /** Course whose graduation screen is open (opens by itself when a course is first completed). */
+  /** Course whose certificate screen is open (from the certificate buttons; the finale does not open it by itself). */
   graduation: string | null;
   showGraduation: (courseId: string | null) => void;
 }
@@ -246,13 +247,13 @@ export const useCourse = create<CourseState>()((set, get) => {
     set({ stats: { ...s, xp: s.xp + xp, day, dayQuizzes: (s.day === day ? s.dayQuizzes : 0) + 1 } });
   };
 
-  /** The first time the active course is complete: stamp it and open the graduation screen. */
+  /** The first time the active course is complete: stamp it and play the Nova blast finale. */
   const markGraduation = () => {
     const id = get().activeId;
     const e = id ? get().library[id] : undefined;
     if (!e || e.completedAt || !isComplete(e)) return;
     patchActive((x) => ({ ...x, completedAt: Date.now() }));
-    set({ graduation: id });
+    useFinale.getState().show(e.course.id, e.course.title);
     track('course_finished');
   };
 

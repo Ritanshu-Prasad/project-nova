@@ -37,7 +37,7 @@ NOVA leverages Nebius AI Studio's high-throughput token factory endpoints runnin
 * **High-Throughput Streaming Course Synthesis:**
   Curriculum generation requires generating hundreds of structured JSON schema fields (modules, topics, definitions, step-by-step analogies, formulas, and 15–20 questions per topic). Nebius AI Studio’s serverless endpoints deliver the low latency and sustained token throughput necessary to stream complete courses in seconds.
 * **NVIDIA Nemotron Reasoning:**
-  NVIDIA Nemotron (`nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`) powers NOVA's pedagogical engine. Nemotron excels at following strict JSON schema outputs, ensuring generated courses survive strict Pydantic and TypeScript runtime validation without hallucinated structures.
+  NVIDIA Nemotron 3.5 Lightning (`nvidia/Nemotron-3_5-Lightning`) writes the lessons and question banks and powers the tutor; DeepSeek-V4-Flash-0731 plans the modules and topics of a course (and falls back to Lightning if it is unavailable). Nemotron excels at following strict JSON schema outputs, ensuring generated courses survive strict Pydantic and TypeScript runtime validation without hallucinated structures.
 * **Socratic AI Tutor Copilot with Anti-Spoiler Logic:**
   Learners can summon their shipboard tutor at any time. The copilot uses prompt-guided pedagogical guardrails to explain concepts with custom analogies, diagnose misconceptions, and synthesize fresh practice variations without ever spoiling active quiz answers.
 * **Adaptive Diagnostic Placement:**
@@ -116,7 +116,7 @@ flowchart TD
 * **Backend:** Python 3.11, FastAPI, Uvicorn, HTTPX, Pydantic v2, PyPDF, SlowAPI
 * **AI & Cloud Infrastructure:** 
   * **Nebius AI Studio:** Serverless Token Factory (`https://api.tokenfactory.nebius.com/v1`)
-  * **Models:** `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`, Nemotron family
+  * **Models:** `nvidia/Nemotron-3_5-Lightning` (lessons, question banks, tutor), `deepseek-ai/DeepSeek-V4-Flash-0731` (course planning)
   * **Datastores:** Upstash Redis, Neon PostgreSQL, Vercel Edge Cache
 * **Verification & Testing:** Pytest, Playwright, Node.js Contract Validator, GitHub Actions CI
 
@@ -140,8 +140,10 @@ Populate `.env` with your Nebius AI Studio credentials:
 ```env
 NEBIUS_API_KEY=your_nebius_api_key_here
 NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1
-NOVA_GENERATE_MODEL=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B
-NOVA_TUTOR_MODEL=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B
+NOVA_PLAN_MODEL=deepseek-ai/DeepSeek-V4-Flash-0731
+NOVA_CONTENT_MODEL=nvidia/Nemotron-3_5-Lightning
+NOVA_BANK_MODEL=nvidia/Nemotron-3_5-Lightning
+NOVA_TUTOR_MODEL=nvidia/Nemotron-3_5-Lightning
 ```
 
 ### 3. Run Frontend

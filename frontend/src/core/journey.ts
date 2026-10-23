@@ -55,7 +55,19 @@ let start: number | null = null;
 /** 1 = seat → lounge, -1 = lounge → seat (the same timeline backwards). */
 let direction: 1 | -1 = 1;
 let onArrive: (() => void) | null = null;
+/** A walk that is waiting for the pilot to settle at the hub spot (see goToCockpit's delay). */
+let pendingBegin: ReturnType<typeof setTimeout> | null = null;
 const fired = new Set<string>();
+
+function cancelPending(): void {
+  if (pendingBegin !== null) clearTimeout(pendingBegin);
+  pendingBegin = null;
+}
+
+/** True while the pilot is walking (either way) or about to start walking. */
+export function isBusy(): boolean {
+  return pendingBegin !== null || useDeck.getState().deck === 'transit';
+}
 
 function once(key: string, fn: () => void) {
   if (fired.has(key)) return;
@@ -69,6 +81,7 @@ export function goToLounge(then?: () => void): void {
     then?.();
     return;
   }
+  cancelPending();
   start = clock();
   direction = 1;
   onArrive = then ?? null;
@@ -87,6 +100,7 @@ export function goToCockpit(then?: () => void, delayMs = 0): void {
     return;
   }
   const begin = () => {
+    pendingBegin = null;
     if (useDeck.getState().deck !== 'lounge') return;
     Object.assign(rt, walkAt(JOURNEY.total));
     start = clock();
@@ -95,12 +109,14 @@ export function goToCockpit(then?: () => void, delayMs = 0): void {
     fired.clear();
     useDeck.setState({ deck: 'transit' });
   };
-  if (delayMs > 0) setTimeout(begin, delayMs);
+  cancelPending();
+  if (delayMs > 0) pendingBegin = setTimeout(begin, delayMs);
   else begin();
 }
 
 /** Skip the walk (e.g. reduced motion or a returning player): appear in the lounge. */
 export function enterLoungeNow(): void {
+  cancelPending();
   start = null;
   Object.assign(rt, { stand: 1, turn: 1, door: 1, walk: 1 });
   useDeck.setState({ deck: 'lounge' });
@@ -108,6 +124,7 @@ export function enterLoungeNow(): void {
 
 /** Back in the pilot's seat (replaying the launch). */
 export function resetJourney(): void {
+  cancelPending();
   start = null;
   onArrive = null;
   Object.assign(rt, { stand: 0, turn: 0, door: 0, walk: 0, holo: 0 });

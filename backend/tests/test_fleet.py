@@ -120,3 +120,13 @@ def test_fleet_leaderboard_deduplicates_by_callsign(client, monkeypatch):
     assert board["top"][0]["callsign"] == "aetheclipse"
     assert board["top"][0]["score"] == 1150
     assert board["top"][0]["me"] is True
+
+def test_fleet_leaderboard_includes_avatar(client):
+    pilot = "33333333333333333333333333333333"
+    avatar_url = "https://lh3.googleusercontent.com/a/ACg8ocTestAvatar"
+    res = client.post("/api/fleet/score", json={"pilotId": pilot, "callsign": "Phoenix", "avatar": avatar_url, "xp": 800}, headers=HEADERS)
+    assert res.status_code == 200
+
+    board = client.get(f"/api/fleet/leaderboard?board=global&pilot={pilot}").json()
+    assert board["top"][0]["callsign"] == "Phoenix"
+    assert board["top"][0]["avatar"] == avatar_url

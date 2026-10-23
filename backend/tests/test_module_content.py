@@ -7,7 +7,7 @@ import asyncio
 
 import llm
 from fastapi import HTTPException
-from module_content import CODE_CHECK_SYSTEM, ModuleContent, module_system, module_user, needs_code, write_module
+from module_content import CODE_CHECK_SYSTEM, CodeExample, ModuleContent, module_system, module_user, needs_code, write_module
 
 SENTENCE = "Good habits grow when a small action is tied to something that already happens every day, so the new action rides along on an old routine. "
 
@@ -112,9 +112,24 @@ def test_windows_line_endings_are_normalised_in_code():
     assert built.sections[2].code.snippet == "x = 1\nprint(x)"
 
 
-def test_the_code_prompt_asks_for_real_line_breaks():
-    assert "real line breaks" in module_system(True)
-    assert "real line breaks" not in module_system(False)
+def test_the_code_prompt_asks_for_one_string_per_line_of_code():
+    assert "JSON array of strings, one string per line" in module_system(True)
+    assert "JSON array of strings" not in module_system(False)
+
+
+def test_a_snippet_written_as_a_list_of_lines_keeps_its_line_breaks():
+    example = CodeExample.model_validate({"language": "python", "snippet": ["def add(a, b):", "    return a + b", "print(add(1, 2))"], "explanation": "Adds two numbers."})
+    assert example.snippet == "def add(a, b):\n    return a + b\nprint(add(1, 2))"
+
+
+def test_the_schema_offers_the_snippet_as_lines_or_text():
+    schema = CodeExample.model_json_schema()["properties"]["snippet"]
+    assert {"type": "array", "items": {"type": "string"}} in schema["anyOf"] and {"type": "string"} in schema["anyOf"]
+
+
+def test_a_list_of_lines_that_is_squashed_into_one_is_still_refused():
+    with pytest.raises(ValidationError):
+        CodeExample.model_validate({"language": "python", "snippet": ["import os class A: def f(self): return 1"], "explanation": "Squashed on a single line."})
 
 
 def test_too_few_or_too_many_sections_are_refused():

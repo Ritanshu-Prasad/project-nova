@@ -180,8 +180,8 @@
     }
   ],
   "meta": {
-    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
-    "promptVersion": "2026-10-d",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "promptVersion": "2026-10-e",
     "createdAt": 0,
     "documentsKey": "00000000000000000000000000000000",
     "calls": 0,

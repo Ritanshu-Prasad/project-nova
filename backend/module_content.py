@@ -1,8 +1,8 @@
 import re
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, WithJsonSchema, model_validator
 
 import llm
 import usage
@@ -54,7 +54,8 @@ CODE_FORBIDDEN = """- Set "requires_code" to false and "code_reason" to one shor
 
 CODE_REQUIRED = """- Set "requires_code" to true and "code_reason" to one short sentence saying why this topic needs code.
 - At least two sections MUST have a "code" object, and every section that teaches a command or syntax has one. Each is under 25 lines, correct and runnable, with an "explanation" of what it does. Put code only in the "code" field, never in the other text.
-- Write every snippet as it appears in an editor: real line breaks (written as \\n inside the JSON string), one statement per line, 4-space indentation for Python and 2 for JavaScript. Never put several statements, or an if/else or loop with its body, on a single line."""
+- Write every snippet as it appears in an editor: one statement per line, 4-space indentation for Python and 2 for JavaScript. Never put several statements, or an if/else or loop with its body, on a single line.
+- Write "snippet" as a JSON array of strings, one string per line of code, each keeping its own indentation, for example: "snippet": ["def add(a, b):", "    return a + b", "print(add(1, 2))"]. Never put two lines of code in one string."""
 
 
 SOURCES_NONE = 'Do not include "sources".'
@@ -80,7 +81,7 @@ class CodeVerdict(BaseModel):
 
 async def needs_code(topic: str, expectations: str) -> bool:
     """Whether the topic is learned by writing code, decided in a small separate question so it stays reliable."""
-    verdict = await llm.ask(CodeVerdict, CODE_CHECK_SYSTEM, _inputs(topic, expectations), 300, kind="outline")
+    verdict = await llm.ask(CodeVerdict, CODE_CHECK_SYSTEM, _inputs(topic, expectations), 300, kind="lesson")
     return verdict.requires_code
 
 
@@ -131,9 +132,14 @@ def looks_squashed(code: str, language: str) -> bool:
     return False
 
 
+def _lines_to_text(value):
+    """A snippet written as a list of lines (the way models keep their line breaks) becomes one text with real line breaks."""
+    return "\n".join(str(line) for line in value) if isinstance(value, list) else value
+
+
 class CodeExample(BaseModel):
     language: str
-    snippet: str = Field(min_length=1)
+    snippet: Annotated[str, BeforeValidator(_lines_to_text), Field(min_length=1), WithJsonSchema({"anyOf": [{"type": "array", "items": {"type": "string"}}, {"type": "string"}]})]
     explanation: Clean = Field(min_length=10)
 
     @model_validator(mode="after")

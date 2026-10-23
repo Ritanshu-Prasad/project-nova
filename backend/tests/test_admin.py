@@ -6,7 +6,7 @@ import pytest
 import admin
 import usage
 
-MODEL = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+MODEL = "nvidia/Nemotron-3_5-Lightning"
 TOKEN = "s3cret-token"
 
 
@@ -164,3 +164,16 @@ def test_the_page_is_served_at_both_paths(client, path):
 def test_the_page_explains_a_wrong_host_and_an_unreachable_backend(client):
     page = client.get("/api/admin").text
     assert "Could not reach the backend" in page and "not the NOVA backend" in page
+
+
+# --- Models of the pipeline ---
+
+def test_the_report_prices_each_models_calls_at_that_models_price(client, monkeypatch):
+    monkeypatch.delenv("NOVA_PLAN_MODEL", raising=False)
+    run(usage.record_call("outline", "deepseek-ai/DeepSeek-V4-Flash-0731", {"prompt_tokens": 1_000_000, "completion_tokens": 0}, 1.0))
+    call("lesson", 1_000_000, 0)
+    report = client.get("/api/admin/usage", headers=auth()).json()
+    kinds = report["days"][0]["kinds"]
+    assert kinds["outline"]["cost_usd"] == pytest.approx(0.14) and kinds["lesson"]["cost_usd"] == pytest.approx(0.06)
+    assert report["price_per_million_by_model"]["deepseek-ai/DeepSeek-V4-Flash-0731"] == {"input_per_million": 0.14, "output_per_million": 0.28}
+    assert set(report["price_per_million_by_model"]) == {"deepseek-ai/DeepSeek-V4-Flash-0731", "nvidia/Nemotron-3_5-Lightning"}

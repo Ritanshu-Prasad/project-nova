@@ -4,7 +4,8 @@ import { ArrowLeft, BookOpen, ChevronDown, Clock, FileUp, Flame, Lock, Play, Plu
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
 import { activeOf, DAILY_GOAL, levelOf, levelProgress, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
-import { openForge, relaunch, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
+import { CODE_BUFFER, matchCode, useFinale } from '../../core/finale';
+import { openForge, playFinale, relaunch, useHub, useProfile, type ForgeTab, type Station } from '../../core/hub';
 import { duration, HUB_QUIZ, openHubQuiz, useCourseQuizzes, useFreshClock, useHubQuiz, useHubQuizScheduler } from '../../core/hubQuiz';
 import { LESSON_QUIZ, quizSizeLabel } from '../../core/quizBuilder';
 import { rankOf } from '../../core/rank';
@@ -15,6 +16,7 @@ import { useNova } from '../../core/store';
 import { HudButton } from '../common/HudButton';
 import PilotAvatar from '../common/PilotAvatar';
 import Graduation from './Graduation';
+import NovaBlast from './NovaBlast';
 import { HubQuizStation, QuizArrival, QuizPill } from './HubQuiz';
 import RankEmblem from './RankEmblem';
 import { ProfileSection, SkillJourneySection } from './sections';
@@ -60,6 +62,7 @@ export default function Hub() {
   const running = useHubQuiz((s) => !!s.run);
   const active = useActiveCourse();
   const graduation = useCourse((s) => s.graduation);
+  const finale = useFinale((s) => s.open);
   const visible = inLounge && !forgeOpen;
 
   useEffect(() => {
@@ -69,11 +72,12 @@ export default function Hub() {
       const t = e.target as HTMLElement | null;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
       if (/^[a-z]$/i.test(e.key)) {
-        typed = (typed + e.key.toLowerCase()).slice(-6);
-        if (typed === 'launch') {
+        typed = (typed + e.key.toLowerCase()).slice(-CODE_BUFFER);
+        const code = matchCode(typed);
+        if (code) {
           typed = '';
           audio.play('pulse');
-          return relaunch();
+          return code === 'launch' ? relaunch() : playFinale();
         }
       }
       const st = useHub.getState().station;
@@ -108,6 +112,7 @@ export default function Hub() {
         </AnimatePresence>
       </div>
       <AnimatePresence>{inLounge && graduation && <Graduation key={graduation} />}</AnimatePresence>
+      <AnimatePresence>{inLounge && finale && <NovaBlast key="finale" />}</AnimatePresence>
     </>
   );
 }

@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "date": "2026-10-24",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "planModel": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "promptVersion": "2026-10-e",
+    "cases": "smoke",
+    "suites": "all",
+    "repeat": 1
+  },
+  "summary": {
+    "goals": {
+      "styles": {
+        "overview": {
+          "runs": 2,
+          "ok": 1.0,
+          "first_try": 1.0,
+          "seconds": 32.85,
+          "tokens": 16472.5,
+          "cost_usd": 0.002,
+          "grade": 10.49,
+          "duplicates": 0.0,
+          "agreement": 0.625,
+          "hygiene": 0,
+          "judge": 5.0,
+          "questions_judge": 3.833,
+          "seconds_sd": 11.102,
+          "tokens_sd": 1467.247,
+          "grade_sd": 0.618,
+          "judge_sd": 0.0
+        },
+        "practical": {
+          "runs": 2,
+          "ok": 1.0,
+          "first_try": 1.0,
+          "seconds": 32.75,
+          "tokens": 22782.5,
+          "cost_usd": 0.002,
+          "grade": 10.807,
+          "duplicates": 0.0,
+          "agreement": 0.9,
+          "hygiene": 0,
+          "judge": 4.375,
+          "questions_judge": 2.833,
+          "seconds_sd": 6.435,
+          "tokens_sd": 3102.077,
+          "grade_sd": 0.249,
+          "judge_sd": 0.884
+        },
+        "deep": {
+          "runs": 2,
+          "ok": 1.0,
+          "first_try": 0.967,
+          "seconds": 59.6,
+          "tokens": 35223.5,
+          "cost_usd": 0.004,
+          "grade": 13.321,
+          "duplicates": 0.0,
+          "agreement": 0.875,
+          "hygiene": 0,
+          "judge": 5.0,
+          "questions_judge": 2.333,
+          "seconds_sd": 4.525,
+          "tokens_sd": 1303.198,
+          "grade_sd": 0.193,
+          "judge_sd": 0.0
+        }
+      },
+      "style_effect": 1.664,
+      "documents": {
+        "plants": {
+          "ok": 1.0,
+          "modules": 2,
+          "topics": 6,
+          "seconds": 49.9,
+          "tokens": 101558,
+          "cost_usd": 0.010855,
+          "retry_rate": 0.0,
+          "citations": 1.0,
+          "duplicates": 0.0
+        }
+      },
+      "latency": {
+        "answers": {
+          "p50": 1.46,
+          "p95": 2.34
+        },
+        "judge": {
+          "p50": 0.87,
+          "p95": 1.41
+        },
+        "lesson": {
+          "p50": 1.49,
+          "p95": 22.23
+        },
+        "outline": {
+          "p50": 3.08,
+          "p95": 3.76
+        },
+        "quiz": {
+          "p50": 4.85,
+          "p95": 14.55
+        }
+      }
+    },
+    "safety": {
+      "runs": 40,
+      "errors": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_refusal_rate": 0.0,
+      "sensitive_allowed_rate": 1.0,
+      "injection_refused_rate": 1.0
+    },
+    "injection": {
+      "runs": 13,
+      "leaks": 0,
+      "ok_rate": 1.0,
+      "refused": 9
+    },
+    "tutor": {
+      "runs": 12,
+      "spoiler_rate": 0.0,
+      "off_topic_refusal_rate": 1.0,
+      "grounded_rate": 1.0,
+      "grounded_page_rate": 1.0,
+      "ungrounded_rate": 0.0
+    },
+    "placement": {
+      "runs": 2,
+      "valid_rate": 1.0,
+      "agreement": 1.0
+    },
+    "modules": {
+      "runs": 6,
+      "ok_rate": 1.0,
+      "decision_accuracy": 1.0,
+      "code_when_needed": 1.0,
+      "no_code_when_not_needed": 1.0,
+      "average_sections": 5.166666666666667
+    },
+    "bank": {
+      "runs": 6,
+      "ok_rate": 1.0,
+      "clean_share": 0.8240740740740741,
+      "first_try": 0.9861111111111112
+    },
+    "outline": {
+      "runs": 6,
+      "ok_rate": 1.0,
+      "styles": {
+        "overview": {
+          "modules": 2.5,
+          "topics": 7.5
+        },
+        "practical": {
+          "modules": 3.5,
+          "topics": 10.5
+        },
+        "deep": {
+          "modules": 4.5,
+          "topics": 13.5
+        }
+      },
+      "size_follows_style": 1.0,
+      "trimmed": 0.0
+    },
+    "cost": {
+      "total_usd": 0.05735,
+      "per_run_usd": 0.000623,
+      "tokens": 520692,
+      "calls": 347,
+      "runs": 92
+    }
+  }
+}

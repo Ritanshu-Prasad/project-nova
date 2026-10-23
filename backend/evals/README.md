@@ -1,6 +1,6 @@
 # Evals
 
-Checks the quality, safety and cost of what the Nano model produces. Run from `backend/` with the project venv and `NEBIUS_API_KEY` set. Only the Nano model is used.
+Checks the quality, safety and cost of what the course and tutor models produce. Run from `backend/` with the project venv and `NEBIUS_API_KEY` set. It uses the models the settings name (by default Nemotron 3.5 Lightning, with DeepSeek-V4-Flash-0731 planning the courses); the result file names the content model and, when different, the planning model.
 
 ```
 python -m evals.run_eval --suite all --cases smoke --judge --repeat 2
@@ -26,14 +26,14 @@ Cases live in `cases/*.json`; add a case without touching code.
 - `--cases smoke|full`: size of the case set
 - `--judge`: model-graded lesson and question quality
 - `--repeat N`: runs each case N times so noise is visible
-- `--baseline evals/baselines/nano.json --fail-on-regression`: exit 1 when a rule in `thresholds.json` breaks
+- `--baseline evals/baselines/lightning.json --fail-on-regression`: exit 1 when a rule in `thresholds.json` breaks
 - `--history`: trend table over `results/`
 - `--compare A B`: difference between two result files
 
 ## Baseline
 
-`baselines/nano.json` is a past all-suite run. Refresh it after an intended change by running the full smoke set and copying `meta` and `summary` from the new result file.
+`baselines/lightning.json` is the all-suite run of the Lightning + DeepSeek setup (`baselines/nano.json` is the older Nano one). Refresh it after an intended change by running the full smoke set and copying `meta` and `summary` from the new result file.
 
 ## Cost
 
-The smoke set is about 150k tokens, about two cents at the estimated Nano price (see `docs/OBSERVABILITY.md`).
+The smoke set is about 150k tokens, about two cents at the estimated price (see `docs/OBSERVABILITY.md`).

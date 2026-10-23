@@ -26,6 +26,7 @@ export type Cue =
   | 'warpIn' // jump to warp
   | 'warpOut' // drop out of warp
   | 'arrive' // new-world pad swell
+  | 'novaBlast' // course finale: charge, blast and shimmer
   | 'hover' // UI hover tick (very quiet)
   | 'click' // UI click blip
   | 'notify' // toast blip

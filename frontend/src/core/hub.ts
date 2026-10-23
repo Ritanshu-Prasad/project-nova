@@ -1,6 +1,8 @@
+import { useCourse } from './course';
 import { ENABLE_PDF_UPLOAD } from './courseApi';
+import { useFinale } from './finale';
 import { create } from 'zustand';
-import { relaunchFromSpace, replayLaunch } from './director';
+import { canRelaunch, relaunchFromSpace, replayLaunch } from './director';
 import { useGraphics } from './graphics';
 import { useNova } from './store';
 
@@ -92,6 +94,10 @@ export function relaunch(): void {
     useNova.getState().notify({ kind: 'toast', title: 'No 3D mode', lines: ['There is no ship view to fly in. Choose a 3D level in Settings → Graphics.'], ttl: 4 });
     return;
   }
+  if (!canRelaunch()) {
+    useNova.getState().notify({ kind: 'toast', title: 'Ship is still settling', lines: ['Launch again once you are back in the lounge.'], ttl: 3 });
+    return;
+  }
   const wasAtHub = useHub.getState().station === 'hub';
   useHub.getState().go('hub');
   relaunchFromSpace(wasAtHub ? 0 : 1300); // from another station the pilot first settles at the hub spot, where the reverse walk starts
@@ -102,4 +108,11 @@ export function replayFullIntro(): void {
   if (!has3d()) return relaunch();
   useHub.getState().go('hub');
   replayLaunch();
+}
+
+/** Plays the Nova blast finale for a course (default: the active one); with no course it still plays, naming "your course". */
+export function playFinale(courseId?: string | null): void {
+  const { activeId, library } = useCourse.getState();
+  const entry = library[courseId ?? activeId ?? ''];
+  useFinale.getState().show(entry ? entry.course.id : null, entry ? entry.course.title : 'your course');
 }

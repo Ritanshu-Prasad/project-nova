@@ -1,6 +1,6 @@
 import re
 
-PROMPT_VERSION = "2026-10-d"
+PROMPT_VERSION = "2026-10-e"
 
 LEARNING_ARC = "foundations and a mental model, then core mechanics, then implementation patterns, then advanced scenarios, optimisation and failure modes"
 
