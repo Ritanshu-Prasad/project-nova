@@ -21,10 +21,10 @@ export const HUB_QUIZ = {
   windowMs: 24 * 3600_000,
   fresh: { regular: 2, timed: 2.5 },
   late: { regular: 1.75, timed: 2 },
-  /** After a module is first completed, the next quiz forms within this random delay. */
-  afterModule: [30_000, 90_000],
-  /** Random gap before another quiz forms once the last one has been taken — never sooner than the first value. */
-  gap: [12 * 3600_000, 24 * 3600_000],
+  /** After a module is completed or on streak, the next quiz forms within 15–45 seconds. */
+  afterModule: [15_000, 45_000],
+  /** Rapid, session-friendly cadence (1 to 3 minutes) once the last one has been taken. */
+  gap: [60_000, 180_000],
 } as const;
 
 export interface HubQuiz {
@@ -156,16 +156,26 @@ useHubQuiz.subscribe((s, prev) => {
   }
 });
 
-// Completing a module (for the first time) brings the next hub quiz soon.
+// Completing a module (for the first time) or hitting answer streaks brings the next hub quiz soon.
 useCourse.subscribe((s, prev) => {
   const id = s.activeId;
   const e = id ? s.library[id] : undefined;
   const before = id ? prev.library[id] : undefined;
   if (!e || !before || e === before) return;
-  if (passedModules(e).length > passedModules(before).length && !useHubQuiz.getState().quizzes.some((q) => q.courseId === e.course.id && !q.result)) {
+  const newPass = passedModules(e).length > passedModules(before).length;
+  const streakMilestone = s.stats.streak >= 5 && s.stats.streak > prev.stats.streak && s.stats.streak % 5 === 0;
+  if ((newPass || streakMilestone) && !useHubQuiz.getState().quizzes.some((q) => q.courseId === e.course.id && !q.result)) {
     useHubQuiz.getState().schedule(e.course.id, HUB_QUIZ.afterModule);
   }
 });
+
+/** On-demand Pop Quiz / Fleet Drill */
+export function triggerPopQuiz(): HubQuiz | null {
+  const c = useCourse.getState();
+  const e = c.activeId ? c.library[c.activeId] : undefined;
+  if (!e || !passedModules(e).length) return null;
+  return useHubQuiz.getState().form(e);
+}
 
 /** The active course's waiting (untaken) quiz and its finished ones, newest first. */
 export function useCourseQuizzes() {

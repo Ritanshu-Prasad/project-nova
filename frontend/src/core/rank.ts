@@ -42,16 +42,21 @@ export interface Rank {
   nextLabel: string | null;
 }
 
-export function rankOf(mmr: number): Rank {
+/** Returns the calibrated 7 classic tiers for Approach B. */
+export function getCourseTiers(_moduleCount?: number): readonly Tier[] {
+  return TIERS;
+}
+
+export function rankOf(mmr: number, tiers: readonly Tier[] = TIERS): Rank {
   let index = 0;
-  for (let i = TIERS.length - 1; i >= 0; i--) {
-    if (mmr >= TIERS[i].min) {
+  for (let i = tiers.length - 1; i >= 0; i--) {
+    if (mmr >= tiers[i].min) {
       index = i;
       break;
     }
   }
-  const tier = TIERS[index];
-  const next = TIERS[index + 1];
+  const tier = tiers[index];
+  const next = tiers[index + 1];
   if (!next) return { tier, index, division: null, label: tier.name, step: index * 3, progress: 1, toNext: 0, nextLabel: null };
   const lo = index === 0 ? FLOOR : tier.min;
   const span = (next.min - lo) / 3;
@@ -68,3 +73,4 @@ export function rankOf(mmr: number): Rank {
     nextLabel: d < 2 ? `${tier.name} ${DIVISIONS[d + 1]}` : next.id === 'master' ? next.name : `${next.name} III`,
   };
 }
+

@@ -92,7 +92,7 @@ export function SkillJourneySection() {
       <FleetLeaderboard active={active} />
       <p className="flex items-start gap-2 text-sm text-white/55">
         <Sparkles size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
-        Every course has its own ladder, scaled to its size. Lesson quizzes move MMR a little; hub quizzes move it a lot — ×2 within 24 h of arriving (timed questions ×2.5, and they never cost MMR), ×1.75 after that.
+        Every course has its own ladder, scaled to its size. Complete modules to advance toward Master. Pop quizzes award up to ×2.5 MMR, and achieving 100% on module quiz retakes earns a +20 MMR mastery bonus.
       </p>
     </div>
   );

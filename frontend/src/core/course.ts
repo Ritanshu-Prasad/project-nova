@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { forgetDocuments } from './courseApi';
 import { flushAnswers, noteAnswer } from './feedback';
 import { flatTopics, type Course, type Module, type PlacedTopic, type Question, type Topic } from './courseSchema';
-import { LESSON_QUIZ, QUIZ_MAX, QUIZ_MIN, questionsFor, type RatedQuestion } from './quizBuilder';
+import { LESSON_QUIZ, questionsFor, type RatedQuestion } from './quizBuilder';
 import { tidyCourse, tidyTopicContent } from './tidyCourse';
 import { track } from './usageEvents';
 
@@ -152,12 +152,17 @@ export function hubPool(e: LibraryEntry): RatedQuestion[] {
 }
 
 /**
- * Scope: roughly how much MMR-weighted answering it takes to walk this course (lesson quizzes plus hub quizzes). Bigger courses take smaller MMR steps, so every course spans the whole ladder.
+ * Scope: dynamically calibrated across M modules and T topics such that completing each module
+ * roughly advances the pilot by 1/M of the ladder towards Master (1900+ MMR).
  */
-function kFactor(course: Course): number {
-  // Per module: a 3–5 question lesson quiz plus about one hub quiz (5–10 questions at roughly double MMR).
-  const answered = course.modules.length * ((LESSON_QUIZ.min + LESSON_QUIZ.max) / 2 + 2 * ((QUIZ_MIN + QUIZ_MAX) / 2));
-  return Math.max(16, Math.min(56, Math.round(1800 / Math.max(1, answered))));
+export function kFactor(course: Course): number {
+  const M = Math.max(1, course.modules.length);
+  const T = Math.max(M, flatTopics(course).length);
+  // Expected standard questions in topics (~2/topic) and module quizzes (~4/module)
+  const standardQuestions = T * 2 + M * 4;
+  // Calibrated so standard completion lands around Frigate/Cruiser (~1600 MMR),
+  // leaving the remaining ~300 MMR Master gap to be earned through Pop Quizzes and Mastery Retakes.
+  return Math.max(18, Math.min(55, Math.round(2000 / Math.max(1, standardQuestions))));
 }
 
 /** Elo rating of a question: climbs from Probe to Master across the course; harder questions rate higher. */
@@ -329,11 +334,16 @@ export const useCourse = create<CourseState>()((set, get) => {
       let delta = K * ((correct ? 1 : 0) - expected) * (correct && opts.hint ? 0.5 : 1);
       delta = correct ? Math.max(opts.hint ? 2 : 4, delta) * (opts.gain ?? 1) : Math.min(-3, delta) * (opts.loss ?? 1);
       
-      // Repeat question MMR logic
+      // Repeat question & Remediation MMR logic
       const qHistory = sk.questionHistory ?? {};
       if (opts.qId && opts.qId in qHistory) {
-        if (qHistory[opts.qId] && correct) delta = 0;
-        else if (!qHistory[opts.qId] && correct) delta *= 0.5;
+        if (qHistory[opts.qId] && correct) {
+          // Previously correct: already mastered, no duplicate MMR farming
+          delta = 0;
+        } else if (!qHistory[opts.qId] && correct) {
+          // Remediation MMR: converting a previous mistake into a correct answer awards +50% value
+          delta = Math.max(2, Math.round(delta * 0.5));
+        }
       }
 
       const d = Math.round(delta) || 0;
@@ -369,7 +379,31 @@ export const useCourse = create<CourseState>()((set, get) => {
       const score = total ? correct / total : 1;
       const prev = e.modules[moduleId] ?? { passed: false, best: 0, attempts: 0 };
       const passed = score >= PASS_MARK;
-      patchActive((x) => ({ ...x, modules: { ...x.modules, [moduleId]: { passed: prev.passed || passed, best: Math.max(prev.best, score), attempts: prev.attempts + 1 } } }));
+      
+      // Mastery bonus: achieving 100% on a module quiz retake awards a +20 MMR bonus
+      const isMasteryRetake = score === 1 && prev.attempts >= 1 && prev.best < 1;
+      const masteryBonus = isMasteryRetake ? 20 : 0;
+
+      patchActive((x) => ({
+        ...x,
+        modules: {
+          ...x.modules,
+          [moduleId]: {
+            passed: prev.passed || passed,
+            best: Math.max(prev.best, score),
+            attempts: prev.attempts + 1,
+          },
+        },
+        ...(masteryBonus > 0
+          ? {
+              skill: {
+                ...x.skill,
+                mmr: x.skill.mmr + masteryBonus,
+                history: [...x.skill.history, x.skill.mmr + masteryBonus].slice(-80),
+              },
+            }
+          : {}),
+      }));
       bumpDay(passed && !prev.passed ? 80 : 0);
       if (passed && !prev.passed) track('module_quiz_finished');
       flushAnswers();

@@ -116,6 +116,14 @@ function writeFlag(key: string, value: boolean): void {
   }
 }
 
+function readItem(key: string, fallback: string | null = null): string | null {
+  try {
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 const prefersReducedMotion = () => {
   try {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -151,8 +159,8 @@ export const useNova = create<NovaState>()((set, get) => ({
   // DEV MODE OVERRIDE: the intro is never marked as seen.
   introSeen: false, // readFlag(LS_INTRO, false),
   
-  themeColor: localStorage.getItem('nova.themeColor') || '#06b6d4',
-  activeObjective: localStorage.getItem('nova.activeObjective') || null,
+  themeColor: readItem('nova.themeColor', '#06b6d4') || '#06b6d4',
+  activeObjective: readItem('nova.activeObjective', null),
 
   setPhase: (phase) => set({ phase }),
   setWorld: (world) => set({ world }),
