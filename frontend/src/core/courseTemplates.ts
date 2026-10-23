@@ -2439,4 +2439,11 @@ export const TEMPLATE_PRESETS = [
   { label: 'English Essentials', objective: 'English Essentials' },
 ];
 
-
+/** Returns true if an objective string matches any of the pre-authored course presets */
+export function isPresetObjective(objective: string): boolean {
+  if (!objective) return false;
+  const clean = objective.trim().toLowerCase();
+  return TEMPLATE_PRESETS.some(
+    (p) => p.objective.toLowerCase() === clean || p.label.toLowerCase() === clean
+  );
+}

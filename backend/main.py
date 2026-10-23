@@ -1,11 +1,8 @@
 import os
-import uuid
-
-from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-
 import sys
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # sibling modules on serverless runtimes too
 from accounts import router as accounts_router  # noqa: E402
@@ -32,54 +29,33 @@ app.include_router(fleet_router)
 app.include_router(generator_router)
 app.include_router(tutor_router)
 
+DEFAULT_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+origins_env = os.getenv("ALLOWED_ORIGINS")
+parsed_origins = (
+    [origin.strip().rstrip("/") for origin in origins_env.split(",") if origin.strip()]
+    if origins_env
+    else []
+)
+ALLOWED_ORIGINS = parsed_origins if parsed_origins else DEFAULT_ORIGINS
+
 # Allow requests from our Vite frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to the frontend URL
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "uploads/avatars"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Serve the uploaded files statically so the frontend can display them
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():
     return {"status": "System Online", "service": "Project Nova API"}
-
-AVATAR_TYPES = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "image/gif": ".gif"}
-AVATAR_MAX_BYTES = 5 * 1024 * 1024
-
-
-async def _store_avatar(file: UploadFile, prefix: str) -> dict:
-    """Saves an avatar under a random name (never the client's filename) — images only, up to 5 MB.
-    Note: on Vercel the disk is not permanent; the app itself keeps avatars inside the pilot profile."""
-    ext = AVATAR_TYPES.get(file.content_type or "")
-    if not ext:
-        raise HTTPException(415, "Avatar must be a PNG, JPEG, WebP or GIF image")
-    data = await file.read(AVATAR_MAX_BYTES + 1)
-    if len(data) > AVATAR_MAX_BYTES:
-        raise HTTPException(413, "Avatar is larger than 5 MB")
-    filename = f"{prefix}{uuid.uuid4().hex}{ext}"
-    with open(os.path.join(UPLOAD_DIR, filename), "wb") as buffer:
-        buffer.write(data)
-    return {"status": "success", "filename": filename, "url": f"/uploads/avatars/{filename}"}
-
-
-@app.post("/api/users/avatar/upload")
-async def upload_avatar(file: UploadFile = File(...)):
-    """An uploaded image for a user's avatar."""
-    return await _store_avatar(file, "")
-
-
-@app.post("/api/users/avatar/doodle")
-async def upload_doodle(file: UploadFile = File(...)):
-    """A drawn doodle avatar (sent as an image file)."""
-    return await _store_avatar(file, "doodle_")
 
 
 if __name__ == "__main__":

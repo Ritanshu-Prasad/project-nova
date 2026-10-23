@@ -29,6 +29,6 @@ export function plannedNote(course: Course): string {
   const planned = course.meta?.plannedModules;
   if (!planned) return '';
   const cut = planned > course.modules.length || (course.meta?.plannedTopics ?? 0) > topicCount(course);
-  const plan = `NOVA planned ${planned} module${planned === 1 ? '' : 's'} and ${course.meta?.plannedTopics ?? '?'} topics from what you told it.`;
-  return cut ? `${plan} It kept the first ${course.modules.length} module${course.modules.length === 1 ? '' : 's'} and ${topicCount(course)} topics to keep the course manageable.` : plan;
+  const plan = `NOVA planned ${planned} planet${planned === 1 ? '' : 's'} and ${course.meta?.plannedTopics ?? '?'} topics from what you told it.`;
+  return cut ? `${plan} It kept the first ${course.modules.length} planet${course.modules.length === 1 ? '' : 's'} and ${topicCount(course)} topics to keep the course manageable.` : plan;
 }

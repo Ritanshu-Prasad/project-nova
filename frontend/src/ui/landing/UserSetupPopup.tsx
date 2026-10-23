@@ -17,7 +17,7 @@ export default function UserSetupPopup() {
   // The Google first name is suggested until the pilot types their own callsign.
   const [typed, setUsername] = useState<string | null>(null);
   const username = typed ?? (accountName.trim().split(/\s+/)[0] ?? '').slice(0, 20);
-  const [avatar, setAvatar] = useState(() => useProfile.getState().avatar);
+  const [avatar, setAvatar] = useState(() => useProfile.getState().avatar || useAccount.getState().user?.picture || '');
   const [themeColor, setThemeColor] = useState('#06b6d4'); // Default cyan
 
   useEffect(() => {

@@ -102,7 +102,7 @@ export default function StudyMode() {
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-base font-semibold text-white">{active.course.title}</div>
           <div className="truncate text-sm text-white/60">
-            Module {item.moduleIndex + 1} · {active.course.modules[item.moduleIndex].title}
+            Planet {item.moduleIndex + 1} · {active.course.modules[item.moduleIndex].title}
           </div>
         </div>
         <Stats />
@@ -260,7 +260,7 @@ function Outline({ active }: { active: ActiveCourse }) {
               <button type="button" onClick={() => setOpen((o) => ({ ...o, [mi]: !o[mi] }))} aria-expanded={isOpen} className="flex w-full cursor-pointer items-center gap-2 px-5 py-3 text-left transition hover:bg-white/[0.03]">
                 {isOpen ? <ChevronDown size={15} className="shrink-0 text-white/50" /> : <ChevronRight size={15} className="shrink-0 text-white/50" />}
                 <span className="min-w-0 flex-1">
-                  <span className="block text-xs text-white/60">Module {mi + 1}</span>
+                  <span className="block text-xs text-white/60">Planet {mi + 1}</span>
                   <span className="block truncate font-display text-base font-semibold text-white">{m.title}</span>
                 </span>
                 <span className="text-xs text-white/60">
@@ -308,7 +308,7 @@ function OutlineRow({ active, it, locked }: { active: ActiveCourse; it: OutlineI
               <span className="text-white/60">{itemNumber(active, it.topic)}</span> {it.topic.title}
             </>
           ) : (
-            <span className="font-semibold">Module quiz</span>
+            <span className="font-semibold">Planet checkpoint</span>
           )}
         </span>
         <span className="text-xs text-white/60">{it.kind === 'topic' ? `${it.topic.lesson.minutes}m` : best !== undefined ? `${Math.round(best * 100)}%` : `${quizSizeLabel(it.pool.length, LESSON_QUIZ.min, LESSON_QUIZ.max)} Q`}</span>
@@ -326,7 +326,7 @@ function MobilePicker({ active }: { active: ActiveCourse }) {
       <select value={active.item.id} onChange={(e) => useCourse.getState().open(e.target.value)} className="w-full appearance-none rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 pr-10 text-sm text-white">
         {active.outline.map((it, i) => (
           <option key={it.id} value={it.id} disabled={i > f} className="bg-[#0d1220]">
-            {it.kind === 'topic' ? `${itemNumber(active, it.topic)} ${it.topic.title}` : `Module ${it.moduleIndex + 1} quiz`}
+            {it.kind === 'topic' ? `${itemNumber(active, it.topic)} ${it.topic.title}` : `Planet ${it.moduleIndex + 1} checkpoint`}
             {isDone(active.entry, it) ? ' ✓' : ''}
           </option>
         ))}

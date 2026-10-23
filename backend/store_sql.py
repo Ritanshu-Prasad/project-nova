@@ -3,7 +3,32 @@ import logging
 from contextlib import asynccontextmanager
 from typing import NamedTuple
 
-import psycopg
+try:
+    import psycopg
+except ImportError:
+    class _PsycopgStub:
+        class AsyncConnection:
+            @classmethod
+            async def connect(cls, *args, **kwargs):
+                raise RuntimeError("psycopg is not installed. Install psycopg[binary] to use SqlStore.")
+
+        class Error(Exception):
+            pass
+
+        class DatabaseError(Error):
+            pass
+
+        class OperationalError(DatabaseError):
+            pass
+
+        class IntegrityError(DatabaseError):
+            pass
+
+        class ProgrammingError(DatabaseError):
+            pass
+
+    psycopg = _PsycopgStub()
+
 from fastapi import HTTPException
 
 logger = logging.getLogger("nova.store_sql")

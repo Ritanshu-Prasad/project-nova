@@ -1,7 +1,7 @@
 import { LayoutGroup, motion } from 'framer-motion';
 import { Check, Flag, Lock, Rocket } from 'lucide-react';
 import { useId } from 'react';
-import { isUnlocked, useActiveCourse } from '../../core/course';
+import { passedModules, useActiveCourse } from '../../core/course';
 
 const PLANET_TINTS = ['#f59e0b', '#a855f7', '#22d3ee', '#34d399', '#f472b6', '#60a5fa', '#fb7185', '#a3e635'];
 
@@ -13,15 +13,18 @@ interface Props {
 }
 
 /**
- * The journey: one planet per topic, grouped by module, with the rocket parked at the next planet to clear.
+ * The journey: one planet per module, with the rocket parked at the next planet to clear.
  * Deliberately static — the only motion is the rocket flying on (a shared layout transition) after a clear.
  */
 export default function RocketProgress({ compact = false, onSelect }: Props) {
   const active = useActiveCourse();
   const id = useId();
   if (!active) return null;
-  const { topics, cleared, entry, outline } = active;
-  const n = topics.length;
+  const { course, entry, next } = active;
+  const modules = course.modules;
+  const n = modules.length;
+  const passedCount = passedModules(entry).length;
+  const currentModuleIndex = next ? next.moduleIndex : passedCount;
   const size = compact ? 22 : 44;
 
   const rocket = (
@@ -33,30 +36,29 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
   return (
     <LayoutGroup id={id}>
       <div className={`scroll-y overflow-x-auto overflow-y-visible ${compact ? '' : 'pb-1'}`}>
-        <ol className="flex min-w-full items-stretch" style={{ minWidth: compact ? undefined : n * 104 + 60 }} aria-label="Course journey">
-          {topics.map((t, i) => {
-            const done = !!entry.progress[t.id]?.cleared;
-            const locked = !isUnlocked(entry, t.id, outline);
-            const here = i === cleared;
+        <ol className="flex min-w-full items-stretch" style={{ minWidth: compact ? undefined : n * 120 + 60 }} aria-label="Course journey">
+          {modules.map((m, i) => {
+            const done = !!entry.modules[m.id]?.passed;
+            const locked = i > 0 && !entry.modules[modules[i - 1].id]?.passed;
+            const here = i === currentModuleIndex;
             const tint = PLANET_TINTS[i % PLANET_TINTS.length];
-            const firstOfModule = i === 0 || topics[i - 1].moduleIndex !== t.moduleIndex;
-            const status = done ? 'Cleared' : here && locked ? 'Pass the module quiz first' : here ? 'Next destination' : locked ? 'Locked' : 'Open';
+            const clearedTopics = m.topics.filter((t) => !!entry.progress[t.id]?.cleared).length;
+            const totalTopics = m.topics.length;
+            const status = done ? 'Cleared' : here && locked ? 'Pass the previous module quiz first' : here ? 'Current destination' : locked ? 'Locked' : 'Open';
+            const firstUnclearedTopic = m.topics.find((t) => !entry.progress[t.id]?.cleared) ?? m.topics[0];
+            const moduleMinutes = m.topics.reduce((acc, t) => acc + (t.lesson?.minutes || 5), 0);
+
             return (
-              <li key={t.id} className={`group relative flex flex-1 flex-col items-center ${compact ? 'h-12' : 'h-36 justify-center'} ${!compact && firstOfModule && i > 0 ? 'border-l border-dashed border-white/15' : ''}`}>
-                {!compact && firstOfModule && (
-                  <div className="absolute left-2 top-0 max-w-[220px] truncate text-[11px] font-semibold uppercase tracking-wider text-white/40">
-                    M{t.moduleIndex + 1} · {t.moduleTitle}
-                  </div>
-                )}
+              <li key={m.id} className={`group relative flex flex-1 flex-col items-center ${compact ? 'h-12' : 'h-36 justify-center'}`}>
                 {/* Route segment towards the next planet */}
-                <div className="absolute left-1/2 top-1/2 h-0.5 w-full -translate-y-1/2" style={{ background: i < cleared ? 'var(--user)' : 'transparent', borderTop: i < cleared ? 'none' : '2px dashed rgb(255 255 255 / 0.14)' }} />
+                <div className="absolute left-1/2 top-1/2 h-0.5 w-full -translate-y-1/2" style={{ background: i < passedCount ? 'var(--user)' : 'transparent', borderTop: i < passedCount ? 'none' : '2px dashed rgb(255 255 255 / 0.14)' }} />
                 <div className="relative mt-auto mb-auto" style={{ width: size, height: size }}>
                   {here && rocket}
                   <button
                     type="button"
-                    disabled={locked || !onSelect}
-                    onClick={() => onSelect?.(t.id)}
-                    aria-label={`${t.planet}: ${t.title} — ${status}`}
+                    disabled={locked || !onSelect || !firstUnclearedTopic}
+                    onClick={() => firstUnclearedTopic && onSelect?.(firstUnclearedTopic.id)}
+                    aria-label={`Planet ${i + 1}: ${m.title} — ${status}`}
                     className={`relative grid size-full place-items-center rounded-full transition-transform duration-200 enabled:cursor-pointer enabled:hover:scale-110 ${locked ? 'opacity-45 grayscale' : ''}`}
                     style={{
                       background: `radial-gradient(circle at 32% 30%, #ffffffcc 0%, ${tint} 28%, color-mix(in srgb, ${tint} 45%, #0b0f1a) 100%)`,
@@ -71,12 +73,16 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
                     {locked && !compact && <Lock size={14} className="text-white/80" />}
                   </button>
                 </div>
-                {!compact && <div className="absolute bottom-1 max-w-[96px] truncate text-center text-[11px] font-medium text-white/60">{t.planet}</div>}
+                {!compact && (
+                  <div className="absolute bottom-1 max-w-[110px] truncate text-center text-[11px] font-medium text-white/60">
+                    Planet {i + 1}
+                  </div>
+                )}
                 {/* Hover / focus tooltip */}
-                <div className="pointer-events-none absolute bottom-[calc(50%+34px)] left-1/2 z-10 w-max max-w-[230px] -translate-x-1/2 rounded-xl border border-white/10 bg-[#0d1220]/95 px-3 py-2 text-left opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-                  <div className="text-[13px] font-semibold text-white">{t.title}</div>
+                <div className="pointer-events-none absolute bottom-[calc(50%+34px)] left-1/2 z-10 w-max max-w-[240px] -translate-x-1/2 rounded-xl border border-white/10 bg-[#0d1220]/95 px-3 py-2 text-left opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+                  <div className="text-[13px] font-semibold text-white">Planet {i + 1} · {m.title}</div>
                   <div className="mt-0.5 text-[11px] text-white/55">
-                    {t.planet} · {status} · {t.lesson.minutes} min
+                    {clearedTopics}/{totalTopics} topics cleared · {status} · {moduleMinutes} min
                   </div>
                 </div>
               </li>
@@ -84,8 +90,8 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
           })}
           <li className={`relative flex w-14 shrink-0 items-center justify-center ${compact ? 'h-12' : 'h-36'}`}>
             <div className="relative">
-              {cleared >= n && rocket}
-              <Flag size={compact ? 16 : 22} className={cleared >= n ? 'text-[var(--user)]' : 'text-white/45'} />
+              {passedCount >= n && rocket}
+              <Flag size={compact ? 16 : 22} className={passedCount >= n ? 'text-[var(--user)]' : 'text-white/45'} />
             </div>
           </li>
         </ol>

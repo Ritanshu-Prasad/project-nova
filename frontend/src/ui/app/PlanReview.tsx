@@ -73,7 +73,7 @@ export default function PlanReview({ course, expectations, onStart }: Props) {
         <section aria-label="Course plan" className="min-w-0">
           <div className="flex items-center justify-between">
             <div className="text-xs font-semibold uppercase tracking-wider text-white/45">
-              {counts.modules} module{counts.modules === 1 ? '' : 's'} · {counts.topics} topic{counts.topics === 1 ? '' : 's'}
+              {counts.modules} planet{counts.modules === 1 ? '' : 's'} · {counts.topics} topic{counts.topics === 1 ? '' : 's'}
             </div>
             <button type="button" onClick={undo} disabled={past.length === 0} className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-white/70 transition hover:bg-white/10 hover:text-white disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent">
               <Undo2 size={14} /> Undo
@@ -87,7 +87,7 @@ export default function PlanReview({ course, expectations, onStart }: Props) {
                     {mi + 1}
                   </span>
                   <h3 className="min-w-0 flex-1 pt-0.5 font-display text-base font-semibold text-white">{m.title}</h3>
-                  <RemoveButton label={`Remove module ${m.title}`} disabled={modules.length === 1} onClick={() => change(removeModule(modules, m.id))} />
+                  <RemoveButton label={`Remove planet ${m.title}`} disabled={modules.length === 1} onClick={() => change(removeModule(modules, m.id))} />
                 </div>
                 <ul className="mt-3 space-y-1.5 pl-10">
                   {m.topics.map((t) => (
@@ -171,7 +171,7 @@ export default function PlanReview({ course, expectations, onStart }: Props) {
 
       <div className="mt-6 flex justify-end border-t border-white/[0.07] pt-5">
         <HudButton variant="primary" size="lg" icon={<ArrowRight size={16} />} disabled={busy} onClick={() => onStart(withModules(course, modules))}>
-          Start course ({counts.modules} module{counts.modules === 1 ? '' : 's'} · {counts.topics} topic{counts.topics === 1 ? '' : 's'})
+          Start course ({counts.modules} planet{counts.modules === 1 ? '' : 's'} · {counts.topics} topic{counts.topics === 1 ? '' : 's'})
         </HudButton>
       </div>
     </motion.div>

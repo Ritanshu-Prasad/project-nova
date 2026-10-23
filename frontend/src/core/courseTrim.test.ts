@@ -75,10 +75,10 @@ describe('plannedNote', () => {
   });
 
   it('reports the plan when nothing was cut', () => {
-    expect(plannedNote(course(3, { meta: meta(3, 6) }))).toBe('NOVA planned 3 modules and 6 topics from what you told it.');
+    expect(plannedNote(course(3, { meta: meta(3, 6) }))).toBe('NOVA planned 3 planets and 6 topics from what you told it.');
   });
 
   it('says what was cut when the plan was bigger than what is shown', () => {
-    expect(plannedNote(course(2, { meta: meta(8, 40) }))).toContain('kept the first 2 modules and 4 topics');
+    expect(plannedNote(course(2, { meta: meta(8, 40) }))).toContain('kept the first 2 planets and 4 topics');
   });
 });

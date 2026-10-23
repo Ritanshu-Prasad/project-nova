@@ -9,6 +9,7 @@ Storage is the same as accounts (Upstash Redis in production, a local file in de
 sign-in requirement yet, so scores are self-reported — fine for a demo, not for prizes.
 """
 
+import asyncio
 import hashlib
 import json
 import re
@@ -26,6 +27,11 @@ TOP = 50
 PILOT_ID = re.compile(r"^[a-f0-9]{32}$")
 COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 COURSE_KEY = re.compile(r"^[a-z0-9-]{1,60}$")
+MAX_XP_DELTA = 5000
+SUBMISSION_THROTTLE_SECONDS = 5.0
+
+_lock = asyncio.Lock()
+_last_submissions: dict[str, float] = {}
 
 
 def _hash(pilot_id: str) -> str:
@@ -49,7 +55,10 @@ async def _load_board() -> dict:
 @router.post("/api/fleet/score")
 async def post_score(request: Request):
     _require_csrf(request)
-    body = await request.json()
+    try:
+        body = await request.json()
+    except (ValueError, json.JSONDecodeError):
+        raise HTTPException(400, "Invalid JSON")
     if not isinstance(body, dict) or not PILOT_ID.match(str(body.get("pilotId", ""))):
         raise HTTPException(400, "pilotId must be 32 hex characters")
     callsign = _clean_name(body.get("callsign"), 24)
@@ -70,14 +79,47 @@ async def post_score(request: Request):
         courses.append({"key": c["key"], "title": _clean_name(c.get("title"), 60), "mmr": mmr})
     color = body.get("color") if COLOR.match(str(body.get("color", ""))) else "#06b6d4"
 
-    board = await _load_board()
-    board[_hash(body["pilotId"])] = {"callsign": callsign, "color": color, "xp": xp, "level": 1 + xp // 150, "courses": courses, "at": int(time.time() * 1000)}
-    if len(board) > MAX_PILOTS:
-        # Keep the strongest and most recent pilots.
-        keep = sorted(board.items(), key=lambda kv: (kv[1].get("xp", 0), kv[1].get("at", 0)), reverse=True)[:MAX_PILOTS]
-        board = dict(keep)
-    await _store().set(BOARD_KEY, json.dumps(board))
-    return {"ok": True}
+    pilot_hash = _hash(body["pilotId"])
+
+    async with _lock:
+        now = time.time()
+        if now - _last_submissions.get(pilot_hash, 0.0) < SUBMISSION_THROTTLE_SECONDS:
+            raise HTTPException(429, "Submitting too fast; please wait 5 seconds")
+
+        board = await _load_board()
+        existing = board.get(pilot_hash)
+        if existing:
+            prev_at = float(existing.get("at", 0) or 0) / 1000.0
+            if prev_at > 0 and 0 <= (now - prev_at) < SUBMISSION_THROTTLE_SECONDS:
+                raise HTTPException(429, "Submitting too fast; please wait 5 seconds")
+            prev_xp = int(existing.get("xp", 0) or 0)
+            if xp - prev_xp > MAX_XP_DELTA:
+                raise HTTPException(400, f"XP jump exceeds maximum allowed delta ({MAX_XP_DELTA})")
+        else:
+            if xp > MAX_XP_DELTA:
+                raise HTTPException(400, f"Initial XP exceeds maximum allowed delta ({MAX_XP_DELTA})")
+
+        board[pilot_hash] = {
+            "callsign": callsign,
+            "color": color,
+            "xp": xp,
+            "level": 1 + xp // 150,
+            "courses": courses,
+            "at": int(now * 1000),
+        }
+        if len(board) > MAX_PILOTS:
+            # Keep the strongest and most recent pilots.
+            keep = sorted(board.items(), key=lambda kv: (kv[1].get("xp", 0), kv[1].get("at", 0)), reverse=True)[:MAX_PILOTS]
+            board = dict(keep)
+        await _store().set(BOARD_KEY, json.dumps(board))
+
+        _last_submissions[pilot_hash] = now
+        if len(_last_submissions) > 5000:
+            cutoff = now - 60.0
+            for k in [k for k, v in _last_submissions.items() if v < cutoff]:
+                _last_submissions.pop(k, None)
+
+        return {"ok": True}
 
 
 @router.get("/api/fleet/leaderboard")

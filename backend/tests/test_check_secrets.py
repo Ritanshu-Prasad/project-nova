@@ -29,7 +29,7 @@ def repo(tmp_path):
         git("add", name)
 
     def run():
-        return subprocess.run(["sh", "scripts/check_secrets.sh"], cwd=tmp_path, capture_output=True, text=True)
+        return subprocess.run(["sh", "scripts/check_secrets.sh"], cwd=tmp_path, capture_output=True, text=True, encoding="utf-8")
 
     return commit, run, tmp_path
 

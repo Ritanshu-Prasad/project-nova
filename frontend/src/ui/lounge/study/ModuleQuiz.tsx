@@ -29,8 +29,8 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
     if (out.passed)
       useNova.getState().notify({
         kind: 'levelup',
-        title: 'Module complete',
-        lines: [nextModule ? `${nextModule.title} is unlocked.` : 'You finished the whole course!', ...(firstPass ? ['A hub quiz on this module will arrive soon.'] : [])],
+        title: 'Planet cleared',
+        lines: [nextModule ? `Planet ${item.moduleIndex + 2} (${nextModule.title}) is unlocked.` : 'You finished the whole course!', ...(firstPass ? ['A hub quiz on this module will arrive soon.'] : [])],
         ttl: 4,
       });
     setResult({ ...r, ...out });
@@ -49,7 +49,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
     <article className="font-sans">
       <header>
         <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--user)' }}>
-          <Target size={14} /> Module {item.moduleIndex + 1} quiz
+          <Target size={14} /> Planet {item.moduleIndex + 1} checkpoint · Module quiz
         </div>
         <h1 className={`mt-1 ${TYPE.heading}`}>{item.module.title}</h1>
       </header>
@@ -57,7 +57,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
       {stage === 'intro' && (
         <div className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6">
           <p className={TYPE.body}>
-            A quick check: {n} questions on this module’s topics. Score {Math.round(PASS_MARK * 100)}% or more to pass{nextModule ? ` and unlock “${nextModule.title}”` : ' and finish the course'}.
+            A quick check: {n} questions on this planet’s topics. Score {Math.round(PASS_MARK * 100)}% or more to pass{nextModule ? ` and unlock Planet ${item.moduleIndex + 2} (“${nextModule.title}”)` : ' and finish the course'}.
           </p>
           <ul className={`mt-4 grid gap-2 sm:grid-cols-3 ${TYPE.body}`}>
             <li className="rounded-xl bg-white/[0.04] px-3 py-2">{n} questions · {formats.length} formats</li>
@@ -87,7 +87,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
         <div className="mt-6 space-y-5">
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 text-center">
             {result.passed ? <Trophy size={40} className="mx-auto text-amber-300" /> : <RotateCcw size={36} className="mx-auto text-white/60" />}
-            <h2 className={`mt-3 ${TYPE.heading}`}>{result.passed ? 'Module passed!' : 'Not quite yet'}</h2>
+            <h2 className={`mt-3 ${TYPE.heading}`}>{result.passed ? 'Planet cleared!' : 'Not quite yet'}</h2>
             <p className={`mt-1 ${TYPE.body}`}>
               {result.correct} of {result.total} correct ({Math.round((result.correct / result.total) * 100)}%) ·{' '}
               <span className={result.delta >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
