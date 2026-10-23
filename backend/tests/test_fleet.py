@@ -60,7 +60,7 @@ def test_fleet_score_anti_cheat_initial_xp(client):
     body = {
         "pilotId": VALID_PILOT,
         "callsign": "Cheater",
-        "xp": 5001,
+        "xp": 50001,
     }
     res = client.post("/api/fleet/score", json=body, headers=HEADERS)
     assert res.status_code == 400
@@ -84,8 +84,8 @@ def test_fleet_score_anti_cheat_xp_jump(client, monkeypatch):
     board[pilot_hash]["at"] -= 10000
     asyncio.run(accounts.store.set(fleet.BOARD_KEY, json.dumps(board)))
 
-    # Jump XP by 6000 (2000 -> 8000)
-    body["xp"] = 8000
+    # Jump XP by 51000 (2000 -> 53000)
+    body["xp"] = 53000
     res2 = client.post("/api/fleet/score", json=body, headers=HEADERS)
     assert res2.status_code == 400
     assert "XP jump exceeds maximum allowed delta" in res2.text
@@ -101,3 +101,22 @@ def test_fleet_score_csrf_required(client):
     body = {"pilotId": VALID_PILOT, "callsign": "Viper", "xp": 100}
     res = client.post("/api/fleet/score", json=body)
     assert res.status_code == 403
+
+
+def test_fleet_leaderboard_deduplicates_by_callsign(client, monkeypatch):
+    pilot1 = "11111111111111111111111111111111"
+    pilot2 = "22222222222222222222222222222222"
+    res1 = client.post("/api/fleet/score", json={"pilotId": pilot1, "callsign": "aetheclipse", "xp": 1000}, headers=HEADERS)
+    assert res1.status_code == 200
+
+    monkeypatch.setattr(fleet, "_last_submissions", {})
+
+    res2 = client.post("/api/fleet/score", json={"pilotId": pilot2, "callsign": "aetheclipse", "xp": 1150}, headers=HEADERS)
+    assert res2.status_code == 200
+
+    board = client.get(f"/api/fleet/leaderboard?board=global&pilot={pilot2}").json()
+    assert board["pilots"] == 1
+    assert len(board["top"]) == 1
+    assert board["top"][0]["callsign"] == "aetheclipse"
+    assert board["top"][0]["score"] == 1150
+    assert board["top"][0]["me"] is True

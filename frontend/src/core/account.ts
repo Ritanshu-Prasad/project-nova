@@ -398,10 +398,13 @@ useNova.subscribe((s, p) => (s.themeColor !== p.themeColor || s.activeObjective 
 useTutor.subscribe((s, p) => s.threads !== p.threads && onLocalChange());
 
 // Leaving: push now (tab hidden), or hand a small final save to the browser to deliver (page closing).
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden' && readSync()?.changedAt) void push();
-});
-window.addEventListener('pagehide', () => {
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && readSync()?.changedAt) void push();
+  });
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
   const user = useAccount.getState().user;
   const local = readSync();
   if (!user || !local?.changedAt || local.sub !== user.sub) return;
@@ -409,3 +412,4 @@ window.addEventListener('pagehide', () => {
   if (body.length > KEEPALIVE_MAX) return;
   void fetch('/api/progress', { method: 'PUT', keepalive: true, credentials: 'same-origin', headers: { 'X-Nova': '1', 'Content-Type': 'application/json' }, body }).catch(() => {});
 });
+}

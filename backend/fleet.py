@@ -27,7 +27,7 @@ TOP = 50
 PILOT_ID = re.compile(r"^[a-f0-9]{32}$")
 COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 COURSE_KEY = re.compile(r"^[a-z0-9-]{1,60}$")
-MAX_XP_DELTA = 5000
+MAX_XP_DELTA = 50_000
 SUBMISSION_THROTTLE_SECONDS = 5.0
 
 _lock = asyncio.Lock()
@@ -87,24 +87,39 @@ async def post_score(request: Request):
             raise HTTPException(429, "Submitting too fast; please wait 5 seconds")
 
         board = await _load_board()
+        callsign_lower = callsign.lower()
+
+        # Deduplicate: if an entry with this callsign already exists under another hash, remove older stale ones
+        prev_xp = 0
+        merged_courses = {c["key"]: c for c in courses}
+        for h, e in list(board.items()):
+            if e.get("callsign", "").strip().lower() == callsign_lower:
+                prev_xp = max(prev_xp, int(e.get("xp", 0) or 0))
+                for c in e.get("courses", []):
+                    if c.get("key") not in merged_courses:
+                        merged_courses[c["key"]] = c
+                if h != pilot_hash:
+                    del board[h]
+
         existing = board.get(pilot_hash)
         if existing:
             prev_at = float(existing.get("at", 0) or 0) / 1000.0
             if prev_at > 0 and 0 <= (now - prev_at) < SUBMISSION_THROTTLE_SECONDS:
                 raise HTTPException(429, "Submitting too fast; please wait 5 seconds")
-            prev_xp = int(existing.get("xp", 0) or 0)
+            prev_xp = max(prev_xp, int(existing.get("xp", 0) or 0))
             if xp - prev_xp > MAX_XP_DELTA:
                 raise HTTPException(400, f"XP jump exceeds maximum allowed delta ({MAX_XP_DELTA})")
         else:
-            if xp > MAX_XP_DELTA:
+            if xp - prev_xp > MAX_XP_DELTA:
                 raise HTTPException(400, f"Initial XP exceeds maximum allowed delta ({MAX_XP_DELTA})")
 
+        final_xp = max(xp, prev_xp)
         board[pilot_hash] = {
             "callsign": callsign,
             "color": color,
-            "xp": xp,
-            "level": 1 + xp // 150,
-            "courses": courses,
+            "xp": final_xp,
+            "level": 1 + final_xp // 150,
+            "courses": list(merged_courses.values()),
             "at": int(now * 1000),
         }
         if len(board) > MAX_PILOTS:
@@ -128,8 +143,11 @@ async def leaderboard(board: str = "global", pilot: str = ""):
         raise HTTPException(400, "Unknown board")
     entries = await _load_board()
     me = _hash(pilot) if PILOT_ID.match(pilot) else None
-    rows = []
+    # Deduplicate entries by callsign so each user appears exactly once
+    deduped = {}
     for key, e in entries.items():
+        c_name = e.get("callsign", "Pilot").strip()
+        c_key = c_name.lower()
         if board == "global":
             score = e.get("xp", 0)
         else:
@@ -137,8 +155,34 @@ async def leaderboard(board: str = "global", pilot: str = ""):
             if not course:
                 continue
             score = course.get("mmr", 0)
-        rows.append({"key": key, "callsign": e.get("callsign", "Pilot"), "color": e.get("color", "#06b6d4"), "level": e.get("level", 1), "score": score, "at": e.get("at", 0)})
+
+        row = {
+            "key": key,
+            "callsign": c_name,
+            "color": e.get("color", "#06b6d4"),
+            "level": e.get("level", 1),
+            "score": score,
+            "at": e.get("at", 0),
+            "courses": e.get("courses", []),
+        }
+
+        if c_key not in deduped:
+            deduped[c_key] = row
+        else:
+            prev = deduped[c_key]
+            if row["score"] > prev["score"]:
+                if prev["key"] == me:
+                    row["key"] = me
+                deduped[c_key] = row
+            elif prev["key"] != me and key == me:
+                prev["key"] = me
+            prev_course_keys = {c.get("key") for c in prev["courses"]}
+            for c in row["courses"]:
+                if c.get("key") not in prev_course_keys:
+                    prev["courses"].append(c)
+
+    rows = list(deduped.values())
     rows.sort(key=lambda r: (r["score"], -r["at"]), reverse=True)
     you = next(({"rank": i + 1, "score": r["score"]} for i, r in enumerate(rows) if r["key"] == me), None)
-    top = [{**{k: v for k, v in r.items() if k not in ("key", "at")}, "rank": i + 1, "me": r["key"] == me} for i, r in enumerate(rows[:TOP])]
+    top = [{**{k: v for k, v in r.items() if k not in ("key", "at", "courses")}, "rank": i + 1, "me": r["key"] == me} for i, r in enumerate(rows[:TOP])]
     return {"board": board, "pilots": len(rows), "top": top, "you": you}
