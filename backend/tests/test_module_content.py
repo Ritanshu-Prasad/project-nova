@@ -73,6 +73,50 @@ def test_a_technical_module_needs_code_in_a_code_field():
         ModuleContent.model_validate(module(requires_code=True))
 
 
+def code_with(language, snippet):
+    return section("A script", code={"language": language, "snippet": snippet, "explanation": "Shows what the code does."})
+
+
+@pytest.mark.parametrize("language, snippet", [
+    ("python", "num = 5 if num > 0: print('Positive') else: print('Not positive')"),
+    ("python", "for i in range(3): print(i)"),
+    ("python", "a = 1; b = 2"),
+    ("javascript", "const a = 1; const b = 2; console.log(a + b);"),
+    ("typescript", "function f() { return 1; }"),
+])
+def test_code_squashed_onto_one_line_is_refused_so_the_model_rewrites_it(language, snippet):
+    with pytest.raises(ValidationError, match="single line"):
+        ModuleContent.model_validate(module(requires_code=True, sections=[section(), section(), code_with(language, snippet)]))
+
+
+@pytest.mark.parametrize("language, snippet", [
+    ("python", "print('hi')"),
+    ("python", "total = a if ok else b"),
+    ("python", "squares = [n * n for n in range(5)]"),
+    ("python", "print('a\\nb\\nc')"),
+    ("javascript", "console.log(1);"),
+    ("bash", "cd project && npm install && npm run build"),
+])
+def test_short_or_single_statement_code_stays_on_one_line(language, snippet):
+    built = ModuleContent.model_validate(module(requires_code=True, sections=[section(), section(), code_with(language, snippet)]))
+    assert built.sections[2].code.snippet == snippet
+
+
+def test_line_breaks_written_out_as_text_become_real_ones():
+    built = ModuleContent.model_validate(module(requires_code=True, sections=[section(), section(), code_with("python", "x = 1\\nif x:\\n    print(x)")]))
+    assert built.sections[2].code.snippet == "x = 1\nif x:\n    print(x)"
+
+
+def test_windows_line_endings_are_normalised_in_code():
+    built = ModuleContent.model_validate(module(requires_code=True, sections=[section(), section(), code_with("python", "x = 1\r\nprint(x)")]))
+    assert built.sections[2].code.snippet == "x = 1\nprint(x)"
+
+
+def test_the_code_prompt_asks_for_real_line_breaks():
+    assert "real line breaks" in module_system(True)
+    assert "real line breaks" not in module_system(False)
+
+
 def test_too_few_or_too_many_sections_are_refused():
     with pytest.raises(ValidationError):
         ModuleContent.model_validate(module(sections=[section(), section()]))

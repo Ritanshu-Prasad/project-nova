@@ -1,9 +1,9 @@
-import { LayoutGroup, motion } from 'framer-motion';
-import { Check, Flag, Lock, Rocket } from 'lucide-react';
-import { useId } from 'react';
+import { motion } from 'framer-motion';
+import { Check, Flag, Lock, Rocket, RotateCcw } from 'lucide-react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { passedModules, useActiveCourse } from '../../core/course';
 
-const PLANET_TINTS = ['#f59e0b', '#a855f7', '#22d3ee', '#34d399', '#f472b6', '#60a5fa', '#fb7185', '#a3e635'];
+const PLANET_TINTS = ['#fb923c', '#a855f7', '#22d3ee', '#34d399', '#f472b6', '#60a5fa', '#fb7185', '#a3e635'];
 
 interface Props {
   /** Small strip for cards, or the full journey map. */
@@ -12,90 +12,559 @@ interface Props {
   onSelect?: (topicId: string) => void;
 }
 
-/**
- * The journey: one planet per module, with the rocket parked at the next planet to clear.
- * Deliberately static — the only motion is the rocket flying on (a shared layout transition) after a clear.
- */
+interface Point {
+  x: number;
+  y: number;
+}
+
 export default function RocketProgress({ compact = false, onSelect }: Props) {
   const active = useActiveCourse();
   const id = useId();
-  if (!active) return null;
-  const { course, entry, next } = active;
-  const modules = course.modules;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const modules = active?.course.modules ?? [];
   const n = modules.length;
-  const passedCount = passedModules(entry).length;
-  const currentModuleIndex = next ? next.moduleIndex : passedCount;
-  const size = compact ? 22 : 44;
+  const entry = active?.entry;
+  const next = active?.next;
+  const passedCount = entry ? passedModules(entry).length : 0;
+  const isCourseComplete = passedCount >= n && n > 0;
 
-  const rocket = (
-    <motion.div layoutId={`rocket-${id}`} transition={{ duration: 1.3, ease: [0.45, 0, 0.2, 1] }} className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ bottom: `calc(50% + ${size / 2 + 4}px)` }} aria-hidden>
-      <Rocket size={compact ? 16 : 24} className="rotate-45 text-white drop-shadow-[0_0_8px_rgb(var(--user-rgb))]" fill="var(--user)" />
-    </motion.div>
-  );
+  // Destination: next uncompleted module, or graduation flag if all modules are complete
+  const destinationIndex = isCourseComplete ? n : next ? next.moduleIndex : Math.min(passedCount, n - 1);
 
-  return (
-    <LayoutGroup id={id}>
-      <div className={`scroll-y overflow-x-auto overflow-y-visible ${compact ? '' : 'pb-1'}`}>
-        <ol className="flex min-w-full items-stretch" style={{ minWidth: compact ? undefined : n * 120 + 60 }} aria-label="Course journey">
+  // Scoped session storage key per course
+  const storageKey = `nova.route.lastPlanet.${active?.course.id ?? 'default'}`;
+
+  // Track replay key to allow replaying flight animation smoothly
+  const [replayKey, setReplayKey] = useState<number>(0);
+
+  // Determine starting position for flight:
+  // - If saved position exists and is prior to destination, fly from saved position (e.g. 0 -> 2)
+  // - Otherwise, fly from previous position (e.g. module 2 done -> from 1 to 2)
+  // - If at module 0, fly in from entry corridor
+  const [fromIndex, setFromIndex] = useState<number>(() => {
+    try {
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed < destinationIndex) {
+          return parsed;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    return Math.max(0, destinationIndex - 1);
+  });
+
+  const [isFlying, setIsFlying] = useState<boolean>(true);
+
+  // Replay flight animation
+  const replayFlight = useCallback(() => {
+    setFromIndex(Math.max(0, destinationIndex - 1));
+    setIsFlying(true);
+    setReplayKey((k) => k + 1);
+  }, [destinationIndex]);
+
+  // Geometry: undulating wave coordinates (ss1 style)
+  // Even planets are lower (y = 156), odd planets are higher (y = 84)
+  const stepWidth = 155;
+  const startX = 90;
+  const baseY = 120;
+  const waveAmplitude = 36;
+  const canvasHeight = 250;
+
+  const planetCoords: Point[] = useMemo(() => {
+    return Array.from({ length: n }, (_, i) => ({
+      x: startX + i * stepWidth,
+      y: baseY + (i % 2 === 0 ? waveAmplitude : -waveAmplitude),
+    }));
+  }, [n, startX, stepWidth, baseY, waveAmplitude]);
+
+  // End flag coordinates (waypoint index = n)
+  const flagCoord: Point = useMemo(() => {
+    const lastX = startX + Math.max(0, n - 1) * stepWidth;
+    return {
+      x: lastX + 120,
+      y: baseY + (n % 2 === 0 ? waveAmplitude : -waveAmplitude),
+    };
+  }, [n, startX, stepWidth, baseY, waveAmplitude]);
+
+  // All waypoints: planet 0..n-1, plus flag at index n
+  const allWaypoints: Point[] = useMemo(() => {
+    return [...planetCoords, flagCoord];
+  }, [planetCoords, flagCoord]);
+
+  // Center scroll on destination planet
+  useEffect(() => {
+    if (scrollRef.current && !compact) {
+      const destPoint = allWaypoints[destinationIndex] ?? planetCoords[0];
+      if (destPoint) {
+        const containerWidth = scrollRef.current.clientWidth;
+        scrollRef.current.scrollTo({
+          left: Math.max(0, destPoint.x - containerWidth / 2),
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [destinationIndex, compact, allWaypoints, planetCoords, replayKey]);
+
+  // SVG Cubic Bezier segment between two points with horizontal tangents
+  const segmentD = (p1: Point, p2: Point) => {
+    const midX = (p1.x + p2.x) / 2;
+    return `C ${midX} ${p1.y}, ${midX} ${p2.y}, ${p2.x} ${p2.y}`;
+  };
+
+  // Full unreached/future curve across all waypoints
+  const fullWavePath = useMemo(() => {
+    if (allWaypoints.length < 2) return '';
+    let d = `M ${allWaypoints[0].x} ${allWaypoints[0].y}`;
+    for (let i = 0; i < allWaypoints.length - 1; i++) {
+      d += ` ${segmentD(allWaypoints[i], allWaypoints[i + 1])}`;
+    }
+    return d;
+  }, [allWaypoints]);
+
+  // Active glowing cyan neon path up to destinationIndex
+  const activeNeonPath = useMemo(() => {
+    const reach = Math.min(allWaypoints.length - 1, destinationIndex);
+    if (reach <= 0 || allWaypoints.length < 2) return '';
+    let d = `M ${allWaypoints[0].x} ${allWaypoints[0].y}`;
+    for (let i = 0; i < reach; i++) {
+      d += ` ${segmentD(allWaypoints[i], allWaypoints[i + 1])}`;
+    }
+    return d;
+  }, [allWaypoints, destinationIndex]);
+
+  // Ambient stars background for deep space aesthetic (matching ss1)
+  const stars = useMemo(() => {
+    const totalW = startX + Math.max(4, n) * stepWidth + 180;
+    const seedStars: { cx: number; cy: number; r: number; opacity: number }[] = [];
+    const count = Math.round(totalW / 28);
+    for (let i = 0; i < count; i++) {
+      const cx = (i * 29.3 + 17) % totalW;
+      const cy = (i * 47.7 + 23) % canvasHeight;
+      const r = (i % 3 === 0 ? 1.4 : i % 2 === 0 ? 1.0 : 0.7);
+      const opacity = 0.2 + (i % 5) * 0.12;
+      seedStars.push({ cx, cy, r, opacity });
+    }
+    return seedStars;
+  }, [n, stepWidth, startX, canvasHeight]);
+
+  // Interpolated flight keyframes along the Bezier wave from fromIndex to destinationIndex
+  const flightKeyframes = useMemo(() => {
+    if (allWaypoints.length === 0) {
+      return { xs: [0], ys: [0], angles: [35], duration: 1.5 };
+    }
+
+    const startIdx = Math.min(allWaypoints.length - 1, Math.max(0, fromIndex));
+    const targetIdx = Math.min(allWaypoints.length - 1, Math.max(0, destinationIndex));
+
+    // Entry flight if starting at planet 0 and no prior completed modules
+    if (startIdx === targetIdx && targetIdx === 0) {
+      const p = allWaypoints[0];
+      const pStart = { x: p.x - 90, y: baseY - 15 };
+      const midX = (pStart.x + p.x) / 2;
+      const SAMPLES = 16;
+      const xs: number[] = [];
+      const ys: number[] = [];
+      const angles: number[] = [];
+
+      for (let k = 0; k <= SAMPLES; k++) {
+        const t = k / SAMPLES;
+        const u = 1 - t;
+        const bx = u * u * u * pStart.x + 3 * u * u * t * midX + 3 * u * t * t * midX + t * t * t * p.x;
+        const by = u * u * u * pStart.y + 3 * u * u * t * pStart.y + 3 * u * t * t * p.y + t * t * t * p.y;
+        const dx = 3 * u * u * (midX - pStart.x) + 3 * t * t * (p.x - midX);
+        const dy = 6 * u * t * (p.y - pStart.y);
+        const tangent = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+        xs.push(bx);
+        ys.push(by - 32);
+        angles.push(Math.round(tangent + 45));
+      }
+      angles[angles.length - 1] = 35;
+      return { xs, ys, angles, duration: 1.6 };
+    }
+
+    if (startIdx === targetIdx) {
+      const p = allWaypoints[targetIdx];
+      return {
+        xs: [p.x - 45, p.x],
+        ys: [p.y - 40, p.y - 32],
+        angles: [25, 35],
+        duration: 1.2,
+      };
+    }
+
+    const xs: number[] = [];
+    const ys: number[] = [];
+    const angles: number[] = [];
+
+    const stepDir = targetIdx > startIdx ? 1 : -1;
+    const segments = Math.abs(targetIdx - startIdx);
+    const SAMPLES_PER_SEGMENT = 16;
+
+    for (let s = 0; s < segments; s++) {
+      const idx = startIdx + s * stepDir;
+      const nextIdx = idx + stepDir;
+      const p1 = allWaypoints[idx];
+      const p2 = allWaypoints[nextIdx];
+      const midX = (p1.x + p2.x) / 2;
+
+      for (let k = 0; k <= SAMPLES_PER_SEGMENT; k++) {
+        if (s > 0 && k === 0) continue; // avoid duplicate point
+        const t = k / SAMPLES_PER_SEGMENT;
+        const u = 1 - t;
+
+        // Cubic Bezier curve formula
+        const bx = u * u * u * p1.x + 3 * u * u * t * midX + 3 * u * t * t * midX + t * t * t * p2.x;
+        const by = u * u * u * p1.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p2.y;
+
+        // Tangent derivatives
+        const dx = 3 * u * u * (midX - p1.x) + 3 * t * t * (p2.x - midX);
+        const dy = 6 * u * t * (p2.y - p1.y);
+        const tangent = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+        xs.push(bx);
+        ys.push(by - 32); // hover above curve
+        // Lucide rocket icon points at -45 deg natively; rotating by tangent + 45 aligns rocket tip along path
+        angles.push(Math.round(tangent + 45));
+      }
+    }
+
+    // Settled resting angle at destination (pointing forward-upward)
+    angles[angles.length - 1] = 35;
+
+    const duration = Math.max(1.5, Math.min(3.2, segments * 1.05));
+    return { xs, ys, angles, duration };
+  }, [allWaypoints, fromIndex, destinationIndex, baseY]);
+
+  if (!active) return null;
+
+  // COMPACT MODE
+  if (compact) {
+    const compactSize = 22;
+    return (
+      <div className="scroll-y overflow-x-auto overflow-y-visible">
+        <ol className="flex min-w-full items-center py-2" aria-label="Course journey">
           {modules.map((m, i) => {
-            const done = !!entry.modules[m.id]?.passed;
-            const locked = i > 0 && !entry.modules[modules[i - 1].id]?.passed;
-            const here = i === currentModuleIndex;
+            const done = !!entry?.modules[m.id]?.passed;
+            const here = i === destinationIndex;
             const tint = PLANET_TINTS[i % PLANET_TINTS.length];
-            const clearedTopics = m.topics.filter((t) => !!entry.progress[t.id]?.cleared).length;
-            const totalTopics = m.topics.length;
-            const status = done ? 'Cleared' : here && locked ? 'Pass the previous module quiz first' : here ? 'Current destination' : locked ? 'Locked' : 'Open';
-            const firstUnclearedTopic = m.topics.find((t) => !entry.progress[t.id]?.cleared) ?? m.topics[0];
-            const moduleMinutes = m.topics.reduce((acc, t) => acc + (t.lesson?.minutes || 5), 0);
-
             return (
-              <li key={m.id} className={`group relative flex flex-1 flex-col items-center ${compact ? 'h-12' : 'h-36 justify-center'}`}>
-                {/* Route segment towards the next planet */}
-                <div className="absolute left-1/2 top-1/2 h-0.5 w-full -translate-y-1/2" style={{ background: i < passedCount ? 'var(--user)' : 'transparent', borderTop: i < passedCount ? 'none' : '2px dashed rgb(255 255 255 / 0.14)' }} />
-                <div className="relative mt-auto mb-auto" style={{ width: size, height: size }}>
-                  {here && rocket}
-                  <button
-                    type="button"
-                    disabled={locked || !onSelect || !firstUnclearedTopic}
-                    onClick={() => firstUnclearedTopic && onSelect?.(firstUnclearedTopic.id)}
-                    aria-label={`Planet ${i + 1}: ${m.title} — ${status}`}
-                    className={`relative grid size-full place-items-center rounded-full transition-transform duration-200 enabled:cursor-pointer enabled:hover:scale-110 ${locked ? 'opacity-45 grayscale' : ''}`}
-                    style={{
-                      background: `radial-gradient(circle at 32% 30%, #ffffffcc 0%, ${tint} 28%, color-mix(in srgb, ${tint} 45%, #0b0f1a) 100%)`,
-                      boxShadow: done ? '0 0 0 2px var(--user), 0 0 18px rgb(var(--user-rgb) / 0.5)' : here ? '0 0 0 2px #fff, 0 0 16px rgb(255 255 255 / 0.3)' : '0 0 0 1px rgb(255 255 255 / 0.15)',
-                    }}
-                  >
-                    {done && (
-                      <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full text-[var(--user-ink)]" style={{ background: 'var(--user)' }}>
-                        <Check size={10} strokeWidth={3.5} />
-                      </span>
-                    )}
-                    {locked && !compact && <Lock size={14} className="text-white/80" />}
-                  </button>
-                </div>
-                {!compact && (
-                  <div className="absolute bottom-1 max-w-[110px] truncate text-center text-[11px] font-medium text-white/60">
-                    Planet {i + 1}
-                  </div>
-                )}
-                {/* Hover / focus tooltip */}
-                <div className="pointer-events-none absolute bottom-[calc(50%+34px)] left-1/2 z-10 w-max max-w-[240px] -translate-x-1/2 rounded-xl border border-white/10 bg-[#0d1220]/95 px-3 py-2 text-left opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-                  <div className="text-[13px] font-semibold text-white">Planet {i + 1} · {m.title}</div>
-                  <div className="mt-0.5 text-[11px] text-white/55">
-                    {clearedTopics}/{totalTopics} topics cleared · {status} · {moduleMinutes} min
-                  </div>
-                </div>
+              <li key={m.id} className="relative flex flex-1 items-center">
+                <div className="h-0.5 w-full" style={{ background: i < passedCount ? 'var(--user)' : 'rgba(255,255,255,0.14)' }} />
+                <div
+                  className="relative shrink-0 rounded-full"
+                  style={{
+                    width: compactSize,
+                    height: compactSize,
+                    background: `radial-gradient(circle at 30% 28%, #fff 0%, ${tint} 40%, #0b0f1a 100%)`,
+                    boxShadow: here ? '0 0 10px #fff' : done ? '0 0 8px var(--user)' : undefined,
+                  }}
+                />
               </li>
             );
           })}
-          <li className={`relative flex w-14 shrink-0 items-center justify-center ${compact ? 'h-12' : 'h-36'}`}>
-            <div className="relative">
-              {passedCount >= n && rocket}
-              <Flag size={compact ? 16 : 22} className={passedCount >= n ? 'text-[var(--user)]' : 'text-white/45'} />
-            </div>
-          </li>
         </ol>
       </div>
-    </LayoutGroup>
+    );
+  }
+
+  // FULL SS1 WAVE TRAJECTORY & GLOWING SPHERE ROUTE
+  const totalSvgWidth = startX + Math.max(1, n - 1) * stepWidth + 180;
+
+  return (
+    <div
+      ref={scrollRef}
+      className="relative overflow-x-auto overflow-y-hidden rounded-2xl py-2 select-none"
+      style={{
+        background: 'radial-gradient(ellipse at 50% 50%, rgba(15, 23, 42, 0.75) 0%, rgba(3, 7, 18, 0.95) 100%)',
+        minHeight: canvasHeight + 10,
+      }}
+    >
+      {/* Replay flight button */}
+      <button
+        type="button"
+        onClick={replayFlight}
+        title="Replay spaceship journey"
+        className="absolute right-3 top-3 z-30 flex items-center gap-1.5 rounded-lg border border-cyan-500/20 bg-slate-900/70 px-2.5 py-1 text-[11px] font-mono text-cyan-300 transition-all hover:border-cyan-400/40 hover:bg-cyan-950/40 hover:text-cyan-200"
+      >
+        <RotateCcw size={11} className={isFlying ? 'animate-spin' : ''} />
+        <span>Replay flight</span>
+      </button>
+
+      <div className="relative" style={{ width: Math.max(780, totalSvgWidth), height: canvasHeight }}>
+        {/* SVG Route Trajectory Curves & Stars */}
+        <svg
+          className="pointer-events-none absolute inset-0 size-full overflow-visible"
+          style={{ width: Math.max(780, totalSvgWidth), height: canvasHeight }}
+        >
+          <defs>
+            <filter id={`cyan-glow-${id}`} x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id={`cyan-intense-${id}`} x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="7" result="blur" />
+              <feColorMatrix type="matrix" values="0 0 0 0 0.13  0 0 0 0 0.82  0 0 0 0 0.93  0 0 0 1 0" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Deep space background stars */}
+          {stars.map((s, idx) => (
+            <circle
+              key={idx}
+              cx={s.cx}
+              cy={s.cy}
+              r={s.r}
+              fill="#e2e8f0"
+              opacity={s.opacity}
+            />
+          ))}
+
+          {/* 1. Subtle dotted wave path for future/unreached sections */}
+          <path
+            d={fullWavePath}
+            fill="none"
+            stroke="rgba(56, 189, 248, 0.25)"
+            strokeWidth="2.2"
+            strokeDasharray="4 6"
+            strokeLinecap="round"
+          />
+
+          {/* 2. Active Cleared / Glowing Cyan Trail (ss1 neon style) */}
+          {activeNeonPath && (
+            <>
+              {/* Soft atmospheric cyan halo */}
+              <path
+                d={activeNeonPath}
+                fill="none"
+                stroke="#22d3ee"
+                strokeWidth="9"
+                strokeOpacity="0.25"
+                filter={`url(#cyan-glow-${id})`}
+                strokeLinecap="round"
+              />
+              {/* Vivid neon cyan stroke */}
+              <path
+                d={activeNeonPath}
+                fill="none"
+                stroke="#22d3ee"
+                strokeWidth="3.6"
+                filter={`url(#cyan-intense-${id})`}
+                strokeLinecap="round"
+              />
+              {/* White-hot energy core */}
+              <path
+                d={activeNeonPath}
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="1.2"
+                strokeOpacity="0.95"
+                strokeLinecap="round"
+              />
+            </>
+          )}
+        </svg>
+
+        {/* Dynamic Flying Spaceship */}
+        {flightKeyframes.xs.length > 0 && (
+          <motion.div
+            key={`ship-${replayKey}`}
+            initial={{
+              x: flightKeyframes.xs[0],
+              y: flightKeyframes.ys[0],
+              rotate: flightKeyframes.angles[0],
+            }}
+            animate={{
+              x: flightKeyframes.xs,
+              y: flightKeyframes.ys,
+              rotate: flightKeyframes.angles,
+            }}
+            transition={{
+              duration: flightKeyframes.duration,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+            onAnimationComplete={() => {
+              setIsFlying(false);
+              try {
+                sessionStorage.setItem(storageKey, String(destinationIndex));
+              } catch {
+                /* ignore */
+              }
+            }}
+            className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2"
+            style={{ willChange: 'transform' }}
+            aria-hidden
+          >
+            <div className="relative">
+              {/* Engine thruster plasma during flight */}
+              {isFlying && (
+                <>
+                  <span className="absolute -bottom-1 -left-2 size-3.5 rounded-full bg-cyan-400 blur-[4px] opacity-85" />
+                  <span className="absolute -bottom-0.5 -left-1 size-2 rounded-full bg-white blur-[1px]" />
+                </>
+              )}
+              {/* Hover bob animation after flight arrives */}
+              <motion.div
+                animate={!isFlying ? { y: [0, -5, 0] } : {}}
+                transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
+              >
+                <Rocket
+                  size={26}
+                  className="text-white drop-shadow-[0_0_12px_#22d3ee]"
+                  fill="var(--user, #22d3ee)"
+                />
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Spherical Planets (ss1 aesthetic) */}
+        {modules.map((m, i) => {
+          const pt = planetCoords[i];
+          if (!pt) return null;
+
+          const done = !!entry?.modules[m.id]?.passed;
+          const locked = i > 0 && !entry?.modules[modules[i - 1].id]?.passed;
+          const here = i === destinationIndex;
+          const tint = PLANET_TINTS[i % PLANET_TINTS.length];
+          const clearedTopics = m.topics.filter((t) => !!entry?.progress[t.id]?.cleared).length;
+          const totalTopics = m.topics.length;
+          const status = done ? 'Cleared' : here && locked ? 'Pass previous quiz first' : here ? 'Current destination' : locked ? 'Locked' : 'Open';
+          const firstUnclearedTopic = m.topics.find((t) => !entry?.progress[t.id]?.cleared) ?? m.topics[0];
+          const moduleMinutes = m.topics.reduce((acc, t) => acc + (t.lesson?.minutes || 5), 0);
+
+          const stepNumber = String(i + 1).padStart(2, '0');
+          const planetDiameter = here ? 54 : 46;
+
+          return (
+            <div
+              key={m.id}
+              className="group absolute z-20 -translate-x-1/2 -translate-y-1/2"
+              style={{ left: pt.x, top: pt.y }}
+            >
+              {/* Step Number (cyan monospace above planet, matching ss1) */}
+              <div
+                className={`absolute left-1/2 -translate-x-1/2 text-[11px] font-mono tracking-widest font-semibold transition-colors duration-200 ${
+                  here ? 'text-cyan-300 drop-shadow-[0_0_8px_#22d3ee]' : done ? 'text-white/80' : 'text-white/40'
+                }`}
+                style={{ bottom: planetDiameter / 2 + 8 }}
+              >
+                {stepNumber}
+              </div>
+
+              {/* Atmospheric Glow Ring & Pulse for Current Active Planet */}
+              {here && (
+                <>
+                  <div
+                    className="pointer-events-none absolute -inset-3 rounded-full bg-cyan-400/15 blur-md"
+                    aria-hidden
+                  />
+                  <div
+                    className="pointer-events-none absolute -inset-2.5 rounded-full border border-cyan-400/50 animate-ping opacity-35"
+                    aria-hidden
+                  />
+                </>
+              )}
+
+              {/* Planet 3D Sphere Button */}
+              <button
+                type="button"
+                disabled={locked || !onSelect || !firstUnclearedTopic}
+                onClick={() => firstUnclearedTopic && onSelect?.(firstUnclearedTopic.id)}
+                aria-label={`Planet ${i + 1}: ${m.title} — ${status}`}
+                className={`relative grid place-items-center rounded-full transition-transform duration-200 enabled:cursor-pointer enabled:hover:scale-110 ${
+                  locked ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
+                style={{
+                  width: planetDiameter,
+                  height: planetDiameter,
+                  background: here
+                    ? `radial-gradient(circle at 30% 28%, #ffffff 0%, ${tint} 30%, color-mix(in srgb, ${tint} 55%, #050811) 75%, #050811 100%)`
+                    : done
+                    ? `radial-gradient(circle at 30% 28%, #ffffffdd 0%, ${tint} 32%, color-mix(in srgb, ${tint} 45%, #060a14) 78%, #060a14 100%)`
+                    : `radial-gradient(circle at 30% 28%, rgba(255,255,255,0.35) 0%, #475569 32%, #182232 75%, #050811 100%)`,
+                  boxShadow: here
+                    ? `0 0 28px ${tint}99, 0 0 50px rgba(34, 211, 238, 0.45), inset -4px -4px 10px rgba(0,0,0,0.9), inset 3px 3px 6px rgba(255,255,255,0.7)`
+                    : done
+                    ? `0 0 16px ${tint}60, inset -3px -3px 8px rgba(0,0,0,0.85), inset 3px 3px 5px rgba(255,255,255,0.5)`
+                    : `inset -3px -3px 8px rgba(0,0,0,0.95), inset 2px 2px 4px rgba(255,255,255,0.25)`,
+                }}
+              >
+                {/* Check Badge for completed planets */}
+                {done && (
+                  <span
+                    className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full text-black shadow-[0_0_8px_#22d3ee]"
+                    style={{ background: '#22d3ee' }}
+                  >
+                    <Check size={11} strokeWidth={3.5} />
+                  </span>
+                )}
+
+                {/* Lock icon for locked planets */}
+                {locked && <Lock size={15} className="text-white/60 drop-shadow" />}
+              </button>
+
+              {/* Title & subtitle underneath planet (ss1 style) */}
+              <div
+                className="absolute left-1/2 -translate-x-1/2 w-32 text-center pointer-events-none"
+                style={{ top: planetDiameter / 2 + 8 }}
+              >
+                <div
+                  className={`truncate text-xs font-semibold ${
+                    here ? 'text-white drop-shadow' : done ? 'text-white/85' : 'text-white/50'
+                  }`}
+                >
+                  {m.title}
+                </div>
+                <div className="text-[10px] text-white/40 font-mono mt-0.5">
+                  Planet {i + 1}
+                </div>
+              </div>
+
+              {/* Hover tooltip */}
+              <div className="pointer-events-none absolute bottom-[calc(100%+16px)] left-1/2 z-40 w-max max-w-[240px] -translate-x-1/2 rounded-xl border border-white/10 bg-[#0d1220]/95 px-3 py-2 text-left opacity-0 shadow-2xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+                <div className="text-[13px] font-semibold text-white">
+                  Planet {i + 1} · {m.title}
+                </div>
+                <div className="mt-0.5 text-[11px] text-white/60">
+                  {clearedTopics}/{totalTopics} topics cleared · {status} · {moduleMinutes} min
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Final Destination Flag (Graduation) */}
+        <div
+          className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
+          style={{ left: flagCoord.x, top: flagCoord.y }}
+        >
+          {isCourseComplete && (
+            <div className="pointer-events-none absolute -inset-2.5 rounded-full bg-cyan-400/20 blur-md animate-pulse" />
+          )}
+          <div
+            className={`grid size-10 place-items-center rounded-full border border-white/15 bg-slate-900/90 shadow-lg ${
+              isCourseComplete ? 'text-cyan-400 border-cyan-400/50 drop-shadow-[0_0_12px_#22d3ee]' : 'text-white/40'
+            }`}
+          >
+            <Flag size={18} strokeWidth={2.2} />
+          </div>
+          <span className={`mt-1.5 text-[10px] font-mono ${isCourseComplete ? 'text-cyan-300 font-semibold' : 'text-white/40'}`}>
+            Graduation
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }

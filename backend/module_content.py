@@ -53,7 +53,8 @@ CODE_FORBIDDEN = """- Set "requires_code" to false and "code_reason" to one shor
 - Do not write any programming code, terminal commands, shell lines, configuration snippets or pseudo-code, anywhere, in any section. Teach with clear explanations, real-world analogies and actionable steps instead. Do not use code fences or backticks for code."""
 
 CODE_REQUIRED = """- Set "requires_code" to true and "code_reason" to one short sentence saying why this topic needs code.
-- At least two sections MUST have a "code" object, and every section that teaches a command or syntax has one. Each is under 25 lines, correct and runnable, with an "explanation" of what it does. Put code only in the "code" field, never in the other text."""
+- At least two sections MUST have a "code" object, and every section that teaches a command or syntax has one. Each is under 25 lines, correct and runnable, with an "explanation" of what it does. Put code only in the "code" field, never in the other text.
+- Write every snippet as it appears in an editor: real line breaks (written as \\n inside the JSON string), one statement per line, 4-space indentation for Python and 2 for JavaScript. Never put several statements, or an if/else or loop with its body, on a single line."""
 
 
 SOURCES_NONE = 'Do not include "sources".'
@@ -111,10 +112,41 @@ class KeyTerm(BaseModel):
     definition: Clean = Field(min_length=10)
 
 
+PYTHON = {"python", "py", "python3"}
+BRACE_LANGUAGES = {"javascript", "js", "typescript", "ts", "tsx", "jsx", "java", "c", "cpp", "c++", "csharp", "c#", "go", "rust", "php", "kotlin", "swift"}
+# A Python compound statement with its body on the same line: "if x: print(x)", "else: y = 1".
+PYTHON_HEADER_WITH_BODY = re.compile(r"\b(?:if|elif|else|for|while|def|class|try|except|finally|with)\b[^:\n]*:\s*\S")
+
+
+def looks_squashed(code: str, language: str) -> bool:
+    """A code example written on one line although it holds several statements, which reads as a wall of text."""
+    code = code.strip()
+    if "\n" in code:
+        return False
+    language = language.strip().lower()
+    if language in PYTHON:
+        return bool(PYTHON_HEADER_WITH_BODY.search(code)) or "; " in code
+    if language in BRACE_LANGUAGES:
+        return code.count(";") >= 2 or ("{" in code and "}" in code and ";" in code)
+    return False
+
+
 class CodeExample(BaseModel):
     language: str
     snippet: str = Field(min_length=1)
     explanation: Clean = Field(min_length=10)
+
+    @model_validator(mode="after")
+    def real_line_breaks(self):
+        """Line breaks are real ones: a backslash-n written out as text becomes a break, and a snippet squashed onto one line is refused so the model rewrites it."""
+        code = self.snippet.replace("\r\n", "\n").replace("\r", "\n")
+        # Without any quote character the text cannot be a string literal, so a written-out backslash-n is a line break.
+        if "\n" not in code.strip() and code.count("\\n") >= 2 and not re.search("[\"']", code):
+            code = code.replace("\\n", "\n")
+        self.snippet = code
+        if looks_squashed(code, self.language):
+            raise ValueError("code snippet is on a single line: write it with real line breaks, one statement per line")
+        return self
 
 
 class SourceQuote(BaseModel):
