@@ -2,8 +2,12 @@ import { useCourse } from './course';
 import { fetchModuleQuiz, fetchTopic } from './courseApi';
 import type { Topic } from './courseSchema';
 
+/** How long the learner must stay on a topic before the next one is written in the background. */
+const PREFETCH_DELAY_MS = 20_000;
+
 const inFlight = new Map<string, Promise<void>>();
 const quizRefreshed = new Set<string>();
+const prefetched = new Set<string>();
 
 const summaryPoints = (topic: Topic) => topic.lesson.blocks.flatMap((b) => (b.type === 'summary' ? b.points : []));
 
@@ -38,7 +42,10 @@ export function ensureTopic(courseId: string, topicId: string): Promise<void> {
     module: module.title,
     topic: topic.title,
     summary: topic.summary,
+    covers: topic.covers ?? '',
+    excludes: topic.excludes ?? '',
     outline: topics.map((t) => t.title),
+    outlineSummaries: topics.map((t) => t.summary),
     previous: previousCovered(topics, topics.indexOf(topic)),
   })
     .then((content) => {
@@ -73,9 +80,27 @@ function refreshModuleQuiz(courseId: string, moduleId: string): void {
     .catch(() => quizRefreshed.delete(key));
 }
 
-/** Starts writing the topic that follows `topicId`, so it is ready when the learner gets there. */
-export function prefetchNextTopic(courseId: string, topicId: string): void {
-  const topics = useCourse.getState().library[courseId]?.course.modules.flatMap((m) => m.topics) ?? [];
-  const next = topics[topics.findIndex((t) => t.id === topicId) + 1];
-  if (next) ensureTopic(courseId, next.id).catch(() => undefined);
+/**
+ * Once the learner has stayed on `topicId` for a while, writes the topic after it in the background.
+ * Returns a function that cancels the wait, for when the learner leaves the topic first.
+ */
+export function prefetchNextTopic(courseId: string, topicId: string, delayMs = PREFETCH_DELAY_MS): () => void {
+  const timer = setTimeout(() => prefetchAfter(courseId, topicId), delayMs);
+  return () => clearTimeout(timer);
+}
+
+function prefetchAfter(courseId: string, topicId: string): void {
+  const course = useCourse.getState().library[courseId]?.course;
+  if (!course || course.source !== 'ai' || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
+
+  const topics = course.modules.flatMap((m) => m.topics);
+  const index = topics.findIndex((t) => t.id === topicId);
+  const next = topics[index + 1];
+  if (index < 0 || !next || next.loaded !== false) return;
+
+  const key = `${courseId}/${next.id}`;
+  if (prefetched.has(key)) return;
+  prefetched.add(key);
+  // A failure is silent: opening the topic writes it again.
+  ensureTopic(courseId, next.id).catch(() => undefined);
 }

@@ -337,6 +337,12 @@ def test_thinking_can_be_allowed_everywhere(api, monkeypatch):
     assert "chat_template_kwargs" not in bodies[0]
 
 
+def test_tutor_replies_are_sent_without_thinking_too(api):
+    bodies = sent_bodies(api)
+    run(llm.chat_text([{"role": "user", "content": "hi"}], llm.tutor_model()))
+    assert bodies[0]["chat_template_kwargs"] == {"enable_thinking": False}
+
+
 # --- JSON schema ---
 
 @pytest.fixture(autouse=True)
@@ -619,3 +625,59 @@ def test_one_model_refusing_schemas_does_not_switch_them_off_for_the_others(stag
     assert llm._schema_unsupported == {DEEPSEEK}
     assert llm._response_format(QuestionList, LIGHTNING)["type"] == "json_schema"
     assert llm._response_format(QuestionList, DEEPSEEK)["type"] == "json_object"
+
+
+# --- Retry reasons, truncation and strict schemas ---
+
+def reasons(kind="quiz"):
+    return {item["reason"]: item["count"] for item in run(usage.daily_report(1, [llm.generate_model()]))[0]["retry_reasons"] if item["kind"] == kind}
+
+
+def test_an_unusable_answer_is_recorded_with_a_short_reason(fake_model):
+    fake_model.replies = [{"questions": []}, {"questions": questions(8)}]
+    run(llm.ask(QuestionList, "Write exactly 8 questions.", "u", kind="quiz"))
+    (reason,) = reasons()
+    assert reason.startswith("questions") and "errors.pydantic.dev" not in reason and len(reason) <= 80
+
+
+def test_upstream_statuses_and_timeouts_are_recorded_as_reasons(api, monkeypatch):
+    monkeypatch.setattr(llm, "RETRY_DELAYS", (0, 0))
+    answers = iter([httpx.Response(429), httpx.Response(503), reply()])
+    api(lambda request: next(answers))
+    run(llm.chat_json("s", "u", kind="quiz"))
+    assert reasons() == {"429": 1, "503": 1}
+
+
+def test_a_cut_off_answer_is_retried_with_a_bigger_budget(api):
+    bodies = []
+
+    def handler(request):
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"questions": ['}, "finish_reason": "length" if len(bodies) < 3 else "stop"}]}) if len(bodies) < 3 else reply('{"questions": []}')
+
+    api(handler)
+    with pytest.raises(HTTPException):
+        run(llm.ask(QuestionList, "s", "u", max_tokens=6000, kind="quiz"))
+    assert [b["max_tokens"] for b in bodies] == [6000, 9000, 12000]
+    assert reasons()["truncated"] == 2
+
+
+def test_the_token_budget_never_passes_the_ceiling(api):
+    bodies = []
+
+    def handler(request):
+        bodies.append(json.loads(request.content)["max_tokens"])
+        return httpx.Response(200, json={"choices": [{"message": {"content": "{"}, "finish_reason": "length"}]})
+
+    api(handler)
+    with pytest.raises(HTTPException):
+        run(llm.ask(QuestionList, "s", "u", max_tokens=10000, kind="quiz"))
+    assert bodies == [10000, 12000, 12000]
+
+
+@pytest.mark.parametrize("kind, setting, strict", [("lesson", None, True), ("quiz", None, False), ("lesson", "off", False)])
+def test_only_lessons_use_a_strict_schema(monkeypatch, kind, setting, strict):
+    monkeypatch.delenv("NOVA_JSON_STRICT", raising=False)
+    if setting:
+        monkeypatch.setenv("NOVA_JSON_STRICT", setting)
+    assert llm._response_format(QuestionList, "m", kind)["json_schema"]["strict"] is strict

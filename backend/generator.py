@@ -3,6 +3,7 @@ import hashlib
 import json
 import logging
 import time
+from itertools import zip_longest
 from typing import AsyncIterator, List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
@@ -75,13 +76,14 @@ async def _read_request(mode, expectations, objective, focus, structure, files) 
 @router.post("/api/courses/topic", dependencies=[Depends(TOPIC_LIMIT), Depends(check_budget)])
 async def generate_topic(body: TopicRequest, fresh: bool = Query(False)):
     refuse_orders(body.expectations)
-    key = (body.objective.casefold(), body.expectations.casefold(), body.module.casefold(), body.topic.casefold(), body.outline, body.previous)
+    key = (body.objective.casefold(), body.expectations.casefold(), body.module.casefold(), body.topic.casefold(), body.outline, body.previous, body.covers, body.excludes, tuple(body.outlineSummaries))
     cached = None if fresh else await TOPICS.get(key)
     if cached:
         return cached
     request = CourseRequest(mode="goal", objective=body.objective, expectations=body.expectations)
-    outline = OutlineTopic(title=body.topic, planet="", summary=body.summary)
-    content = await write_topic(body.module, outline, request, "", body.outline, body.previous)
+    outline = OutlineTopic(title=body.topic, planet="", summary=body.summary, covers=body.covers, excludes=body.excludes)
+    others = list(zip_longest(body.outline, body.outlineSummaries, fillvalue=""))
+    content = await write_topic(body.module, outline, request, "", others, body.previous)
     seen: set = set()
     topic = {
         "kind": content.kind,

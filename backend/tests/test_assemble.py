@@ -88,6 +88,14 @@ def test_lazy_topics_keep_the_planned_minutes():
     assert course.modules[0].topics[0].lesson.minutes == 5
 
 
+def test_lazy_topics_carry_what_they_cover_and_exclude():
+    planned = outline(1, 1)
+    planned.modules[0].topics[0].covers, planned.modules[0].topics[0].excludes = "the hook", "the closing"
+    topic = assemble_lazy_course(planned, request()).modules[0].topics[0]
+    assert (topic.covers, topic.excludes) == ("the hook", "the closing")
+    assert assemble_lazy_course(outline(1, 1), request()).modules[0].topics[0].covers == ""
+
+
 # --- Citations ---
 
 QUOTE = "Chlorophyll absorbs red and blue light in the thylakoid membrane"

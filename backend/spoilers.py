@@ -1,6 +1,6 @@
 import re
 
-QUIZ_REQUEST = re.compile(r"\b(quiz|test me|practice|question me|ask me|another one|next question)\b", re.IGNORECASE)
+QUIZ_REQUEST = re.compile(r"\b(quiz|test me|practice|question me|ask me|another one|next question|exam|checkpoint|graded)\b", re.IGNORECASE)
 SENTENCE_END = re.compile(r"(?<=[?.!])\s+|\n+")
 WORDS = re.compile(r"[a-z0-9]{4,}")
 COMMON = {"which", "what", "does", "that", "with", "this", "from", "when", "have", "would", "should", "about", "these", "their", "there", "following", "correct", "answer"}

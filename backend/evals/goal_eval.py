@@ -29,8 +29,8 @@ async def run_goal(case: dict, style: dict, judge: bool) -> dict:
     try:
         outline = fit_outline(await plan_outline(request))
         module, topic = outline.modules[0], outline.modules[0].topics[0]
-        titles = [t.title for m in outline.modules for t in m.topics]
-        content = await write_topic(module.title, topic, request, "", titles, "")
+        others = [(t.title, t.summary) for m in outline.modules for t in m.topics]
+        content = await write_topic(module.title, topic, request, "", others, "")
         text = lesson_text(content.lesson)
         questions = content.quiz + content.practice
         grade = reading_grade(text)

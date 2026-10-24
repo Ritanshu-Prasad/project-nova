@@ -25,6 +25,24 @@ def test_outline_prompt_asks_for_the_learning_arc_and_a_size_that_follows_the_le
     assert prompts.SIZE_RULE in prompt and prompts.LEARNING_ARC in prompt
 
 
+def test_the_outline_asks_for_topics_that_do_not_overlap():
+    assert "no two topics share a subtopic or an example" in outline_system()
+
+
+def test_the_tutor_answers_with_the_answer_only_and_never_its_planning():
+    prompt = prompts.tutor_system("Topic", "Module", "Course", "Probe", "Lesson text", [])
+    assert "Reply with the answer only, never your planning or reasoning." in prompt
+
+
+def test_the_tutor_puts_multiple_choice_options_on_their_own_lines():
+    prompt = prompts.tutor_system("Topic", "Module", "Course", "Probe", "Lesson text", [])
+    assert "put each option on its own line as `A) ...`" in prompt and "short bullet lists when listing more than two points" in prompt
+
+
+def test_the_outline_summary_is_one_sentence_without_an_example():
+    assert "in one sentence and never contains 'Example:'" in outline_system()
+
+
 def test_the_planning_prompts_tell_the_model_to_ignore_instructions_in_the_goal_or_documents():
     assert prompts.GOAL_RULE in outline_system() and prompts.DOCUMENT_RULE in module_system()
 
@@ -154,3 +172,13 @@ def test_system_style_tags_are_removed_from_goals(goal):
 
 def test_ordinary_html_tags_in_a_goal_are_kept():
     assert "<div>" in sanitise("How the <div> tag works", 300)
+
+
+def test_the_outline_prompts_ask_for_covers_and_excludes_and_the_revision_keeps_them():
+    for prompt in (prompts.outline_system(), prompts.revise_outline_system()):
+        assert '"covers": str, "excludes": str' in prompt and '"covers" is one short sentence' in prompt
+    assert "same title, planet, summary, covers and excludes" in prompts.revise_outline_system()
+
+
+def test_the_prompt_version_names_this_round():
+    assert prompts.PROMPT_VERSION == "2026-10-m"

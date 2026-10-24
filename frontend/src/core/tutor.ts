@@ -163,6 +163,8 @@ function blockText(b: Block): string {
       return `Example: ${b.body}`;
     case 'callout':
       return b.body;
+    case 'quickcheck':
+      return `Quick check: ${b.question} Answer: ${b.answer}`;
     case 'source':
       return `From ${b.doc}${b.page ? ` p.${b.page}` : ''}: ${b.excerpt}`;
     case 'summary':

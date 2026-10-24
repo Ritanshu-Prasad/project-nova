@@ -222,16 +222,18 @@ def test_a_bank_that_needed_rewrites_leaves_remarks_on_the_request(monkeypatch):
 
 def test_a_module_that_broke_the_code_rule_leaves_a_remark(monkeypatch):
     spent = usage.begin()
-    answers = [module(), module(requires_code=True, sections=[section(), section(), module_content.ModuleContent.model_validate(module()).sections[0].model_copy(update={"code": {"language": "python", "snippet": "print(1)", "explanation": "Prints one."}})])]
+    answers = [module(), module(sections=[section(), section(), section("A first script", code={"language": "python", "snippet": "print(1)", "explanation": "Prints one."})])]
 
     async def fake_ask(schema, system, user, max_tokens=0, thinking=False, kind="call"):
         if schema is module_content.CodeVerdict:
             return schema(requires_code=True)
+        if schema is module_content.FactReview:
+            return schema(doubtful=[])
         return schema.model_validate(answers.pop(0))
 
     monkeypatch.setattr(module_content.llm, "ask", fake_ask)
     result = run(module_content.write_module("Git", "", []))
-    assert result.requires_code and spent.notes == ["module: wrote requires_code=False but True was decided, asked again"]
+    assert result.requires_code and spent.notes == ["module: code wanted but no section has any, asked again"]
 
 
 # --- Failures become eval cases ---

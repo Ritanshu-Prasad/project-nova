@@ -320,3 +320,13 @@ def test_a_new_hour_counts_again(alerts, monkeypatch):
     monkeypatch.setattr(usage.time, "strftime", lambda fmt, now=None: "2099-01-01-00" if "%H" in fmt and fmt.endswith("%H") else "2099-01-01")
     fail(3)
     assert len(alerts.posted) == 2
+
+
+def test_retry_reasons_are_counted_per_kind_and_ranked():
+    for reason in ("truncated", "429", "truncated", "x" * 200):
+        run(usage.record_retry("lesson", MODEL, reason))
+    run(usage.record_retry("lesson", MODEL))
+    day = report()[0]
+    assert day["kinds"]["lesson"]["retries"] == 5
+    assert day["retry_reasons"][0] == {"kind": "lesson", "reason": "truncated", "count": 2}
+    assert all(len(item["reason"]) <= 80 for item in day["retry_reasons"])

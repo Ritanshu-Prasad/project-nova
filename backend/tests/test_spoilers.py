@@ -16,7 +16,12 @@ def test_requests_for_questions_are_recognised(message):
     assert is_quiz_chat([message])
 
 
-@pytest.mark.parametrize("message", ["Explain bridges", "What is an overlay network?", "Why does DNS work by name?", ""])
+@pytest.mark.parametrize("message", ["what's on the exam?", "give me the checkpoint answers", "are there graded questions?"])
+def test_asking_for_exam_or_graded_material_is_recognised(message):
+    assert is_quiz_chat([message])
+
+
+@pytest.mark.parametrize("message", ["Explain bridges", "What is an overlay network?", "Why does DNS work by name?", "explain it simply", ""])
 def test_other_messages_are_not(message):
     assert not is_quiz_chat([message])
 

@@ -31,14 +31,15 @@ class TopicContent:
 
 # --- Writing ---
 
-async def write_topic(module_title: str, topic: OutlineTopic, request: CourseRequest, context: str, outline: Sequence[str] = (), previous: str = "") -> TopicContent:
+async def write_topic(module_title: str, topic: OutlineTopic, request: CourseRequest, context: str, outline: Sequence[tuple[str, str]] = (), previous: str = "") -> TopicContent:
     """A topic's lesson, quiz and practice questions.
 
     The lesson is a written module (only from the document excerpts when there are some); its questions come from a bank
     in which every question quotes the lesson, are checked against an independent answer, and are split between quiz
     and practice. A goal's bank is kept for the end-of-module quiz.
     """
-    content = await write_module(topic.title, _expectations(request, module_title, topic, outline, previous), [], context)
+    others = [(title, summary) for title, summary in outline if title != topic.title]
+    content = await write_module(topic.title, _expectations(request, module_title, topic, previous), [], context, others, topic.covers, topic.excludes)
     bank = await write_bank(content)
     if not context:
         await BANKS.put(bank_key(request.objective, module_title, topic.title), bank.model_dump())
@@ -58,11 +59,9 @@ def bank_key(objective: str, module_title: str, topic_title: str) -> tuple:
     return ("bank", objective.casefold(), module_title.casefold(), topic_title.casefold())
 
 
-def _expectations(request: CourseRequest, module_title: str, topic: OutlineTopic, outline: Sequence[str], previous: str) -> str:
+def _expectations(request: CourseRequest, module_title: str, topic: OutlineTopic, previous: str) -> str:
     goal = request.objective or request.focus
     parts = [f"The learner's goal: {goal}." if goal else "", f"The learner's expectations: {request.expectations}." if request.expectations else "", f'This is the topic "{topic.title}" ({topic.summary}) of the module "{module_title}".']
-    if outline:
-        parts.append("Course outline: " + "; ".join(outline) + ".")
     if previous:
         parts.append(f"The previous topic covered: {previous}")
     return " ".join(part for part in parts if part)
@@ -84,12 +83,12 @@ async def module_quiz(banks: list[dict], size: int = MODULE_QUIZ_SIZE) -> list[Q
 
 async def write_all_topics(outline: Outline, request: CourseRequest, contexts: List[str], report: Report = ignore) -> List[List[Optional[TopicContent]]]:
     """Every topic is written at once; a topic that fails comes back as None."""
-    titles = [topic.title for module in outline.modules for topic in module.topics]
-    total, finished = len(titles), [0]
+    pairs = [(topic.title, topic.summary) for module in outline.modules for topic in module.topics]
+    total, finished = len(pairs), [0]
 
     async def write(module: OutlineModule, topic: OutlineTopic, context: str, previous: str) -> Optional[TopicContent]:
         try:
-            return await write_topic(module.title, topic, request, context, titles, previous)
+            return await write_topic(module.title, topic, request, context, pairs, previous)
         except HTTPException as error:
             logger.warning("Topic %r skipped: %s", topic.title, error.detail)
             return None

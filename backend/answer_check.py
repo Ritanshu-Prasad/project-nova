@@ -30,8 +30,9 @@ class BlindAnswers(BaseModel):
 async def drop_disputed(questions: List[Question], context: str = "", minimum: int = MIN_QUESTIONS, open_book: bool = False) -> List[Question]:
     """Has the model answer the questions without seeing the key, and drops those where every attempt disagrees.
 
-    A key the model cannot reproduce is more likely wrong than the question is hard, and asking twice keeps one
-    unlucky answer from removing a good question. Nothing is dropped if that would leave too few questions, and
+    A key the model cannot reproduce is more likely wrong than the question is hard, and asking again keeps one
+    unlucky answer from removing a good question. The second vote is only asked when the first disputes something,
+    which is the only case where it can change the outcome. Nothing is dropped if that would leave too few questions, and
     a failing check leaves the questions as they were.
 
     Questions about a particular lesson cannot be answered blind, so with `open_book` the lesson is given as
@@ -44,15 +45,26 @@ async def drop_disputed(questions: List[Question], context: str = "", minimum: i
     if not checkable:
         return questions
     try:
-        votes = await asyncio.gather(*(_vote(checkable, context) for _ in range(VOTES)))
+        disputed = await _disputed(checkable, context)
     except HTTPException as error:
         logger.warning("Answer check skipped: %s", error.detail)
         return questions
-    disputed = {position for number, (position, question) in enumerate(checkable, start=1) if all(number in vote and vote[number] != _key(question) for vote in votes)}
     kept = [question for position, question in enumerate(questions) if position not in disputed]
     if disputed:
         logger.info("Answer check dropped %d of %d questions", len(disputed), len(questions))
     return kept if len(kept) >= minimum else questions
+
+
+async def _disputed(checkable: list, context: str) -> set:
+    """Positions of the questions every vote disputes; a vote is only asked while the earlier ones disputed something."""
+    disputed = None
+    for _ in range(VOTES):
+        vote = await _vote(checkable, context)
+        now = {position for number, (position, question) in enumerate(checkable, start=1) if number in vote and vote[number] != _key(question)}
+        disputed = now if disputed is None else disputed & now
+        if not disputed:
+            break
+    return disputed
 
 
 async def _vote(checkable: list, context: str) -> dict:

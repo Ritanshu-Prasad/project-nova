@@ -51,6 +51,52 @@ export const FORMAT_LABEL: Record<Question['type'], string> = {
 /** "3–5" style label for a bank of `n` questions. */
 export const quizSizeLabel = (n: number, min = QUIZ_MIN, max = QUIZ_MAX) => (n >= min ? `${min}–${Math.min(max, n)}` : String(n));
 
+// ── Answers and feedback text ───────────────────────────────────────────────────────────────────────────
+
+/** Joins sentence-like points, dropping each one's trailing punctuation so the result never reads ".," or "..". */
+export const joinPoints = (points: string[], sep: string) =>
+  points
+    .map((p) => p.trim().replace(/[\s.;,!]+$/, ''))
+    .filter(Boolean)
+    .join(sep);
+
+/** Lowercase, punctuation-free form used to compare typed answers. */
+const normAnswer = (s: string) => s.toLowerCase().replace(/[^a-z0-9α-ωλ]+/gi, ' ').trim();
+
+/** Singular and plural forms of an answer: "cell" ↔ "cells", "box" ↔ "boxes". */
+function answerForms(answer: string): string[] {
+  const n = normAnswer(answer);
+  if (n.endsWith('es')) return [n, n.slice(0, -2)];
+  if (n.endsWith('s')) return [n, n.slice(0, -1)];
+  return [n, `${n}s`, `${n}es`];
+}
+
+/** Whether a typed fill-in answer matches the question's answer or an accepted variant, singular or plural. */
+export function fillAccepts(q: Extract<Question, { type: 'fill' }>, typed: string): boolean {
+  const t = normAnswer(typed);
+  return [q.answer, ...(q.accept ?? [])].some((a) => answerForms(a).includes(t));
+}
+
+/** The answer as shown after a question: multiple select lists each option as its own item. */
+export function answerText(q: Question): string {
+  switch (q.type) {
+    case 'mcq':
+      return q.options[q.answer];
+    case 'multi':
+      return joinPoints(q.answers.map((i) => q.options[i]), '; ');
+    case 'truefalse':
+      return q.answer ? 'True' : 'False';
+    case 'fill':
+      return q.answer;
+    case 'code':
+      return q.solution;
+    case 'order':
+      return joinPoints(q.items, ' → ');
+    case 'match':
+      return q.pairs.map(([a, b]) => `${a} = ${b}`).join(' · ');
+  }
+}
+
 function shuffle<T>(xs: T[], rand: () => number): T[] {
   const a = [...xs];
   for (let i = a.length - 1; i > 0; i--) {
@@ -163,6 +209,8 @@ const SUBJECT_STOP = new Set(
 const GENERIC_TERMS = new Set('the basics introduction intro overview deep dive pattern patterns part fundamentals essentials practice concepts concept'.split(' '));
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const lessonText = (t: PlacedTopic) => t.lesson.blocks.flatMap((b) => (b.type === 'text' || b.type === 'example' ? [b.body] : [])).join(' ');
+/** Explanation text only: worked examples are left out, since they restate the lesson with made-up cases. */
+const textBody = (t: PlacedTopic) => blocksOf(t, 'text').map((b) => b.body).join(' ');
 
 /** The parts of a topic title that name things: "MSE vs Cross Entropy" → MSE, Cross Entropy. Used as answers and distractors. */
 function titleTerms(t: PlacedTopic): string[] {
@@ -181,11 +229,20 @@ function termsMarkedIn(t: PlacedTopic): string[] {
   return [...quoted, ...acronyms, ...titleTerms(t)].filter((x) => !GENERIC_TERMS.has(x.toLowerCase()) && !seen.has(x.toLowerCase()) && !!seen.add(x.toLowerCase()));
 }
 
+const DEPENDENT_START = /^(this|that|these|those|it|they|he|she|such|here|there|and|but|so|then|also|however)\b/i;
+const REFERENCE_WORDS = /\b(above|below|previous|following)\b/i;
+
+/** Whether a sentence makes sense lifted out of its paragraph (no leading pronoun or connective, no "see above"). */
+export function standsAlone(sentence: string): boolean {
+  const s = sentence.trim().replace(/^['"‘“’”]+/, '');
+  return !DEPENDENT_START.test(s) && !REFERENCE_WORDS.test(s);
+}
+
 /** A sentence from the lesson with `term` blanked out (null if none fits, the term would still show, or the sentence is taken). */
 function cloze(t: PlacedTopic, term: string, taken: Set<string>): { q: string; answer: string; sentence: string } | null {
   const re = new RegExp(`['‘"“]?\\b(${escapeRe(term)}(?:e?s)?)\\b['’"”]?`, 'i');
   for (const s of lessonText(t).split(/(?<=[.!?])\s+(?=[A-Z'"‘“])/)) {
-    if (s.length < 30 || s.length > 200 || taken.has(s)) continue;
+    if (s.length < 30 || s.length > 200 || taken.has(s) || !standsAlone(s)) continue;
     const m = re.exec(s);
     if (!m) continue;
     const q = s.replace(re, '____');
@@ -196,7 +253,7 @@ function cloze(t: PlacedTopic, term: string, taken: Set<string>): { q: string; a
 
 /** "A tensor is a generalisation to n dimensions." → { term: 'Tensor', def: 'a generalisation to n dimensions' } — from a topic's own text. */
 function textDefinitions(t: PlacedTopic): { term: string; def: string; sentence: string }[] {
-  const text = lessonText(t);
+  const text = textBody(t);
   const out: { term: string; def: string; sentence: string }[] = [];
   for (const raw of text.split(/(?<=[.!?])\s+(?=[A-Z])/)) {
     const sentence = raw.trim();
@@ -218,17 +275,17 @@ function textDefinitions(t: PlacedTopic): { term: string; def: string; sentence:
 
 function generateBanks(course: Course): Map<string, Question[]> {
   const topics = flatTopics(course);
-  const textDefs = new Map(topics.map((t) => [t.id, textDefinitions(t)]));
+  const textDefs = new Map(topics.map((t) => [t.id, textDefinitions(t).filter((d) => !isFillerLabel(d.term))]));
   const markedTerms = new Map(topics.map((t) => [t.id, termsMarkedIn(t)]));
+  const keyTerms = new Map(topics.map((t) => [t.id, blocksOf(t, 'keyTerms').flatMap((b) => b.terms.filter((x) => !isFillerLabel(x.term)))]));
   const terms = topics.flatMap((t) => {
-    const key = blocksOf(t, 'keyTerms').flatMap((b) => b.terms.filter((x) => !isFillerLabel(x.term)).map((x) => ({ ...x, topic: t.id })));
-    const fromText = (textDefs.get(t.id) ?? []).filter((d) => !isFillerLabel(d.term) && !key.some((k) => k.term.toLowerCase() === d.term.toLowerCase())).map((d) => ({ term: d.term, def: d.def, topic: t.id }));
+    const key = (keyTerms.get(t.id) ?? []).map((x) => ({ term: x.term, def: x.def, topic: t.id }));
+    const fromText = (textDefs.get(t.id) ?? []).filter((d) => !key.some((k) => k.term.toLowerCase() === d.term.toLowerCase())).map((d) => ({ term: d.term, def: d.def, topic: t.id }));
     return [...key, ...fromText];
   });
   // Authored questions pasted into many topics are generic; they are kept only where a topic has little else.
   const qCount = new Map<string, number>();
   for (const t of topics) for (const q of new Set(t.quiz.map((x) => x.q))) qCount.set(q, (qCount.get(q) ?? 0) + 1);
-  const points = topics.flatMap((t) => blocksOf(t, 'summary').flatMap((b) => b.points.map((p) => ({ p, topic: t.id }))));
   const formulas = topics.flatMap((t) => blocksOf(t, 'formula').map((f) => ({ ...f, topic: t.id })));
   const out = new Map<string, Question[]>();
 
@@ -246,25 +303,15 @@ function generateBanks(course: Course): Map<string, Question[]> {
       const distract = [...mine.filter((x) => x.term !== k.term), ...others].map((x) => x.term).filter((x, i, a) => a.indexOf(x) === i);
       if (distract.length >= 2) gen.push({ type: 'mcq', q: `Which term matches: “${clip(k.def)}”?`, options: [k.term, ...distract.slice(0, 3)], answer: 0, why: `${k.term} — ${k.def}`, difficulty: 1 });
     }
-    // Matching: terms to meanings.
+    // Matching: the lesson's key terms to their meanings (text definitions top up a topic with fewer than three key terms).
     // Question texts must be unique per topic: quizzes de-duplicate by text and repeat scoring keys on it.
-    if (mine.length >= 3) gen.push({ type: 'match', q: `Match each term from “${t.title}” to its meaning.`, pairs: mine.slice(0, 4).map((x) => [x.term, clip(x.def, 110)] as [string, string]), why: 'Each term pairs with the definition from the lesson’s key terms.', difficulty: 2 });
-    // Multiple select: which of these are this topic's key terms?
-    if (mine.length >= 2 && others.length >= 2) {
-      const right = mine.slice(0, 3).map((x) => x.term);
-      gen.push({ type: 'multi', q: `Which of these are key terms in “${t.title}”?`, options: [...right, ...others.slice(0, 2).map((x) => x.term)], answers: right.map((_, i) => i), why: `This topic’s key terms: ${right.join(', ')}.`, difficulty: 2 });
-    }
+    const keys = keyTerms.get(t.id) ?? [];
+    const pairSource = keys.length >= 3 ? keys : [...keys, ...(textDefs.get(t.id) ?? []).filter((d) => !keys.some((k) => k.term.toLowerCase() === d.term.toLowerCase()))];
+    if (pairSource.length >= 3) gen.push({ type: 'match', q: `Match each term from “${t.title}” to its meaning.`, pairs: pairSource.slice(0, 4).map((x) => [x.term, clip(x.def, 110)] as [string, string]), why: 'Each term pairs with the definition from the lesson’s key terms.', difficulty: 2 });
     // Ordering: the lesson's steps.
     for (const s of blocksOf(t, 'steps').filter((b) => b.steps.length >= 3).slice(0, 1)) {
       const items = s.steps.slice(0, 6).map(stripStepLabel);
-      gen.push({ type: 'order', q: `Put these steps in order: ${s.title && !isFillerLabel(s.title) ? s.title : t.title}.`, items, why: `The order: ${items.join(' → ')}.`, difficulty: 2 });
-    }
-    // Multiple select: takeaways of this topic vs. other topics'.
-    const myPoints = points.filter((x) => x.topic === t.id).map((x) => x.p);
-    const otherPoints = shuffle(points.filter((x) => x.topic !== t.id && !myPoints.includes(x.p)), rand).map((x) => x.p);
-    if (myPoints.length >= 2 && otherPoints.length >= 2) {
-      const right = myPoints.slice(0, 3);
-      gen.push({ type: 'multi', q: `Which of these are takeaways from “${t.title}”?`, options: [...right, ...otherPoints.slice(0, 2)], answers: right.map((_, i) => i), why: `From this topic: ${right.join('; ')}.`, difficulty: 2 });
+      gen.push({ type: 'order', q: `Put these steps in order: ${s.title && !isFillerLabel(s.title) ? s.title : t.title}.`, items, why: `The order: ${joinPoints(items, ' → ')}.`, difficulty: 2 });
     }
     // Fill in the blank: definition sentences and terms the lesson marks itself ('quoted', (ACRONYM), title parts),
     // each blanked out of a different sentence so one question never gives away another's answer.
@@ -278,18 +325,20 @@ function generateBanks(course: Course): Map<string, Question[]> {
       taken.add(c.sentence);
       blanks.push({ term, c });
     }
-    // With two blanks, the first becomes multiple choice and the second fill-in; a lone blank stays fill-in.
+    // With two blanks, the first becomes multiple choice and the second fill-in; a lone blank, or a first blank whose
+    // multiple choice cannot be built, stays fill-in.
     const pick = blanks.length >= 2 ? blanks[0] : undefined;
-    for (const { c } of blanks.slice(pick ? 1 : 0)) gen.push({ type: 'fill', q: c.q, answer: c.answer, accept: [c.answer.toLowerCase()], why: `From the lesson: “${c.sentence}”`, difficulty: 2 });
-    if (pick) {
-      // Distractors: other topics' title terms and key terms — real terms from the same course.
-      const distract = shuffle(
-        [...new Set([...topics.filter((x) => x.id !== t.id).flatMap(titleTerms), ...others.map((x) => x.term)])].filter((x) => x.toLowerCase() !== pick.term.toLowerCase() && x.toLowerCase() !== pick.c.answer.toLowerCase()),
-        rand,
-      );
-      if (distract.length >= 2)
-        gen.push({ type: 'mcq', q: `Which term completes the sentence? “${clip(pick.c.q, 170)}”`, options: [pick.c.answer, ...distract.slice(0, 3)], answer: 0, why: `From the lesson: “${pick.c.q.replace('____', pick.c.answer)}”`, difficulty: 1 });
-    }
+    // Distractors: other topics' title terms and key terms — real terms from the same course.
+    const distract = pick
+      ? shuffle(
+          [...new Set([...topics.filter((x) => x.id !== t.id).flatMap(titleTerms), ...others.map((x) => x.term)])].filter((x) => x.toLowerCase() !== pick.term.toLowerCase() && x.toLowerCase() !== pick.c.answer.toLowerCase()),
+          rand,
+        )
+      : [];
+    const choiceBuilt = !!pick && distract.length >= 2;
+    for (const { c } of blanks.slice(choiceBuilt ? 1 : 0)) gen.push({ type: 'fill', q: c.q, answer: c.answer, accept: [c.answer.toLowerCase()], why: `From the lesson: “${c.sentence}”`, difficulty: 2 });
+    if (pick && choiceBuilt)
+      gen.push({ type: 'mcq', q: `Which term completes the sentence? “${clip(pick.c.q, 170)}”`, options: [pick.c.answer, ...distract.slice(0, 3)], answer: 0, why: `From the lesson: “${pick.c.q.replace('____', pick.c.answer)}”`, difficulty: 1 });
     // Multiple choice: which formula is described?
     for (const f of formulas.filter((x) => x.topic === t.id && x.caption).slice(0, 1)) {
       const alt = shuffle(formulas.filter((x) => x.expr !== f.expr), rand).map((x) => prettyMath(x.expr));

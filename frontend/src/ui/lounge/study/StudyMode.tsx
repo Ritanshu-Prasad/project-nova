@@ -40,6 +40,7 @@ import Dropdown from '../../common/Dropdown';
 import RankEmblem from '../RankEmblem';
 import { KIND_TEMPLATES } from './kinds';
 import LessonView from './LessonView';
+import { Inline } from './markdown';
 import ModuleQuiz from './ModuleQuiz';
 import TopicGate from './TopicGate';
 import TutorChat from './TutorChat';
@@ -369,7 +370,7 @@ const List = ({ items, mono = false }: { items: string[]; mono?: boolean }) => (
     {items.map((x, i) => (
       <li key={i} className={mono ? 'rounded-xl bg-black/30 px-3 py-2 font-mono text-white' : 'flex gap-2'}>
         {!mono && <span className="mt-2 size-1.5 shrink-0 rounded-full" style={{ background: 'var(--user)' }} />}
-        {x}
+        {mono ? x : <Inline text={x} />}
       </li>
     ))}
   </ul>
@@ -391,7 +392,7 @@ function sectionsFor(topic: PlacedTopic, checklist: ReactNode): SectionDef[] {
           {terms.map((t) => (
             <div key={t.term}>
               <dt className="font-semibold text-white">{t.term}</dt>
-              <dd className="text-white/65">{t.def}</dd>
+              <dd className="text-white/65"><Inline text={t.def} /></dd>
             </div>
           ))}
         </dl>
@@ -402,11 +403,11 @@ function sectionsFor(topic: PlacedTopic, checklist: ReactNode): SectionDef[] {
   const code = blocksOf(topic, 'code');
   if (code.length) out.push({ title: 'Code snippets', icon: Braces, count: code.length, body: <List mono items={code.map((x) => x.code.split('\n')[0])} /> });
   const steps = blocksOf(topic, 'steps');
-  if (steps.length) out.push({ title: 'Steps at a glance', icon: ListOrdered, count: steps[0].steps.length, body: <List items={steps.flatMap((x) => x.steps)} /> });
+  if (steps.length) out.push({ title: 'Steps at a glance', icon: ListOrdered, count: steps.flatMap((x) => x.steps).length, body: <List items={steps.flatMap((x) => x.steps)} /> });
   for (const p of topic.lesson.panels ?? [])
     out.push({ title: p.title, icon: panelIcon(p.title), count: p.items?.length || undefined, body: p.items?.length ? <List items={p.items} /> : <p>{p.body}</p> });
   const sum = blocksOf(topic, 'summary');
-  if (sum.length) out.push({ title: 'Key takeaways', icon: Check, count: sum[0].points.length, body: <List items={sum.flatMap((x) => x.points)} /> });
+  if (sum.length) out.push({ title: 'Key takeaways', icon: Check, count: sum.flatMap((x) => x.points).length, body: <List items={sum.flatMap((x) => x.points)} /> });
   const src = blocksOf(topic, 'source');
   if (src.length) out.push({ title: 'Sources', icon: FileText, count: src.length, body: <List items={src.map((x) => `${x.doc}${x.page ? ` · page ${x.page}` : ''}`)} /> });
   out.push({ title: 'My notes', icon: NotebookPen, body: <Notes topicId={topic.id} /> });
@@ -467,7 +468,6 @@ function Rail({ topic }: { topic: PlacedTopic | null }) {
   const defs = sectionsFor(topic, checklist);
   return (
     <div className="space-y-3">
-      <div className="px-1 text-xs text-white/60">{defs.length} sections for this topic</div>
       {defs.map((d, i) => (
         <Section key={d.title} def={d} defaultOpen={i < 2} />
       ))}

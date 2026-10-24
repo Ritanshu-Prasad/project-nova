@@ -41,6 +41,8 @@ def model(monkeypatch):
     async def chat_json(system, user, max_tokens=0, thinking=False, schema=None, kind="call"):
         if system == CODE_CHECK_SYSTEM:
             return {"requires_code": state.verdict, "reason": "because"}
+        if "careful fact checker" in system:
+            return {"doubtful": []}
         if "curriculum designer" in system:
             sections = [section(), section(), code_section()] if "MUST have" in system else [section(), section(), section()]
             return module(requires_code="MUST have" in system, sections=sections)
@@ -71,16 +73,17 @@ def test_a_module_row_records_the_decision_the_sections_and_the_code(model):
 
 def test_the_summary_scores_decisions_and_code_but_not_ambiguous_cases():
     rows = [
-        {"ok": True, "expected": True, "decided": True, "code_sections": 2, "sections": 4},
-        {"ok": True, "expected": False, "decided": True, "code_sections": 1, "sections": 5},
-        {"ok": True, "expected": False, "decided": False, "code_sections": 0, "sections": 3},
-        {"ok": True, "expected": None, "decided": True, "code_sections": 3, "sections": 4},
+        {"ok": True, "expected": True, "decided": True, "code_sections": 2, "sections": 4, "repeated_extras": 0, "sections_with_lists": 2, "simple_grade": 5.0},
+        {"ok": True, "expected": False, "decided": True, "code_sections": 1, "sections": 5, "repeated_extras": 1, "sections_with_lists": 1, "simple_grade": 7.0},
+        {"ok": True, "expected": False, "decided": False, "code_sections": 0, "sections": 3, "repeated_extras": 0, "sections_with_lists": 2, "simple_grade": 6.0},
+        {"ok": True, "expected": None, "decided": True, "code_sections": 3, "sections": 4, "repeated_extras": 0, "sections_with_lists": 2, "simple_grade": 6.0},
         {"ok": False, "expected": True, "decided": True, "error": "x"},
     ]
     summary = module_eval.summarise(rows)
     assert summary["runs"] == 5 and summary["ok_rate"] == 0.8
     assert summary["decision_accuracy"] == 0.75 and summary["code_when_needed"] == 1.0 and summary["no_code_when_not_needed"] == 0.5
     assert summary["average_sections"] == 4.0
+    assert summary["repeated_extras"] == 1 and summary["simple_grade"] == 6.0 and summary["sections_with_lists"] == 1.75
 
 
 def test_a_whole_run_goes_through_every_smoke_topic(model):
@@ -111,7 +114,7 @@ def test_the_bank_summary_averages_the_first_pass_and_counts_failures():
 # --- In the report ---
 
 def test_the_report_has_a_section_for_each_new_suite():
-    rows = [{"suite": "modules", "ok": True, "expected": False, "decided": False, "code_sections": 0, "sections": 3, "cost_usd": 0.001, "tokens": 100, "calls": 2},
+    rows = [{"suite": "modules", "ok": True, "expected": False, "decided": False, "code_sections": 0, "sections": 3, "repeated_extras": 0, "sections_with_lists": 2, "simple_grade": 6.0, "cost_usd": 0.001, "tokens": 100, "calls": 2},
             {"suite": "bank", "ok": True, "clean_share": 1.0, "first_try": 1.0, "cost_usd": 0.001, "tokens": 100, "calls": 2}]
     summary = report.build_summary(rows, ["beginner"])
     text = report.render_markdown(summary, {"date": "2026-01-01", "model": "m", "promptVersion": "p", "cases": "smoke", "suites": "all", "repeat": 1})

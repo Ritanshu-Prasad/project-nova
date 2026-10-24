@@ -92,10 +92,17 @@ async def _system_prompt(context: TutorContext, question: str) -> str:
         module=sanitise(context.module, LABEL_CHARS) or "-",
         course=sanitise(context.course, LABEL_CHARS) or "-",
         rank=sanitise(context.rank, LABEL_CHARS) or "new pilot",
-        lesson=wrap_untrusted_context(context.lesson[:LESSON_CHARS]),
+        lesson=wrap_untrusted_context(_clip(context.lesson)),
         graded=[sanitize_prompt_text(graded, GRADED_CHARS) for graded in context.avoid[:GRADED_SHOWN]],
         sources=await _document_sources(context, question),
     )
+
+
+def _clip(lesson: str) -> str:
+    """The lesson cut at a paragraph break, so a long lesson never ends in the middle of a sentence."""
+    if len(lesson) <= LESSON_CHARS:
+        return lesson
+    return lesson[:LESSON_CHARS].rpartition("\n")[0] or lesson[:LESSON_CHARS]
 
 
 async def _document_sources(context: TutorContext, question: str) -> List[str]:
@@ -139,7 +146,7 @@ async def _in_chunks(text: str) -> AsyncIterator[str]:
 # --- Streaming ---
 
 async def _open_stream(client: httpx.AsyncClient, messages: list) -> httpx.Response:
-    payload = {"model": llm.tutor_model(), "messages": messages, "stream": True, "temperature": 0.4, "max_tokens": 700}
+    payload = {"model": llm.tutor_model(), "messages": messages, "stream": True, "temperature": 0.4, "max_tokens": 700, "chat_template_kwargs": llm.NO_THINKING}
     request = client.build_request("POST", f"{llm.base_url()}/chat/completions", headers={"Authorization": f"Bearer {llm.api_key()}"}, json=payload)
     try:
         upstream = await client.send(request, stream=True)

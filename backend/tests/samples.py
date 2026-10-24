@@ -90,18 +90,22 @@ EVIDENCE = "a small repeated action becomes a lasting routine when it is attache
 STEPS = ["Choose one tiny action", "Attach it to a daily routine", "Do it right after the routine", "Celebrate right away"]
 
 
-def module_content_json(sections: int = 3, requires_code: bool = False) -> dict:
+def module_content_json(sections: int = 4, requires_code: bool = False) -> dict:
     """A module whose every section contains EVIDENCE, so the bank samples below can quote it."""
     body = f"In this part we show that {EVIDENCE}. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
     items = [{"heading": f"Idea {n}", "explanation": body * 2} for n in range(sections)]
+    for item in items[:2]:
+        item["points"] = ["Choose one tiny action", "Attach it to a daily routine", "Celebrate right away"]
+    if sections > 3:
+        items[3]["quick_check"] = {"question": "What share is 12000 of 30000?", "answer": "40 percent"}
     if requires_code:
         items[-1]["code"] = {"language": "python", "snippet": "print('hi')", "explanation": "Prints a greeting to the screen."}
     return {
         "title": "Building a daily habit",
         "overview": "How small, repeated actions turn into habits that last without willpower.",
+        "simple": "Small actions turn into habits when you attach them to something you already do. Each repeat makes the next one easier. Like brushing your teeth after breakfast, the routine does the remembering for you.",
         "learning_objectives": ["Explain how a small action attaches to a routine", "Build a habit that needs little willpower"],
-        "requires_code": requires_code,
-        "code_reason": "The topic needs code." if requires_code else "A general life skill, no software involved.",
+        "takeaways": [f"Takeaway number {n} is a real point of the module." for n in range(3)],
         "key_terms": [{"term": f"Term {n}", "definition": "A short definition of the term."} for n in range(3)],
         "sections": items,
     }

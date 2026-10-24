@@ -7,8 +7,8 @@
     "title",
     "overview",
     "learning_objectives",
-    "requires_code",
-    "code_reason",
+    "simple",
+    "takeaways",
     "key_terms",
     "sections"
   ],
@@ -32,13 +32,18 @@
         "minLength": 5
       }
     },
-    "requires_code": {
-      "type": "boolean"
-    },
-    "code_reason": {
+    "simple": {
       "type": "string",
-      "minLength": 3,
-      "maxLength": 200
+      "minLength": 40,
+      "maxLength": 600
+    },
+    "takeaways": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 5,
+      "items": {
+        "type": "string"
+      }
     },
     "key_terms": {
       "type": "array",
@@ -66,7 +71,7 @@
     "sections": {
       "type": "array",
       "minItems": 3,
-      "maxItems": 8,
+      "maxItems": 6,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -81,7 +86,7 @@
           },
           "explanation": {
             "type": "string",
-            "minLength": 200
+            "minLength": 120
           },
           "example": {
             "type": "string",
@@ -119,6 +124,15 @@
             "items": {
               "type": "string",
               "minLength": 5
+            }
+          },
+          "points": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 6,
+            "items": {
+              "type": "string",
+              "minLength": 3
             }
           },
           "code": {

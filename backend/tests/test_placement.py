@@ -70,7 +70,7 @@ def test_the_questions_are_not_dropped_below_four(fake_model, monkeypatch):
 def test_writing_a_placement_quiz_asks_the_model_for_the_quiz_and_the_check(fake_model, monkeypatch):
     monkeypatch.delenv("NOVA_VERIFY_ANSWERS")
     run(write_placement("Docker networking"))
-    assert fake_model.kinds == ["placement", "answers", "answers"] and "<learning_goal>Docker networking</learning_goal>" in fake_model.prompts[0][1]
+    assert fake_model.kinds == ["placement", "answers"] and "<learning_goal>Docker networking</learning_goal>" in fake_model.prompts[0][1]
 
 
 def test_the_prompt_asks_for_questions_in_order_without_naming_levels():

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { audio } from '../../../core/audio';
 import { shuffledIndices, useCourse } from '../../../core/course';
 import type { Question } from '../../../core/courseSchema';
-import { FORMAT_LABEL } from '../../../core/quizBuilder';
+import { answerText, FORMAT_LABEL, fillAccepts } from '../../../core/quizBuilder';
 import Btn from './Btn';
 import ReportQuestion from './ReportQuestion';
 import { hasCourseApi } from '../../../core/courseApi';
@@ -20,27 +20,6 @@ interface Resp {
   correct: boolean;
   delta: number;
   timedOut?: boolean;
-}
-
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9α-ωλ]+/gi, ' ').trim();
-
-function answerText(q: Question): string {
-  switch (q.type) {
-    case 'mcq':
-      return q.options[q.answer];
-    case 'multi':
-      return q.answers.map((i) => q.options[i]).join(', ');
-    case 'truefalse':
-      return q.answer ? 'True' : 'False';
-    case 'fill':
-      return q.answer;
-    case 'code':
-      return q.solution;
-    case 'order':
-      return q.items.join(' → ');
-    case 'match':
-      return q.pairs.map(([a, b]) => `${a} = ${b}`).join(' · ');
-  }
 }
 
 /** The answer for review lists — code keeps its formatting. */
@@ -216,7 +195,7 @@ export default function QuizRunner({ questions, limits, rates, practice = false,
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!text.trim() || answered) return;
-                  submit([q.answer, ...(q.accept ?? [])].some((a) => norm(a) === norm(text)));
+                  submit(fillAccepts(q, text));
                 }}
                 className="flex flex-col gap-3 sm:flex-row"
               >

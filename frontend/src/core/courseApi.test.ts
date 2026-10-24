@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.stubEnv('VITE_COURSE_API', 'https://api.example');
-const { generateCourse, reportQuestion, reportAnswers } = await import('./courseApi');
+const { fetchTopic, generateCourse, reportQuestion, reportAnswers } = await import('./courseApi');
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -19,6 +19,15 @@ describe('reportQuestion', () => {
   it('fails when the backend refuses, so the app can say so', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 429 })));
     await expect(reportQuestion('A question?', 'unclear')).rejects.toThrow('429');
+  });
+});
+
+describe('fetchTopic', () => {
+  const request = { objective: 'Docker', expectations: '', course: 'Docker', module: 'Basics', topic: 'Bridges', summary: '', covers: '', excludes: '', outline: ['Bridges'], outlineSummaries: [''], previous: '' };
+
+  it('reports the status of a refused topic, so the screen can tell a model failure from a connection failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 502 })));
+    await expect(fetchTopic(request)).rejects.toMatchObject({ status: 502, message: 'Course API responded 502' });
   });
 });
 

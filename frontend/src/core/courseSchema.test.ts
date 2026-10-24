@@ -5,6 +5,18 @@ const mcq = { type: 'mcq', q: 'Which one?', options: ['a', 'b', 'c', 'd'], answe
 const block = { type: 'text', body: 'Some text.' };
 const topic = (extra: Record<string, unknown> = {}) => ({ id: 't1', title: 'Bridges', lesson: { blocks: [block] }, ...extra });
 
+describe('quickcheck block', () => {
+  const lesson = (blocks: unknown[]) => normTopic({ id: 't1', title: 'Bridges', lesson: { blocks } }).lesson.blocks;
+
+  it('keeps a quickcheck with a question and an answer', () => {
+    expect(lesson([{ type: 'quickcheck', question: 'Why?', answer: 'Because.' }])).toEqual([{ type: 'quickcheck', question: 'Why?', answer: 'Because.' }]);
+  });
+
+  it('drops one missing either part', () => {
+    expect(lesson([block, { type: 'quickcheck', question: 'Why?' }, { type: 'quickcheck', answer: 'Because.' }])).toEqual([{ type: 'text', body: 'Some text.' }]);
+  });
+});
+
 describe('normQuestion', () => {
   it('keeps a valid single-choice question', () => {
     expect(normQuestion(mcq)).toMatchObject({ type: 'mcq', q: 'Which one?', answer: 1, difficulty: 1 });
@@ -48,6 +60,12 @@ describe('normTopic', () => {
   it('keeps the def key of key terms and drops blocks it does not understand', () => {
     const result = normTopic(topic({ lesson: { blocks: [{ type: 'keyTerms', terms: [{ term: 'Veth', def: 'A pair' }, { term: '', def: 'x' }] }, { type: 'hologram' }] } }));
     expect(result.lesson.blocks).toEqual([{ type: 'keyTerms', terms: [{ term: 'Veth', def: 'A pair' }] }]);
+  });
+
+  it('keeps what a topic covers and excludes, and leaves them out when empty', () => {
+    expect(normTopic(topic({ covers: 'Bridge basics', excludes: 'Overlay networks' }))).toMatchObject({ covers: 'Bridge basics', excludes: 'Overlay networks' });
+    expect(normTopic(topic({ covers: 42 })).covers).toBeUndefined();
+    expect(normTopic(topic()).excludes).toBeUndefined();
   });
 
   it('keeps an outline-only topic marked as not loaded', () => {

@@ -28,6 +28,8 @@ class OutlineTopic(BaseModel):
     planet: Clean
     kind: TopicKind = "concept"
     summary: Clean = ""
+    covers: Clean = ""
+    excludes: Clean = ""
     minutes: int = 5
 
     @field_validator("kind", mode="before")

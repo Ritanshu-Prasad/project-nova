@@ -1,33 +1,52 @@
 import { motion } from 'framer-motion';
-import { Check, Copy, FileText, Info, KeyRound, Lightbulb, ListChecks, ListOrdered, Sparkles, Table2, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { Check, Copy, FileText, HelpCircle, Info, KeyRound, Lightbulb, ListChecks, ListOrdered, Sparkles, Table2, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Block } from '../../../core/courseSchema';
 import { prettyMath } from '../../../core/mathText';
+import { Inline, Markdown } from './markdown';
+import { revealLabel, toggleReveal } from './reveal';
 import { TYPE } from './typography';
-
-/** Inline emphasis in lesson text: **bold**, *italic* and `code`. */
-function rich(text: string): ReactNode[] {
-  return text.split(/((?<![\w*])\*\*[^*]+\*\*(?![\w*])|(?<![\w*])\*[^*\s][^*]*\*(?![\w*])|`[^`]+`)/g).map((part, i) => {
-    if (part.length > 4 && part.startsWith('**') && part.endsWith('**')) return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
-    if (part.length > 2 && part.startsWith('*') && part.endsWith('*')) return <em key={i} className="text-white">{part.slice(1, -1)}</em>;
-    if (part.length > 2 && part.startsWith('`') && part.endsWith('`')) return <code key={i} className="rounded bg-black/30 px-1 font-mono text-[0.95em] text-white">{part.slice(1, -1)}</code>;
-    return part;
-  });
-}
 
 function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-2xl border border-white/[0.07] bg-white/[0.035] p-5 ${className}`}>{children}</div>;
 }
 
-/** Every heading in the feed: same face, size and weight; only the icon colour varies. */
-function H({ children, icon: Icon, color = 'var(--user)' }: { children: ReactNode; icon?: LucideIcon; color?: string }) {
+/** Section titles are the loud level; sub-block headers are small coloured labels with an optional icon. */
+function H({ children, icon: Icon, color = 'var(--user)', level = 'label' }: { children: ReactNode; icon?: LucideIcon; color?: string; level?: 'section' | 'label' }) {
+  if (level === 'section') return <h2 className={`mb-3 ${TYPE.section}`}>{children}</h2>;
   return (
-    <h3 className={`mb-3 flex items-center gap-2 ${TYPE.heading}`}>
-      {Icon && <Icon size={18} className="shrink-0" style={{ color }} />}
+    <h3 className={`mb-3 flex items-center gap-2 ${TYPE.label}`} style={{ color }}>
+      {Icon && <Icon size={16} className="shrink-0" />}
       {children}
     </h3>
   );
 }
+
+function QuickCheck({ b }: { b: Extract<Block, { type: 'quickcheck' }> }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card>
+      <H icon={HelpCircle}>Quick check</H>
+      <Markdown text={b.question} className={BODY} />
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(toggleReveal)}
+        className={`mt-4 cursor-pointer rounded-lg border border-white/10 px-3 py-1.5 font-semibold transition hover:bg-white/10 ${TYPE.body} text-white!`}
+      >
+        {revealLabel(open)}
+      </button>
+      {open && (
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="mt-4 border-t border-white/[0.08] pt-4">
+          <p className={`mb-2 ${TYPE.label} text-white/55`}>Answer</p>
+          <Markdown text={b.answer} className={BODY} />
+        </motion.div>
+      )}
+    </Card>
+  );
+}
+
+const BODY = `space-y-3 ${TYPE.body}`;
 
 function CodeBlock({ b }: { b: Extract<Block, { type: 'code' }> }) {
   const [copied, setCopied] = useState(false);
@@ -66,19 +85,15 @@ function BlockView({ b }: { b: Block }) {
     case 'text':
       return (
         <div>
-          {b.title && <H>{b.title}</H>}
-          {b.body.split(/\n\n+/).map((p, i) => (
-            <p key={i} className={`mb-3 last:mb-0 ${TYPE.body}`}>
-              {rich(p)}
-            </p>
-          ))}
+          {b.title && <H level="section">{b.title}</H>}
+          <Markdown text={b.body} className={BODY} />
         </div>
       );
     case 'analogy':
       return (
         <Card className="border-[rgb(var(--user-rgb)/0.3)]">
           <H icon={Sparkles}>Think of it like…</H>
-          <p className={TYPE.body}>{rich(b.body)}</p>
+          <Markdown text={b.body} className={BODY} />
         </Card>
       );
     case 'keyTerms':
@@ -89,7 +104,7 @@ function BlockView({ b }: { b: Block }) {
             {b.terms.map((t) => (
               <Card key={t.term} className="p-4!">
                 <p className={`${TYPE.body} font-semibold text-white!`}>{t.term}</p>
-                <p className={`mt-1 ${TYPE.body}`}>{rich(t.def)}</p>
+                <p className={`mt-1 ${TYPE.body}`}><Inline text={t.def} /></p>
               </Card>
             ))}
           </div>
@@ -105,7 +120,7 @@ function BlockView({ b }: { b: Block }) {
                 <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-sm font-bold text-[var(--user-ink)]" style={{ background: 'var(--user)' }}>
                   {i + 1}
                 </span>
-                <span className={TYPE.body}>{rich(s)}</span>
+                <span className={TYPE.body}><Inline text={s} /></span>
               </li>
             ))}
           </ol>
@@ -152,7 +167,7 @@ function BlockView({ b }: { b: Block }) {
           <H icon={Lightbulb} color="#34d399">
             {b.title ?? 'Worked example'}
           </H>
-          <p className={TYPE.body}>{rich(b.body)}</p>
+          <Markdown text={b.body} className={BODY} />
         </Card>
       );
     case 'callout': {
@@ -162,10 +177,12 @@ function BlockView({ b }: { b: Block }) {
           <H icon={t.icon} color={t.color}>
             {t.label}
           </H>
-          <p className={TYPE.body}>{rich(b.body)}</p>
+          <Markdown text={b.body} className={BODY} />
         </div>
       );
     }
+    case 'quickcheck':
+      return <QuickCheck b={b} />;
     case 'source':
       return (
         <figure className="rounded-2xl border-l-4 bg-white/[0.03] py-4 pl-5 pr-4" style={{ borderColor: 'var(--user)' }}>
@@ -185,7 +202,7 @@ function BlockView({ b }: { b: Block }) {
           <ul className="space-y-1.5">
             {b.points.map((p) => (
               <li key={p} className={`flex gap-2 ${TYPE.body}`}>
-                <Check size={16} className="mt-1 shrink-0 text-emerald-300" /> {rich(p)}
+                <Check size={16} className="mt-1 shrink-0 text-emerald-300" /> <Inline text={p} />
               </li>
             ))}
           </ul>
@@ -194,14 +211,39 @@ function BlockView({ b }: { b: Block }) {
   }
 }
 
-/** Renders a lesson's typed blocks in order, with a gentle staggered entrance. */
+// ── grouping ──────────────────────────────────────────────────────────────
+
+const isTitledText = (b: Block) => b.type === 'text' && !!b.title;
+const endsGroup = (b: Block) => isTitledText(b) || b.type === 'keyTerms' || b.type === 'summary';
+
+/** A titled text block together with the extras that follow it; untitled leading blocks stand alone. */
+function group(blocks: Block[]): { section: boolean; blocks: Block[] }[] {
+  const out: { section: boolean; blocks: Block[] }[] = [];
+  for (const b of blocks) {
+    const last = out[out.length - 1];
+    if (isTitledText(b)) out.push({ section: true, blocks: [b] });
+    else if (last?.section && !endsGroup(b)) last.blocks.push(b);
+    else out.push({ section: false, blocks: [b] });
+  }
+  return out;
+}
+
+/** Renders a lesson's typed blocks in order; each section's extras sit under its title, with a gentle staggered entrance. */
 export default function Blocks({ blocks }: { blocks: Block[] }) {
   return (
-    <div className="space-y-6">
-      {blocks.map((b, i) => (
-        <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.06, 0.4), duration: 0.35 }}>
-          <BlockView b={b} />
-        </motion.div>
+    <div className="space-y-8">
+      {group(blocks).map((g, i) => (
+        <motion.section
+          key={i}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: Math.min(i * 0.06, 0.4), duration: 0.35 }}
+          className={`space-y-5 ${g.section && i > 0 ? 'border-t border-white/[0.08] pt-8' : ''}`}
+        >
+          {g.blocks.map((b, j) => (
+            <BlockView key={j} b={b} />
+          ))}
+        </motion.section>
       ))}
     </div>
   );

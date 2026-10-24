@@ -24,7 +24,7 @@ class ProfileSyncModel(SafeBaseModel):
     callsign: str = Field("", max_length=50)
     avatar: Optional[str] = Field("", max_length=600_000)
     themeColor: str = Field("#06b6d4", max_length=25)
-    activeObjective: Optional[str] = Field(None, max_length=200)
+    activeObjective: Optional[str] = Field(None, max_length=500)
 
     @field_validator("callsign")
     @classmethod

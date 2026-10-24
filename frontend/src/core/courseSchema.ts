@@ -21,6 +21,7 @@ export type Block =
   | { type: 'compare'; title?: string; columns: [string, string]; rows: [string, string, string][] }
   | { type: 'example'; title?: string; body: string }
   | { type: 'callout'; tone: 'tip' | 'warning' | 'fact'; body: string }
+  | { type: 'quickcheck'; question: string; answer: string }
   | { type: 'source'; doc: string; page?: number; excerpt: string }
   | { type: 'summary'; points: string[] };
 
@@ -60,6 +61,10 @@ export interface Topic {
   planet: string;
   kind: TopicKind;
   summary: string;
+  /** What the outline says this topic teaches; sent along when the topic is written. */
+  covers?: string;
+  /** What the outline leaves to other topics, so this lesson does not repeat them. */
+  excludes?: string;
   lesson: Lesson;
   /** Lesson-quiz questions (drawn for the end-of-module quiz and the hub quiz). */
   quiz: Question[];
@@ -137,6 +142,8 @@ function normBlock(b: Record<string, unknown>): Block | null {
       const tone = b.tone === 'warning' || b.tone === 'fact' ? b.tone : 'tip';
       return str(b.body) ? { type: 'callout', tone, body: str(b.body) } : null;
     }
+    case 'quickcheck':
+      return str(b.question) && str(b.answer) ? { type: 'quickcheck', question: str(b.question), answer: str(b.answer) } : null;
     case 'source':
       return str(b.excerpt) ? { type: 'source', doc: str(b.doc, 'Document'), page: typeof b.page === 'number' ? b.page : undefined, excerpt: str(b.excerpt) } : null;
     case 'summary': {
@@ -199,6 +206,8 @@ export function normTopic(t: Record<string, unknown>): Topic {
     planet: str(t.planet) || str(t.title, 'Planet').split(' ')[0],
     kind: KINDS.includes(t.kind as TopicKind) ? (t.kind as TopicKind) : 'concept',
     summary: str(t.summary),
+    covers: str(t.covers) || undefined,
+    excludes: str(t.excludes) || undefined,
     ...(t.loaded === false ? { loaded: false as const } : {}),
     lesson: {
       minutes: typeof l.minutes === 'number' ? l.minutes : 5,

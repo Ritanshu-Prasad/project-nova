@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 import pytest
 from fastapi import HTTPException
@@ -73,22 +74,28 @@ def write_one(outline_titles=(), previous=""):
 
 
 def test_a_topic_prompt_carries_the_outline_and_the_previous_topic(fake_model):
-    write_one(["Bridges", "Overlay", "Swarm"], "Bridges isolate containers")
+    write_one([("Bridges", "Bridges summary"), ("Overlay", "Across hosts"), ("Swarm", "Swarm summary")], "Bridges isolate containers")
     [(system, user)] = topic_prompts(fake_model)
-    assert "Course outline: Bridges; Overlay; Swarm." in user and "The previous topic covered: Bridges isolate containers" in user
+    assert "<other_topics>\nBridges: Bridges summary\nSwarm: Swarm summary\n</other_topics>" in user and "Overlay: Across hosts" not in user and "The previous topic covered: Bridges isolate containers" in user
     assert "do not repeat what they taught" in system
 
 
 def test_a_topic_written_alone_has_no_outline_or_previous_topic(fake_model):
     write_one()
     [(_, user)] = topic_prompts(fake_model)
-    assert "Course outline" not in user and "previous topic" not in user
+    assert "other_topics" not in user and "previous topic" not in user
 
 
 def test_topics_know_their_siblings_and_the_one_before(fake_model):
     write(outline(2, 2))
     users = [user for _, user in topic_prompts(fake_model)]
-    assert all("Course outline: Topic 1.1; Topic 1.2; Topic 2.1; Topic 2.2." in user for user in users)
+    titles = ["Topic 1.1", "Topic 1.2", "Topic 2.1", "Topic 2.2"]
+    for user in users:
+        own = re.search(r'This is the topic "([^"]+)"', user).group(1)
+        listed = re.search(r"<other_topics>\n(.*?)\n</other_topics>", user, re.S).group(1).splitlines()
+        assert [line.split(": ")[0] for line in listed] == [title for title in titles if title != own]
+        assert all(": " in line and not line.endswith(": ") for line in listed)
+        assert "<other_topics>" not in re.search(r"<expectations>.*?</expectations>", user, re.S).group(0)
     assert sum("The previous topic covered:" in user for user in users) == 3
 
 
