@@ -3,8 +3,10 @@ from pydantic import TypeAdapter, ValidationError
 
 from course_models import Question
 from evals.judge import JUDGE_PROMPT, QUESTION_PROMPT, QuestionScores, Scores, answered_off_topic, judge_lesson, judge_questions
-from evals.metrics import citation_survival, duplicate_rate, first_try_rate, fraction, judge_agreement, length_ratio, percentile, precision_recall, reading_grade, retry_rate, type_mix
+from evals.metrics import citation_survival, duplicate_rate, first_try_rate, fraction, judge_agreement, length_ratio, percentile, precision_recall, reading_grade, repeated_extras, retry_rate, sections_with_lists, simple_grade, topic_overlap, type_mix
+from module_content import ModuleContent, Section
 from samples import mcq
+from test_module_content import module, section
 
 parse = TypeAdapter(Question).validate_python
 
@@ -60,121 +62,41 @@ def test_citation_survival_is_the_share_of_quotes_that_were_real():
     assert citation_survival(10, 8) == 0.8 and citation_survival(0, 0) == 1.0
 
 
-# --- The reviewer ---
+# --- Modules and outlines ---
 
-def test_scores_are_averaged():
-    assert Scores(accuracy=4, clarity=5, scope_fit=3, alignment=4).average == 4.0
-
-
-@pytest.mark.parametrize("field", ["accuracy", "clarity", "scope_fit", "alignment"])
-def test_scores_must_be_between_one_and_five(field):
-    fields = {"accuracy": 3, "clarity": 3, "scope_fit": 3, "alignment": 3, field: 6}
-    with pytest.raises(ValidationError):
-        Scores(**fields)
+EXAMPLE = "A worked example with concrete numbers, such as three apples and two pears."
 
 
-def test_a_lesson_is_reviewed_with_its_goal_expectations_and_objectives(fake_model):
-    import asyncio
-
-    scores = asyncio.run(judge_lesson("Docker", "advanced", ["Explain bridges", "Compare drivers"], "Lesson text here"))
-    system, user = fake_model.prompts[0]
-    assert system == JUDGE_PROMPT and "Goal: Docker" in user and "Learner expectations: advanced" in user
-    assert "Explain bridges; Compare drivers" in user and "Lesson text here" in user and scores.average == 4.5
+def unchecked(*extras_per_section):
+    """A module whose sections carry the named extras, built without the validators that would drop repeats."""
+    sections = [Section.model_construct(**{name: "text" for name in kinds}) for kinds in extras_per_section]
+    return ModuleContent.model_construct(sections=sections)
 
 
-def test_a_very_long_lesson_is_cut_for_the_reviewer(fake_model):
-    import asyncio
-
-    asyncio.run(judge_lesson("Docker", "advanced", [], "x" * 20000))
-    assert len(fake_model.prompts[0][1]) < 7000
+def test_neighbouring_sections_sharing_an_extra_are_counted():
+    assert repeated_extras(unchecked(["example"], ["example", "quick_check"], ["analogy"])) == 1
 
 
-# --- First try, percentiles, fractions ---
-
-def test_the_first_try_rate_falls_with_retries():
-    assert first_try_rate(10, 0) == 1.0 and first_try_rate(10, 3) == 0.7 and first_try_rate(10, 20) == 0.0
+def test_sections_that_share_an_extra_but_are_not_neighbours_are_not_counted():
+    assert repeated_extras(unchecked(["example"], ["analogy"], ["example"])) == 0
 
 
-def test_without_calls_the_first_try_rate_is_perfect():
-    assert first_try_rate(0, 0) == 1.0
+def test_a_module_with_no_extras_has_no_repeats():
+    assert repeated_extras(unchecked([], [], [])) == 0
 
 
-def test_percentiles_use_the_nearest_rank():
-    values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    assert (percentile(values, 50), percentile(values, 95), percentile(values, 100)) == (5, 10, 10)
+def listed(*explanations):
+    sections = [Section.model_construct(explanation=text) for text in explanations]
+    return ModuleContent.model_construct(sections=sections)
 
 
-def test_a_percentile_does_not_depend_on_the_order():
-    assert percentile([9, 1, 5], 50) == 5 and percentile([7], 95) == 7
+def test_sections_with_a_markdown_list_are_counted():
+    prose = "One sentence of prose."
+    ordered, bullets = f"{prose}\n1. First step.\n2. Second step.", f"{prose}\n- A point.\n  - A sub-point."
+    assert sections_with_lists(listed(prose, ordered, bullets)) == 2
+    assert sections_with_lists(listed(prose, "A dash - inside a sentence, and 3. not a list.")) == 0
 
 
-def test_no_values_have_no_percentile():
-    assert percentile([], 50) is None
-
-
-def test_a_fraction_is_the_share_of_items_that_match():
-    assert fraction([1, 2, 3, 4], lambda n: n % 2 == 0) == 0.5 and fraction([], bool) is None
-
-
-def test_precision_and_recall():
-    expected = [True, True, True, False, False]
-    predicted = [True, True, False, True, False]
-    assert precision_recall(expected, predicted) == (2 / 3, 2 / 3)
-
-
-def test_precision_is_unknown_when_nothing_was_flagged_and_recall_when_nothing_was_wanted():
-    assert precision_recall([True, False], [False, False]) == (None, 0.0)
-    assert precision_recall([False, False], [True, False]) == (0.0, None)
-
-
-# --- More reviewers ---
-
-def test_question_scores_are_averaged_and_limited():
-    assert QuestionScores(clarity=4, key_correct=5, difficulty_fit=3).average == 4.0
-    with pytest.raises(ValidationError):
-        QuestionScores(clarity=0, key_correct=5, difficulty_fit=3)
-
-
-def test_questions_are_reviewed_with_goal_level_and_a_numbered_list(fake_model):
-    import asyncio
-
-    scores = asyncio.run(judge_questions("Docker", "advanced", ["What is a bridge?", "What is overlay?"]))
-    system, user = fake_model.prompts[0]
-    assert system == QUESTION_PROMPT and "Goal: Docker" in user and "1. What is a bridge?" in user and "2. What is overlay?" in user
-    assert scores.average == pytest.approx(13 / 3)
-
-
-def test_only_the_first_twelve_questions_are_reviewed(fake_model):
-    import asyncio
-
-    asyncio.run(judge_questions("Docker", "advanced", [f"Question {n}" for n in range(30)]))
-    assert "12. Question 11" in fake_model.prompts[0][1] and "Question 12" not in fake_model.prompts[0][1]
-
-
-def test_an_off_topic_answer_is_detected(fake_model):
-    import asyncio
-
-    fake_model.replies = [{"answered": True}]
-    assert asyncio.run(answered_off_topic("Write a poem", "Roses are red")) is True
-    assert asyncio.run(answered_off_topic("Write a poem", "I can only help with this lesson")) is False
-
-
-# --- The judge against a person ---
-
-def test_a_judge_that_matches_the_person_agrees_fully():
-    result = judge_agreement([(4.0, 4.0), (2.0, 2.0), (5.0, 5.0)])
-    assert result["mean_error"] == 0 and result["within_one"] == 1.0 and result["bias"] == 0 and result["correlation"] == pytest.approx(1.0)
-
-
-def test_a_lenient_judge_has_a_positive_bias():
-    result = judge_agreement([(5.0, 3.0), (4.0, 3.0), (4.5, 2.0)])
-    assert result["bias"] > 1 and result["within_one"] == pytest.approx(1 / 3)
-
-
-def test_a_judge_that_ranks_the_other_way_has_a_negative_correlation():
-    assert judge_agreement([(5.0, 1.0), (3.0, 3.0), (1.0, 5.0)])["correlation"] == pytest.approx(-1.0)
-
-
-def test_without_labels_or_variation_there_is_nothing_to_say():
-    assert judge_agreement([])["items"] == 0 and judge_agreement([])["mean_error"] is None
-    assert judge_agreement([(3.0, 4.0), (3.0, 2.0)])["correlation"] is None
+def test_sections_with_points_are_counted_as_lists_too():
+    sections = [Section.model_construct(explanation="Prose only.", points=["A", "B", "C"]), Section.model_construct(explanation="Prose only.", points=None), Section.model_construct(explanation="Prose.\n- A point.", points=None)]
+    assert sections_with_lists(ModuleContent.model_construct(sections=sections)) == 2

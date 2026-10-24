@@ -92,6 +92,12 @@ class Callout(BaseModel):
     body: str = Field(min_length=1)
 
 
+class QuickCheckBlock(BaseModel):
+    type: Literal["quickcheck"]
+    question: str = Field(min_length=1)
+    answer: str = Field(min_length=1)
+
+
 class Source(BaseModel):
     type: Literal["source"]
     doc: str = "Document"
@@ -105,7 +111,7 @@ class Summary(BaseModel):
 
 
 Block = Annotated[
-    Union[Text, Analogy, KeyTerms, Steps, Code, Formula, Compare, Example, Callout, Source, Summary],
+    Union[Text, Analogy, KeyTerms, Steps, Code, Formula, Compare, Example, Callout, QuickCheckBlock, Source, Summary],
     Field(discriminator="type"),
 ]
 
@@ -255,6 +261,8 @@ class Topic(BaseModel):
     planet: str
     kind: TopicKind
     summary: str
+    covers: str = ""
+    excludes: str = ""
     lesson: Lesson
     quiz: list[Question]
     practice: list[Question]
@@ -274,6 +282,8 @@ class TopicStub(BaseModel):
     planet: str
     kind: TopicKind
     summary: str
+    covers: str = ""
+    excludes: str = ""
     loaded: Literal[False] = False
     lesson: LessonStub
     quiz: list = Field(default_factory=list)

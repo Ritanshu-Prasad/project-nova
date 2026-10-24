@@ -21,6 +21,8 @@ logger = logging.getLogger("nova.llm")
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
 # What each part of the pipeline uses unless a setting says otherwise: Lightning writes everything, DeepSeek plans the course.
 DEFAULT_MODEL = LIGHTNING_MODEL
+# Sent with every call that must answer straight away, so the model does not write its reasoning into the reply.
+NO_THINKING = {"enable_thinking": False}
 DEFAULT_PLAN_MODEL = DEEPSEEK_MODEL
 # Models that may be used without NOVA_ALLOWED_MODELS (all three are priced in pricing.py).
 VETTED_MODELS = (NANO_MODEL, LIGHTNING_MODEL, DEEPSEEK_MODEL)
@@ -30,6 +32,10 @@ BANK_KINDS = frozenset({"quiz", "placement"})
 TIMEOUT = httpx.Timeout(120.0, connect=10.0)
 ATTEMPTS = 3
 DEFAULT_MAX_TOKENS = 5000
+MAX_TOKENS_CEILING = 12000
+TRUNCATED_GROWTH = 1.5
+STRICT_KINDS = frozenset({"lesson"})
+REASON_CHARS = 80
 MAX_PARALLEL_CALLS = 16
 RETRY_DELAYS = (1.0, 3.0)
 RETRY_STATUSES = {429, 500, 502, 503, 504}
@@ -39,6 +45,10 @@ _forced_model: contextvars.ContextVar = contextvars.ContextVar("forced_model", d
 _warned_settings: set = set()
 
 T = TypeVar("T", bound=BaseModel)
+
+
+class TruncatedAnswer(ValueError):
+    """The model ran out of tokens before it finished its answer."""
 
 
 # --- Settings ---
@@ -144,12 +154,12 @@ async def _chat_json(model: str, key: str, system: str, user: str, max_tokens: i
     payload = {
         "model": model,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        "response_format": _response_format(schema, model),
+        "response_format": _response_format(schema, model, kind),
         "temperature": 0.4,
         "max_tokens": max_tokens,
     }
     if not (thinking or os.getenv("NOVA_THINKING") == "on"):
-        payload["chat_template_kwargs"] = {"enable_thinking": False}
+        payload["chat_template_kwargs"] = NO_THINKING
     started = time.perf_counter()
     response = await _post(payload, key, kind)
     if response.status_code == 400 and payload["response_format"]["type"] == "json_schema":
@@ -162,6 +172,9 @@ async def _chat_json(model: str, key: str, system: str, user: str, max_tokens: i
     choice = body["choices"][0]
     capture.save_exchange(kind, system, user, choice["message"]["content"] or "", body.get("usage"))
     usage.record_exchange(kind, system, user, choice["message"]["content"] or "")
+    if choice.get("finish_reason") == "length":
+        logger.warning("Model answer for %s was cut off at %d tokens", kind, max_tokens)
+        raise TruncatedAnswer(f"The answer was cut off at {max_tokens} tokens")
     try:
         return _parse_json(choice["message"]["content"] or "")
     except ValueError:
@@ -169,10 +182,10 @@ async def _chat_json(model: str, key: str, system: str, user: str, max_tokens: i
         raise
 
 
-def _response_format(schema: Type[BaseModel] | None, model: str) -> dict:
+def _response_format(schema: Type[BaseModel] | None, model: str, kind: str = "call") -> dict:
     if schema is None or model in _schema_unsupported or os.getenv("NOVA_JSON_SCHEMA") == "off":
         return {"type": "json_object"}
-    return {"type": "json_schema", "json_schema": {"name": schema.__name__.lower(), "strict": False, "schema": _schema_of(schema)}}
+    return {"type": "json_schema", "json_schema": {"name": schema.__name__.lower(), "strict": kind in STRICT_KINDS and os.getenv("NOVA_JSON_STRICT") != "off", "schema": _schema_of(schema)}}
 
 
 @lru_cache(maxsize=None)
@@ -190,19 +203,19 @@ async def _post(payload: dict, key: str, kind: str) -> httpx.Response:
                 if response.status_code not in RETRY_STATUSES or delay is None:
                     return response
                 logger.warning("Model endpoint responded %s, retrying", response.status_code)
-                await usage.record_retry(kind, payload["model"])
+                await usage.record_retry(kind, payload["model"], str(response.status_code))
             except httpx.TimeoutException:
                 if delay is None:
                     logger.warning("Model request timed out")
                     await usage.record_failure(kind, payload["model"])
                     raise HTTPException(503, "The model timed out")
-                await usage.record_retry(kind, payload["model"])
+                await usage.record_retry(kind, payload["model"], "timeout")
             except httpx.HTTPError as error:
                 if delay is None:
                     logger.warning("Model request failed: %s", error)
                     await usage.record_failure(kind, payload["model"])
                     raise HTTPException(502, "Could not reach the model")
-                await usage.record_retry(kind, payload["model"])
+                await usage.record_retry(kind, payload["model"], "network error")
             await asyncio.sleep(delay * random.uniform(0.8, 1.2))
     raise AssertionError("unreachable")
 
@@ -217,7 +230,7 @@ async def chat_text(messages: list, model: str, max_tokens: int = 700) -> str:
     key = api_key()
     if not key:
         raise HTTPException(503, "Tutor model is not configured")
-    payload = {"model": model, "messages": messages, "temperature": 0.4, "max_tokens": max_tokens}
+    payload = {"model": model, "messages": messages, "temperature": 0.4, "max_tokens": max_tokens, "chat_template_kwargs": NO_THINKING}
     started = time.perf_counter()
     response = await _post(payload, key, "tutor")
     await _raise_for_upstream(response, "tutor", model)
@@ -236,21 +249,39 @@ async def ask(schema: Type[T], system: str, user: str, max_tokens: int = DEFAULT
     reason): on the Nano model reasoning often used up the whole token limit before the JSON began.
     """
     asked = user
+    budget = max_tokens
     for attempt in range(ATTEMPTS):
         # The last try of a call whose model keeps giving unusable answers goes to the fallback model.
         backup = fallback_for(model_for(kind)) if attempt == ATTEMPTS - 1 and ATTEMPTS > 1 else None
         token = _forced_model.set(backup) if backup else None
         try:
-            return schema.model_validate(await chat_json(system, asked, max_tokens, thinking, schema, kind))
+            return schema.model_validate(await chat_json(system, asked, budget, thinking, schema, kind))
         except (ValidationError, ValueError) as error:
             logger.warning("Unusable model answer (attempt %d): %s", attempt + 1, str(error)[:300])
             asked = user + _rejection_note(error)
-            await usage.record_retry(kind, model_for(kind))
+            await usage.record_retry(kind, model_for(kind), _retry_reason(error))
+            if isinstance(error, TruncatedAnswer):
+                budget = min(int(budget * TRUNCATED_GROWTH), max(MAX_TOKENS_CEILING, budget))
         finally:
             if token is not None:
                 _forced_model.reset(token)
     await usage.record_failure(kind, model_for(kind))
     raise HTTPException(502, "The course model returned an unusable answer")
+
+
+def _retry_reason(error: Exception) -> str:
+    """A short label for why an answer was rejected, without the pydantic documentation link."""
+    if isinstance(error, TruncatedAnswer):
+        return "truncated"
+    if isinstance(error, ValidationError):
+        first = error.errors()[0] if error.errors() else {}
+        where = ".".join(str(part) for part in first.get("loc", ()))
+        text = f"{where}: {first.get('msg', 'invalid')}" if where else first.get("msg", "invalid")
+    elif "json" in str(error).lower():
+        return "bad json"
+    else:
+        text = str(error)
+    return " ".join(text.removeprefix("Value error, ").split())[:REASON_CHARS]
 
 
 def _rejection_note(error: Exception) -> str:

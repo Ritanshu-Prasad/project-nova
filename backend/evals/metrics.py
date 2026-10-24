@@ -1,9 +1,11 @@
 import math
 import re
 from collections import Counter
+from itertools import combinations
 from typing import Callable, Iterable
 
 from course_models import Question
+from module_content import EXTRAS, ModuleContent
 
 SENTENCE_END = re.compile(r"[.!?]+")
 WORD = re.compile(r"[A-Za-z']+")
@@ -41,6 +43,36 @@ def duplicate_rate(questions: list[Question]) -> float:
 
 def type_mix(questions: list[Question]) -> dict[str, int]:
     return dict(sorted(Counter(question.type for question in questions).items()))
+
+
+# --- Modules and outlines ---
+
+def repeated_extras(content: ModuleContent) -> int:
+    """How many neighbouring section pairs share an extra kind; the validator drops these, so the extras are assigned by position, so any above zero means the prompt was not followed."""
+    kinds = [{name for name in EXTRAS if getattr(section, name)} for section in content.sections]
+    return sum(len(before & after) for before, after in zip(kinds, kinds[1:]))
+
+
+LIST_LINE = re.compile(r"^\s*(?:[-*]|\d+\.)\s+\S", re.MULTILINE)
+
+
+def sections_with_lists(content: ModuleContent) -> int:
+    """How many sections carry a list, as structured points or as a Markdown list in the explanation; the prompt asks for at least two."""
+    return sum(1 for section in content.sections if getattr(section, "points", None) or LIST_LINE.search(section.explanation))
+
+
+def simple_grade(content: ModuleContent) -> float:
+    """The reading grade of a module's plain-language summary."""
+    return reading_grade(content.simple)
+
+
+def topic_overlap(summaries: list[str]) -> float | None:
+    """The highest word overlap (Jaccard) between any two summaries; None when there are fewer than two."""
+    word_sets = [{word.lower() for word in WORD.findall(summary)} for summary in summaries]
+    pairs = list(combinations(word_sets, 2))
+    if not pairs:
+        return None
+    return max(len(first & second) / len(first | second) if first | second else 0.0 for first, second in pairs)
 
 
 # --- Runs ---

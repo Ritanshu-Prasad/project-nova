@@ -15,18 +15,40 @@
           "planet": "Star 1",
           "kind": "document",
           "summary": "About it.",
+          "covers": "",
+          "excludes": "",
           "lesson": {
-            "minutes": 5,
+            "minutes": 6,
             "objectives": [
               "Explain how a small action attaches to a routine",
               "Build a habit that needs little willpower"
             ],
-            "simple": "How small, repeated actions turn into habits that last without willpower.",
+            "simple": "Small actions turn into habits when you attach them to something you already do. Each repeat makes the next one easier. Like brushing your teeth after breakfast, the routine does the remembering for you.",
             "blocks": [
               {
                 "type": "text",
                 "title": "Idea 0",
+                "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. \n\n- Choose one tiny action\n- Attach it to a daily routine\n- Celebrate right away"
+              },
+              {
+                "type": "text",
+                "title": "Idea 1",
+                "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. \n\n- Choose one tiny action\n- Attach it to a daily routine\n- Celebrate right away"
+              },
+              {
+                "type": "text",
+                "title": "Idea 2",
                 "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
+              },
+              {
+                "type": "text",
+                "title": "Idea 3",
+                "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
+              },
+              {
+                "type": "quickcheck",
+                "question": "What share is 12000 of 30000?",
+                "answer": "40 percent"
               },
               {
                 "type": "keyTerms",
@@ -46,37 +68,27 @@
                 ]
               },
               {
-                "type": "text",
-                "title": "Idea 1",
-                "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
-              },
-              {
-                "type": "text",
-                "title": "Idea 2",
-                "body": "In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. In this part we show that a small repeated action becomes a lasting routine when it is attached to something that already happens every day. People who practise it notice that the habit needs less effort each week, which is why the idea is taught first. "
-              },
-              {
                 "type": "summary",
                 "points": [
-                  "Idea 0",
-                  "Idea 1",
-                  "Idea 2"
+                  "Takeaway number 0 is a real point of the module.",
+                  "Takeaway number 1 is a real point of the module.",
+                  "Takeaway number 2 is a real point of the module."
                 ]
               }
             ]
           },
           "quiz": [
             {
-              "q": "Which of these hold for idea 1 (item 1)? Select all that apply.",
+              "q": "Which of these hold for idea 0 (item 1)? Select all that apply.",
               "why": "A small action is easier to repeat when it follows a routine.",
               "difficulty": 2,
               "type": "multi",
               "options": [
-                "Pick 3 for item 1 of idea 1",
-                "Pick 1 for item 1 of idea 1",
-                "Pick 4 for item 1 of idea 1",
-                "Pick 2 for item 1 of idea 1",
-                "Pick 0 for item 1 of idea 1"
+                "Pick 3 for item 1 of idea 0",
+                "Pick 1 for item 1 of idea 0",
+                "Pick 4 for item 1 of idea 0",
+                "Pick 2 for item 1 of idea 0",
+                "Pick 0 for item 1 of idea 0"
               ],
               "answers": [
                 3,
@@ -84,31 +96,27 @@
               ]
             },
             {
-              "q": "Which of these hold for idea 2 (item 2)? Select all that apply.",
+              "q": "Which statement matches idea 0 (item 1)?",
               "why": "A small action is easier to repeat when it follows a routine.",
-              "difficulty": 2,
-              "type": "multi",
+              "difficulty": 1,
+              "type": "mcq",
               "options": [
-                "Pick 4 for item 2 of idea 2",
-                "Pick 1 for item 2 of idea 2",
-                "Pick 2 for item 2 of idea 2",
-                "Pick 3 for item 2 of idea 2",
-                "Pick 0 for item 2 of idea 2"
+                "Choice 3 for item 1 of idea 0",
+                "Choice 1 for item 1 of idea 0",
+                "Choice 2 for item 1 of idea 0",
+                "Choice 0 for item 1 of idea 0"
               ],
-              "answers": [
-                2,
-                4
-              ]
+              "answer": 1
             },
             {
-              "q": "For idea 0, a small action tied to a daily routine becomes easier to repeat (item 1).",
+              "q": "For idea 2, a small action tied to a daily routine becomes easier to repeat (item 1).",
               "why": "A small action is easier to repeat when it follows a routine.",
               "difficulty": 1,
               "type": "truefalse",
               "answer": false
             },
             {
-              "q": "For idea 1, a small action tied to a daily routine becomes easier to repeat (item 2).",
+              "q": "For idea 3, a small action tied to a daily routine becomes easier to repeat (item 2).",
               "why": "A small action is easier to repeat when it follows a routine.",
               "difficulty": 1,
               "type": "truefalse",
@@ -117,30 +125,34 @@
           ],
           "practice": [
             {
-              "q": "Which statement matches idea 0 (item 4)?",
+              "q": "Which of these hold for idea 1 (item 2)? Select all that apply.",
               "why": "A small action is easier to repeat when it follows a routine.",
-              "difficulty": 1,
-              "type": "mcq",
+              "difficulty": 2,
+              "type": "multi",
               "options": [
-                "Choice 0 for item 4 of idea 0",
-                "Choice 2 for item 4 of idea 0",
-                "Choice 3 for item 4 of idea 0",
-                "Choice 1 for item 4 of idea 0"
+                "Pick 0 for item 2 of idea 1",
+                "Pick 4 for item 2 of idea 1",
+                "Pick 3 for item 2 of idea 1",
+                "Pick 1 for item 2 of idea 1",
+                "Pick 2 for item 2 of idea 1"
               ],
-              "answer": 0
+              "answers": [
+                0,
+                4
+              ]
             },
             {
-              "q": "Which statement matches idea 0 (item 1)?",
+              "q": "Which statement matches idea 3 (item 4)?",
               "why": "A small action is easier to repeat when it follows a routine.",
               "difficulty": 1,
               "type": "mcq",
               "options": [
-                "Choice 0 for item 1 of idea 0",
-                "Choice 3 for item 1 of idea 0",
-                "Choice 1 for item 1 of idea 0",
-                "Choice 2 for item 1 of idea 0"
+                "Choice 0 for item 4 of idea 3",
+                "Choice 3 for item 4 of idea 3",
+                "Choice 1 for item 4 of idea 3",
+                "Choice 2 for item 4 of idea 3"
               ],
-              "answer": 2
+              "answer": 0
             },
             {
               "q": "Which statement matches idea 2 (item 3)?",
@@ -181,7 +193,7 @@
   ],
   "meta": {
     "model": "nvidia/Nemotron-3_5-Lightning",
-    "promptVersion": "2026-10-e",
+    "promptVersion": "2026-10-m",
     "createdAt": 0,
     "documentsKey": "00000000000000000000000000000000",
     "calls": 0,

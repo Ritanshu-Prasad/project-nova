@@ -38,6 +38,8 @@ def reply_for(system: str, call_number: int, user: str = "") -> dict:
         return module_content_json(requires_code="MUST have" in system)
     if "strict assessment writer" in system:
         return bank_batch_json(user)
+    if "careful fact checker" in system:
+        return {"doubtful": []}
     if "careful student" in system:
         return {"answers": [{"number": int(number), "choice": [1]} for number in re.findall(r"^Question (\d+)", user, re.MULTILINE)]}
     if "strict assessment reviewer" in system:

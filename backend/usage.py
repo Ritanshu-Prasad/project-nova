@@ -21,6 +21,8 @@ MAX_NOTES = 20
 FAILURES_PER_HOUR = 20
 MAX_EXCHANGES = 30
 EXCHANGE_CHARS = 2000
+RETRY_REASON_CHARS = 80
+TOP_RETRY_REASONS = 8
 
 
 class RequestUsage:
@@ -112,11 +114,16 @@ async def record_call(kind: str, model: str, tokens_used: dict | None, seconds: 
     await asyncio.gather(_add(ledger_key(_day(), model), {f"{kind}:{name}": amount for name, amount in amounts.items()}), _charge(prompt + completion))
 
 
-async def record_retry(kind: str, model: str) -> None:
+async def record_retry(kind: str, model: str, reason: str = "") -> None:
+    """A call that had to be tried again, and why (counted per kind and reason)."""
     spent = current()
     if spent:
         spent.retries += 1
-    await _add(ledger_key(_day(), model), {f"{kind}:retries": 1})
+    amounts = {f"{kind}:retries": 1}
+    reason = " ".join(reason.split())[:RETRY_REASON_CHARS]
+    if reason:
+        amounts[f"{kind}:retry:{reason}"] = 1
+    await _add(ledger_key(_day(), model), amounts)
 
 
 async def record_failure(kind: str, model: str) -> None:
@@ -178,6 +185,7 @@ async def report_for_day(day: str, models: list[str]) -> dict:
 
 async def _report_day(day: str, models: list[str]) -> dict:
     kinds: dict[str, dict] = {}
+    reasons: dict[tuple[str, str], int] = {}
     for model in models:
         try:
             counters = await shared.state.hgetall(ledger_key(day, model))
@@ -185,11 +193,24 @@ async def _report_day(day: str, models: list[str]) -> dict:
             logger.warning("Usage not read: %s", error)
             counters = {}
         for kind in KINDS:
+            _add_reasons(reasons, kind, counters)
             row = _kind_row(kind, counters, model)
             if row["calls"] or row["failures"] or row["retries"]:
                 kinds[kind] = _merge(kinds.get(kind), row)
     totals = _merge_all(list(kinds.values()))
-    return {"day": day, "kinds": kinds, "totals": totals, "events": await _events(day)}
+    return {"day": day, "kinds": kinds, "totals": totals, "events": await _events(day), "retry_reasons": _top_reasons(reasons)}
+
+
+def _add_reasons(reasons: dict, kind: str, counters: dict[str, int]) -> None:
+    prefix = f"{kind}:retry:"
+    for name, count in counters.items():
+        if name.startswith(prefix):
+            reasons[(kind, name[len(prefix):])] = reasons.get((kind, name[len(prefix):]), 0) + count
+
+
+def _top_reasons(reasons: dict) -> list[dict]:
+    ranked = sorted(reasons.items(), key=lambda item: -item[1])[:TOP_RETRY_REASONS]
+    return [{"kind": kind, "reason": reason, "count": count} for (kind, reason), count in ranked]
 
 
 def _kind_row(kind: str, counters: dict[str, int], model: str | None = None) -> dict:

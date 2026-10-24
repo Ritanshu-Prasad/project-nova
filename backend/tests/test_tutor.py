@@ -112,6 +112,12 @@ def test_the_request_uses_the_tutor_model_key_and_streaming(client, upstream):
     assert body["model"] == "nvidia/Nemotron-3_5-Lightning" and body["stream"] is True
 
 
+def test_the_tutor_stream_is_sent_without_thinking(client, upstream):
+    seen = upstream(streaming("Hi"))
+    client.post("/api/tutor/chat", json=chat())
+    assert json.loads(seen[0].content)["chat_template_kwargs"] == {"enable_thinking": False}
+
+
 def test_the_model_can_be_changed_with_an_environment_variable(client, upstream, monkeypatch):
     monkeypatch.setenv("NOVA_ALLOWED_MODELS", "another/model")
     monkeypatch.setenv("NOVA_TUTOR_MODEL", "another/model")
@@ -167,6 +173,17 @@ def test_labels_are_sanitised(client, upstream):
 def test_no_graded_section_without_graded_questions():
     prompt = tutor_system("Topic", "Module", "Course", "Probe", "Lesson text", [])
     assert "Graded questions" not in prompt and "Practice Arena" in prompt
+
+
+# --- Lesson clipping ---
+
+def test_a_long_lesson_is_cut_at_its_last_line_break():
+    assert tutor._clip("a" * 7000 + "\n" + "b" * 2000) == "a" * 7000
+
+
+def test_a_short_lesson_is_kept_whole():
+    lesson = "First line.\nSecond line.\n" * 10
+    assert tutor._clip(lesson) == lesson
 
 
 # --- Errors ---

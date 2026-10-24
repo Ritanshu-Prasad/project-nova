@@ -4,6 +4,8 @@ from pathlib import Path
 from module_content import ModuleContent
 from question_bank import Mcq, Msq, Order, TrueFalse
 
+# The model never writes these two; write_module sets them from the code decision.
+DECIDED_IN_CODE = {"requires_code", "code_reason"}
 SCHEMAS = Path(__file__).parent.parent / "schemas"
 
 
@@ -18,7 +20,7 @@ def required(model) -> set[str]:
 def test_the_module_schema_requires_what_the_model_requires():
     schema = load("module_content.schema.json")
     assert set(schema["required"]) == required(ModuleContent)
-    assert set(schema["properties"]) == set(ModuleContent.model_fields)
+    assert set(schema["properties"]) == set(ModuleContent.model_fields) - DECIDED_IN_CODE
 
 
 def test_each_question_type_in_the_bank_schema_requires_what_its_model_requires():

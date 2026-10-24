@@ -94,6 +94,10 @@ function render(report) {
     <div class="scroll"><table><tr><th>kind</th><th>calls</th><th>in</th><th>out</th><th>cost</th><th>avg s</th><th>retries</th><th>failures</th></tr>
       ${Object.entries(today.kinds).map(([kind, row]) => `<tr><td>${esc(kind)}</td><td>${num(row.calls)}</td><td>${num(row.prompt_tokens)}</td><td>${num(row.completion_tokens)}</td><td>${money(row.cost_usd)}</td><td>${row.average_seconds.toFixed(1)}</td><td>${row.retries}</td><td>${row.failures}</td></tr>`).join('') || '<tr><td colspan="8">No model calls yet today.</td></tr>'}
     </table></div>
+    <h2>Top retry reasons today</h2>
+    <div class="scroll"><table><tr><th>kind</th><th>reason</th><th>count</th></tr>
+      ${(today.retry_reasons || []).map((item) => `<tr><td>${esc(item.kind)}</td><td>${esc(item.reason)}</td><td>${item.count}</td></tr>`).join('') || '<tr><td colspan="3">No retries with a recorded reason today.</td></tr>'}
+    </table></div>
     <h2>By day</h2>
     <div class="scroll"><table><tr><th>day (UTC)</th><th>calls</th><th>tokens</th><th>cost</th><th>retries</th><th>failures</th><th>cache hits</th><th>turned away</th></tr>
       ${report.days.map((day) => `<tr><td>${day.day}</td><td>${num(day.totals.calls)}</td><td>${num(day.totals.prompt_tokens + day.totals.completion_tokens)}</td><td>${money(day.totals.cost_usd)}</td><td>${day.totals.retries}</td><td>${day.totals.failures}</td><td>${sumEvents(day.events, 'cache:', ':hit')}</td><td>${sumEvents(day.events, 'limit_denied:', '')}</td></tr>`).join('')}

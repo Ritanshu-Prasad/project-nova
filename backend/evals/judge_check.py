@@ -28,7 +28,7 @@ async def prepare_item(goal: dict, style: dict) -> dict | None:
     try:
         outline = fit_outline(await plan_outline(request))
         module, topic = outline.modules[0], outline.modules[0].topics[0]
-        content = await write_topic(module.title, topic, request, "", [t.title for m in outline.modules for t in m.topics], "")
+        content = await write_topic(module.title, topic, request, "", [(t.title, t.summary) for m in outline.modules for t in m.topics], "")
     except Exception:
         return None
     text = lesson_text(content.lesson)

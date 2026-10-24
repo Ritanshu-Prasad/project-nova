@@ -14,16 +14,16 @@
       "answer": 0
     },
     {
-      "q": "Which of these hold for idea 2 (item 2)? Select all that apply.",
+      "q": "Which of these hold for idea 1 (item 2)? Select all that apply.",
       "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 2,
       "type": "multi",
       "options": [
-        "Pick 0 for item 2 of idea 2",
-        "Pick 4 for item 2 of idea 2",
-        "Pick 1 for item 2 of idea 2",
-        "Pick 2 for item 2 of idea 2",
-        "Pick 3 for item 2 of idea 2"
+        "Pick 0 for item 2 of idea 1",
+        "Pick 4 for item 2 of idea 1",
+        "Pick 1 for item 2 of idea 1",
+        "Pick 2 for item 2 of idea 1",
+        "Pick 3 for item 2 of idea 1"
       ],
       "answers": [
         0,
@@ -31,23 +31,29 @@
       ]
     },
     {
-      "q": "For idea 1, a small action tied to a daily routine becomes easier to repeat (item 2).",
+      "q": "Which statement matches idea 0 (item 1)?",
       "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 1,
-      "type": "truefalse",
-      "answer": true
+      "type": "mcq",
+      "options": [
+        "Choice 1 for item 1 of idea 0",
+        "Choice 3 for item 1 of idea 0",
+        "Choice 2 for item 1 of idea 0",
+        "Choice 0 for item 1 of idea 0"
+      ],
+      "answer": 0
     },
     {
-      "q": "Which of these hold for idea 1 (item 1)? Select all that apply.",
+      "q": "Which of these hold for idea 0 (item 1)? Select all that apply.",
       "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 2,
       "type": "multi",
       "options": [
-        "Pick 1 for item 1 of idea 1",
-        "Pick 3 for item 1 of idea 1",
-        "Pick 2 for item 1 of idea 1",
-        "Pick 0 for item 1 of idea 1",
-        "Pick 4 for item 1 of idea 1"
+        "Pick 4 for item 1 of idea 0",
+        "Pick 3 for item 1 of idea 0",
+        "Pick 2 for item 1 of idea 0",
+        "Pick 0 for item 1 of idea 0",
+        "Pick 1 for item 1 of idea 0"
       ],
       "answers": [
         2,
@@ -55,7 +61,7 @@
       ]
     },
     {
-      "q": "For idea 0, a small action tied to a daily routine becomes easier to repeat (item 1).",
+      "q": "For idea 2, a small action tied to a daily routine becomes easier to repeat (item 1).",
       "why": "A small action is easier to repeat when it follows a routine.",
       "difficulty": 1,
       "type": "truefalse",

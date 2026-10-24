@@ -92,6 +92,15 @@ def test_progress_put_and_get(client):
     assert get_res.json()["save"]["stats"]["xp"] == 50
 
 
+def test_progress_accepts_an_objective_as_long_as_a_course_request_allows(client):
+    sign_in(client)
+    base = None
+    for length, status in ((300, 200), (500, 200), (501, 422)):
+        payload = {"savedAt": length, "save": {"profile": {"activeObjective": "x" * length}}, "base": base}
+        assert client.put("/api/progress", json=payload, headers=HEADERS).status_code == status
+        base = length if status == 200 else base
+
+
 def test_progress_put_conflict_on_stale_base(client):
     sign_in(client)
     payload = {"savedAt": 1000, "save": {"xp": 50}, "base": None}

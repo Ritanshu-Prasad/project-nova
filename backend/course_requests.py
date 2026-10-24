@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -45,8 +45,12 @@ class TopicRequest(BaseModel):
     # The titles of every topic in the course, in order, and what the topic before this one covered.
     outline: list[str] = Field(default_factory=list, max_length=MAX_OUTLINE_TOPICS)
     previous: str = Field(default="", max_length=MAX_SUMMARY_CHARS)
+    # What this topic teaches and leaves to others, and the summary of every topic of `outline` (same order).
+    covers: str = Field(default="", max_length=MAX_SUMMARY_CHARS)
+    excludes: str = Field(default="", max_length=MAX_SUMMARY_CHARS)
+    outlineSummaries: list[Annotated[str, Field(max_length=MAX_SUMMARY_CHARS)]] = Field(default_factory=list, max_length=MAX_OUTLINE_TOPICS)
 
-    @field_validator("objective", "course", "module", "topic", "summary", "previous")
+    @field_validator("objective", "course", "module", "topic", "summary", "previous", "covers", "excludes")
     @classmethod
     def clean(cls, text: str) -> str:
         return sanitise(text, MAX_SUMMARY_CHARS)
@@ -60,6 +64,11 @@ class TopicRequest(BaseModel):
     @classmethod
     def clean_titles(cls, titles: list[str]) -> list[str]:
         return [sanitise(title, MAX_TITLE_CHARS) for title in titles]
+
+    @field_validator("outlineSummaries")
+    @classmethod
+    def clean_summaries(cls, summaries: list[str]) -> list[str]:
+        return [sanitise(summary, MAX_SUMMARY_CHARS) for summary in summaries]
 
 
 class TaughtTopic(BaseModel):
@@ -100,8 +109,10 @@ class PlanTopic(BaseModel):
     title: str = Field(min_length=1, max_length=MAX_TITLE_CHARS)
     planet: str = Field(default="", max_length=MAX_TITLE_CHARS)
     summary: str = Field(default="", max_length=MAX_SUMMARY_CHARS)
+    covers: str = Field(default="", max_length=MAX_SUMMARY_CHARS)
+    excludes: str = Field(default="", max_length=MAX_SUMMARY_CHARS)
 
-    @field_validator("title", "planet", "summary")
+    @field_validator("title", "planet", "summary", "covers", "excludes")
     @classmethod
     def clean(cls, text: str) -> str:
         return sanitise(text, MAX_SUMMARY_CHARS)
@@ -154,7 +165,7 @@ class RevisionRequest(BaseModel):
 
 def describe_revision(request: RevisionRequest) -> str:
     """What the plan reviser reads: the goal, the plan as it stands, the conversation so far and the new request."""
-    plan = "\n".join(f"Module {number}: {module.title}\n" + "\n".join(f"  - {topic.title} [{topic.planet}]: {topic.summary}" for topic in module.topics) for number, module in enumerate(request.modules, 1))
+    plan = "\n".join(f"Module {number}: {module.title}\n" + "\n".join(f"  - {topic.title} [{topic.planet}]: {topic.summary}" + (f" Covers: {topic.covers}" if topic.covers else "") + (f" Excludes: {topic.excludes}" if topic.excludes else "") for topic in module.topics) for number, module in enumerate(request.modules, 1))
     earlier = "\n".join(f"{message.role}: {message.text}" for message in request.history)
     wishes = f"\nLearner expectations: <{EXPECTATIONS_TAG}>{request.expectations}</{EXPECTATIONS_TAG}>" if request.expectations else ""
     return f"{wrap_goal(request.objective)}{wishes}\n<plan>\n{plan}\n</plan>\n" + (f"<conversation>\n{earlier}\n</conversation>\n" if earlier else "") + f"<request>{request.message}</request>"

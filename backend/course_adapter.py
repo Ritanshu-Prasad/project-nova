@@ -13,16 +13,16 @@ DIFFICULTY = {"mcq": 1, "true_false": 1, "msq": 2, "order": 2}
 # --- Lesson ---
 
 def to_lesson(content: ModuleContent) -> course.Lesson:
-    """A written module as the lesson the app shows: each section a text block with its analogy, steps and code, the key terms after the first section."""
+    """A written module as the lesson the app shows: each section a text block with its analogy, steps and code, the key terms and the takeaways at the end."""
     blocks: list[dict] = []
-    for number, section in enumerate(content.sections):
-        blocks.append({"type": "text", "title": section.heading, "body": section.explanation})
+    for section in content.sections:
+        blocks.append({"type": "text", "title": section.heading, "body": _body(section)})
         if section.example:
             blocks.append({"type": "example", "title": "Worked example", "body": section.example})
         if section.common_mistake:
-            blocks.append({"type": "callout", "tone": "warning", "body": f"Common mistake: {section.common_mistake}"})
+            blocks.append({"type": "callout", "tone": "warning", "body": section.common_mistake})
         if section.quick_check:
-            blocks.append({"type": "callout", "tone": "tip", "body": f"Quick check: {section.quick_check.question} Answer: {section.quick_check.answer}"})
+            blocks.append({"type": "quickcheck", "question": section.quick_check.question, "answer": section.quick_check.answer})
         if section.analogy:
             blocks.append({"type": "analogy", "body": section.analogy})
         if section.action_steps:
@@ -30,15 +30,21 @@ def to_lesson(content: ModuleContent) -> course.Lesson:
         blocks += [{"type": "source", "doc": source.doc, "page": source.page, "excerpt": source.excerpt} for source in section.sources or []]
         if section.code:
             blocks.append({"type": "code", "language": section.code.language, "code": section.code.snippet, "caption": section.code.explanation})
-        if number == 0:
-            blocks.append({"type": "keyTerms", "terms": [{"term": term.term, "def": term.definition} for term in content.key_terms]})
-    blocks.append({"type": "summary", "points": [section.heading for section in content.sections]})
+    blocks.append({"type": "keyTerms", "terms": [{"term": term.term, "def": term.definition} for term in content.key_terms]})
+    blocks.append({"type": "summary", "points": content.takeaways})
     return course.Lesson.model_validate({
         "minutes": lesson_minutes(content),
         "objectives": content.learning_objectives,
-        "simple": content.overview,
+        "simple": content.simple,
         "blocks": blocks,
     })
+
+
+def _body(section) -> str:
+    """The explanation, followed by its points as a Markdown bullet list when the section has any."""
+    if not section.points:
+        return section.explanation
+    return section.explanation + "\n\n" + "\n".join(f"- {point}" for point in section.points)
 
 
 def lesson_minutes(content: ModuleContent) -> int:

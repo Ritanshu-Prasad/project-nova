@@ -9,7 +9,7 @@ from pydantic import ValidationError
 import llm
 import usage
 from module_content import ModuleContent
-from question_bank import TYPE_RULES, QuestionBank, bank_system, bank_user, check_bank, pick_quiz, plan_sections, plan_types, with_found_sections, wording_problem, write_bank
+from question_bank import BANK_ROUNDS, WRITE_ATTEMPTS, BATCH_TOKENS, TYPE_RULES, McqBatch, QuestionBank, bank_system, bank_user, check_bank, pick_quiz, plan_sections, plan_types, with_found_sections, wording_problem, write_bank
 from test_module_content import module, section
 
 STEPS = ["Choose one tiny action", "Attach it to a daily routine", "Do it right after the routine", "Celebrate right away"]
@@ -18,7 +18,7 @@ STEPS = ["Choose one tiny action", "Attach it to a daily routine", "Do it right 
 def content(sequence=False, sections=3) -> ModuleContent:
     items = [section(f"Idea {n}") for n in range(sections)]
     if sequence:
-        items[0] = section("Idea 0", action_steps=STEPS)
+        items[1] = section("Idea 1", action_steps=STEPS)
     return ModuleContent.model_validate(module(sections=items))
 
 
@@ -67,9 +67,9 @@ def check(questions, module_content=None):
 
 # --- The plan ---
 
-def test_the_plan_has_between_eight_and_ten_questions_and_fixed_types():
-    short, long = plan_types(content(sections=3)), plan_types(content(sections=8))
-    assert len(short) == 8 and len(long) == 10
+def test_the_plan_has_between_eight_and_nine_questions_and_fixed_types():
+    short, long = plan_types(content(sections=3)), plan_types(content(sections=6))
+    assert len(short) == 8 and len(long) == 9
     assert short.count("msq") == 2 and short.count("true_false") == 2 and "order" not in short
 
 
@@ -171,6 +171,15 @@ def test_evidence_is_matched_ignoring_case_punctuation_and_spacing():
     assert check(questions) == {}
 
 
+def test_evidence_quoted_from_a_markdown_list_item_still_matches():
+    items = "Before you record, run through the list.\n1. Read the script aloud once at a natural pace.\n   - Mark every breath you need.\n- Cut any sentence you stumble on twice.\n**Pacing** matters more than polish."
+    module_content = ModuleContent.model_validate(module(sections=[section(explanation=items + " " + "Filler words that make this long enough to be valid. " * 4), section(), section()]))
+    questions = good_questions()
+    for quote in ("1. Read the script aloud once at a natural pace.", "- Cut any sentence you stumble on twice.", "**Pacing** matters more than polish."):
+        questions[0] = {**questions[0], "evidence": quote}
+        assert check(questions, module_content) == {}
+
+
 def test_evidence_quoted_from_another_section_is_fine_and_the_section_is_corrected():
     unique = "Only the third section ever explains how the sourdough starter is fed each morning."
     module_content = ModuleContent.model_validate(module(sections=[section(), section(), section(explanation=unique + " " + "Filler words that make this long enough to be valid. " * 4)]))
@@ -255,6 +264,7 @@ def test_each_type_has_its_own_prompt_with_only_its_own_rule():
 
 def test_questions_must_stand_alone_without_pointing_at_the_module():
     assert 'never say "the module"' in bank_system("mcq")
+    assert '"according to the text"' in bank_system("mcq") and '"according to the series"' in bank_system("mcq")
 
 
 def test_the_question_writer_sees_the_module_text_and_which_section_each_question_comes_from():
@@ -278,14 +288,16 @@ def model(monkeypatch):
     class Model:
         requests: list = []
         override: dict = {}
+        tokens: list = []
 
     state = Model()
-    state.requests, state.override = [], {}
+    state.requests, state.override, state.tokens = [], {}, []
 
     async def chat_json(system, user, max_tokens=0, thinking=False, schema=None, kind="call"):
         asked = re.search(r"of type (\w+),", user).group(1)
         state.asked_count = int(re.search(r"Write exactly (\d+)", user).group(1))
         state.requests.append(asked)
+        state.tokens.append(max_tokens)
         reply = state.override.get(asked) or REPLIES[asked]
         return {"questions": reply() if callable(reply) else reply}
 
@@ -295,9 +307,16 @@ def model(monkeypatch):
 
 def test_the_bank_is_written_with_one_call_per_type_and_every_question_has_the_type_it_was_asked_for(model):
     result = asyncio.run(write_bank(content()))
-    assert sorted(model.requests) == ["mcq", "msq", "true_false"]
+    assert sorted(model.requests) == ["mcq", "msq", "true_false"] and model.tokens == [BATCH_TOKENS] * 3
     assert [question.type for question in result.questions] == plan_types(content())
     assert [question.question_id for question in result.questions] == [f"q{n}" for n in range(1, 9)]
+
+
+def test_a_module_that_teaches_a_sequence_adds_a_fourth_call_for_the_order_question(model):
+    model.override["order"] = lambda: [order(1, 1)]
+    model.override["mcq"] = lambda: REPLIES["mcq"]()[:3]
+    asyncio.run(write_bank(content(sequence=True)))
+    assert sorted(model.requests) == ["mcq", "msq", "order", "true_false"]
 
 
 def test_the_section_of_each_question_is_set_by_where_its_evidence_is_found_not_by_the_model(model):
@@ -311,6 +330,14 @@ def test_a_batch_with_the_wrong_number_of_questions_is_asked_again(model):
     model.override["mcq"] = lambda: answers.pop(0)
     asyncio.run(write_bank(content()))
     assert model.requests.count("mcq") == 2
+
+
+def test_a_batch_that_never_has_the_right_number_is_refused_and_the_log_says_how_many(model, caplog):
+    model.override["mcq"] = lambda: REPLIES["mcq"]()[:3]
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(write_bank(content()))
+    assert error.value.status_code == 502 and model.requests.count("mcq") == WRITE_ATTEMPTS
+    assert "type mcq" in caplog.text and "expected 4, received 3" in caplog.text
 
 
 def test_only_the_type_with_a_bad_question_is_written_again(model):
@@ -334,6 +361,10 @@ def test_a_rewrite_asks_only_for_the_failed_questions(model):
     assert asked == [2, 1]
 
 
+def test_there_is_one_rewrite_round_and_no_more():
+    assert BANK_ROUNDS == 2
+
+
 def bad_evidence(question: dict) -> dict:
     return {**question, "evidence": "a quote that is not in the module at all"}
 
@@ -342,6 +373,7 @@ def test_questions_that_never_pass_are_left_out_when_enough_good_ones_remain(mod
     spent = usage.begin()
     model.override["true_false"] = lambda: [bad_evidence(true_false(n, 0)) for n in range(1, model.asked_count + 1)]
     result = asyncio.run(write_bank(content()))
+    assert model.requests.count("true_false") == BANK_ROUNDS
     assert len(result.questions) == 6 and [q.question_id for q in result.questions] == [f"q{n}" for n in range(1, 7)]
     assert "never passed" in spent.notes[-1] and {q.type for q in result.questions} == {"mcq", "msq"}
 
@@ -356,20 +388,14 @@ def test_a_bank_with_too_few_good_questions_is_refused(model):
 # --- Small replies ---
 
 def test_a_lone_question_without_the_wrapper_is_accepted():
-    from question_bank import McqBatch
-
     assert len(McqBatch.model_validate(mcq(1)).questions) == 1
 
 
 def test_a_bare_list_of_questions_is_accepted():
-    from question_bank import McqBatch
-
     assert len(McqBatch.model_validate([mcq(1), mcq(2)]).questions) == 2
 
 
 def test_a_wrapped_reply_is_left_alone():
-    from question_bank import McqBatch
-
     assert len(McqBatch.model_validate({"questions": [mcq(1)]}).questions) == 1
 
 

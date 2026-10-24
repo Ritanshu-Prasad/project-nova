@@ -90,6 +90,8 @@ def _topic(module_number: int, topic_number: int, outline: OutlineTopic, content
         planet=outline.planet,
         kind=content.kind,
         summary=outline.summary,
+        covers=outline.covers,
+        excludes=outline.excludes,
         lesson=content.lesson,
         quiz=dedupe_questions(content.quiz, seen),
         practice=dedupe_questions(content.practice, seen),
@@ -103,6 +105,8 @@ def _stub(module_number: int, topic_number: int, outline: OutlineTopic) -> Topic
         planet=outline.planet,
         kind=outline.kind,
         summary=outline.summary,
+        covers=outline.covers,
+        excludes=outline.excludes,
         lesson=LessonStub(minutes=outline.minutes),
     )
 

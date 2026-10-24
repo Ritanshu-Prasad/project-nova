@@ -4,7 +4,7 @@ from fastapi import HTTPException
 
 from course_requests import CourseRequest
 from evals import cases, rows
-from evals.metrics import fraction
+from evals.metrics import fraction, topic_overlap
 from planning import fit_outline, plan_outline
 
 PARALLEL_RUNS = 3
@@ -16,7 +16,8 @@ async def check(goal: dict, style: dict) -> dict:
     row = rows.start("outline", case=goal["id"], style=style["id"])
     try:
         outline = fit_outline(await plan_outline(request))
-        row.update(ok=True, modules=len(outline.modules), topics=sum(len(module.topics) for module in outline.modules), planned_modules=outline.planned_modules, planned_topics=outline.planned_topics)
+        overlap = topic_overlap([topic.summary for module in outline.modules for topic in module.topics])
+        row.update(ok=True, modules=len(outline.modules), topics=sum(len(module.topics) for module in outline.modules), planned_modules=outline.planned_modules, planned_topics=outline.planned_topics, topic_overlap=overlap)
     except HTTPException as error:
         row.update(ok=False, error=str(error.detail))
     return rows.finish(row)
@@ -43,10 +44,12 @@ def summarise(result_rows: list[dict]) -> dict:
     cases_seen = {row["case"] for row in done}
     pairs = {case: {row["style"]: row["topics"] for row in done if row["case"] == case} for case in cases_seen}
     comparable = [sizes for sizes in pairs.values() if "overview" in sizes and "deep" in sizes]
+    overlaps = [row["topic_overlap"] for row in done if row["topic_overlap"] is not None]
     return {
         "runs": len(result_rows),
         "ok_rate": fraction(result_rows, lambda row: row["ok"]),
         "styles": by_style,
         "size_follows_style": fraction(comparable, lambda sizes: sizes["overview"] <= sizes["deep"]),
         "trimmed": fraction(done, lambda row: row["planned_modules"] > row["modules"] or row["planned_topics"] > row["topics"]),
+        "topic_overlap": sum(overlaps) / len(overlaps) if overlaps else None,
     }

@@ -54,7 +54,7 @@ def test_the_suite_runs_every_goal_in_every_style(fake_model):
 
 
 def row(case, style, topics, modules=3, planned=None, ok=True):
-    return {"suite": "outline", "case": case, "style": style, "ok": ok, "modules": modules, "topics": topics, "planned_modules": planned or modules, "planned_topics": topics, "cost_usd": 0, "tokens": 0, "calls": 1}
+    return {"suite": "outline", "case": case, "style": style, "ok": ok, "modules": modules, "topics": topics, "planned_modules": planned or modules, "planned_topics": topics, "topic_overlap": None, "cost_usd": 0, "tokens": 0, "calls": 1}
 
 
 def test_the_summary_averages_sizes_and_checks_that_a_deeper_request_is_not_smaller():
