@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCourse } from './course';
 import type { Course, Question, Topic } from './courseSchema';
 
 vi.mock('./courseApi', () => ({ fetchTopic: vi.fn(), fetchModuleQuiz: vi.fn(), generateCourse: vi.fn(), hasCourseApi: false, reportAnswers: vi.fn() }));
 const api = await import('./courseApi');
-const { ensureTopic } = await import('./topicLoader');
+const { ensureTopic, prefetchNextTopic } = await import('./topicLoader');
 
 const written = (title: string) => ({
   lesson: { minutes: 5, objectives: ['Explain it'], simple: 'Short.', blocks: [{ type: 'text' as const, body: `About ${title}.` }, { type: 'summary' as const, points: [`${title} point`] }] },
@@ -74,6 +74,104 @@ describe('ensureTopic', () => {
   it('does not send a level to the backend', async () => {
     await ensureTopic('c1', 't1');
     expect(vi.mocked(api.fetchTopic).mock.calls[0][0]).not.toHaveProperty('level');
+  });
+});
+
+describe('what the writer is sent', () => {
+  it('sends what the topic covers and excludes, and every topic summary in outline order', async () => {
+    const outlined = { ...course('c-outline') };
+    outlined.modules[0].topics[0] = { ...stub('t1', 'Bridges'), covers: 'Bridge basics', excludes: 'Overlay networks' };
+    useCourse.getState().addCourse(outlined);
+    await ensureTopic('c-outline', 't1');
+    expect(api.fetchTopic).toHaveBeenCalledWith(expect.objectContaining({
+      covers: 'Bridge basics',
+      excludes: 'Overlay networks',
+      outline: ['Bridges', 'Overlay'],
+      outlineSummaries: ['Bridges summary', 'Overlay summary'],
+    }));
+  });
+
+  it('sends empty covers and excludes for an older topic that has none', async () => {
+    await ensureTopic('c1', 't2');
+    expect(api.fetchTopic).toHaveBeenCalledWith(expect.objectContaining({ covers: '', excludes: '' }));
+  });
+});
+
+describe('prefetching the next topic', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const withCourse = (id: string, source: Course['source'] = 'ai') => {
+    useCourse.getState().addCourse({ ...course(id), source });
+    return id;
+  };
+
+  it('waits about twenty seconds on a topic before writing the next one', async () => {
+    const id = withCourse('p-wait');
+    prefetchNextTopic(id, 't1');
+    await vi.advanceTimersByTimeAsync(19_000);
+    expect(api.fetchTopic).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(api.fetchTopic).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(api.fetchTopic).mock.calls[0][0].topic).toBe('Overlay');
+  });
+
+  it('does nothing when the learner leaves the topic first', async () => {
+    const id = withCourse('p-cancel');
+    const cancel = prefetchNextTopic(id, 't1');
+    await vi.advanceTimersByTimeAsync(10_000);
+    cancel();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(api.fetchTopic).not.toHaveBeenCalled();
+  });
+
+  it('writes the next topic only once, however often the topic is entered', async () => {
+    const id = withCourse('p-once');
+    prefetchNextTopic(id, 't1');
+    prefetchNextTopic(id, 't1');
+    await vi.advanceTimersByTimeAsync(20_000);
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(api.fetchTopic).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips a next topic that is already written', async () => {
+    const id = withCourse('p-loaded');
+    useCourse.getState().setTopicContent(id, 't2', written('Overlay'));
+    prefetchNextTopic(id, 't1');
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(api.fetchTopic).not.toHaveBeenCalled();
+  });
+
+  it('does nothing for the last topic of the course', async () => {
+    const id = withCourse('p-last');
+    prefetchNextTopic(id, 't2');
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(api.fetchTopic).not.toHaveBeenCalled();
+  });
+
+  it('is only for AI courses, not document or template courses', async () => {
+    const documents = withCourse('p-docs', 'documents');
+    const template = withCourse('p-template', 'template');
+    prefetchNextTopic(documents, 't1');
+    prefetchNextTopic(template, 't1');
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(api.fetchTopic).not.toHaveBeenCalled();
+  });
+
+  it('is silent when the write fails, and opening the topic writes it again', async () => {
+    const id = withCourse('p-fail');
+    vi.mocked(api.fetchTopic).mockRejectedValueOnce(new Error('busy'));
+    prefetchNextTopic(id, 't1');
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(api.fetchTopic).toHaveBeenCalledTimes(1);
+    await ensureTopic(id, 't2');
+    expect(api.fetchTopic).toHaveBeenCalledTimes(2);
+    expect(useCourse.getState().library[id].course.modules[0].topics[1].lesson.blocks.length).toBeGreaterThan(0);
   });
 });
 

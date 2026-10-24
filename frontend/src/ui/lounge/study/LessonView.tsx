@@ -46,7 +46,7 @@ export default function LessonView({ topic, active }: { topic: PlacedTopic; acti
             </span>
           )}
         </div>
-        <h1 className={`mt-4 ${TYPE.heading}`}>{topic.title}</h1>
+        <h1 className={`mt-4 ${TYPE.title}`}>{topic.title}</h1>
         {topic.summary && <p className={`mt-2 max-w-2xl ${TYPE.body}`}>{topic.summary}</p>}
         {topic.lesson.simple && (
           <Btn className="mt-5" icon={<Lightbulb size={14} />} onClick={() => (setSimple((v) => !v), holoBurst(0.4))}>
@@ -59,8 +59,8 @@ export default function LessonView({ topic, active }: { topic: PlacedTopic; acti
         {simple && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
             <div className="mt-6 rounded-2xl border border-[rgb(var(--user-rgb)/0.35)] bg-[rgb(var(--user-rgb)/0.08)] p-5">
-              <h3 className={`mb-2 flex items-center gap-2 ${TYPE.heading}`}>
-                <Lightbulb size={18} style={{ color: 'var(--user)' }} /> In plain words
+              <h3 style={{ color: 'var(--user)' }} className={`mb-2 flex items-center gap-2 ${TYPE.label}`}>
+                <Lightbulb size={16} /> In plain words
               </h3>
               <p className={TYPE.body}>{topic.lesson.simple}</p>
             </div>
@@ -74,7 +74,7 @@ export default function LessonView({ topic, active }: { topic: PlacedTopic; acti
 
       <footer className="mt-10 flex flex-col items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 sm:flex-row sm:items-center">
         <div>
-          <div className={TYPE.heading}>{done ? 'You’ve completed this topic' : 'Finished reading?'}</div>
+          <div className={TYPE.section}>{done ? 'You’ve completed this topic' : 'Finished reading?'}</div>
           <div className={`${TYPE.body} text-white/60!`}>{nextLabel ? `Up next: ${nextLabel}` : 'This is the last topic of the course.'}</div>
         </div>
         <Btn variant="primary" icon={<ArrowRight size={15} />} onClick={complete}>

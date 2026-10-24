@@ -51,7 +51,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
         <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--user)' }}>
           <Target size={14} /> Planet {item.moduleIndex + 1} checkpoint · Module quiz
         </div>
-        <h1 className={`mt-1 ${TYPE.heading}`}>{item.module.title}</h1>
+        <h1 className={`mt-1 ${TYPE.title}`}>{item.module.title}</h1>
       </header>
 
       {stage === 'intro' && (
@@ -87,7 +87,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
         <div className="mt-6 space-y-5">
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 text-center">
             {result.passed ? <Trophy size={40} className="mx-auto text-amber-300" /> : <RotateCcw size={36} className="mx-auto text-white/60" />}
-            <h2 className={`mt-3 ${TYPE.heading}`}>{result.passed ? 'Planet cleared!' : 'Not quite yet'}</h2>
+            <h2 className={`mt-3 ${TYPE.section}`}>{result.passed ? 'Planet cleared!' : 'Not quite yet'}</h2>
             <p className={`mt-1 ${TYPE.body}`}>
               {result.correct} of {result.total} correct ({Math.round((result.correct / result.total) * 100)}%) ·{' '}
               <span className={result.delta >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
@@ -112,7 +112,7 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
             </div>
           </div>
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6">
-            <h3 className={`mb-3 ${TYPE.heading}`}>Review</h3>
+            <h3 className={`mb-3 ${TYPE.section}`}>Review</h3>
             <ul className="space-y-3">
               {quiz.questions.map(({ q }, i) => (
                 <li key={i} className={`flex gap-3 ${TYPE.body}`}>

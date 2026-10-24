@@ -93,6 +93,17 @@ async function plainCourse(form: FormData, progress: ProgressFn): Promise<Course
   return normalizeCourse(await res.json());
 }
 
+/** A backend answer that is not OK; `status` tells the screen whether the model or the connection failed. */
+export class CourseApiError extends Error {
+  readonly status: number;
+
+  constructor(status: number) {
+    super(`Course API responded ${status}`);
+    this.name = 'CourseApiError';
+    this.status = status;
+  }
+}
+
 /** What the backend needs to write one topic of a lazily generated AI course. */
 export interface TopicRequest {
   objective: string;
@@ -101,8 +112,13 @@ export interface TopicRequest {
   module: string;
   topic: string;
   summary: string;
+  /** What this topic teaches and what it leaves to other topics, from the outline. */
+  covers: string;
+  excludes: string;
   /** The titles of every topic in the course, in order, and what the topic before this one covered. */
   outline: string[];
+  /** The summary of each topic in `outline`, in the same order. */
+  outlineSummaries: string[];
   previous: string;
 }
 
@@ -121,7 +137,7 @@ export async function fetchTopic(req: TopicRequest): Promise<Pick<Topic, 'lesson
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
   });
-  if (!res.ok) throw new Error(`Course API responded ${res.status}`);
+  if (!res.ok) throw new CourseApiError(res.status);
   const { lesson, quiz, practice, kind } = normTopic({ ...(await res.json()), title: req.topic });
   if (!lesson.blocks.length) throw new Error('The topic came back empty.');
   return { lesson, quiz, practice, kind };
@@ -161,7 +177,7 @@ export async function reviseOutline(req: PlanRevisionRequest): Promise<{ reply: 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ...req,
-      modules: req.modules.map((m) => ({ title: m.title, topics: m.topics.map((t) => ({ title: t.title, planet: t.planet, summary: t.summary })) })),
+      modules: req.modules.map((m) => ({ title: m.title, topics: m.topics.map((t) => ({ title: t.title, planet: t.planet, summary: t.summary, covers: t.covers, excludes: t.excludes })) })),
       history: req.history.slice(-6),
     }),
   });

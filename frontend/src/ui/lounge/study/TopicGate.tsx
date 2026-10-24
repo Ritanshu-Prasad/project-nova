@@ -1,30 +1,31 @@
 import { Loader2, RotateCw } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { PlacedTopic } from '../../../core/courseSchema';
+import { lessonFailureMessage } from '../../../core/lessonError';
 import { ensureTopic, prefetchNextTopic } from '../../../core/topicLoader';
 import Btn from './Btn';
 import { TYPE } from './typography';
 
 /** Shows a topic once its lesson has been written; an outline-only topic is fetched on arrival, and the next one is prefetched. */
 export default function TopicGate({ courseId, topic, children }: { courseId: string; topic: PlacedTopic; children: ReactNode }) {
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const loaded = topic.loaded !== false;
 
   useEffect(() => {
     if (loaded) return prefetchNextTopic(courseId, topic.id);
-    ensureTopic(courseId, topic.id).catch(() => setFailed(true));
+    ensureTopic(courseId, topic.id).catch((e) => setFailure(lessonFailureMessage(e)));
   }, [courseId, topic.id, loaded, attempt]);
 
   if (loaded) return <>{children}</>;
 
   return (
     <div className="flex flex-col items-center gap-4 py-24 text-center font-sans">
-      <h1 className={TYPE.heading}>{topic.title}</h1>
-      {failed ? (
+      <h1 className={TYPE.title}>{topic.title}</h1>
+      {failure ? (
         <>
-          <p className={TYPE.body}>NOVA could not write this lesson. Check your connection and try again.</p>
-          <Btn variant="primary" icon={<RotateCw size={14} />} onClick={() => (setFailed(false), setAttempt((n) => n + 1))}>
+          <p className={TYPE.body}>{failure}</p>
+          <Btn variant="primary" icon={<RotateCw size={14} />} onClick={() => (setFailure(null), setAttempt((n) => n + 1))}>
             Try again
           </Btn>
         </>

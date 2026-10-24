@@ -379,24 +379,21 @@ function FinaleScreen({ mode }: { mode: 'cockpit' | 'overlay' }) {
               Thank you for flying with NOVA, <span style={{ color: accent }} className="font-semibold">{pilot}</span>. Every planet is cleared and the whole journey is behind you — you should be proud.
             </p>
             <p className="mt-3 text-sm text-white/60">Ready for what’s next? Chart a brand-new journey, or go back and revisit where you’ve been.</p>
-            <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+            <div className="mx-auto mt-6 grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 ref={primary}
                 type="button"
                 onClick={() => leave(() => openForge())}
-                className="flex cursor-pointer items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-[var(--user-ink)] shadow-[0_0_26px_-4px_var(--user)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-[var(--user-ink)] shadow-[0_0_26px_-4px_var(--user)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${courseId ? '' : 'sm:col-span-2 sm:mx-auto sm:max-w-xs'}`}
                 style={{ background: 'var(--user)' }}
               >
                 <Plus size={16} /> Start a new journey
               </button>
               {courseId && (
-                <button type="button" onClick={revisit} className="flex cursor-pointer items-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white">
+                <button type="button" onClick={revisit} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white">
                   <BookOpen size={16} /> Revisit this course
                 </button>
               )}
-              <button type="button" onClick={() => leave()} className="cursor-pointer rounded-xl px-4 py-3 text-sm text-white/60 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white">
-                Close
-              </button>
             </div>
           </motion.div>
         )}

@@ -6,6 +6,7 @@ import { useSkill } from '../../../core/course';
 import { useProfile } from '../../../core/hub';
 import { rankOf } from '../../../core/rank';
 import { hasTutorApi, useTutor, type ChatMsg } from '../../../core/tutor';
+import { Markdown } from './markdown';
 
 const LS_OPEN = 'nova.tutor.open';
 const SUGGESTIONS = ['Explain it simply', 'Give me an example', 'Quiz me', 'Summarise this topic'];
@@ -213,73 +214,8 @@ function Bubble({ m, typing }: { m: ChatMsg; typing: boolean }) {
           ))}
         </span>
       ) : (
-        <Md text={m.content} />
+        <Markdown text={m.content} />
       )}
     </div>
   );
-}
-
-const LIST = /^\s*([-*•]|\d+[.)])\s+/;
-
-/** Just enough markdown for tutor answers: paragraphs, lists, code fences, `code` and **bold**. */
-function Md({ text }: { text: string }) {
-  const out: ReactNode[] = [];
-  const lines = text.split('\n');
-  let i = 0;
-  while (i < lines.length) {
-    const l = lines[i];
-    if (l.trim().startsWith('```')) {
-      const code: string[] = [];
-      i++;
-      while (i < lines.length && !lines[i].trim().startsWith('```')) code.push(lines[i++]);
-      i++;
-      out.push(
-        <pre key={out.length} className="overflow-x-auto rounded-lg bg-black/40 p-2.5 font-mono text-sm text-sky-100/90">
-          {code.join('\n')}
-        </pre>,
-      );
-    } else if (LIST.test(l)) {
-      const ordered = /^\s*\d/.test(l);
-      const items: string[] = [];
-      while (i < lines.length && LIST.test(lines[i])) items.push(lines[i++].replace(LIST, ''));
-      const cls = `space-y-1 pl-5 ${ordered ? 'list-decimal' : 'list-disc'} marker:text-white/60`;
-      const lis = items.map((it, k) => <li key={k}>{inline(it)}</li>);
-      out.push(
-        ordered ? (
-          <ol key={out.length} className={cls}>
-            {lis}
-          </ol>
-        ) : (
-          <ul key={out.length} className={cls}>
-            {lis}
-          </ul>
-        ),
-      );
-    } else if (!l.trim()) {
-      i++;
-    } else {
-      const para: string[] = [];
-      while (i < lines.length && lines[i].trim() && !LIST.test(lines[i]) && !lines[i].trim().startsWith('```')) para.push(lines[i++].replace(/^#+\s*/, ''));
-      out.push(<p key={out.length}>{inline(para.join(' '))}</p>);
-    }
-  }
-  return <div className="space-y-2">{out}</div>;
-}
-
-function inline(text: string): ReactNode[] {
-  return text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).map((p, i) => {
-    if (p.length > 2 && p.startsWith('`') && p.endsWith('`'))
-      return (
-        <code key={i} className="rounded bg-black/40 px-1 py-0.5 font-mono text-[0.95em] text-white">
-          {p.slice(1, -1)}
-        </code>
-      );
-    if (p.length > 4 && p.startsWith('**') && p.endsWith('**'))
-      return (
-        <strong key={i} className="font-semibold text-white">
-          {p.slice(2, -2)}
-        </strong>
-      );
-    return p;
-  });
 }
