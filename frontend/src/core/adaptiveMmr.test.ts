@@ -13,7 +13,7 @@ if (typeof globalThis.localStorage === 'undefined') {
   (globalThis as any).localStorage = localStorageMock;
 }
 
-import { kFactor, useCourse } from './course';
+import { kFactor, MASTER_MMR, paceFactors, paceTarget, useCourse } from './course';
 import { getCourseTiers, rankOf } from './rank';
 import { HUB_QUIZ } from './hubQuiz';
 import type { Course } from './courseSchema';
@@ -173,5 +173,87 @@ describe('Adaptive MMR & 7 Tiers (Approach B)', () => {
     expect(finalMmr).toBeGreaterThanOrEqual(1900);
     const rank = rankOf(finalMmr);
     expect(rank.tier.id).toBe('master');
+  });
+});
+
+/** A deterministic pilot who answers `accuracy` of the questions right, played through a whole course. */
+function playCourse(modules: number, topicsPerModule: number, accuracy: number) {
+  const course = makeMockCourse(modules, topicsPerModule);
+  const store = useCourse.getState();
+  store.addCourse(course);
+  let seed = 7;
+  const rand = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
+  const total = modules * topicsPerModule;
+  const mmr = () => useCourse.getState().library[course.id].skill.mmr;
+  const trace: number[] = [mmr()];
+  let biggest = 0;
+  let before = mmr();
+  let lift = 0;
+  for (let m = 0; m < modules; m++) {
+    for (let t = 0; t < topicsPerModule; t++) {
+      const index = m * topicsPerModule + t;
+      for (let q = 0; q < 2; q++) {
+        const d = useCourse.getState().answer(rand() < accuracy, { qId: `t-${index}-${q}`, progress: index / Math.max(1, total - 1) });
+        biggest = Math.max(biggest, Math.abs(d));
+      }
+      useCourse.getState().completeTopic(`mod-${m + 1}-top-${t + 1}`);
+      trace.push(mmr());
+    }
+    let passed = false;
+    for (let attempt = 0; attempt < 6 && !passed; attempt++) {
+      let right = 0;
+      for (let q = 0; q < 4; q++) {
+        const ok = rand() < accuracy;
+        right += ok ? 1 : 0;
+        const d = useCourse.getState().answer(ok, { qId: `q-${m}-${attempt}-${q}`, progress: (m * topicsPerModule + topicsPerModule) / Math.max(1, total) });
+        biggest = Math.max(biggest, Math.abs(d));
+      }
+      before = mmr();
+      passed = useCourse.getState().finishModuleQuiz(`mod-${m + 1}`, Math.max(right, 3), 4).passed;
+      lift = mmr() - before;
+    }
+    trace.push(mmr());
+  }
+  return { course, entry: useCourse.getState().library[course.id], trace, biggest, lift, final: mmr() };
+}
+
+describe('The rank is paced so that finishing a course ends in Master', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useCourse.setState({ activeId: null, library: {}, stats: { xp: 0, streak: 0, bestStreak: 0, correct: 0, answered: 0, day: '2026-10-23', dayQuizzes: 0 } });
+  });
+
+  for (const [modules, topics] of [[4, 2], [8, 2], [12, 3]] as const) {
+    for (const accuracy of [0.6, 0.75, 0.9, 1]) {
+      it(`${modules} modules, ${Math.round(accuracy * 100)}% accuracy → Master at graduation`, () => {
+        const r = playCourse(modules, topics, accuracy);
+        expect(r.entry.completedAt).toBeTruthy();
+        expect(r.final).toBeGreaterThanOrEqual(MASTER_MMR);
+        expect(rankOf(r.final).tier.id).toBe('master');
+        // No single answer moves the rating by more than a ladder division or so.
+        expect(r.biggest).toBeLessThanOrEqual(150);
+        // The last quiz's top-up is small for a pilot who answers reasonably, never a leap across the ladder.
+        if (accuracy >= 0.75) expect(r.lift).toBeLessThanOrEqual(80);
+      });
+    }
+  }
+
+  it('a pilot who is on pace gains more slowly than one who is behind', () => {
+    const behind = paceFactors(1000, 0.5); // should be at ~1460
+    const onPace = paceFactors(paceTarget(0.5), 0.5);
+    const ahead = paceFactors(paceTarget(0.5) + 200, 0.5);
+    expect(behind.gain).toBeGreaterThan(onPace.gain);
+    expect(onPace.gain).toBeCloseTo(1, 5);
+    expect(ahead.gain).toBeLessThan(1);
+    expect(ahead.gain).toBeGreaterThanOrEqual(0.55);
+    expect(behind.gain).toBeLessThanOrEqual(3.5);
+    expect(behind.loss).toBeLessThan(1);
+  });
+
+  it('a wrong answer still lowers the rating, and the rating never decreases on a right one', () => {
+    const course = makeMockCourse(4, 2);
+    useCourse.getState().addCourse(course);
+    expect(useCourse.getState().answer(false, { qId: 'w1', progress: 0.1 })).toBeLessThan(0);
+    expect(useCourse.getState().answer(true, { qId: 'r1', progress: 0.1 })).toBeGreaterThanOrEqual(1);
   });
 });

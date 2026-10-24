@@ -464,9 +464,9 @@ function tick(dt: number): void {
       rt.fovKick = R ? 0 : kf(t, [[0, 24 * (rt.spaceLaunch ? SPACE_LAUNCH_KICK : 1)], [0.6, 34], [2.6, 30], [3.1, 8], [3.6, 0]]);
       rt.shake = R ? 0 : kf(t, [[0, 0.55], [0.6, 0.35], [2.6, 0.3], [3.0, 0.65], [3.6, 0.1]]);
       const entryFlash = kf(t, [[0, 1.0], [0.15, 0.9], [0.5, 0]]);
-      const midPulse = kf(t, [[1.35, 0], [1.5, 0.35], [1.65, 0]]);
       const exitFlash = kf(t, [[2.55, 0], [2.95, 1.0], [3.5, 0.6]]);
-      rt.flash = R ? 0 : Math.max(entryFlash, midPulse, exitFlash);
+      // One flash in and one out: the pulse that used to blink at the swap made the warp read as flickering.
+      rt.flash = R ? 0 : Math.max(entryFlash, exitFlash);
       rt.engine = kf(t / dur, [[0, 1], [0.75, 0.9], [1, 0.45]]);
       rt.speedKms = lerp(rt.speedKms, LIGHT_SPEED_KMS * 0.98, 1 - Math.exp(-3 * dt));
       if (t >= dur - 0.45) once('exit', () => audio.play('warpOut'));

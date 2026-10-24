@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
-import { Check, Flag, Lock, Rocket, RotateCcw } from 'lucide-react';
+import { Check, Lock, Rocket, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { passedModules, useActiveCourse } from '../../core/course';
+import { useFinale } from '../../core/finale';
+import { routeLayout } from './routeLayout';
 
 const PLANET_TINTS = ['#fb923c', '#a855f7', '#22d3ee', '#34d399', '#f472b6', '#60a5fa', '#fb7185', '#a3e635'];
 
@@ -66,12 +68,22 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
     setReplayKey((k) => k + 1);
   }, [destinationIndex]);
 
+  // The window's width: the route stretches to fill it (see routeLayout.ts).
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || compact || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setWidth(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [compact, active]);
+
   // Geometry: undulating wave coordinates (ss1 style)
-  // Even planets are lower (y = 156), odd planets are higher (y = 84)
-  const stepWidth = 155;
-  const startX = 90;
+  // Even planets are lower, odd planets are higher; the supernova is the last waypoint (index n).
+  const { stepWidth, startX, amplitude: waveAmplitude, totalWidth } = useMemo(() => routeLayout(width, n), [width, n]);
   const baseY = 120;
-  const waveAmplitude = 36;
   const canvasHeight = 250;
 
   const planetCoords: Point[] = useMemo(() => {
@@ -81,16 +93,16 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
     }));
   }, [n, startX, stepWidth, baseY, waveAmplitude]);
 
-  // End flag coordinates (waypoint index = n)
-  const flagCoord: Point = useMemo(() => {
-    const lastX = startX + Math.max(0, n - 1) * stepWidth;
-    return {
-      x: lastX + 120,
+  // Supernova coordinates (waypoint index = n): spaced like every other stop
+  const flagCoord: Point = useMemo(
+    () => ({
+      x: startX + n * stepWidth,
       y: baseY + (n % 2 === 0 ? waveAmplitude : -waveAmplitude),
-    };
-  }, [n, startX, stepWidth, baseY, waveAmplitude]);
+    }),
+    [n, startX, stepWidth, baseY, waveAmplitude],
+  );
 
-  // All waypoints: planet 0..n-1, plus flag at index n
+  // All waypoints: planet 0..n-1, plus the supernova at index n
   const allWaypoints: Point[] = useMemo(() => {
     return [...planetCoords, flagCoord];
   }, [planetCoords, flagCoord]);
@@ -138,7 +150,7 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
 
   // Ambient stars background for deep space aesthetic (matching ss1)
   const stars = useMemo(() => {
-    const totalW = startX + Math.max(4, n) * stepWidth + 180;
+    const totalW = totalWidth;
     const seedStars: { cx: number; cy: number; r: number; opacity: number }[] = [];
     const count = Math.round(totalW / 28);
     for (let i = 0; i < count; i++) {
@@ -149,7 +161,7 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
       seedStars.push({ cx, cy, r, opacity });
     }
     return seedStars;
-  }, [n, stepWidth, startX, canvasHeight]);
+  }, [totalWidth, canvasHeight]);
 
   // Interpolated flight keyframes along the Bezier wave from fromIndex to destinationIndex
   const flightKeyframes = useMemo(() => {
@@ -273,7 +285,7 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
   }
 
   // FULL SS1 WAVE TRAJECTORY & GLOWING SPHERE ROUTE
-  const totalSvgWidth = startX + Math.max(1, n - 1) * stepWidth + 180;
+  const totalSvgWidth = totalWidth;
 
   return (
     <div
@@ -541,24 +553,54 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
           );
         })}
 
-        {/* Final Destination Flag (Graduation) */}
+        {/* Final destination: the supernova (the course finale). A dim ember until the course is complete; then it blazes,
+            and clicking it replays the finale. */}
         <div
           className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
           style={{ left: flagCoord.x, top: flagCoord.y }}
         >
-          {isCourseComplete && (
-            <div className="pointer-events-none absolute -inset-2.5 rounded-full bg-cyan-400/20 blur-md animate-pulse" />
-          )}
-          <div
-            className={`grid size-10 place-items-center rounded-full border border-white/15 bg-slate-900/90 shadow-lg ${
-              isCourseComplete ? 'text-cyan-400 border-cyan-400/50 drop-shadow-[0_0_12px_#22d3ee]' : 'text-white/40'
-            }`}
+          <button
+            type="button"
+            disabled={!isCourseComplete}
+            onClick={() => active && useFinale.getState().show(active.course.id, active.course.title)}
+            aria-label={isCourseComplete ? 'Supernova — replay the finale' : 'Supernova — finish the course to reach it'}
+            title={isCourseComplete ? 'Replay the finale' : 'Finish every planet to reach the supernova'}
+            className={`relative grid size-14 place-items-center rounded-full transition-transform duration-200 ${isCourseComplete ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
           >
-            <Flag size={18} strokeWidth={2.2} />
-          </div>
-          <span className={`mt-1.5 text-[10px] font-mono ${isCourseComplete ? 'text-cyan-300 font-semibold' : 'text-white/40'}`}>
-            Graduation
-          </span>
+            {/* Corona and rays */}
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute -inset-8 rounded-full ${isCourseComplete ? 'animate-pulse' : ''}`}
+              style={{
+                opacity: isCourseComplete ? 0.95 : 0.4,
+                background: isCourseComplete
+                  ? 'radial-gradient(closest-side, rgba(255,214,160,0.55), rgba(255,110,40,0.22) 55%, rgba(255,80,20,0) 100%)'
+                  : 'radial-gradient(closest-side, rgba(255,150,90,0.22), rgba(255,110,40,0.08) 55%, rgba(255,80,20,0) 100%)',
+              }}
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -inset-6 rounded-full"
+              style={{
+                opacity: isCourseComplete ? 0.8 : 0.25,
+                background: 'repeating-conic-gradient(from 0deg, rgba(255,226,190,0.55) 0deg 2deg, transparent 2deg 30deg)',
+                WebkitMaskImage: 'radial-gradient(closest-side, transparent 38%, #000 52%, transparent 100%)',
+                maskImage: 'radial-gradient(closest-side, transparent 38%, #000 52%, transparent 100%)',
+              }}
+            />
+            {/* The star itself */}
+            <span
+              aria-hidden
+              className={`relative rounded-full ${isCourseComplete ? 'size-10' : 'size-9'}`}
+              style={{
+                background: isCourseComplete
+                  ? 'radial-gradient(circle at 42% 38%, #ffffff 0%, #ffe6b8 28%, #ff9a4a 62%, #b83a12 100%)'
+                  : 'radial-gradient(circle at 42% 38%, #d8b49a 0%, #8a4a2c 45%, #3a1a10 100%)',
+                boxShadow: isCourseComplete ? '0 0 26px rgba(255,150,70,0.95), 0 0 56px rgba(255,90,30,0.55)' : '0 0 10px rgba(255,120,60,0.25)',
+              }}
+            />
+          </button>
+          <span className={`mt-3 text-[10px] font-mono ${isCourseComplete ? 'font-semibold text-orange-200' : 'text-white/40'}`}>Supernova</span>
         </div>
       </div>
     </div>

@@ -1,9 +1,10 @@
 import { Environment, Lightformer, PerformanceMonitor } from '@react-three/drei';
 import { Canvas, useThree, type RootState } from '@react-three/fiber';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { WebGLRenderTarget, type Object3D } from 'three';
 import { currentQuality, suggestLighter } from '../core/graphics';
 import { Z } from '../core/layers';
+import { rt } from '../core/runtime';
 import { useNova } from '../core/store';
 import LaunchBay from './bay/LaunchBay';
 import Cockpit from './cockpit/Cockpit';
@@ -15,6 +16,9 @@ import SpaceWorld from './space/SpaceWorld';
 import DyingSun from './space/DyingSun';
 import Supernova from './space/Supernova';
 import Warp from './space/Warp';
+
+/** True when nothing is in flight: landed, and no finale running. */
+const calm = () => useNova.getState().phase === 'landed' && !rt.finaleFlight && !rt.novaOn;
 
 type Three = RootState;
 
@@ -184,14 +188,31 @@ export default function Experience() {
   // The level is fixed while this mounts (App remounts the scene with a new key when it changes).
   const [q] = useState(currentQuality);
   const [dpr, setDpr] = useState<number>(q.dpr[0]);
+  // A change of resolution (or of graphics level, which rebuilds the scene) blinks a frame, most visibly on Safari: it waits
+  // until the pilot is landed and no finale is playing.
+  const later = useRef<(() => void) | null>(null);
+  const whenCalm = (fn: () => void) => {
+    if (calm()) fn();
+    else later.current = fn;
+  };
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (later.current && calm()) {
+        const fn = later.current;
+        later.current = null;
+        fn();
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, []);
   return (
     <div className="fixed inset-0" style={{ zIndex: Z.canvas, touchAction: 'none' }}>
       <Canvas dpr={dpr} gl={{ antialias: false, powerPreference: 'high-performance', stencil: false, preserveDrawingBuffer: import.meta.env.DEV }}>
         <PerformanceMonitor
           // Only resolution adapts: re-creating the effect composer mid-session can blank the canvas. Already at the
           // lowest resolution and still slow → offer the next lighter graphics level (once).
-          onDecline={() => (dpr <= q.dpr[1] ? suggestLighter() : setDpr(q.dpr[1]))}
-          onIncline={() => setDpr(q.dpr[0])}
+          onDecline={() => whenCalm(() => (dpr <= q.dpr[1] ? suggestLighter() : setDpr(q.dpr[1])))}
+          onIncline={() => whenCalm(() => setDpr(q.dpr[0]))}
         />
         <color attach="background" args={['#02040a']} />
         <Environment resolution={q.env} frames={1}>

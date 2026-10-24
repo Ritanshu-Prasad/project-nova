@@ -26,6 +26,8 @@ export default function IntroUI() {
 }
 
 const RING = 2 * Math.PI * 52;
+/** Strongest the white flash gets (0-1). */
+const FLASH_MAX = 0.8;
 
 function LaunchControl() {
   const ring = useRef<SVGCircleElement>(null);
@@ -94,13 +96,13 @@ function WarpOverlay() {
   const introSeen = useNova((s) => s.introSeen);
   const flash = useRef<HTMLDivElement>(null);
   useRaf(() => {
-    if (flash.current) flash.current.style.opacity = String(Math.min(1, rt.flash));
+    if (flash.current) flash.current.style.opacity = String(Math.min(FLASH_MAX, rt.flash * FLASH_MAX)); // never a full white-out
   });
   // Suppress "ENTERING NEW WORLD" during inter-planet traversal; only show on maiden launch from hangar bay
   const showTitle = phase === 'warp' && !rt.isInterPlanetJump && !introSeen;
   return (
     <div className="pointer-events-none fixed inset-0" style={{ zIndex: Z.warpFlash }}>
-      <div ref={flash} className="absolute inset-0 bg-gradient-to-r from-cyan-100 via-white to-sky-100 opacity-0 mix-blend-screen transition-none" />
+      <div ref={flash} className="absolute inset-0 bg-gradient-to-r from-cyan-100 via-white to-sky-100 opacity-0 transition-none" /* plain alpha: Safari composites blend modes over a WebGL canvas unreliably */ />
       <AnimatePresence>
         {showTitle && (
           <motion.div

@@ -51,6 +51,7 @@ void main() {
   float rim = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.2);
   float a = (0.05 + rim) * uAlpha;
   gl_FragColor = vec4(uColor * a, a);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 const SPARK_VERT = /* glsl */ `
@@ -79,6 +80,7 @@ void main() {
   float a = (1.0 - d * d) * vAlpha;
   if (a <= 0.0) discard;
   gl_FragColor = vec4(vColor * a * 1.6, a);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 /** A soft star with thin spikes, for the flare around the dying star. */

@@ -310,11 +310,12 @@ void main() {
   float grid = max(smoothstep(0.96, 1.0, abs(sin(lat * 9.0))), smoothstep(0.97, 1.0, abs(sin(lon * 9.0)))) * 0.35;
   // Dotted "continents".
   vec2 cell = vec2(lon * 24.0, lat * 24.0);
-  float dots = smoothstep(0.32, 0.1, length(fract(cell) - 0.5)) * step(0.05, fbm3(p * 2.2 + 3.0));
+  float dots = (1.0 - smoothstep(0.1, 0.32, length(fract(cell) - 0.5))) * step(0.05, fbm3(p * 2.2 + 3.0));
   float scan = 0.6 + 0.4 * sin(vP.y * 60.0 - uTime * 4.0);
   float flicker = 0.92 + 0.08 * sin(uTime * 37.0) * sin(uTime * 13.0);
   float a = (fres * 0.9 + grid + dots * 0.8) * scan * flicker * (1.0 + uBoost * 1.5);
   gl_FragColor = vec4(uColor * a, 1.0);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 function Hologram() {
@@ -455,7 +456,8 @@ const DUST_FRAG = /* glsl */ `
 varying float vA;
 void main() {
   float d = length(gl_PointCoord - 0.5);
-  gl_FragColor = vec4(vec3(1.0, 0.85, 0.65) * smoothstep(0.5, 0.0, d) * vA * 0.9, 1.0);
+  gl_FragColor = vec4(vec3(1.0, 0.85, 0.65) * (1.0 - smoothstep(0.0, 0.5, d)) * vA * 0.9, 1.0);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 /** Slow floating dust motes catching the light. */

@@ -11,7 +11,7 @@
 
 **Autonomous, Gamified 3D Learning Platform Built for the Nebius x NVIDIA Global AI Hackathon**
 
-[Live Demo](https://project-nova-ai.vercel.app/) • [Architecture](#-architecture) • [Nebius & NVIDIA Integration](#-nebius-ai-studio--nvidia-nemotron-integration) • [Quick Start](#-quick-start) • [Evaluation](#-testing--evaluations)
+[Live Demo](https://project-nova-ai.vercel.app/) • [Nebius & NVIDIA Integration](#-nebius-ai-studio--nvidia-ai-integration) • [Core Features](#-core-features) • [Quick Start](#-quick-start) • [Evaluation](#-testing--evaluations) • [Credits](#-credits)
 
 </div>
 
@@ -19,79 +19,41 @@
 
 ## 🌟 Overview & Hackathon Mission
 
-Online self-directed education suffers from a notorious completion crisis: passive video lectures, rigid one-size-fits-all curricula, and multiple-choice trivia leave learners disengaged and unprepared for practical problem-solving.
+Online self-directed education suffers from a notorious completion crisis: passive video lectures, rigid one-size-fits-all curricula, and static multiple-choice trivia leave learners disengaged and unprepared for practical problem-solving.
 
-**Project NOVA** transforms self-directed learning into an interplanetary expedition. Powered by **NVIDIA Nemotron** on **Nebius AI Studio**, NOVA autonomously deconstructs any ambitious learning goal into a structured multi-planetary curriculum. Every station along the journey features interactive lessons, deep Socratic tutoring with zero-spoiler safety guards, application-driven multi-format quizzes, and a 7-tier spaceship progression ladder (Probe → Titan) driven by real-time RR (Matchmaking Rating) and spaced-repetition retention curves.
+**Project NOVA** transforms self-directed learning into an interplanetary expedition. Powered by **NVIDIA Nemotron** models running on **Nebius AI Studio**, NOVA autonomously deconstructs any ambitious learning goal into a structured multi-planetary curriculum. Every station along the journey features interactive lessons, deep Socratic tutoring with zero-spoiler safety guards, application-driven multi-format assessments, and a 7-tier spaceship progression ladder (Probe → Titan) driven by real-time Elo rating (RR) and spaced-repetition retention curves.
 
 > [!IMPORTANT]
 > **Hackathon Track Alignment:**
-> * **Autonomous AI Agents & Next-Gen Productivity:** Self-architecting course pipelines, dynamic placement diagnostics, and a shipboard Socratic tutor copilot.
-> * **High-Performance Generative AI Inference:** Sub-second streaming responses, multi-stage curriculum structuring, and on-demand practice challenge synthesis powered by Nebius AI Studio's serverless token factory.
+> * **Autonomous AI Agents & Next-Gen Productivity:** Self-architecting course pipelines, dynamic diagnostic placement, and a real-time Socratic flight copilot.
+> * **High-Performance Generative AI Inference:** Sub-second streaming responses, multi-stage curriculum structuring, and on-demand challenge synthesis powered by Nebius AI Studio's serverless token factory.
 
 ---
 
-## ⚡ Nebius AI Studio & NVIDIA Nemotron Integration
+## ⚡ Nebius AI Studio & NVIDIA AI Integration
 
-NOVA leverages Nebius AI Studio's high-throughput token factory endpoints running NVIDIA Nemotron models:
+Project NOVA is built from the ground up to harness high-throughput serverless inference from **Nebius AI Studio** paired with the advanced reasoning capabilities of **NVIDIA Nemotron** models.
 
-* **High-Throughput Streaming Course Synthesis:**
-  Curriculum generation requires generating hundreds of structured JSON schema fields (modules, topics, definitions, step-by-step analogies, formulas, and 15–20 questions per topic). Nebius AI Studio’s serverless endpoints deliver the low latency and sustained token throughput necessary to stream complete courses in seconds.
-* **NVIDIA Nemotron Reasoning:**
-  NVIDIA Nemotron 3.5 Lightning (`nvidia/Nemotron-3_5-Lightning`) writes the lessons and question banks and powers the tutor; DeepSeek-V4-Flash-0731 plans the modules and topics of a course (and falls back to Lightning if it is unavailable). Nemotron excels at following strict JSON schema outputs, ensuring generated courses survive strict Pydantic and TypeScript runtime validation without hallucinated structures.
-* **Socratic AI Tutor Copilot with Anti-Spoiler Logic:**
-  Learners can summon their shipboard tutor at any time. The copilot uses prompt-guided pedagogical guardrails to explain concepts with custom analogies, diagnose misconceptions, and synthesize fresh practice variations without ever spoiling active quiz answers.
+### 1. Nebius AI Studio: High-Throughput Serverless Token Factory
+Nebius AI Studio acts as the foundational compute engine for NOVA, providing:
+* **Sub-Second Streaming Inference:** Nebius AI Studio's high-speed Token Factory endpoints (`https://api.tokenfactory.nebius.com/v1`) deliver low-latency, sustained token streaming. This enables real-time generation of rich curricula and dynamic conversational turns with zero perceived latency for the pilot.
+* **Serverless Elasticity:** Handles concurrent multi-turn pedagogical dialogues, real-time diagnostic scoring, and multi-module course synthesis without requiring dedicated cluster management or experiencing throttling timeouts.
+* **Cost-Efficient Token Economics:** Enables granular tracking of prompt and completion token usage, ensuring complex educational synthesis remains cost-effective at scale.
+
+### 2. NVIDIA Nemotron: Advanced Pedagogical Reasoning
+NVIDIA Nemotron models provide the reasoning intelligence driving each layer of the learning experience:
+* **Complex Schema Adherence & Structured Synthesis:**
+  Curriculum generation requires generating deeply nested JSON structures—modules, topics, definitions, step-by-step analogies, formulas, and 15–20 questions per station. Nemotron models excel at strict JSON schema compliance, ensuring generated courses survive strict Pydantic and TypeScript runtime validation without malformed structures.
+* **Autonomous Multi-Stage Course Generation:**
+  NOVA transforms any user prompt (from "Quantum Computing Algorithms" to "Aviation Aerodynamics") into a cohesive planetary expedition. Nemotron autonomously structures the curriculum hierarchy, synthesizes conceptual foundations, authors intuitive real-world analogies, and formats actionable takeaways.
+* **Socratic AI Tutor Copilot with Anti-Spoiler Guardrails:**
+  Learners can summon their shipboard tutor at any point. Governed by prompt-guided pedagogical guardrails, the Nemotron-powered tutor diagnoses misconceptions, guides problem-solving through targeted hints, and creates practice variations without ever spoiling active quiz answers.
 * **Adaptive Diagnostic Placement:**
-  Learners uncertain of their expertise level can launch a 5-question diagnostic calibration. Nemotron dynamically evaluates response patterns across difficulty tiers to calibrate the curriculum between `beginner`, `intermediate`, and `advanced`.
+  Learners uncertain of their starting level can launch a 5-question calibration flight. Nemotron evaluates the pilot's responses across difficulty tiers to calibrate the curriculum between `beginner`, `intermediate`, and `advanced`.
+* **On-Demand Challenge & Question Bank Synthesis:**
+  Instead of static question pools, Nemotron generates varied application-oriented challenges—including multiple-choice, multi-select, true/false, fill-in-the-blank, and live executable code exercises.
 * **Preset Fast-Path vs. On-Demand Synthesis:**
-  To optimize token efficiency and guarantee instantaneous access to flagship curricula, NOVA includes a local fast-path for benchmark courses (*Neural Networks to Transformers*, *Advanced React Patterns*, *Linear Algebra Basics*, *Cellular Biology*, and *English Essentials*) that loads pre-authored masterclasses immediately without consuming API tokens, while reserving live Nemotron generation for custom user-defined learning goals.
-
----
-
-## 🏛 Architecture
-
-```mermaid
-flowchart TD
-    subgraph Client ["Client (React 19 + Three.js WebGL)"]
-        UI["Flight Deck & Cosmic Lounge HUD"]
-        Canvas3D["Three.js / React Three Fiber Canvas"]
-        CourseStore["Zustand Client State (Cache & Local Library)"]
-        PresetRouter["Preset Fast-Path Router"]
-    end
-
-    subgraph Gateway ["Backend Gateway (FastAPI on Python 3.11)"]
-        API["FastAPI REST & Streaming NDJSON API"]
-        RateLimit["Token Bucket Rate Limiter & Security Guard"]
-        SchemaVal["Pydantic Runtime Schema Validation"]
-        TutorEngine["Socratic Anti-Spoiler Tutor Engine"]
-    end
-
-    subgraph NebiusCloud ["Nebius AI Studio & NVIDIA Infrastructure"]
-        NebiusAPI["Nebius Token Factory Gateway"]
-        NemotronModel["NVIDIA Nemotron LLM Endpoint"]
-        StreamTokens["Low-Latency Token Streaming"]
-    end
-
-    subgraph Persistence ["Persistence & Fleet Sync"]
-        RedisStore["Upstash Redis / PostgreSQL"]
-        Leaderboard["Fleet RR Ladder & Anti-Cheat Sync"]
-    end
-
-    UI --> PresetRouter
-    PresetRouter -- "Preset Selected (Zero Token Cost)" --> CourseStore
-    PresetRouter -- "Custom Goal / AI Generation" --> API
-    UI --> Canvas3D
-
-    API --> RateLimit --> SchemaVal
-    API --> TutorEngine
-
-    SchemaVal --> NebiusAPI
-    TutorEngine --> NebiusAPI
-    NebiusAPI --> NemotronModel --> StreamTokens --> API
-
-    API --> RedisStore
-    RedisStore --> Leaderboard
-    API -- "Streamed NDJSON Progress & Course" --> CourseStore
-```
+  To guarantee immediate access to benchmark masterclasses (*Neural Networks to Transformers*, *Advanced React Patterns*, *Linear Algebra Basics*, *Cellular Biology*, and *English Essentials*), NOVA provides a local fast-path that loads instantly with zero token consumption, while reserving live Nemotron generation for custom user-defined learning goals.
 
 ---
 
@@ -99,7 +61,7 @@ flowchart TD
 
 | Feature | Description | Powered By |
 | :--- | :--- | :--- |
-| **Cinematic 3D Flight Deck & Lounge** | Real-time WebGL cockpit and celestial lounge with interactive lighting, reactive particles, and spatial audio. | Three.js, React Three Fiber, GLSL Shaders |
+| **Cinematic 3D Flight Deck & Space World** | Real-time WebGL cockpit and celestial lounge with interactive lighting, reactive particles, and two-stage warp traversal. | Three.js, React Three Fiber, GLSL Shaders |
 | **Autonomous Curriculum Architect** | Transforms any learning objective into structured modules and bite-sized planetary stations. | NVIDIA Nemotron on Nebius AI Studio |
 | **Application-Driven Assessment Forge** | Multi-format quiz engine: MCQs, Multi-Select, True/False, Fill-in-the-Blank, and live executable code challenges. | Nemotron reasoning + Regex validation |
 | **Socratic AI Tutor & Anti-Spoiler** | Real-time streaming tutor that answers questions, guides problem-solving, and prevents answer leaks. | Nebius streaming + Socratic guardrails |
@@ -113,40 +75,36 @@ flowchart TD
 ## 🛠 Tech Stack
 
 * **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Three.js, React Three Fiber, `@react-three/drei`, Framer Motion, Zustand
-* **Backend:** Python 3.11, FastAPI, Uvicorn, HTTPX, Pydantic v2, PyPDF, SlowAPI
+* **Backend:** Python 3.11, FastAPI, Uvicorn, HTTPX, Pydantic v2, SlowAPI
 * **AI & Cloud Infrastructure:** 
   * **Nebius AI Studio:** Serverless Token Factory (`https://api.tokenfactory.nebius.com/v1`)
-  * **Models:** `nvidia/Nemotron-3_5-Lightning` (lessons, question banks, tutor), `deepseek-ai/DeepSeek-V4-Flash-0731` (course planning)
+  * **AI Models:** NVIDIA Nemotron reasoning models (`nvidia/Nemotron-3_5-Lightning`) for curriculum synthesis, question banks, and Socratic tutoring, with multi-stage planning support
   * **Datastores:** Upstash Redis, Neon PostgreSQL, Vercel Edge Cache
-* **Verification & Testing:** Pytest, Playwright, Node.js Contract Validator, GitHub Actions CI
+* **Verification & Testing:** Pytest, Playwright, Vitest, Node.js Contract Validator, GitHub Actions CI
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
-* **Node.js**: `20.x` or higher (Node 22+ recommended)
-* **Python**: `3.11` or higher
-* **Nebius API Key**: Obtainable from [Nebius AI Studio](https://studio.nebius.ai/)
-
-### 2. Repository Setup
+### 1. Clone Repository
 ```bash
 git clone https://github.com/Ritanshu-Prasad/project-nova.git
 cd project-nova
+```
+
+### 2. Configure Environment Keys
+Copy the example environment file:
+```bash
 cp .env.example .env
 ```
 
-Populate `.env` with your Nebius AI Studio credentials:
+Add your Nebius AI Studio credentials in `.env`:
 ```env
 NEBIUS_API_KEY=your_nebius_api_key_here
 NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1
-NOVA_PLAN_MODEL=deepseek-ai/DeepSeek-V4-Flash-0731
-NOVA_CONTENT_MODEL=nvidia/Nemotron-3_5-Lightning
-NOVA_BANK_MODEL=nvidia/Nemotron-3_5-Lightning
-NOVA_TUTOR_MODEL=nvidia/Nemotron-3_5-Lightning
 ```
 
-### 3. Run Frontend
+### 3. Launch Frontend
 ```bash
 cd frontend
 npm install
@@ -154,9 +112,10 @@ npm run dev
 ```
 The client will start at `http://localhost:5173`. The Vite development proxy automatically forwards `/api` requests to the local backend.
 
-### 4. Run Backend
+### 4. Launch Backend
 In a separate terminal:
 ```bash
+# From repository root:
 python -m venv .venv
 
 # On Windows:
@@ -165,7 +124,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r backend/requirements.txt
-uvicorn backend.main:app --reload --port 8000 --env-file .env
+uvicorn backend.main:app --reload --port 8000
 ```
 The FastAPI backend will start at `http://localhost:8000`. You can inspect the interactive OpenAPI documentation at `http://localhost:8000/docs`.
 
@@ -176,19 +135,19 @@ The FastAPI backend will start at `http://localhost:8000`. You can inspect the i
 NOVA includes a multi-tier testing pipeline ensuring high schema fidelity and reliable AI outputs:
 
 ```bash
-# 1. Backend Unit & Regression Suite (837 tests, zero network dependency)
+# 1. Backend Unit & Regression Suite (1,173 tests, zero network dependency)
 pip install -r backend/requirements-dev.txt
 pytest backend/tests -q
 
-# 2. Frontend Contract Check (validates backend fixtures vs React TypeScript validators)
+# 2. Frontend Test Suite (146 tests)
 cd frontend
+npm test -- --run
+
+# 3. Frontend Contract Check (validates backend fixtures vs React TypeScript validators)
 npm run check:contract
 
-# 3. Production Build Validation
+# 4. Production Build Validation
 npm run build
-
-# 4. End-to-End Browser Tests (Playwright)
-npm run test:e2e
 
 # 5. Live Nemotron Evaluation Suite (evaluates pedagogical quality & token efficiency)
 cd ../backend
@@ -206,13 +165,23 @@ NOVA includes a built-in admin dashboard for real-time observability:
 
 ---
 
-## 🛡 Security & Git Workflow
+## 📄 License
 
-* **Pre-Push Security Hooks:** Automated git hooks scan for uncommitted secrets, API keys, and run build checks prior to pushing.
-* **Safe Branching:** Review [`TEAM_GIT_WORKFLOW.md`](./TEAM_GIT_WORKFLOW.md) for team branch policies and pull request requirements.
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
 ---
 
-## 🏆 Hackathon Acknowledgements
+## 👥 Credits
 
-Built with passion for the **Nebius x NVIDIA Global AI Hackathon**. Special thanks to the **Nebius AI Studio** and **NVIDIA** engineering teams for providing state-of-the-art serverless AI infrastructure and high-performance Nemotron reasoning models.
+Developed with ❤️ for the **Nebius x NVIDIA Global AI Hackathon** by:
+
+* **Devansh Sangule**
+* **Devjit Sarkar**
+* **Ritanshu Prasad**
+* **Shrinkhal**
+
+---
+
+## 🏆 Acknowledgements
+
+Special thanks to **Nebius AI Studio** and **NVIDIA** for providing state-of-the-art serverless AI infrastructure, high-throughput token streaming, and powerful Nemotron reasoning models that made building Project NOVA possible.

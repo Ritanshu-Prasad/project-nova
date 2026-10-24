@@ -6,6 +6,9 @@ import { Vector2 } from 'three';
 import type { Quality } from '../core/graphics';
 import { rt } from '../core/runtime';
 
+/** Safari (not Chrome, Edge or the iOS wrappers): its multisampled half-float targets flicker under heavy bloom. */
+const SAFARI = typeof navigator !== 'undefined' && /^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);
+
 /**
  * Cinematic post, steered by `rt`. 'full': bloom, chromatic aberration, vignette, grain, ACES.
  * 'mid': bloom, vignette, ACES (no multisampling). 'min': ACES only.
@@ -27,7 +30,7 @@ export default function PostFX({ quality = 'full' }: { quality?: Quality['post']
   });
 
   return (
-    <EffectComposer multisampling={full ? 4 : 0}>
+    <EffectComposer multisampling={full && !SAFARI ? 4 : 0}>
       {mid ? <Bloom ref={bloom} mipmapBlur luminanceThreshold={0.7} luminanceSmoothing={0.2} intensity={0.85} /> : <></>}
       {full ? <ChromaticAberration ref={ca} offset={offset} radialModulation modulationOffset={0.2} /> : <></>}
       {mid ? <Vignette ref={vig} offset={0.3} darkness={0.6} /> : <></>}

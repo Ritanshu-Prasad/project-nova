@@ -1,7 +1,8 @@
-import { ArrowRight, Award, Check, Play, RotateCcw, Target, Trophy, X } from 'lucide-react';
+import { ArrowRight, Award, Check, ChevronsUp, Play, RotateCcw, Target, Trophy, X } from 'lucide-react';
 import { useState } from 'react';
-import { PASS_MARK, useCourse, type ActiveCourse, type OutlineItem } from '../../../core/course';
+import { activeMmr, PASS_MARK, useCourse, type ActiveCourse, type OutlineItem } from '../../../core/course';
 import { buildQuiz, FORMAT_LABEL, LESSON_QUIZ } from '../../../core/quizBuilder';
+import { rankOf } from '../../../core/rank';
 import { useNova } from '../../../core/store';
 import Btn from './Btn';
 import { TYPE } from './typography';
@@ -16,6 +17,7 @@ type QuizItem = Extract<OutlineItem, { kind: 'quiz' }>;
 export default function ModuleQuiz({ item, active }: { item: QuizItem; active: ActiveCourse }) {
   const [stage, setStage] = useState<'intro' | 'run' | 'done'>('intro');
   const [result, setResult] = useState<(QuizResult & { passed: boolean; nextId: string | null }) | null>(null);
+  const [rankUp, setRankUp] = useState<string | null>(null);
   const progress = active.entry.modules[item.module.id];
   const nextModule = active.course.modules[item.moduleIndex + 1];
   const draw = () => buildQuiz(item.pool, { min: LESSON_QUIZ.min, max: LESSON_QUIZ.max, timedFinale: false, prefer: (x) => !active.entry.skill.questionHistory?.[x.q.q] });
@@ -24,7 +26,12 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
   const formats = [...new Set(quiz.questions.map((x) => FORMAT_LABEL[x.q.type]))];
 
   const finish = (r: QuizResult) => {
+    // Finishing the last quiz of the course lifts the pilot into Master (core/course.ts): the rank change is shown below.
+    const before = activeMmr();
     const out = useCourse.getState().finishModuleQuiz(item.module.id, r.correct, r.total);
+    const rankBefore = rankOf(before);
+    const rankAfter = rankOf(activeMmr());
+    setRankUp(rankAfter.step > rankBefore.step ? (rankAfter.index > rankBefore.index ? `Rank up — you now fly a ${rankAfter.tier.name}!` : `Promoted to ${rankAfter.label}`) : null);
     const firstPass = out.passed && !progress?.passed;
     if (out.passed)
       useNova.getState().notify({
@@ -95,6 +102,12 @@ export default function ModuleQuiz({ item, active }: { item: QuizItem; active: A
                 {result.delta} RR
               </span>
             </p>
+            {rankUp && (
+              <div className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full bg-amber-300 px-4 py-2 text-sm font-semibold text-[#1a1203]">
+                <ChevronsUp size={16} />
+                {rankUp}
+              </div>
+            )}
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">
               {result.passed && result.nextId ? (
                 <Btn variant="primary" icon={<ArrowRight size={15} />} onClick={() => useCourse.getState().open(result.nextId!)}>

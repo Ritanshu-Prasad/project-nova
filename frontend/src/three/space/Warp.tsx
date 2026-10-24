@@ -46,8 +46,9 @@ void main() {
   col += colCore * (pow(rings, 2.0) * 1.2);
   col *= (streak + rings + microRings);
   
-  float fade = smoothstep(0.0, 0.22, vUv.y) * smoothstep(1.0, 0.70, vUv.y);
+  float fade = smoothstep(0.0, 0.22, vUv.y) * (1.0 - smoothstep(0.70, 1.0, vUv.y));
   gl_FragColor = vec4(col * uAmount * fade, 1.0);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 /** Ship-local warp: star streaks and energetic light tunnel. */

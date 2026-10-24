@@ -122,6 +122,7 @@ void main() {
   a *= 1.0 - uTwinkle + uTwinkle * (0.5 + 0.5 * sin(uTime * 3.0 + vRand * 40.0));
   if (a < 0.003) discard;
   gl_FragColor = vec4(vColor * (1.0 + uFlash * 1.8), a);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 const SOLID_VERT = /* glsl */ `
@@ -187,6 +188,7 @@ void main() {
   float a = (1.0 - smoothstep(0.04, 0.22, uWarp)) * smoothstep(0.05, 0.85, uArrive);
   if (a < 0.01) discard;
   gl_FragColor = vec4(col, a);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 const RIBBON_VERT = /* glsl */ `
@@ -221,6 +223,7 @@ void main() {
   float a = curtain * rays * edge * uOpacity * (1.0 - smoothstep(0.04, 0.22, uWarp)) * smoothstep(0.05, 0.85, uArrive);
   if (!(a >= 0.003)) discard; // also drops NaN
   gl_FragColor = vec4(col * 1.4, a);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 const dummy = new Object3D();

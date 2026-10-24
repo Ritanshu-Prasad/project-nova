@@ -18,7 +18,7 @@ export type { RatedQuestion } from './quizBuilder';
  *
  * Skill (MMR) is per course: every new course starts at the bottom of the ladder (Probe III). Updates are
  * Elo-style and scaled to the course's scope — question ratings climb across the course and the step size
- * shrinks for bigger courses — so mastering any course, small or large, lands near the top of the ladder.
+ * shrinks for bigger courses — and paced (see paceFactors) so that finishing any course, small or large, ends in Master.
  * XP, level, answer streak and the daily goal belong to the pilot.
  */
 
@@ -131,6 +131,15 @@ export function isUnlocked(e: LibraryEntry, itemId: string, outline = outlineOf(
 /** Where a topic sits in the course, 0..1. */
 const progressAt = (index: number, count: number) => (count > 1 ? index / (count - 1) : 0);
 
+/** How far through the course the pilot is, 0..1: topics cleared and module quizzes passed. */
+export function courseProgress(e: LibraryEntry): number {
+  const topics = flatTopics(e.course);
+  const modules = e.course.modules.length;
+  const total = topics.length + modules;
+  if (!total) return 0;
+  return (coveredTopics(e).length + passedModules(e).length) / total;
+}
+
 /** Modules the pilot has completed (passed their lesson quiz). */
 export const passedModules = (e: LibraryEntry) => e.course.modules.filter((m) => e.modules[m.id]?.passed);
 
@@ -153,17 +162,36 @@ export function hubPool(e: LibraryEntry): RatedQuestion[] {
 }
 
 /**
- * Scope: dynamically calibrated across M modules and T topics such that completing each module
- * roughly advances the pilot by 1/M of the ladder towards Master (1900+ MMR).
+ * Base step size of the Elo update, scaled to the course's scope: bigger courses have more questions, so each moves the
+ * rating less. How far the whole course carries the pilot is set by the pace below, not by this number alone.
  */
 export function kFactor(course: Course): number {
   const M = Math.max(1, course.modules.length);
   const T = Math.max(M, flatTopics(course).length);
   // Expected standard questions in topics (~2/topic) and module quizzes (~4/module)
   const standardQuestions = T * 2 + M * 4;
-  // Calibrated so standard completion lands around Frigate/Cruiser (~1600 MMR),
-  // leaving the remaining ~300 MMR Master gap to be earned through Pop Quizzes and Mastery Retakes.
   return Math.max(18, Math.min(55, Math.round(2000 / Math.max(1, standardQuestions))));
+}
+
+/** Master's entry rating (core/rank.ts): finishing a course carries the pilot at least this far. */
+export const MASTER_MMR = 1900;
+/** The rating a pilot on pace holds at the end of the course: just inside Master. */
+const PACE_END_MMR = 1920;
+
+/** The rating a pilot should hold `p` (0..1) of the way through the course for the course to end in Master. */
+export const paceTarget = (p: number) => START_MMR + (PACE_END_MMR - START_MMR) * Math.max(0, Math.min(1, p));
+
+/**
+ * How the pace bends one answer. Behind pace (the target is above the rating): gains grow, up to 3.5×, and losses ease so
+ * a bad start cannot spiral. Ahead of pace: gains shrink to 0.55×, so nobody runs past the ladder early. A pilot answering
+ * well stays near the target; one who is stuck is carried along faster, never past it.
+ */
+export function paceFactors(mmr: number, progress: number): { gain: number; loss: number } {
+  const gap = paceTarget(progress) - mmr;
+  return {
+    gain: Math.max(0.55, Math.min(3.5, 1 + gap / 120)),
+    loss: Math.max(0.5, Math.min(1.15, 1 - gap / 500)),
+  };
 }
 
 /** Elo rating of a question: climbs from Probe to Master across the course; harder questions rate higher. */
@@ -252,7 +280,16 @@ export const useCourse = create<CourseState>()((set, get) => {
     const id = get().activeId;
     const e = id ? get().library[id] : undefined;
     if (!e || e.completedAt || !isComplete(e)) return;
-    patchActive((x) => ({ ...x, completedAt: Date.now() }));
+    // Finishing a course carries the pilot into Master: whatever the pace left short is made up here (a small top-up for
+    // anyone who answered reasonably well).
+    patchActive((x) => {
+      const lift = Math.max(0, MASTER_MMR - x.skill.mmr);
+      return {
+        ...x,
+        completedAt: Date.now(),
+        ...(lift > 0 ? { skill: { ...x.skill, mmr: MASTER_MMR, history: [...x.skill.history, MASTER_MMR].slice(-80) } } : {}),
+      };
+    });
     useFinale.getState().show(e.course.id, e.course.title);
     track('course_finished');
   };
@@ -334,7 +371,11 @@ export const useCourse = create<CourseState>()((set, get) => {
       const expected = 1 / (1 + Math.pow(10, (questionRating(opts.progress, opts.difficulty) - sk.mmr) / 400));
       let delta = K * ((correct ? 1 : 0) - expected) * (correct && opts.hint ? 0.5 : 1);
       delta = correct ? Math.max(opts.hint ? 2 : 4, delta) * (opts.gain ?? 1) : Math.min(-3, delta) * (opts.loss ?? 1);
-      
+      // The pace: a pilot behind the course's trajectory climbs faster, one ahead of it more slowly (see paceFactors).
+      const pace = paceFactors(sk.mmr, opts.progress ?? courseProgress(e));
+      delta *= correct ? pace.gain : pace.loss;
+      if (correct) delta = Math.max(1, delta);
+
       // Repeat question & Remediation MMR logic
       const qHistory = sk.questionHistory ?? {};
       if (opts.qId && opts.qId in qHistory) {

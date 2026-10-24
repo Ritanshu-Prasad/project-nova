@@ -236,7 +236,7 @@ void main() {
 
   // Biome Structure 9: Continental Mantle Fracture (colossal rift revealing glowing interior)
   if (uBiomeStructure > 8.5) {
-    float rift = smoothstep(0.065, 0.0, abs(p.y - sin(p.x * 3.0) * 0.28));
+    float rift = (1.0 - smoothstep(0.0, 0.065, abs(p.y - sin(p.x * 3.0) * 0.28)));
     lavaGlow += uLavaColor * rift * 4.5;
     albedo = mix(albedo, uGround0 * 0.4, rift);
   }
@@ -249,8 +249,8 @@ void main() {
     albedo = mix(albedo, uOcean0, smoothstep(0.35, 0.9, fbm3(vec3(p.x * 3.0, p.y * 16.0, p.z * 3.0))) * 0.55);
     float eye1 = distance(p, normalize(vec3(0.62, -0.28, 0.73)));
     float eye2 = distance(p, normalize(vec3(-0.55, 0.35, -0.73)));
-    albedo = mix(albedo, uOcean1, smoothstep(0.30, 0.06, min(eye1, eye2)) * 0.85);
-    albedo = mix(albedo, uGround1 * 1.1, smoothstep(0.16, 0.02, min(eye1, eye2)) * 0.5);
+    albedo = mix(albedo, uOcean1, (1.0 - smoothstep(0.06, 0.30, min(eye1, eye2))) * 0.85);
+    albedo = mix(albedo, uGround1 * 1.1, (1.0 - smoothstep(0.02, 0.16, min(eye1, eye2))) * 0.5);
     isLand = 1.0;
   }
 
@@ -313,6 +313,7 @@ void main() {
   float alpha = warpFade * arriveFade;
   if (any(isnan(col)) || any(isinf(col))) col = vec3(0.0); // never let one bad pixel spread through bloom
   gl_FragColor = vec4(col, alpha);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 const HALO_FRAG = /* glsl */ `
@@ -334,6 +335,7 @@ void main() {
   float warpFade = 1.0 - smoothstep(0.06, 0.28, uWarp);
   float arriveFade = smoothstep(0.02, 0.5, uArrive);
   gl_FragColor = vec4(atmoCol * rim * lit * (0.8 + 0.6 * uArrive) * (1.0 + uMist * 0.6) * warpFade * arriveFade, 1.0);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 const RING_VERT = /* glsl */ `
@@ -362,12 +364,13 @@ void main() {
   float b = 0.55 + 0.45 * sin(t * 90.0) * sin(t * 23.0 + 1.0);
   b *= 0.6 + 0.4 * snoise(vec3(t * 40.0, 0.0, 0.0));
   float gap = smoothstep(0.42, 0.44, t) * (1.0 - smoothstep(0.47, 0.49, t));
-  float edge = smoothstep(0.0, 0.05, t) * smoothstep(1.0, 0.9, t);
+  float edge = smoothstep(0.0, 0.05, t) * (1.0 - smoothstep(0.9, 1.0, t));
   float warpFade = 1.0 - smoothstep(0.06, 0.28, uWarp);
   float arriveFade = smoothstep(0.02, 0.5, uArrive);
   float a = clamp(b * edge * (1.0 - gap * 0.9), 0.0, 1.0) * uRingAlpha * warpFade * arriveFade;
   vec3 col = mix(uRingA, uRingB, t) * 0.9;
   gl_FragColor = vec4(col * a, a);
+  if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0);
 }`;
 
 const dummy = new Object3D();
