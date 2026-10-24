@@ -1,5 +1,4 @@
 import bisect
-import math
 """
 Fleet leaderboard: every pilot's standing across the demo courses, so pilots can compare ranks.
 
