@@ -11,8 +11,90 @@
       content="NOVA — an AI tutor that reads your level like a game reads a player. Wake up in the cockpit, launch, and level up."
     />
     <title>NOVA — Wake up. Level up.</title>
+    <style>
+      /* Shown from the very first paint, until the 3D scene has its first frame (see App.tsx): no black screen. */
+      html, body { background: #02040a; }
+      #boot { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; transition: opacity 0.7s ease;
+        background: radial-gradient(ellipse 75% 60% at 50% 36%, #1a2a52 0%, #0b1334 42%, #02040a 100%); }
+      #boot.gone { opacity: 0; }
+      /* A returning pilot: the cover sits over the whole app, so the lounge and its cards appear together once the scene is drawn. */
+      html.ret #boot { z-index: 2147483000; transition-duration: 0.45s; }
+      /* The loading screen (returning pilots only): drifting aurora, an orbit emblem and the wordmark. CSS only, transforms
+         and opacity only, so it stays smooth while the 3D scene compiles underneath. */
+      #boot .load, #boot .aur { display: none; }
+      html.ret #boot .aur { display: block; position: absolute; inset: -20%; z-index: 0; }
+      #boot .aur::before, #boot .aur::after { content: ""; position: absolute; border-radius: 50%; will-change: transform; }
+      #boot .aur::before { width: 70vmax; height: 50vmax; left: 8%; top: 18%; opacity: 0.55;
+        background: radial-gradient(closest-side, rgba(34, 211, 238, 0.32), rgba(34, 211, 238, 0)); animation: boot-drift-a 16s ease-in-out infinite alternate; }
+      #boot .aur::after { width: 64vmax; height: 56vmax; right: 4%; bottom: 10%; opacity: 0.5;
+        background: radial-gradient(closest-side, rgba(139, 92, 246, 0.34), rgba(139, 92, 246, 0)); animation: boot-drift-b 19s ease-in-out infinite alternate; }
+      html.ret #boot .load { display: flex; position: absolute; inset: 0; z-index: 1; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+        opacity: 0; animation: boot-in 0.6s 0.12s ease-out forwards; transition: transform 0.45s cubic-bezier(0.4, 0, 1, 1); }
+      html.ret #boot.gone .load { transform: scale(1.12); } /* lifts away towards the pilot as the scene comes in */
+      #boot .emblem { position: relative; width: 104px; height: 104px; }
+      #boot .emblem svg { position: absolute; inset: 0; overflow: visible; }
+      #boot .ring { stroke: rgba(103, 232, 249, 0.14); }
+      #boot .arc { transform-origin: 52px 52px; animation: boot-spin 1.6s linear infinite; }
+      #boot .moon { transform-origin: 52px 52px; animation: boot-spin 3.4s linear infinite reverse; }
+      #boot .star { transform-origin: 52px 52px; animation: boot-pulse 2.4s ease-in-out infinite; filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.8)); }
+      #boot .word { font: 700 30px/1 system-ui, "Segoe UI", sans-serif; letter-spacing: 0.62em; padding-left: 0.62em; color: transparent;
+        background: linear-gradient(100deg, #a5f3fc 0%, #ffffff 35%, #67e8f9 55%, #c4b5fd 100%) 0 0 / 220% 100%; -webkit-background-clip: text; background-clip: text;
+        animation: boot-sheen 4s ease-in-out infinite alternate; }
+      #boot .sub { display: flex; align-items: center; gap: 10px; font: 600 10px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: 0.42em;
+        padding-left: 0.42em; color: rgba(165, 243, 252, 0.6); text-transform: uppercase; }
+      #boot .sub i { width: 5px; height: 5px; border-radius: 50%; background: #22d3ee; box-shadow: 0 0 10px #22d3ee; animation: boot-blink 1.2s ease-in-out infinite; }
+      @keyframes boot-in { to { opacity: 1; } } /* opacity only: the transform is left free for the lift-away */
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @keyframes boot-pulse { 0%, 100% { transform: scale(0.92); opacity: 0.85; } 50% { transform: scale(1.05); opacity: 1; } }
+      @keyframes boot-sheen { to { background-position: 100% 0; } }
+      @keyframes boot-blink { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+      @keyframes boot-drift-a { to { transform: translate(14%, 10%) scale(1.15); } }
+      @keyframes boot-drift-b { to { transform: translate(-12%, -8%) scale(1.1); } }
+      @media (prefers-reduced-motion: reduce) {
+        #boot .aur::before, #boot .aur::after, #boot .arc, #boot .moon, #boot .star, #boot .word, #boot .sub i { animation: none; }
+      }
+      #boot::before { content: ""; position: absolute; inset: 0; opacity: 0.85;
+        background-image:
+          radial-gradient(1.4px 1.4px at 12% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 27% 62%, #cbd5e1 50%, transparent 51%),
+          radial-gradient(1.6px 1.6px at 41% 12%, #e0f2fe 50%, transparent 51%), radial-gradient(1px 1px at 58% 33%, #fff 50%, transparent 51%),
+          radial-gradient(1px 1px at 66% 8%, #bae6fd 50%, transparent 51%), radial-gradient(1.6px 1.6px at 79% 41%, #fff 50%, transparent 51%),
+          radial-gradient(1px 1px at 88% 16%, #e2e8f0 50%, transparent 51%), radial-gradient(1px 1px at 93% 58%, #fff 50%, transparent 51%),
+          radial-gradient(1px 1px at 6% 44%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 34% 36%, #c7d2fe 50%, transparent 51%),
+          radial-gradient(1px 1px at 51% 54%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 72% 66%, #e0e7ff 50%, transparent 51%); }
+      /* A soft planet glow low on the right and the dark console edge, so it already looks like the cockpit window. */
+      #boot::after { content: ""; position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse 38% 46% at 74% 84%, rgba(90, 120, 220, 0.38) 0%, rgba(60, 80, 170, 0.18) 45%, transparent 72%),
+          linear-gradient(to top, #04070f 0%, #04070f 12%, rgba(4, 7, 15, 0) 34%); }
+    </style>
   </head>
   <body>
+    <script>
+      try {
+        // The same "has been here before" flags as core/runtime.ts: these pilots skip the warning, so nothing needs to be clickable yet.
+        if (['nova.isLoggedIn', 'nova.visited', 'nova.safetyAccepted', 'nova.introSeen'].some((k) => localStorage.getItem(k) === '1'))
+          document.documentElement.classList.add('ret');
+      } catch (e) {}
+    </script>
+    <div id="boot" aria-hidden="true">
+      <div class="aur"></div>
+      <div class="load">
+        <div class="emblem">
+          <svg viewBox="0 0 104 104" fill="none">
+            <defs>
+              <linearGradient id="boot-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee" /><stop offset="1" stop-color="#a78bfa" /></linearGradient>
+            </defs>
+            <circle class="ring" cx="52" cy="52" r="46" stroke-width="1" />
+            <circle class="ring" cx="52" cy="52" r="32" stroke-width="1" stroke-dasharray="2 6" />
+            <circle class="arc" cx="52" cy="52" r="46" stroke="url(#boot-g)" stroke-width="2" stroke-linecap="round" stroke-dasharray="64 225" />
+            <g class="moon"><circle cx="52" cy="20" r="3" fill="#a5f3fc" /></g>
+            <path class="star" fill="#e6f6ff" d="M52 36c.5 7.6 8.4 15.5 16 16-7.6.5-15.5 8.4-16 16-.5-7.6-8.4-15.5-16-16 7.6-.5 15.5-8.4 16-16z" />
+          </svg>
+        </div>
+        <div class="word">NOVA</div>
+        <div class="sub"><i></i>Re-entering orbit</div>
+      </div>
+    </div>
     <div id="root"></div>
     <noscript>NOVA needs JavaScript to launch.</noscript>
     <script type="module" src="/src/main.tsx"></script>

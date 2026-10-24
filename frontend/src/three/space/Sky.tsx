@@ -1,9 +1,11 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
-import { AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, ShaderMaterial, type Group } from 'three';
+import { AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, Color, ShaderMaterial, type Group } from 'three';
 import { damp } from '../../core/math';
 import { currentQuality, fbmDefines } from '../../core/graphics';
+import { usePlanets } from '../../core/planets';
 import { rt } from '../../core/runtime';
+import { PLANETS } from './planets';
 import { useNova } from '../../core/store';
 import { NOISE_GLSL } from '../shaders/noise';
 import { seededRandom } from '../../core/seeded';
@@ -18,6 +20,10 @@ void main() {
 const NEBULA_FRAG = /* glsl */ `
 uniform float uWorld;
 uniform float uWarp;
+uniform vec3 uNebA;
+uniform vec3 uNebB;
+uniform vec3 uBand;
+uniform float uNebAmt;
 varying vec3 vDir;
 ${NOISE_GLSL}
 void main() {
@@ -26,16 +32,16 @@ void main() {
   float m = fbm3(d * 4.5 + n);
   // Old world: cold, sparse.
   vec3 oldCol = vec3(0.01, 0.02, 0.04) + vec3(0.0, 0.05, 0.07) * smoothstep(0.1, 0.8, m) * 0.6;
-  // New world: violet/magenta/teal clouds and a galactic band.
+  // New world: two nebula colours and a galactic band, different for every world (see worlds.ts).
   float bd = dot(d, normalize(vec3(0.35, 0.8, 0.45))) * 3.2;
   float band = exp(-bd * bd);
   vec3 newCol = vec3(0.012, 0.01, 0.03);
-  newCol += vec3(0.32, 0.08, 0.42) * smoothstep(0.0, 0.9, n) * 0.55;
-  newCol += vec3(0.05, 0.28, 0.33) * smoothstep(0.2, 0.9, m) * 0.45;
-  newCol += vec3(0.4, 0.32, 0.5) * band * (0.25 + 0.35 * m);
+  newCol += uNebA * smoothstep(0.0, 0.9, n) * uNebAmt * 1.3;
+  newCol += uNebB * smoothstep(0.2, 0.9, m) * uNebAmt * 1.15;
+  newCol += uBand * band * (0.25 + 0.35 * m) * 0.9;
   // Keep the hero area (upper centre, looking -Z) calm and dark.
   newCol *= 1.0 - 0.55 * smoothstep(0.8, 0.98, dot(d, normalize(vec3(0.0, 0.32, -1.0))));
-  vec3 col = mix(oldCol, newCol, uWorld) * (1.0 - 0.5 * uWarp);
+  vec3 col = mix(oldCol, newCol, uWorld) * (1.0 - 0.85 * smoothstep(0.35, 0.85, uWarp));
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -51,14 +57,19 @@ void main() {
 }`;
 
 const STAR_FRAG = /* glsl */ `
+uniform float uWarp;
 varying vec3 vColor;
 void main() {
   float d = length(gl_PointCoord - 0.5);
-  float a = smoothstep(0.5, 0.0, d);
+  float a = smoothstep(0.5, 0.0, d) * (1.0 - 0.85 * smoothstep(0.35, 0.85, uWarp));
   gl_FragColor = vec4(vColor * a, 1.0);
 }`;
 
 /** Camera-centred backdrop for both worlds: nebula sphere + twinkling stars. */
+const target = new Color();
+/** The sky around the dying sun: a bruised crimson and violet, with a glow of ember along the galactic band. */
+const FINALE_SKY = { a: '#5a0a12', b: '#2a0a46', band: '#ff7a3a', amount: 0.95 };
+
 export default function Sky() {
   const group = useRef<Group>(null);
   const world = useRef(0);
@@ -68,7 +79,7 @@ export default function Sky() {
       new ShaderMaterial({
         vertexShader: NEBULA_VERT,
         fragmentShader: NEBULA_FRAG,
-        uniforms: { uWorld: { value: 0 }, uWarp: { value: 0 } },
+        uniforms: { uWorld: { value: 0 }, uWarp: { value: 0 }, uNebA: { value: new Color('#2a1a5c') }, uNebB: { value: new Color('#0c4a5e') }, uBand: { value: new Color('#8f7fd6') }, uNebAmt: { value: 0.6 } },
         defines: fbmDefines(),
         side: BackSide,
         depthWrite: false,
@@ -101,7 +112,7 @@ export default function Sky() {
     const m = new ShaderMaterial({
       vertexShader: STAR_VERT,
       fragmentShader: STAR_FRAG,
-      uniforms: { uTime: { value: 0 } },
+      uniforms: { uTime: { value: 0 }, uWarp: { value: 0 } },
       blending: AdditiveBlending,
       depthWrite: false,
     });
@@ -110,10 +121,24 @@ export default function Sky() {
 
   useFrame(({ camera }, dt) => {
     if (group.current) camera.getWorldPosition(group.current.position);
-    world.current = damp(world.current, useNova.getState().world === 'newworld' ? 1 : 0, 2.5, dt);
+    // Inside the warp tunnel the sky eases across to the new world; anywhere else (a replayed launch puts the pilot back
+    // in the hangar) it switches at once, so the hangar never opens on a sky that is still changing.
+    const st = useNova.getState();
+    const wantWorld = st.world === 'newworld' ? 1 : 0;
+    world.current = st.phase === 'warp' ? damp(world.current, wantWorld, 2.5, dt) : wantWorld;
     nebula.uniforms.uWorld.value = world.current;
+    // The sky takes the colours of the world the ship is at, easing across during a jump; otherwise (the first frames after
+    // a refresh, a replayed launch) it is simply that sky, with nothing visibly shifting.
+    const sky = rt.finaleWorld ? FINALE_SKY : PLANETS[usePlanets.getState().index].sky;
+    const k = st.phase === 'warp' || st.phase === 'arrive' ? 1 - Math.exp(-3 * dt) : 1;
+    const u = nebula.uniforms;
+    u.uNebA.value.lerp(target.set(sky.a), k);
+    u.uNebB.value.lerp(target.set(sky.b), k);
+    u.uBand.value.lerp(target.set(sky.band), k);
+    u.uNebAmt.value += (sky.amount - u.uNebAmt.value) * k;
     nebula.uniforms.uWarp.value = rt.warp;
     stars.m.uniforms.uTime.value = rt.time;
+    stars.m.uniforms.uWarp.value = rt.warp;
   });
 
   return (

@@ -1,8 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ENABLE_PDF_UPLOAD } from '../../core/courseApi';
-import { ArrowLeft, Award, BookOpen, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
+import { Award, BookOpen, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
+import { nextPlanet } from '../../core/planets';
+import { PLANETS } from '../../three/space/planets';
 import { activeOf, DAILY_GOAL, firstUncleared, levelOf, levelProgress, xpForLevel, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
 import { CODE_BUFFER, matchCode } from '../../core/finale';
 import { flatTopics } from '../../core/courseSchema';
@@ -14,6 +16,7 @@ import { useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
 import { actionFor, keyLabel, useSettings, type Action } from '../../core/settings';
 import { useNova } from '../../core/store';
+import BackPill from '../common/BackPill';
 import Dropdown from '../common/Dropdown';
 import { HudButton } from '../common/HudButton';
 import PilotAvatar from '../common/PilotAvatar';
@@ -63,6 +66,7 @@ export default function Hub() {
   const running = useHubQuiz((s) => !!s.run);
   const active = useActiveCourse();
   const graduation = useCourse((s) => s.graduation);
+  const starChartOpen = useNova((s) => s.starChartOpen);
   const visible = inLounge && !forgeOpen;
 
   useEffect(() => {
@@ -72,17 +76,46 @@ export default function Hub() {
       const t = e.target as HTMLElement | null;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
       if (/^[a-z]$/i.test(e.key)) {
-        typed = (typed + e.key.toLowerCase()).slice(-CODE_BUFFER);
+        typed = (typed + e.key.toLowerCase()).slice(-Math.max(CODE_BUFFER, 10));
+        if (typed.endsWith('atlas')) {
+          typed = '';
+          audio.play('pulse');
+          useNova.getState().toggleStarChart();
+          return;
+        }
         const code = matchCode(typed);
         if (code) {
           typed = '';
           audio.play('pulse');
-          return code === 'launch' ? relaunch() : playFinale();
+          if (code === 'launch') return relaunch();
+          if (code === 'finale') return playFinale();
+          if (code === 'planet') {
+            const newIdx = nextPlanet();
+            const spec = PLANETS[newIdx];
+            useNova.getState().notify({
+              kind: 'toast',
+              title: `🪐 Orbiting World [${newIdx + 1}/20]: ${spec.name}`,
+              lines: [`Biome: ${spec.look.spaceBiome?.toUpperCase() ?? 'SPACE'}`],
+              ttl: 3.5,
+            });
+            return;
+          }
+          if (code === 'orbit' || code === 'atlas') {
+            useNova.getState().toggleStarChart();
+            return;
+          }
         }
       }
+      if (e.key === 'Escape') {
+        if (starChartOpen) {
+          useNova.getState().setStarChartOpen(false);
+          return;
+        }
+        const st = useHub.getState().station;
+        if (st !== 'hub') useHub.getState().go('hub');
+      }
       const st = useHub.getState().station;
-      if (e.key === 'Escape' && st !== 'hub') useHub.getState().go('hub');
-      if (st === 'hub' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (st === 'hub' && !starChartOpen && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const action = actionFor(e.code);
         const dock = action && ACTION_DOCK[action];
         if (dock) choose(dock);
@@ -90,7 +123,7 @@ export default function Hub() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [visible]);
+  }, [visible, starChartOpen]);
 
   // Hub quizzes form at random moments once a module is complete.
   useHubQuizScheduler();
@@ -98,7 +131,8 @@ export default function Hub() {
   return (
     <>
       <div className="pointer-events-none fixed inset-0" style={{ zIndex: Z.landing }}>
-        <AnimatePresence>
+        {/* initial={false}: a pilot who comes back to the lounge finds the cards already in place, not sliding in. */}
+        <AnimatePresence initial={false}>
           {visible && station === 'hub' && (active ? <Overview key="overview" active={active} /> : <EmptyState key="empty" />)}
           {visible && (station === 'journey' || station === 'profile') && <SectionPanel key={station} station={station} />}
           {visible && active && station === 'quiz' && <HubQuizStation key="hubquiz" />}
@@ -447,12 +481,14 @@ function SectionPanel({ station }: { station: 'journey' | 'profile' }) {
       animate={{ opacity: 1, x: 0, y: 0 }}
       exit={wide ? { opacity: 0, y: 30 } : { opacity: 0, x: 30 }}
       transition={{ duration: 0.45, delay: 0.35, ease: [0.2, 0.8, 0.25, 1] }}
-      className={`card scroll-y pointer-events-auto absolute ${wide ? 'bottom-5 left-1/2 top-20 w-[min(1080px,calc(100vw-32px))] -translate-x-1/2' : 'bottom-3 right-3 max-h-[80vh] w-[calc(100vw-24px)] sm:bottom-6 sm:right-6 sm:top-20 sm:max-h-none sm:w-[460px]'} p-5 sm:p-6`}
+      className={`card pointer-events-auto absolute flex flex-col overflow-hidden ${wide ? 'bottom-5 left-1/2 top-20 w-[min(1080px,calc(100vw-32px))] -translate-x-1/2' : 'bottom-3 right-3 max-h-[80vh] w-[calc(100vw-24px)] sm:bottom-6 sm:right-6 sm:top-20 sm:max-h-none sm:w-[460px]'}`}
     >
-      <button type="button" onClick={() => (audio.play('click'), useHub.getState().go('hub'))} className="mb-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/[0.12] hover:text-white">
-        <ArrowLeft size={13} /> Back to lounge <kbd className="ml-1 hidden font-mono text-[10px] text-white/40 sm:inline">Esc</kbd>
-      </button>
-      {station === 'journey' ? <SkillJourneySection /> : <ProfileSection />}
+      {/* The header is outside the scrolling part, so Back is always in reach. */}
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.07] bg-[#0b1020]/60 px-5 py-3 sm:px-6">
+        <BackPill label="Back to lounge" onClick={() => useHub.getState().go('hub')} />
+        <span className="hud-label truncate">{TITLES[station]}</span>
+      </header>
+      <div className="scroll-y min-h-0 flex-1 p-5 sm:p-6">{station === 'journey' ? <SkillJourneySection /> : <ProfileSection />}</div>
     </motion.section>
   );
 }

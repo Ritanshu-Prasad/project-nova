@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowLeft,
   Bookmark,
   Braces,
   Brain,
@@ -36,6 +35,7 @@ import { Z } from '../../../core/layers';
 import { prettyMath } from '../../../core/mathText';
 import { LESSON_QUIZ, quizSizeLabel } from '../../../core/quizBuilder';
 import { rankOf } from '../../../core/rank';
+import BackPill from '../../common/BackPill';
 import Dropdown from '../../common/Dropdown';
 import RankEmblem from '../RankEmblem';
 import { KIND_TEMPLATES } from './kinds';
@@ -94,9 +94,7 @@ export default function StudyMode() {
       aria-label="Study"
     >
       <header className="flex shrink-0 items-center gap-3 border-b border-white/[0.06] px-4 py-3 sm:px-6">
-        <button type="button" onClick={() => useHub.getState().go('hub')} className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-sm font-medium text-white/75 transition hover:bg-white/[0.12] hover:text-white">
-          <ArrowLeft size={14} /> Lounge <kbd className="ml-1 hidden text-[11px] text-white/60 sm:inline">Esc</kbd>
-        </button>
+        <BackPill label="Lounge" onClick={() => useHub.getState().go('hub')} />
         <IconBtn label="Toggle course outline" onClick={() => setOutlineOpen((v) => !v)} className="hidden lg:grid">
           <PanelLeft size={17} />
         </IconBtn>

@@ -30,6 +30,8 @@ export default function ShipRig({ children }: { children?: ReactNode }) {
   const cam = useRef<Cam>(null);
   const s = useRef({ yaw: 0, pitch: 0, lean: 0, zoom: 0 });
   const pose = useRef({ x: 0, y: 0, z: 0, yaw: 0, pitch: 0 });
+  /** Set after the first frame: if that frame is already in the lounge the pilot is put straight at the station, not glided there. */
+  const placed = useRef(false);
 
   useFrame((state, dtRaw) => {
     const dt = Math.min(dtRaw, 0.1);
@@ -75,6 +77,7 @@ export default function ShipRig({ children }: { children?: ReactNode }) {
     if (deck === 'lounge' && rt.walk >= 1) {
       // Walk over to the chosen station.
       const target = STATIONS[station];
+      if (!placed.current) Object.assign(p, target); // the very first frame is in the lounge: already standing there
       const k = 1 - Math.exp(-2.2 * dt);
       p.x += (target.x - p.x) * k;
       p.y += (target.y - p.y) * k;
@@ -88,11 +91,12 @@ export default function ShipRig({ children }: { children?: ReactNode }) {
       p.yaw = Math.PI * rt.turn;
       p.pitch = -0.06 * rt.walk;
     }
+    placed.current = true;
     v.zoom = damp(v.zoom, deck === 'lounge' && station !== 'hub' ? -6 : 0, 2.5, dt);
     head.current.position.set(sx + p.x, sy + p.y, v.lean + p.z);
     head.current.rotation.set(pitch + p.pitch, yaw + p.yaw, roll, 'YXZ');
 
-    const fov = baseFov(state.size.width / Math.max(1, state.size.height)) + (rm ? 0 : rt.fovKick) + v.zoom;
+    const fov = baseFov(state.size.width / Math.max(1, state.size.height)) + (rm ? 0 : rt.fovKick + rt.novaKick) + v.zoom;
     if (Math.abs(cam.current.fov - fov) > 0.01) {
       cam.current.fov = fov;
       cam.current.updateProjectionMatrix();

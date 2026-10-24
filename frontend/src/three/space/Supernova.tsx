@@ -10,21 +10,27 @@ import { usePlanets } from '../../core/planets';
 import { rt } from '../../core/runtime';
 import { SUN_DISTANCE, screenDir } from './layout';
 import { PLANETS } from './planets';
-import { glowTexture } from './textures';
+import { DYING, DYING_COLORS, implosion } from './finaleWorld';
+import { glowTexture, shockRingTexture } from './textures';
 
 /**
- * The course finale as seen from the cockpit: the sun of the world charges, goes supernova, and the blast wave sweeps
- * over the ship, lighting the planet and washing the window white once (never a strobe). What is left is a glowing
- * remnant that slowly fades when the finale is closed. Driven by `rt.novaOn / novaT / novaBlastAt`; writes
- * `rt.novaGlow` and `rt.novaShake`. With reduced motion everything is slower, softer and has no shake.
+ * The course finale as seen from the cockpit: the dying sun charges, goes supernova, and the blast wave sweeps over the
+ * ship, lighting the sky and washing the window white once (never a strobe). What is left is a glowing remnant that fades
+ * when the finale is closed. Driven by `rt.novaOn / novaT / novaBlastAt`; writes `rt.novaGlow`, `rt.novaShake` (the
+ * strongest shake in the app: it peaks at twice the launch) and `rt.novaKick`. With reduced motion everything is
+ * slower and softer, with no shake, no kick and no flash.
  */
 
+/** The blast wave's shells; the last one is the echo, a second, slower front that rocks the ship again. */
 const SHELLS = [
-  { delay: 0, speed: 1500, color: '#bfe9ff' },
-  { delay: 0.35, speed: 1250, color: '#d9a8ff' },
-  { delay: 0.7, speed: 1000, color: '#ffd28a' },
+  { delay: 0, speed: 1500, color: '#bfe9ff', weight: 1 },
+  { delay: 0.35, speed: 1250, color: '#d9a8ff', weight: 0.6 },
+  { delay: 0.7, speed: 1000, color: '#ffd28a', weight: 0.6 },
+  { delay: 2.3, speed: 850, color: '#ff8a5c', weight: 0.55 },
 ] as const;
-const MAX_SPARKS = 700;
+const MAX_SPARKS = 1200;
+/** Remnant gas clouds (full-screen sprites by the end): the fourth only on the higher graphics levels. */
+const CLOUDS = (['#ff4a2a', '#a04cff', '#ffa030', '#38bdf8'] as const).slice(0, currentQuality().particles >= 0.75 ? 4 : 3);
 const HUES = ['#67e8f9', '#c084fc', '#f472b6', '#fde68a', '#86efac'];
 
 const SHELL_VERT = /* glsl */ `
@@ -61,7 +67,7 @@ void main() {
   vec3 p = uOrigin + aVel * uT;
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = clamp(uScale * (1.0 - 0.6 * age) / max(1.0, -mv.z) * 900.0, 1.0, 22.0);
+  gl_PointSize = clamp(uScale * (1.0 - 0.6 * age) / max(1.0, -mv.z) * 9000.0, 1.5, 30.0);
   vColor = aColor;
   vAlpha = (1.0 - smoothstep(0.55, 1.0, age)) * step(0.0, uT);
 }`;
@@ -97,6 +103,7 @@ function burstTexture() {
 
 const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
 const WHITE = new Color('#ffffff');
+const FINALE_TINT = new Color(DYING_COLORS.core);
 
 export default function Supernova() {
   const index = usePlanets((s) => s.index);
@@ -108,10 +115,16 @@ export default function Supernova() {
   }, [spec]);
 
   const root = useRef<Group>(null);
+  const star = useRef<Group>(null);
+  const shock = useRef<Mesh>(null);
+  const shockMat = useRef<MeshBasicMaterial>(null);
+  const hit = useRef(false);
   const core = useRef<MeshBasicMaterial>(null);
   const coreMesh = useRef<Mesh>(null);
   const burst = useRef<Mesh>(null);
   const burstMat = useRef<MeshBasicMaterial>(null);
+  const streak = useRef<Mesh>(null);
+  const streakMat = useRef<MeshBasicMaterial>(null);
   const clouds = useRef<(Mesh | null)[]>([]);
   const cloudMats = useRef<(MeshBasicMaterial | null)[]>([]);
   const shells = useRef<(Mesh | null)[]>([]);
@@ -145,7 +158,7 @@ export default function Supernova() {
     geo.setAttribute('aLife', new BufferAttribute(life, 1));
     const sparkMat = new ShaderMaterial({ vertexShader: SPARK_VERT, fragmentShader: SPARK_FRAG, uniforms: { uOrigin: { value: new Vector3() }, uT: { value: -1 }, uScale: { value: 1 } }, blending: AdditiveBlending, transparent: true, depthWrite: false });
     const shellMats = SHELLS.map((s) => new ShaderMaterial({ vertexShader: SHELL_VERT, fragmentShader: SHELL_FRAG, uniforms: { uColor: { value: new Color(s.color) }, uAlpha: { value: 0 } }, side: DoubleSide, blending: AdditiveBlending, transparent: true, depthWrite: false }));
-    return { geo, sparkMat, shellMats, glow: glowTexture(), star: burstTexture(), tint: new Color(spec.sunColor) };
+    return { geo, sparkMat, shellMats, glow: glowTexture(), star: burstTexture(), ring: shockRingTexture(), tint: new Color(spec.sunColor) };
   }, [spec.sunColor]);
   useEffect(() => () => {
     res.geo.dispose();
@@ -153,6 +166,7 @@ export default function Supernova() {
     res.shellMats.forEach((m) => m.dispose());
     res.glow.dispose();
     res.star.dispose();
+    res.ring.dispose();
   }, [res]);
 
   useFrame((_, dt) => {
@@ -161,6 +175,10 @@ export default function Supernova() {
     if (!rt.novaOn) {
       g.visible = false;
       fade.current = 1;
+      hit.current = false;
+      rt.novaKick = 0;
+      rt.novaAlarm = 0;
+      rt.novaDim = 0;
       return;
     }
     // Once the finale is closed the remnant fades away, then everything is switched off.
@@ -170,6 +188,11 @@ export default function Supernova() {
       rt.novaT = 0;
       rt.novaGlow = 0;
       rt.novaShake = 0;
+      rt.novaKick = 0;
+      rt.novaAlarm = 0;
+      rt.novaDim = 0;
+      rt.finaleWorld = false; // the remnant has faded: the normal world comes back
+      rt.finaleFlight = false;
       g.visible = false;
       return;
     }
@@ -180,17 +203,31 @@ export default function Supernova() {
     const blast = rt.novaBlastAt;
     const t = T - blast; // seconds since the blast went off
     const charge = clamp(T / blast);
-    const dist = SUN_DISTANCE;
+    // Where the star is: the dying sun ahead in the finale, the world's own sun otherwise.
+    const at = rt.finaleWorld ? DYING.position : sun;
+    star.current?.position.set(at[0], at[1], at[2]);
+    const dist = Math.hypot(at[0], at[1], at[2]);
 
-    // The star: swells while charging, flares at the blast, then settles into a bright remnant.
-    const swell = t < 0 ? 560 + 900 * charge * charge : 1460 + 2400 * easeOut(clamp(t / 1.4)) - 1500 * clamp((t - 1.4) / 6);
-    const bright = t < 0 ? 2.2 + 3.5 * charge : 9 * (1 - clamp(t / 3.5)) + 2.2;
-    core.current?.color.copy(res.tint).lerp(WHITE, clamp(charge * 1.4)).multiplyScalar(bright * k + (1 - k) * 2);
+    // The core collapses for the last moments before the blast: the glow is sucked in, white-hot (see finaleWorld.ts).
+    const implode = implosion(t);
+
+    // The star's own glow: it stays modest while the dying sun charges (the sun draws its own corona), pulls in during the
+    // collapse, makes one bright flare at the blast that is gone in about a second, and leaves a softer remnant glow behind.
+    const swell = t < 0 ? (520 + 720 * charge * charge) * (1 - 0.6 * implode) : 1600 + 2100 * easeOut(clamp(t / 0.8)) - 2300 * clamp((t - 0.8) / 4);
+    const bright = t < 0 ? 0.7 + 1.1 * charge + 1.6 * implode : 5.5 * Math.exp(-t * 4) + 0.75;
+    core.current?.color.copy(rt.finaleWorld ? FINALE_TINT : res.tint).lerp(WHITE, clamp(charge * 1.4)).multiplyScalar(bright * k + (1 - k) * 2);
     coreMesh.current?.scale.setScalar(swell / 900);
     if (burst.current && burstMat.current) {
-      burst.current.scale.setScalar((swell * 3.2) / 900);
-      burst.current.rotation.z = T * 0.05;
-      burstMat.current.opacity = (t < 0 ? 0.25 * charge : 0.9 * (1 - clamp(t / 6))) * k;
+      burst.current.scale.setScalar((swell * 3.6) / 900);
+      burst.current.rotation.z = T * 0.05 + (t > 0 ? 0.25 * easeOut(clamp(t / 3)) : 0);
+      burstMat.current.opacity = (t < 0 ? 0.12 * charge + 0.4 * implode : 0.75 * (1 - clamp(t / 4))) * k;
+    }
+    // A lens streak across the whole window: a thin line during the collapse, flung wide by the blast, then fading.
+    if (streak.current && streakMat.current) {
+      const wide = t < 0 ? 0.8 * implode : 0.8 + 13 * easeOut(clamp(t / 0.3));
+      streak.current.scale.set(wide, 0.03 + (t > 0 ? 0.05 * Math.exp(-t * 2) : 0), 1);
+      streakMat.current.opacity = (t < 0 ? 0.45 * implode : Math.exp(-t * 0.9)) * k * fade.current;
+      streak.current.visible = streakMat.current.opacity > 0.01;
     }
 
     // The blast wave: three thin shells expanding from the star, reaching the ship after about two seconds.
@@ -209,33 +246,56 @@ export default function Supernova() {
       const alpha = Math.pow(1 - clamp(age / 7), 1.6) * (calm ? 0.4 : 0.9);
       res.shellMats[i].uniforms.uAlpha.value = alpha;
       // The wave is "over the ship" when its radius equals the sun's distance.
-      const pass = Math.exp(-Math.pow((radius - dist) / (700 + 250 * i), 2));
-      glow = Math.max(glow, pass * (i === 0 ? 1 : 0.6));
+      const pass = Math.exp(-Math.pow((radius - dist) / (420 + 150 * i), 2));
+      glow = Math.max(glow, pass * s.weight);
     });
     const target = (calm ? 0.35 : 1) * glow;
     rt.novaGlow = damp(rt.novaGlow, target, 8, dt) * fade.current;
-    rt.novaShake = calm ? 0 : (0.06 * charge * charge * (t < 0 ? 1 : 0) + 0.5 * glow + (t > 0 && t < 0.6 ? 0.25 * (1 - t / 0.6) : 0)) * fade.current;
+    // Vibration: a rumble that builds while the star charges and falls silent during the collapse (the hush makes the hit
+    // land harder), then the strongest shake of the whole app as the blast hits, and again, softer, as the echo passes.
+    const rumble = t < 0 ? 0.75 * charge * charge * (1 - 0.85 * implode) : 0;
+    const impact = t > 0 ? 2.9 * Math.min(1, t / 0.05) * Math.exp(-t * 1.4) : 0;
+    rt.novaShake = calm ? 0 : Math.min(3.2, rumble + impact + 0.8 * glow) * fade.current;
+    // The view narrows as the star charges and collapses, then the blast throws it wide.
+    rt.novaKick = calm ? 0 : (t < 0 ? -2.5 * charge - 3 * implode : 18 * Math.exp(-t * 2.2)) * fade.current;
+    // Red alert in the cockpit once the star goes critical, easing off after the wave has passed; and the hush: the edges of
+    // the view darken during the collapse and the blast tears it away at once.
+    rt.novaAlarm = (t < 0 ? clamp((charge - 0.35) / 0.4) : 1 - clamp(t / 3.5)) * fade.current;
+    rt.novaDim = calm ? 0 : t < 0 ? 0.6 * implode : 0;
+    if (t >= 0 && !hit.current) {
+      hit.current = true;
+      if (!calm) navigator.vibrate?.([70, 40, 140, 60, 280]); // phones buzz with it
+    }
+    // One extra, central shock ring leaving the star.
+    if (shock.current && shockMat.current) {
+      const p = t > 0 ? clamp(t / 3) : 0;
+      shock.current.visible = t > 0 && p < 1;
+      shock.current.scale.setScalar(0.5 + 4.5 * easeOut(p));
+      shockMat.current.opacity = Math.pow(1 - p, 1.4) * 0.85 * k * fade.current;
+    }
 
     // Gas clouds of the remnant: big soft sprites growing and drifting through colours.
     clouds.current.forEach((mesh, i) => {
       const mat = cloudMats.current[i];
       if (!mesh || !mat) return;
-      const grow = t < 0 ? 0 : easeOut(clamp(t / (6 + i * 2)));
-      mesh.scale.setScalar(0.3 + (3.4 + i * 1.3) * grow);
-      mat.opacity = (t < 0 ? 0 : 0.5 * Math.min(1, t / 1.5) * (0.75 + 0.25 * Math.sin(T * 0.5 + i * 2))) * fade.current * k;
+      const grow = t < 0 ? 0 : easeOut(clamp(t / (5 + i * 1.8)));
+      mesh.scale.setScalar(0.3 + (2.6 + i * 0.9) * grow);
+      mesh.rotation.z = T * (i % 2 ? 0.03 : -0.025); // the remnant slowly turns as it spreads
+      mat.opacity = (t < 0 ? 0 : 0.24 * Math.min(1, t / 1.2) * (0.75 + 0.25 * Math.sin(T * 0.5 + i * 2))) * fade.current * k;
     });
 
     // Sparks and debris flying outwards from the star past the ship.
     const u = res.sparkMat.uniforms;
-    u.uOrigin.value.set(sun[0], sun[1], sun[2]);
+    u.uOrigin.value.set(at[0], at[1], at[2]);
     u.uT.value = t < 0 ? -1 : t * (calm ? 0.5 : 1);
     u.uScale.value = fade.current * k;
     if (sparks.current) sparks.current.visible = t >= 0 && fade.current > 0.02;
   });
 
   return (
-    <group ref={root} visible={false}>
-      <Billboard position={[sun[0], sun[1], sun[2]]}>
+    <group ref={root} visible={false} userData={{ world: 'finale' }}>
+      <group ref={star} position={[sun[0], sun[1], sun[2]]}>
+      <Billboard>
         <mesh ref={coreMesh}>
           <planeGeometry args={[900, 900]} />
           <meshBasicMaterial ref={core} map={res.glow} color="#ffffff" transparent blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
@@ -244,19 +304,26 @@ export default function Supernova() {
           <planeGeometry args={[900, 900]} />
           <meshBasicMaterial ref={burstMat} map={res.star} color="#cfeaff" transparent opacity={0} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
         </mesh>
-        {['#7dd3fc', '#e879f9', '#fbbf24'].map((color, i) => (
-          <mesh key={color} ref={(m) => void (clouds.current[i] = m)} position={[i * 60 - 60, i * 40 - 40, -10 - i]} scale={0.3}>
+        <mesh ref={streak} visible={false}>
+          <planeGeometry args={[900, 900]} />
+          <meshBasicMaterial ref={streakMat} map={res.glow} color="#d6ecff" transparent opacity={0} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
+        </mesh>
+        {CLOUDS.map((color, i) => (
+          <mesh key={color} ref={(m) => void (clouds.current[i] = m)} position={[i * 60 - 90, i * 40 - 60, -10 - i]} scale={0.3}>
             <planeGeometry args={[1400, 1400]} />
             <meshBasicMaterial ref={(m) => void (cloudMats.current[i] = m)} map={res.glow} color={color} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
           </mesh>
         ))}
+        <mesh ref={shock} visible={false}>
+          <planeGeometry args={[900, 900]} />
+          <meshBasicMaterial ref={shockMat} map={res.ring} color="#ffd9a8" transparent opacity={0} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
+        </mesh>
       </Billboard>
-      <group position={[sun[0], sun[1], sun[2]]}>
-        {SHELLS.map((s, i) => (
-          <mesh key={s.color} ref={(m) => void (shells.current[i] = m)} material={res.shellMats[i]} visible={false} frustumCulled={false}>
-            <sphereGeometry args={[1, 64, 32]} />
-          </mesh>
-        ))}
+      {SHELLS.map((s, i) => (
+        <mesh key={s.color} ref={(m) => void (shells.current[i] = m)} material={res.shellMats[i]} visible={false} frustumCulled={false}>
+          <sphereGeometry args={[1, 64, 32]} />
+        </mesh>
+      ))}
       </group>
       <points ref={sparks} geometry={res.geo} material={res.sparkMat} frustumCulled={false} visible={false} />
     </group>

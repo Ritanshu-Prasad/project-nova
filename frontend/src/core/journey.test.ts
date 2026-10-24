@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type * as J from './journey';
 
 let j: typeof J;
+let rt: typeof import('./runtime').rt;
 
 beforeAll(async () => {
   const data: Record<string, string> = {};
@@ -10,6 +11,8 @@ beforeAll(async () => {
     value: { getItem: (k: string) => data[k] ?? null, setItem: (k: string, v: string) => void (data[k] = String(v)), removeItem: (k: string) => void delete data[k] },
   });
   j = await import('./journey');
+  const r = await import('./runtime');
+  rt = r.rt;
 });
 
 describe('the walk between the seat and the lounge', () => {
@@ -42,6 +45,13 @@ describe('the walk between the seat and the lounge', () => {
     let called = 0;
     j.goToCockpit(() => called++);
     expect(called).toBe(1);
+  });
+
+  it('manages progressive deckLightDim between 1.0 in lounge and 0.25 in cockpit', () => {
+    j.enterLoungeNow();
+    expect(rt.deckLightDim).toBe(1.0);
+    j.resetJourney();
+    expect(rt.deckLightDim).toBe(0.25);
   });
 });
 

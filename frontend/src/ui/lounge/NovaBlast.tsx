@@ -1,23 +1,27 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Award, BookOpen, Plus, SkipForward } from 'lucide-react';
+import { Award, BookOpen, Plus, Rocket, SkipForward } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { audio } from '../../core/audio';
 import { useCourse } from '../../core/course';
+import { skipIntro, startFinaleFlight } from '../../core/director';
 import { useFinale } from '../../core/finale';
 import { currentQuality, useGraphics } from '../../core/graphics';
 import { openForge, useHub, useProfile } from '../../core/hub';
 import { goToCockpit, goToLounge, useDeck } from '../../core/journey';
 import { Z } from '../../core/layers';
 import { rt } from '../../core/runtime';
-import { useNova } from '../../core/store';
+import { SYSTEM_ORDER, useNova } from '../../core/store';
 import NovaMark from '../hud/NovaMark';
 
 /** Seconds from the start: the charge ends and the blast goes off; the headline, thank-you card and certificate note follow. */
 const FULL = { blast: 2, head: 2.7, card: 6.2, cert: 8.8 } as const;
 const CALM = { blast: 0.6, head: 0.9, card: 2.4, cert: 4.2 } as const;
-/** From the cockpit the blast is out of the window (three/space/Supernova.tsx); the same clock, with room to watch it before the words come. */
-const COCKPIT = { blast: 2, head: 4.6, card: 7.4, cert: 10.4 } as const;
-const COCKPIT_CALM = { blast: 0.8, head: 1.8, card: 3.6, cert: 6.2 } as const;
+/**
+ * In the cockpit the blast is out of the window (three/space/Supernova.tsx), in front of the dying sun. The clock starts when
+ * the ship has arrived: the star charges for `blast` seconds, goes off, and the words follow with room to watch it first.
+ */
+const COCKPIT = { blast: 3, head: 6.2, card: 9.2, cert: 12.4 } as const;
+const COCKPIT_CALM = { blast: 1, head: 2.4, card: 4.2, cert: 6.4 } as const;
 
 const HUES = [190, 270, 330, 45, 150];
 const BASE_PARTICLES = 520;
@@ -37,9 +41,9 @@ const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 /**
- * The finale. With 3D it plays from the pilot seat: the pilot walks back to the cockpit and the sun of the world goes
- * supernova outside the window, then the thank-you appears over the view. Without 3D (or in the middle of a walk) it
- * is the full-screen version below.
+ * The finale. With 3D it plays from the pilot seat: the pilot is walked back to the cockpit, flips switches 1 · 2 · 3, holds
+ * to launch and jumps to a dying sun, which goes supernova outside the window — then the thank-you appears over the view.
+ * Without 3D (or in the middle of a walk) it is the full-screen version below.
  */
 export default function NovaBlast() {
   const open = useFinale((s) => s.open);
@@ -54,18 +58,57 @@ export default function NovaBlast() {
     const has3d = gfx.level !== 'none' && gfx.ready && !useNova.getState().webglFailed;
     if (!has3d || useDeck.getState().deck === 'transit') return finale.setStage('overlay');
     finale.setStage('walking');
-    const atHub = useHub.getState().station === 'hub';
     useHub.getState().go('hub');
     goToCockpit(() => {
       if (!useFinale.getState().open) return;
-      rt.novaBlastAt = (reduced ? COCKPIT_CALM : COCKPIT).blast;
-      rt.novaT = 0;
-      rt.novaOn = true;
-      useFinale.getState().setStage('blast');
-    }, atHub ? 0 : 1300); // from another station the pilot first settles at the hub spot
-  }, [open, stage, reduced]);
+      startFinaleFlight(); // powers the ship down; the pilot flips the switches and launches
+      useFinale.getState().setStage('flight');
+    }, 0);
+  }, [open, stage]);
 
-  return <AnimatePresence>{open && (stage === 'blast' || stage === 'overlay') && <FinaleScreen key={stage} mode={stage === 'blast' ? 'cockpit' : 'overlay'} />}</AnimatePresence>;
+  // The ship has arrived in front of the dying sun: it starts to charge.
+  const phase = useNova((s) => s.phase);
+  useEffect(() => {
+    if (!open || stage !== 'flight' || phase !== 'landed') return;
+    rt.novaBlastAt = (reduced ? COCKPIT_CALM : COCKPIT).blast;
+    rt.novaT = 0;
+    rt.novaOn = true;
+    useFinale.getState().setStage('blast');
+  }, [open, stage, phase, reduced]);
+
+  return (
+    <>
+      <AnimatePresence>{open && stage === 'flight' && <FlightBanner key="banner" />}</AnimatePresence>
+      <AnimatePresence>{open && (stage === 'blast' || stage === 'overlay') && <FinaleScreen key={stage} mode={stage === 'blast' ? 'cockpit' : 'overlay'} />}</AnimatePresence>
+    </>
+  );
+}
+
+/** What to do on the way to the dying sun: the switches, the launch hold, then the jump. */
+function FlightBanner() {
+  const phase = useNova((s) => s.phase);
+  const cleared = useNova((s) => s.cleared);
+  const systems = useNova((s) => s.systems);
+  const done = SYSTEM_ORDER.filter((k) => systems[k]).length;
+  const line =
+    phase === 'preflight'
+      ? cleared
+        ? 'Hold LAUNCH (or Space) until the countdown ends'
+        : `Flip the ship's switches in order — press 1 · 2 · 3 (${done} of 3 online)`
+      : 'Jumping to the dying sun…';
+  return (
+    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pointer-events-none fixed inset-x-0 top-20 flex justify-center px-4" style={{ zIndex: Z.notices - 3 }}>
+      <div className="pointer-events-auto flex max-w-[560px] flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-orange-300/30 bg-[#12080a]/80 px-4 py-2.5 text-center shadow-[0_0_40px_-12px_rgb(255_110_40/0.7)] backdrop-blur-md">
+        <span className="flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-[0.3em] text-orange-300">
+          <Rocket size={13} /> Final voyage
+        </span>
+        <span className="text-sm text-white/90">{line}</span>
+        <button type="button" onClick={() => skipIntro()} className="cursor-pointer rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/15 transition hover:bg-white/15 hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+          Skip to the blast
+        </button>
+      </div>
+    </motion.div>
+  );
 }
 
 /**
@@ -86,6 +129,7 @@ function FinaleScreen({ mode }: { mode: 'cockpit' | 'overlay' }) {
   const [stage, setStage] = useState(0); // 0 charge · 1 headline · 2 thank-you card · 3 certificate note
   const canvas = useRef<HTMLCanvasElement>(null);
   const wash = useRef<HTMLDivElement>(null);
+  const hush = useRef<HTMLDivElement>(null);
   const skipped = useRef(false);
   const primary = useRef<HTMLButtonElement>(null);
 
@@ -104,14 +148,16 @@ function FinaleScreen({ mode }: { mode: 'cockpit' | 'overlay' }) {
   // Sound and the stage timers.
   useEffect(() => {
     void audio.init();
-    audio.play(reduced ? 'quest' : 'novaBlast');
+    // The blast sound has two seconds of charge before its boom: start it early enough that the boom lands on the blast.
+    const lead = cockpit && !reduced ? Math.max(0, T.blast - 2) : 0;
     const timers = [
+      setTimeout(() => audio.play(reduced ? 'quest' : 'novaBlast'), lead * 1000),
       setTimeout(() => setStage((s) => Math.max(s, 1)), T.head * 1000),
       setTimeout(() => (setStage((s) => Math.max(s, 2)), audio.play('chime')), T.card * 1000),
       setTimeout(() => setStage((s) => Math.max(s, 3)), T.cert * 1000),
     ];
     return () => timers.forEach(clearTimeout);
-  }, [T, reduced]);
+  }, [T, reduced, cockpit]);
 
   // Once skipped, the certificate note still waits a beat after the card.
   useEffect(() => {
@@ -144,7 +190,8 @@ function FinaleScreen({ mode }: { mode: 'cockpit' | 'overlay' }) {
     if (!cockpit || reduced) return;
     let raf = 0;
     const frame = () => {
-      if (wash.current) wash.current.style.opacity = String(0.6 * rt.novaGlow);
+      if (wash.current) wash.current.style.opacity = String(0.3 * rt.novaGlow);
+      if (hush.current) hush.current.style.opacity = String(rt.novaDim);
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -343,7 +390,9 @@ function FinaleScreen({ mode }: { mode: 'cockpit' | 'overlay' }) {
         <>
           {/* The 3D window stays visible: only a soft shade behind the words, and the wash of the wave. */}
           <div className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: stage >= 1 ? 1 : 0, background: 'radial-gradient(ellipse at 50% 46%, rgb(2 3 10 / 0.55), rgb(2 3 10 / 0) 68%)' }} aria-hidden="true" />
-          {!reduced && <div ref={wash} className="pointer-events-none absolute inset-0" style={{ opacity: 0, background: 'radial-gradient(circle at 50% 42%, #fff 0%, rgb(255 255 255 / 0.7) 30%, rgb(220 235 255 / 0.35) 80%)' }} aria-hidden="true" />}
+          {/* The hush before the blast: the edges of the view close in for a moment (see rt.novaDim). */}
+          {!reduced && <div ref={hush} className="pointer-events-none absolute inset-0" style={{ opacity: 0, background: 'radial-gradient(ellipse at 50% 40%, rgb(0 0 0 / 0) 28%, rgb(0 0 0 / 0.85) 100%)' }} aria-hidden="true" />}
+          {!reduced && <div ref={wash}className="pointer-events-none absolute inset-0" style={{ opacity: 0, background: 'radial-gradient(circle at 50% 42%, #fff 0%, rgb(255 255 255 / 0.7) 30%, rgb(220 235 255 / 0.35) 80%)' }} aria-hidden="true" />}
         </>
       ) : (
         <>

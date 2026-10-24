@@ -92,6 +92,9 @@ interface NovaState {
   setUserSetupOpen: (open: boolean) => void;
   setCurriculumOpen: (open: boolean) => void;
   setFeedOpen: (open: boolean) => void;
+  starChartOpen: boolean;
+  setStarChartOpen: (open: boolean) => void;
+  toggleStarChart: () => void;
   setIsTransitioning: (transitioning: boolean) => void;
   notify: (notice: NoticeInput) => number;
   dismiss: (id: number) => void;
@@ -101,6 +104,8 @@ interface NovaState {
 
 const LS_SOUND = 'nova.sound';
 const LS_INTRO = 'nova.introSeen';
+const LS_ACK = 'nova.safetyAccepted';
+const LS_VISITED = 'nova.visited';
 
 function readFlag(key: string, fallback: boolean): boolean {
   try {
@@ -135,15 +140,23 @@ const prefersReducedMotion = () => {
   }
 };
 
+const ALL_SYSTEMS: Record<SystemKey, boolean> = { power: true, neural: true, core: true };
 const NO_SYSTEMS: Record<SystemKey, boolean> = { power: false, neural: false, core: false };
 
 let noticeId = 0;
 
+const isReturningPilot =
+  readFlag('nova.isLoggedIn', false) ||
+  readFlag(LS_INTRO, false) ||
+  readFlag(LS_VISITED, false) ||
+  readFlag(LS_ACK, false);
+
 export const useNova = create<NovaState>()((set, get) => ({
-  phase: 'gate',
-  world: 'bay',
-  systems: { ...NO_SYSTEMS },
-  cleared: false,
+  // Returning visitors start immediately in parked orbit — eliminating any initial black screen hang.
+  phase: isReturningPilot ? 'landed' : 'gate',
+  world: isReturningPilot ? 'newworld' : 'bay',
+  systems: isReturningPilot ? { ...ALL_SYSTEMS } : { ...NO_SYSTEMS },
+  cleared: isReturningPilot,
   soundOn: readFlag(LS_SOUND, true),
   reducedMotion: prefersReducedMotion(),
   sceneReady: false,
@@ -156,13 +169,14 @@ export const useNova = create<NovaState>()((set, get) => ({
   curriculumOpen: false,
   feedOpen: false,
   isTransitioning: false,
+  starChartOpen: false,
   
   // A signed-in pilot with a profile skips the intro and starts in the lounge (see App.tsx).
   isLoggedIn: readFlag('nova.isLoggedIn', false),
-  // DEV MODE OVERRIDE: the intro is never marked as seen.
-  introSeen: false, // readFlag(LS_INTRO, false),
-  // Asked on every visit before the intro plays; the dev ?jump= shortcut skips it.
-  warningAccepted: typeof location !== 'undefined' && new URLSearchParams(location.search).has('jump'),
+  introSeen: isReturningPilot,
+  warningAccepted:
+    isReturningPilot ||
+    (typeof location !== 'undefined' && new URLSearchParams(location.search).has('jump')),
   
   themeColor: readItem('nova.themeColor', '#06b6d4') || '#06b6d4',
   activeObjective: readItem('nova.activeObjective', null),
@@ -177,11 +191,18 @@ export const useNova = create<NovaState>()((set, get) => ({
   },
   toggleSound: () => get().setSoundOn(!get().soundOn),
   setReducedMotion: (reducedMotion) => set({ reducedMotion }),
-  setWarningAccepted: (warningAccepted) => set({ warningAccepted }),
+  setWarningAccepted: (warningAccepted) => {
+    writeFlag(LS_ACK, warningAccepted);
+    if (warningAccepted) writeFlag(LS_VISITED, true);
+    set({ warningAccepted });
+  },
   setIntroSeen: (introSeen) => {
     writeFlag(LS_INTRO, introSeen);
+    if (introSeen) writeFlag(LS_VISITED, true);
     set({ introSeen });
   },
+  setStarChartOpen: (starChartOpen) => set({ starChartOpen }),
+  toggleStarChart: () => set((s) => ({ starChartOpen: !s.starChartOpen })),
   setLoggedIn: (isLoggedIn) => {
     writeFlag('nova.isLoggedIn', isLoggedIn);
     set({ isLoggedIn });

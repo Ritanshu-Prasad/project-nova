@@ -1,10 +1,31 @@
 import { create } from 'zustand';
 
 /**
- * The six worlds the ship can visit, in tour order. The look of each one lives in three/space/planets.ts (same order);
+ * The twenty worlds the ship can visit, in tour order. The look of each one lives in three/space/planets.ts (same order);
  * this file only holds which one is current, so the director, the HUD and the saved state need no 3D code.
  */
-export const PLANET_NAMES = ['Aurelia', 'Kryos', 'Ember', 'Verdant', 'Dune', 'Tempest'] as const;
+export const PLANET_NAMES = [
+  'Aurelia',
+  'Kryos',
+  'Ember',
+  'Verdant',
+  'Dune',
+  'Tempest',
+  'Nebula Prime',
+  'Zephyr',
+  'Vespera',
+  'Obsidian',
+  'Aquaria',
+  'Glacies',
+  'Solaria',
+  'Caelum',
+  'Arcadia',
+  'Toxis',
+  'Chronos',
+  'Aetheria',
+  'Ignis',
+  'Vortexia',
+] as const;
 export const PLANET_COUNT = PLANET_NAMES.length;
 
 const KEY = 'nova.planet';
@@ -39,3 +60,16 @@ export function nextPlanet(): number {
   usePlanets.setState({ index });
   return index;
 }
+
+/** Sets the planet to a specific world index and remembers it. Returns the new index. */
+export function setPlanet(target: number): number {
+  const index = ((target % PLANET_COUNT) + PLANET_COUNT) % PLANET_COUNT;
+  try {
+    localStorage.setItem(KEY, String(index));
+  } catch {
+    /* storage unavailable */
+  }
+  usePlanets.setState({ index });
+  return index;
+}
+

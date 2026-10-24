@@ -10,6 +10,7 @@ import {
   MeshStandardMaterial,
   ShaderMaterial,
   type Group,
+  type HemisphereLight,
   type Mesh,
   type PointLight,
 } from 'three';
@@ -558,16 +559,25 @@ function Drifters() {
 }
 
 function LoungeLights() {
+  const hemi = useRef<HemisphereLight>(null);
+  const mainLight = useRef<PointLight>(null);
   const holo = useRef<PointLight>(null);
+  const blueLight = useRef<PointLight>(null);
+
   useFrame(() => {
-    if (holo.current) holo.current.intensity = 2.5 + rt.holo * 6 + Math.sin(rt.time * 3) * 0.2;
+    const dim = rt.deckLightDim;
+    if (hemi.current) hemi.current.intensity = 0.55 * dim;
+    if (mainLight.current) mainLight.current.intensity = 9 * dim;
+    if (blueLight.current) blueLight.current.intensity = 4 * dim;
+    if (holo.current) holo.current.intensity = (2.5 + rt.holo * 6 + Math.sin(rt.time * 3) * 0.2) * dim;
   });
+
   return (
     <>
-      <hemisphereLight args={['#ffcf9e', '#20140c', 0.55]} />
-      <pointLight color="#ffc58f" position={[CX, FLOOR_Y + H - 0.6, CZ]} intensity={9} distance={16} decay={1.5} />
+      <hemisphereLight ref={hemi} args={['#ffcf9e', '#20140c', 0.55]} />
+      <pointLight ref={mainLight} color="#ffc58f" position={[CX, FLOOR_Y + H - 0.6, CZ]} intensity={9} distance={16} decay={1.5} />
       {currentQuality().lights === 'all' && <pointLight ref={holo} color="#5eead4" position={HOLO_CENTER} intensity={2.5} distance={7} decay={1.4} />}
-      {currentQuality().lights === 'all' && <pointLight color="#86a8ff" position={[CX, FLOOR_Y + 2.2, CZ + A - 1]} intensity={4} distance={10} decay={1.5} />}
+      {currentQuality().lights === 'all' && <pointLight ref={blueLight} color="#86a8ff" position={[CX, FLOOR_Y + 2.2, CZ + A - 1]} intensity={4} distance={10} decay={1.5} />}
     </>
   );
 }

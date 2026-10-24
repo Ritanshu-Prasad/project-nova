@@ -7,6 +7,7 @@ import { useHub } from '../../core/hub';
 import { duration, HUB_QUIZ, openHubQuiz, useCourseQuizzes, useFreshClock, useHubQuiz, type HubQuiz, type QuizRun } from '../../core/hubQuiz';
 import { FORMAT_LABEL } from '../../core/quizBuilder';
 import QuizOutcome, { type Outcome } from './QuizOutcome';
+import BackPill from '../common/BackPill';
 import Btn from './study/Btn';
 import QuizRunner, { AnswerView, type QuizResult } from './study/QuizRunner';
 
@@ -99,18 +100,17 @@ export function HubQuizStation() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        className="card scroll-y pointer-events-auto relative max-h-[88vh] w-[min(720px,calc(100vw-32px))] overflow-x-hidden p-6 font-sans sm:p-7"
+        className="card pointer-events-auto relative flex max-h-[88vh] w-[min(720px,calc(100vw-32px))] flex-col overflow-hidden font-sans"
       >
-        <div className="flex items-center justify-between gap-3">
-          <button type="button" onClick={leave} className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1.5 text-sm font-medium text-white/75 transition hover:bg-white/[0.12] hover:text-white">
-            <ArrowLeft size={14} /> {returnTo === 'lesson' ? 'Back to lesson' : 'Lounge'}
-          </button>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.07] bg-[#0b1020]/60 px-6 py-3 sm:px-7">
+          <BackPill label={returnTo === 'lesson' ? 'Back to lesson' : 'Lounge'} onClick={leave} />
           {run && (
             <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${run.practice ? 'bg-white/[0.06] text-white/60' : 'bg-amber-300/15 text-amber-200'}`}>
               <Zap size={13} /> {run.practice ? 'Practice · no RR' : `×${run.regular} RR`}
             </span>
           )}
         </div>
+        <div className="scroll-y min-h-0 flex-1 overflow-x-hidden p-6 pt-1 sm:p-7 sm:pt-1">
 
         {stage === 'home' && (
           <div className="pt-5">
@@ -179,6 +179,7 @@ export function HubQuizStation() {
             </div>
           </div>
         )}
+        </div>
       </motion.section>
 
       <AnimatePresence>{stage === 'outcome' && outcome && <QuizOutcome key="outcome" outcome={outcome} onDone={() => setStage('done')} />}</AnimatePresence>

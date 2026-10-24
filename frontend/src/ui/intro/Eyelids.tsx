@@ -7,7 +7,9 @@ import { useRaf } from '../../core/useRaf';
 /** Two soft black lids that part as rt.eyelid → 1, plus the wake-up blur. Driven per frame. */
 export default function Eyelids() {
   const phase = useNova((s) => s.phase);
-  const active = phase === 'gate' || phase === 'wake';
+  const introSeen = useNova((s) => s.introSeen);
+  // Returning visitors: eyelid overlay is never shown at gate, preventing the black-screen flash.
+  const active = (phase === 'gate' && !introSeen) || phase === 'wake';
   const top = useRef<HTMLDivElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const blur = useRef<HTMLDivElement>(null);
