@@ -176,7 +176,7 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 Developed with ❤️ for the **Nebius x NVIDIA Global AI Hackathon** by:
 
 * **Devansh Sangule** (dsangule)
-* **Devjit Sarkar** (deiztro)
+* **Devjit Sarkar** (devjit-sarkar)
 * **Ritanshu Prasad** (Ritanshu-Prasad)
 * **Shrinkhal** (shrinkhal01)
 
