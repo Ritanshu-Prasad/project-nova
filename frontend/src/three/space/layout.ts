@@ -83,12 +83,22 @@ export const RINGS = {
 
 // ── Moons ───────────────────────────────────────────────────────────────
 
+/** The four moon silhouettes (see moons.ts): a clean sphere, a lumpy rock, a stretched potato, a pocked world. */
+export type MoonShape = 'round' | 'lumpy' | 'elongated' | 'cratered';
+
 export interface MoonSpec {
   position: Vec3;
   radius: number;
   /** Surface tint (linear-ish sRGB hex) and noise seed. */
   tint: string;
   seed: number;
+  shape?: MoonShape;
+  /** Axis ratios (x, y, z) applied to `radius`, so moons are not all the same proportions. */
+  squash?: Vec3;
+  /** Slow spin, rad/s. */
+  spin?: number;
+  /** A moon that glows from within (molten) — 0..1. */
+  glow?: number;
 }
 
 export const MOONS: readonly MoonSpec[] = [

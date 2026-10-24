@@ -4,12 +4,16 @@ import { setHolding, skipIntro, toggleSystem, wake } from './director';
 import { clamp, damp } from './math';
 import { rt } from './runtime';
 import { actionFor, resolveMotion } from './settings';
+import { matchCode } from './finale';
+import { nextPlanet } from './planets';
+import { PLANETS } from '../three/space/planets';
 import { INTRO_PHASES, SYSTEM_ORDER, useNova } from './store';
 
 const isTypingTarget = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 
 const DIGITS = ['Digit1', 'Digit2', 'Digit3'];
+let typedCheat = '';
 
 /**
  * Global input, installed once by <App>:
@@ -72,6 +76,38 @@ export function useGlobalInput(): void {
         }
         return;
       }
+      if (e.code === 'Escape') {
+        if (s.starChartOpen) {
+          s.setStarChartOpen(false);
+          return;
+        }
+        if (s.activePillar !== null) s.setActivePillar(null);
+        else if (INTRO_PHASES.includes(s.phase)) skipIntro();
+        return;
+      }
+      if (/^[a-z]$/i.test(e.key)) {
+        typedCheat = (typedCheat + e.key.toLowerCase()).slice(-12);
+        const code = matchCode(typedCheat);
+        if (code === 'planet') {
+          typedCheat = '';
+          audio.play('pulse');
+          const newIdx = nextPlanet();
+          const spec = PLANETS[newIdx];
+          s.notify({
+            kind: 'toast',
+            title: `🪐 Orbiting World [${newIdx + 1}/20]: ${spec.name}`,
+            lines: [`Surroundings: ${spec.env.label}`],
+            ttl: 3.5,
+          });
+          return;
+        }
+        if (code === 'orbit' || code === 'atlas') {
+          typedCheat = '';
+          audio.play('pulse');
+          s.toggleStarChart();
+          return;
+        }
+      }
       if (e.repeat) return;
       // Pre-flight's 1/2/3 ship systems come first, whatever the shortcut settings say.
       if (s.phase === 'preflight' && DIGITS.includes(e.code)) {
@@ -80,9 +116,6 @@ export function useGlobalInput(): void {
         s.toggleSound();
       } else if (e.code === 'Enter' && s.phase === 'gate' && s.warningAccepted) {
         wake();
-      } else if (e.code === 'Escape') {
-        if (s.activePillar !== null) s.setActivePillar(null);
-        else if (INTRO_PHASES.includes(s.phase)) skipIntro();
       }
     };
 

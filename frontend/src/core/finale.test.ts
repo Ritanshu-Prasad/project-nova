@@ -51,6 +51,9 @@ describe('secret codes typed in the lounge', () => {
   it('recognises each word at the end of what was typed', () => {
     expect(matchCode('xxlaunch')).toBe('launch');
     expect(matchCode('qsupernova')).toBe('finale');
+    expect(matchCode('myplanet')).toBe('planet');
+    expect(matchCode('deeporbit')).toBe('orbit');
+    expect(matchCode('staratlas')).toBe('atlas');
     expect(matchCode('supernov')).toBeNull();
     expect(matchCode('')).toBeNull();
   });
@@ -90,5 +93,32 @@ describe('the Nova blast finale', () => {
   it('keeps the certificate screen for the certificate buttons', () => {
     useCourse.getState().showGraduation('c1');
     expect(useCourse.getState().graduation).toBe('c1');
+  });
+});
+
+describe('the dying sun the finale ends in front of', () => {
+  it('hangs ahead and a little above the horizon, filling about half of the window', async () => {
+    const { DYING } = await import('../three/space/finaleWorld');
+    const { CAMERA } = await import('./scene');
+    const [x, y, z] = DYING.position;
+    expect(z).toBeLessThan(0); // in front of the ship
+    expect(y).toBeGreaterThan(0); // a little above the horizon
+    expect(Math.abs(x)).toBeLessThan(DYING.distance * 0.2); // near the middle
+    const halfHeight = Math.tan((CAMERA.fovWide * Math.PI) / 360);
+    const share = (Math.atan(DYING.radius / DYING.distance) / Math.atan(halfHeight)) * 1; // radius as a share of half the window height
+    expect(share).toBeGreaterThan(0.35);
+    expect(share).toBeLessThan(0.75);
+    expect(DYING.distance - DYING.radius).toBeGreaterThan(300); // the ship is nowhere near touching it
+  });
+
+  it('passes through the stages of the flight in the store', () => {
+    useFinale.getState().show('c1', 'Mini Course');
+    expect(useFinale.getState().stage).toBe('pending');
+    for (const stage of ['walking', 'flight', 'blast'] as const) {
+      useFinale.getState().setStage(stage);
+      expect(useFinale.getState().stage).toBe(stage);
+    }
+    useFinale.getState().hide();
+    expect(useFinale.getState().open).toBe(false);
   });
 });

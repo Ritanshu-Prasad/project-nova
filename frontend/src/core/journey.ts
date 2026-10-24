@@ -16,7 +16,16 @@ interface DeckState {
   deck: Deck;
 }
 
-export const useDeck = create<DeckState>()(() => ({ deck: 'cockpit' }));
+/** A signed-in pilot comes back to the lounge itself: the deck is right from the first render, with no walk to play. */
+const startsInLounge = (): boolean => {
+  try {
+    return localStorage.getItem('nova.isLoggedIn') === '1';
+  } catch {
+    return false;
+  }
+};
+
+export const useDeck = create<DeckState>()(() => ({ deck: startsInLounge() ? 'lounge' : 'cockpit' }));
 
 /** Timeline in seconds from the start of the transit. */
 export const JOURNEY = {
@@ -57,11 +66,14 @@ let direction: 1 | -1 = 1;
 let onArrive: (() => void) | null = null;
 /** A walk that is waiting for the pilot to settle at the hub spot (see goToCockpit's delay). */
 let pendingBegin: ReturnType<typeof setTimeout> | null = null;
+let dimDelayStart: number | null = null;
+let dimDelayTotal = 0;
 const fired = new Set<string>();
 
 function cancelPending(): void {
   if (pendingBegin !== null) clearTimeout(pendingBegin);
   pendingBegin = null;
+  dimDelayStart = null;
 }
 
 /** True while the pilot is walking (either way) or about to start walking. */
@@ -101,6 +113,7 @@ export function goToCockpit(then?: () => void, delayMs = 0): void {
   }
   const begin = () => {
     pendingBegin = null;
+    dimDelayStart = null;
     if (useDeck.getState().deck !== 'lounge') return;
     Object.assign(rt, walkAt(JOURNEY.total));
     start = clock();
@@ -110,14 +123,20 @@ export function goToCockpit(then?: () => void, delayMs = 0): void {
     useDeck.setState({ deck: 'transit' });
   };
   cancelPending();
-  if (delayMs > 0) pendingBegin = setTimeout(begin, delayMs);
-  else begin();
+  if (delayMs > 0) {
+    dimDelayStart = clock();
+    dimDelayTotal = delayMs / 1000;
+    pendingBegin = setTimeout(begin, delayMs);
+  } else {
+    begin();
+  }
 }
 
 /** Skip the walk (e.g. reduced motion or a returning player): appear in the lounge. */
 export function enterLoungeNow(): void {
   cancelPending();
   start = null;
+  rt.deckLightDim = 1.0;
   Object.assign(rt, { stand: 1, turn: 1, door: 1, walk: 1 });
   useDeck.setState({ deck: 'lounge' });
 }
@@ -127,6 +146,7 @@ export function resetJourney(): void {
   cancelPending();
   start = null;
   onArrive = null;
+  rt.deckLightDim = 0.25;
   Object.assign(rt, { stand: 0, turn: 0, door: 0, walk: 0, holo: 0 });
   useDeck.setState({ deck: 'cockpit' });
 }
@@ -138,11 +158,19 @@ export function holoBurst(amount = 1): void {
 
 export function tickJourney(dt: number): void {
   rt.holo = damp(rt.holo, 0, 0.9, dt);
+  if (pendingBegin !== null && dimDelayStart !== null) {
+    const elapsed = clock() - dimDelayStart;
+    const p = clamp(elapsed / Math.max(dimDelayTotal, 0.001), 0, 1);
+    rt.deckLightDim = 1.0 - 0.25 * p;
+  }
   if (start === null) return;
   const t = clock() - start;
   const fast = rt.reducedMotion ? 2.2 : 1;
   // Walking back plays the same timeline from its end to its start.
   const s = direction === 1 ? t * fast : JOURNEY.total - t * fast;
+
+  const progress = clamp(s / JOURNEY.total, 0, 1);
+  rt.deckLightDim = 0.25 + 0.75 * progress;
 
   Object.assign(rt, walkAt(clamp(s, 0, JOURNEY.total)));
 
@@ -161,6 +189,7 @@ export function tickJourney(dt: number): void {
 
 function finish(deck: Deck, cue: 'arrive' | null): void {
   start = null;
+  rt.deckLightDim = deck === 'lounge' ? 1.0 : 0.25;
   useDeck.setState({ deck });
   if (cue) audio.play(cue);
   const fn = onArrive;

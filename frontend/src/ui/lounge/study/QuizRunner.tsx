@@ -31,9 +31,9 @@ export function AnswerView({ q }: { q: Question }) {
 function optionCls(state: 'idle' | 'right' | 'wrong' | 'dim' | 'selected') {
   switch (state) {
     case 'idle':
-      return 'cursor-pointer border-white/10 bg-white/[0.04] text-white/90 hover:border-[var(--user)] hover:bg-white/[0.08]';
+      return 'cursor-pointer border-white/10 bg-white/[0.04] text-white/90 hover:-translate-y-0.5 hover:border-[var(--user)] hover:bg-white/[0.08] hover:shadow-[0_8px_24px_-12px_var(--user)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--user)]';
     case 'selected':
-      return 'cursor-pointer border-[var(--user)] bg-[rgb(var(--user-rgb)/0.12)] text-white';
+      return 'cursor-pointer border-[var(--user)] bg-[rgb(var(--user-rgb)/0.14)] text-white shadow-[0_0_0_1px_var(--user)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--user)]';
     case 'right':
       return 'border-emerald-400/70 bg-emerald-400/15 text-white';
     case 'wrong':
@@ -259,6 +259,28 @@ function Choice({
 }) {
   const order = useMemo(() => shuffledIndices(q), [q]);
   const right = q.type === 'mcq' ? [q.answer] : q.answers;
+
+  // A-D or 1-4 answers with the keyboard (not while typing somewhere, and not with Ctrl/Alt/Cmd).
+  const pickRef = useRef(onPick);
+  useEffect(() => {
+    pickRef.current = onPick;
+  });
+  useEffect(() => {
+    if (answered) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const n = /^[a-d]$/i.test(e.key) ? e.key.toLowerCase().charCodeAt(0) - 97 : /^[1-4]$/.test(e.key) ? Number(e.key) - 1 : -1;
+      const i = order[n];
+      if (n < 0 || i === undefined || hidden.includes(i)) return;
+      e.preventDefault();
+      pickRef.current(i);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [answered, order, hidden]);
+
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {order.map((i, pos) => {
@@ -273,9 +295,9 @@ function Choice({
             onClick={() => onPick(i)}
             animate={state === 'wrong' ? { x: [0, -6, 6, -3, 3, 0] } : { x: 0 }}
             transition={{ duration: 0.35 }}
-            className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-base transition ${optionCls(state)}`}
+            className={`flex min-h-[3.5rem] items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-base leading-snug transition duration-150 ${optionCls(state)}`}
           >
-            <span className={`grid size-7 shrink-0 place-items-center text-xs font-semibold ${multi ? 'rounded-md' : 'rounded-full'} bg-white/10`}>
+            <span className={`grid size-8 shrink-0 place-items-center text-sm font-bold ${multi ? 'rounded-md' : 'rounded-full'} ${state === 'selected' ? 'bg-[var(--user)] text-[var(--user-ink)]' : 'bg-white/10'}`}>
               {state === 'right' ? <Check size={14} /> : state === 'wrong' ? <X size={14} /> : multi && isPicked ? <Check size={14} /> : String.fromCharCode(65 + pos)}
             </span>
             {q.options[i]}

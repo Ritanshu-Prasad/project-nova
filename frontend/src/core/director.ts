@@ -16,11 +16,11 @@ import { SYSTEM_ORDER, useNova, type Phase, type SystemKey } from './store';
 
 /** Timeline constants in seconds. Reduced motion uses the shorter `_rm` variants where present. */
 export const TIMING = {
-  wake: 6.4,
-  wake_rm: 2.6,
+  wake: 1.0,
+  wake_rm: 0.8,
   /** "You have awakened" System window appears. */
-  wakeNotice: 4.2,
-  wakeNotice_rm: 1.2,
+  wakeNotice: 0.7,
+  wakeNotice_rm: 0.5,
   /** After the last system comes online: clearance is granted, then the doors take `doorsOpen` to open. */
   clearanceDelay: 0.9,
   doorsOpen: 2.6,
@@ -30,24 +30,28 @@ export const TIMING = {
   /** Catapult run: the ship reaches BAY.exitZ at tubeExit, the phase ends at launch. */
   tubeExit: 1.45,
   launch: 1.75,
-  warp: 3.4,
+  warp: 3.6,
   warp_rm: 1.6,
   /** Moment inside the warp when the hangar world is swapped for the new world (tunnel fully opaque). */
   warpSwap: 1.5,
   warpSwap_rm: 0.8,
   arrive: 3.8,
   /** Duration of the deceleration glide into the parking point. */
-  approach: 3.2,
+  approach: 3.4,
 } as const;
 
-const WAKE_EYELID: Keyframes = [[0, 0], [0.9, 0], [1.5, 0.32], [1.75, 0.04], [2.3, 0.06], [2.9, 0.62], [3.05, 0.12], [3.25, 0.18], [4.1, 1]];
-const WAKE_BLUR: Keyframes = [[0, 18], [2.3, 16], [2.9, 9], [3.6, 5], [4.6, 1.5], [5.4, 0]];
-const WAKE_SLUMP: Keyframes = [[0, 1], [2.6, 1], [5.4, 0]];
-const WAKE_DIZZY: Keyframes = [[0, 1], [3, 0.8], [6.4, 0]];
+/** Share of the catapult's field-of-view kick used when launching from space. */
+const SPACE_LAUNCH_KICK = 0.4;
+
+// The eyes open straight onto the hangar bay: one smooth lid lift, no blur, no slump and no dizzy roll.
+const WAKE_EYELID: Keyframes = [[0, 0.35], [0.7, 1]];
+const WAKE_BLUR: Keyframes = [[0, 0]];
+const WAKE_SLUMP: Keyframes = [[0, 0]];
+const WAKE_DIZZY: Keyframes = [[0, 0]];
 const WAKE_RM = {
-  eyelid: [[0, 0], [0.3, 0], [1.4, 1]] as Keyframes,
-  blur: [[0, 6], [1.4, 0]] as Keyframes,
-  slump: [[0, 0.25], [1.6, 0]] as Keyframes,
+  eyelid: [[0, 0.5], [0.6, 1]] as Keyframes,
+  blur: [[0, 0]] as Keyframes,
+  slump: [[0, 0]] as Keyframes,
 };
 /** Main power stutters on before it holds. */
 const POWER_FLICKER: Keyframes = [[0, 0], [0.06, 0.75], [0.14, 0.08], [0.3, 0.9], [0.38, 0.25], [0.62, 1]];
@@ -106,9 +110,11 @@ export function enterPhase(phase: Phase): void {
       break;
     case 'arrive':
       store().setWorld('newworld');
+      rt.arrive = 0; // the new world fades in from the first frame (a jump from space still has the old value)
       audio.play('arrive');
       break;
     case 'landed':
+      rt.isInterPlanetJump = false;
       store().setIntroSeen(true);
       if (replayingFromLounge) {
         // A replay from the lounge: once landed, walk straight back to the lounge.
@@ -117,7 +123,7 @@ export function enterPhase(phase: Phase): void {
         landedTimer = setTimeout(() => {
           landedTimer = null;
           goToLounge();
-        }, 1400);
+        }, 600);
       }
       break;
     default:
@@ -193,7 +199,8 @@ export function replayLaunch(): void {
 /** Ends the in-space launch's special motion and moves to the next world of the tour (once). */
 function finishSpaceJump(): void {
   if (!rt.spaceLaunch) return;
-  nextPlanet();
+  if (rt.finaleFlight) rt.finaleWorld = true; // the course finale ends in front of the dying sun, not at the next planet
+  else nextPlanet();
   rt.spaceLaunch = false;
   rt.shipZ = 0;
 }
@@ -211,20 +218,38 @@ export function relaunchFromSpace(delayMs = 0): boolean {
 
 /** Only from the lounge, parked at a planet, with no walk or timer in flight (a second press must not start a second flight). */
 export function canRelaunch(): boolean {
-  return store().phase === 'landed' && useDeck.getState().deck === 'lounge' && landedTimer === null && !isBusy();
+  return store().phase === 'landed' && useDeck.getState().deck === 'lounge' && landedTimer === null && !isBusy() && !rt.finaleFlight;
 }
 
-function beginSpacePreflight(): void {
-  const s = store();
+/** The course finale: the ship powers down in its seat and the pilot launches — to the dying sun instead of the next planet. */
+export function startFinaleFlight(): void {
+  beginSpacePreflight(true);
+}
+
+/** Leaves the finale: back to the normal world at the current planet (also when it is abandoned halfway). */
+export function endFinale(): void {
+  rt.finaleFlight = false;
+  rt.finaleWorld = false;
+  if (store().phase !== 'landed') {
+    bringEverythingOnline();
+    settleMotion();
+    rt.spaceLaunch = false;
+    rt.approach = 1;
+    rt.arrive = 1;
+    store().setWorld('newworld');
+    enterPhase('landed');
+  }
+}
+
+function beginSpacePreflight(finale = false): void {
   resetTimelineState();
-  for (const k of SYSTEM_ORDER) s.setSystem(k, false);
-  s.setCleared(false);
   Object.assign(rt, {
-    eyelid: 1, blur: 0, slump: 0, dizzy: 0, emergency: 1, power: 0, bayLights: 0, hud: 0, core: 0,
+    eyelid: 1, blur: 0, slump: 0, dizzy: 0, emergency: 0, power: 1.0, bayLights: 0, hud: 0, core: 0,
     doors: 0, clearance: 0, charge: 0, holding: false, countdown: 0, warp: 0, flash: 0, engine: 0,
-    shake: 0, fovKick: 0, shipZ: 0, shipSpeed: 0, speedKms: 0, approach: 1, arrive: 1, spaceLaunch: true,
+    shake: 0, fovKick: 0, shipZ: 0, shipSpeed: 0, speedKms: 0, approach: 1, arrive: 1, spaceLaunch: true, isInterPlanetJump: true,
+    finaleFlight: finale, finaleWorld: false,
   });
-  replayingFromLounge = true;
+  replayingFromLounge = !finale; // after the finale the pilot stays at the controls for the blast
   enterPhase('preflight');
 }
 
@@ -279,6 +304,14 @@ export function debugJump(phase: Phase): void {
     store().setWorld('newworld');
     rt.approach = phase === 'landed' ? 1 : 0;
     rt.arrive = phase === 'landed' ? 1 : 0;
+    // Returning visitor: ensure eyes are fully open and all wake effects are cleared
+    // so there is no black screen or lingering blur.
+    rt.eyelid = 1;
+    rt.blur = 0;
+    rt.slump = 0;
+    rt.dizzy = 0;
+    rt.emergency = 0;
+    rt.deckLightDim = 1;
   }
   enterPhase(phase);
 }
@@ -298,7 +331,7 @@ function tick(dt: number): void {
 
   switch (s.phase) {
     case 'gate': {
-      rt.eyelid = 0; rt.blur = 18; rt.slump = 1; rt.dizzy = 1; rt.emergency = 1;
+      rt.eyelid = 0; rt.blur = 0; rt.slump = 0; rt.dizzy = 0; rt.emergency = 1;
       break;
     }
 
@@ -342,8 +375,20 @@ function tick(dt: number): void {
           audio.play('lightsOn', banks - 1);
         }
       } else {
-        rt.power = 0;
-        rt.emergency = 1;
+        if (rt.isInterPlanetJump) {
+          rt.power = damp(rt.power, 0.45, 2, dt);
+          rt.emergency = 0;
+          if (t >= 0.4) {
+            once('spaceStandby', () => {
+              for (const k of SYSTEM_ORDER) s.setSystem(k, false);
+              s.setCleared(false);
+              audio.play('quest');
+            });
+          }
+        } else {
+          rt.power = damp(rt.power, 0, 4, dt);
+          rt.emergency = damp(rt.emergency, 1, 3, dt);
+        }
         rt.bayLights = 0;
       }
       rt.hud = sysAt.neural !== null ? smoothstep(0, 0.9, now - sysAt.neural) : 0;
@@ -388,8 +433,11 @@ function tick(dt: number): void {
       rt.shipSpeed = LAUNCH_ACCEL * tt;
       rt.flash = rm() ? 0 : kf(t, [[0, 0.9], [0.4, 0]]);
       rt.shake = rm() ? 0 : kf(t, [[0, 1], [0.7, 0.7], [1.75, 0.55]]);
-      rt.fovKick = rm() ? 0 : kf(t, [[0, -4], [0.3, 16], [1.75, 24]]);
-      rt.warp = kf(t, [[0, 0], [1.2, 0.05], [1.75, 0.35]]);
+      // From space the planet and its moons stream past instead (three/space/transition.ts), so the view widens less: the
+      // full catapult kick made the planet look as if it fell back from the window before it rushed by.
+      rt.fovKick = rm() ? 0 : kf(t, [[0, -4], [0.3, 16], [1.75, 24]]) * (rt.spaceLaunch ? SPACE_LAUNCH_KICK : 1);
+      // Two-stage departure: slow drift at t in [0, 0.7s], then exponential hyperdrive surge
+      rt.warp = kf(t, [[0, 0], [0.7, 0.04], [1.2, 0.12], [1.75, 0.35]]);
       rt.engine = 1;
       rt.charge = 1;
       rt.countdown = 0;
@@ -402,7 +450,10 @@ function tick(dt: number): void {
       const R = rm();
       const dur = R ? TIMING.warp_rm : TIMING.warp;
       if (s.world === 'bay' || rt.spaceLaunch) rt.shipZ -= rt.shipSpeed * dt; // only the launch itself moves the ship; after the swap it glides in
-      rt.warp = R ? kf(t, [[0, 0.35], [0.4, 1], [1.2, 1], [1.6, 0]]) : kf(t, [[0, 0.35], [0.6, 1], [2.5, 1], [3.2, 0]]);
+      // Two-stage warp trajectory: surge to 1.0, steady cruise, then hyper-speed burst exit
+      rt.warp = R
+        ? kf(t, [[0, 0.35], [0.4, 1], [1.2, 1], [1.6, 0]])
+        : kf(t, [[0, 0.35], [0.55, 1.0], [2.65, 1.0], [3.05, 0.35], [3.6, 0.0]]);
       if (t >= (R ? TIMING.warpSwap_rm : TIMING.warpSwap))
         once('swap', () => {
           s.setWorld('newworld');
@@ -410,12 +461,15 @@ function tick(dt: number): void {
         });
       rt.approach = 0;
       if (t >= (R ? TIMING.warpSwap_rm : TIMING.warpSwap)) rt.shipSpeed = damp(rt.shipSpeed, 0, 2.5, dt); // the rail speed dies away once the swap is done
-      rt.fovKick = R ? 0 : kf(t, [[0, 24], [0.6, 34], [2.5, 30], [3.1, 6], [3.4, 0]]);
-      rt.shake = R ? 0 : kf(t, [[0, 0.55], [0.6, 0.35], [2.6, 0.3], [3.0, 0.65], [3.4, 0.15]]);
-      rt.flash = R ? 0 : kf(t, [[2.9, 0], [3.05, 0.75], [3.4, 0]]);
+      rt.fovKick = R ? 0 : kf(t, [[0, 24 * (rt.spaceLaunch ? SPACE_LAUNCH_KICK : 1)], [0.6, 34], [2.6, 30], [3.1, 8], [3.6, 0]]);
+      rt.shake = R ? 0 : kf(t, [[0, 0.55], [0.6, 0.35], [2.6, 0.3], [3.0, 0.65], [3.6, 0.1]]);
+      const entryFlash = kf(t, [[0, 1.0], [0.15, 0.9], [0.5, 0]]);
+      const midPulse = kf(t, [[1.35, 0], [1.5, 0.35], [1.65, 0]]);
+      const exitFlash = kf(t, [[2.55, 0], [2.95, 1.0], [3.5, 0.6]]);
+      rt.flash = R ? 0 : Math.max(entryFlash, midPulse, exitFlash);
       rt.engine = kf(t / dur, [[0, 1], [0.75, 0.9], [1, 0.45]]);
       rt.speedKms = lerp(rt.speedKms, LIGHT_SPEED_KMS * 0.98, 1 - Math.exp(-3 * dt));
-      if (t >= dur - 0.4) once('exit', () => audio.play('warpOut'));
+      if (t >= dur - 0.45) once('exit', () => audio.play('warpOut'));
       if (t >= dur) enterPhase('arrive');
       break;
     }
@@ -423,9 +477,9 @@ function tick(dt: number): void {
     case 'arrive': {
       rt.warp = 0;
       rt.shipSpeed = damp(rt.shipSpeed, 0, 3, dt); // streaks fade out as the ship drops out of warp
-      rt.flash = damp(rt.flash, 0, 6, dt);
+      rt.flash = damp(rt.flash, 0, 4.5, dt);
       rt.approach = easeOutCubic(clamp(t / TIMING.approach));
-      rt.arrive = smoothstep(0.3, 2.8, t);
+      rt.arrive = smoothstep(0.2, 3.0, t);
       rt.fovKick = damp(rt.fovKick, 0, 3, dt);
       rt.shake = damp(rt.shake, rm() ? 0 : 0.015, 2.5, dt);
       rt.engine = damp(rt.engine, 0.14, 1.5, dt);

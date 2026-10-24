@@ -98,9 +98,8 @@ export function relaunch(): void {
     useNova.getState().notify({ kind: 'toast', title: 'Ship is still settling', lines: ['Launch again once you are back in the lounge.'], ttl: 3 });
     return;
   }
-  const wasAtHub = useHub.getState().station === 'hub';
   useHub.getState().go('hub');
-  relaunchFromSpace(wasAtHub ? 0 : 1300); // from another station the pilot first settles at the hub spot, where the reverse walk starts
+  relaunchFromSpace(450); // 450ms smooth lounge lighting dimming before transit walk triggers
 }
 
 /** Settings: watch the whole opening again — wake-up in the hangar and the launch down the launch pad — then land back in the lounge. */

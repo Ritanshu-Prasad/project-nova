@@ -21,16 +21,22 @@ import PillarPanel from './ui/landing/PillarPanel';
 import UserSetupPopup from './ui/landing/UserSetupPopup';
 import CurriculumSetup from './ui/app/CurriculumSetup';
 import SettingsModal from './ui/hud/SettingsModal';
+import StarChartModal from './ui/lounge/StarChartModal';
 import Hub from './ui/lounge/Hub';
 import NovaBlast from './ui/lounge/NovaBlast';
 import { applyTheme } from './core/theme';
 import { useHubQuiz } from './core/hubQuiz';
 import { useCourse } from './core/course';
 import { useHub, useProfile } from './core/hub';
+import { setPlanet, usePlanets } from './core/planets';
 import * as account from './core/account';
 import * as graphics from './core/graphics';
 import { useGraphics } from './core/graphics';
 import LighterGraphicsPrompt from './ui/hud/LighterGraphicsPrompt';
+
+// index.html guessed "returning pilot" from storage before the app ran (core/localPilot.ts may have cleared it since). If
+// the store says the warning must be shown, the loading cover goes back under the app so the warning is usable at once.
+if (useNova.getState().phase === 'gate') document.documentElement.classList.remove('ret');
 
 /** The WebGL scene loads in its own chunk so the gate paints instantly. */
 const Experience = lazy(() => import('./three/Experience'));
@@ -47,11 +53,22 @@ export default function App() {
 
   useEffect(() => {
     const stop = director.startDirector();
-    // Returning pilot: skip the cinematic — straight to the lounge (the course forge if they have no course yet).
-    if (useNova.getState().isLoggedIn) {
+    // Returning pilot: skip the cinematic — straight to the lounge or orbit without black screen hang.
+    const s = useNova.getState();
+    const isReturning =
+      s.isLoggedIn ||
+      s.introSeen ||
+      (typeof localStorage !== 'undefined' &&
+        (localStorage.getItem('nova.visited') === '1' ||
+          localStorage.getItem('nova.safetyAccepted') === '1' ||
+          localStorage.getItem('nova.introSeen') === '1'));
+    if (s.isLoggedIn) {
       director.debugJump('landed');
       journey.enterLoungeNow();
       if (!Object.keys(useCourse.getState().library).length) useNova.getState().setCurriculumOpen(true);
+    } else if (isReturning) {
+      // Skip gate + wake entirely so there's no black screen at all
+      director.debugJump('landed');
     }
     // Confirms the remembered account and syncs its progress in the background.
     void account.restoreSession();
@@ -60,6 +77,7 @@ export default function App() {
   
   useDevHooks();
   useAutoWake();
+  useBootBackdrop();
   useTheme();
   const webglFailed = useNova((s) => s.webglFailed);
   const level = useGraphics((s) => s.level);
@@ -96,6 +114,7 @@ export default function App() {
       <IntroUI />
       <TopBar />
       <SettingsModal />
+      <StarChartModal />
       <LighterGraphicsPrompt />
       <Eyelids />
       <Gate />
@@ -104,6 +123,25 @@ export default function App() {
       <Cursor />
     </div>
   );
+}
+
+/** Fades out the plain-HTML backdrop (index.html) once the 3D scene has its first frames, or at once without 3D. */
+function useBootBackdrop() {
+  const sceneDone = useNova((s) => s.sceneReady || s.webglFailed);
+  const no3d = useGraphics((s) => s.level === 'none' && s.ready);
+  const done = sceneDone || no3d;
+  useEffect(() => {
+    const el = document.getElementById('boot');
+    if (!el) return;
+    const fail = setTimeout(() => (el.classList.add('gone'), setTimeout(() => el.remove(), 800)), 9000); // never leave it up
+    if (done) {
+      clearTimeout(fail);
+      el.classList.add('gone');
+      const id = setTimeout(() => el.remove(), 800);
+      return () => clearTimeout(id);
+    }
+    return () => clearTimeout(fail);
+  }, [done]);
 }
 
 /** Checks the device once at start-up; tags the page with the level so CSS can switch off the costly effects. */
@@ -135,10 +173,10 @@ function useAutoWake() {
     if (!accepted || new URLSearchParams(location.search).has('jump')) return;
     const go = () => useNova.getState().phase === 'gate' && director.wake();
     if (ready) {
-      const id = setTimeout(go, 400);
+      const id = setTimeout(go, 50);
       return () => clearTimeout(id);
     }
-    const id = setTimeout(go, 6000);
+    const id = setTimeout(go, 300);
     return () => clearTimeout(id);
   }, [ready, accepted]);
 }
@@ -147,7 +185,7 @@ function useAutoWake() {
 function useDevHooks() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile, hubQuiz: useHubQuiz, account, graphics };
+    (window as unknown as { __nova: unknown }).__nova = { rt, store: useNova, director, journey, course: useCourse, hub: useHub, profile: useProfile, hubQuiz: useHubQuiz, account, graphics, planets: { usePlanets, setPlanet } };
     const jump = new URLSearchParams(location.search).get('jump') as Phase | null;
     if (jump && PHASES.includes(jump)) director.debugJump(jump);
   }, []);

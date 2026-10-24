@@ -19,8 +19,8 @@ export default function PostFX({ quality = 'full' }: { quality?: Quality['post']
   const mid = quality !== 'min';
 
   useFrame(() => {
-    if (bloom.current) bloom.current.intensity = 0.85 + 2.5 * rt.flash + 0.6 * rt.warp + 0.6 * rt.pulse + 2.2 * rt.novaGlow;
-    const o = 0.0006 + 0.004 * rt.dizzy + 0.003 * rt.warp + 0.0015 * rt.shake;
+    if (bloom.current) bloom.current.intensity = 0.85 + 2.5 * rt.flash + 0.6 * rt.warp + 0.6 * rt.pulse + 1.1 * rt.novaGlow;
+    const o = 0.0006 + 0.004 * rt.dizzy + 0.003 * rt.warp + 0.0015 * rt.shake + 0.0022 * rt.novaShake;
     offset.set(o, o);
     if (ca.current) ca.current.offset = offset;
     if (vig.current) vig.current.darkness = 0.5 + 0.25 * (1 - rt.power) + 0.2 * rt.dizzy;

@@ -6,7 +6,12 @@ import '@fontsource-variable/oxanium';
 import { StrictMode, type ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
+import { detectGraphics, useGraphics } from './core/graphics';
 import './index.css';
+
+// Start the device check and the 3D scene's download now, not after React has mounted ("No 3D" never downloads it).
+detectGraphics();
+if (!(useGraphics.getState().ready && useGraphics.getState().level === 'none')) void import('./three/Experience');
 
 async function boot() {
   let Root: ComponentType = App;

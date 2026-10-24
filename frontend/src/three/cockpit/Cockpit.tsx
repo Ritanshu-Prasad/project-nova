@@ -35,21 +35,28 @@ const FACE_BOT = 0.62;
 const TILT = Math.atan((FACE_TOP - FACE_BOT) / (TOP_Y - BOT_Y));
 const ARC = MathUtils.degToRad(200);
 
-/** Point on the instrument face at yaw (deg, negative = left) and height y, nudged toward the pilot. */
-function onFace(yawDeg: number, y: number, inset = 0.006): { pos: [number, number, number]; rot: [number, number, number] } {
+/**
+ * Point on the instrument face at yaw (deg, negative = left) and height y, nudged toward the pilot. The rotation turns to
+ * the yaw first and then leans back with the face ('YXZ'): leaning about the world X axis instead twisted every part off
+ * centre, and the inner edges of the side screens sank behind the face.
+ */
+function onFace(yawDeg: number, y: number, inset = 0.006): { pos: [number, number, number]; rot: [number, number, number, 'YXZ'] } {
   const r = FACE_TOP - ((TOP_Y - y) / (TOP_Y - BOT_Y)) * (FACE_TOP - FACE_BOT) - inset;
   const a = MathUtils.degToRad(yawDeg);
-  return { pos: [Math.sin(a) * r, y, -Math.cos(a) * r], rot: [-TILT, -a, 0] };
+  return { pos: [Math.sin(a) * r, y, -Math.cos(a) * r], rot: [-TILT, -a, 0, 'YXZ'] };
 }
 
-const MFD_YAW = [-20, 0, 20];
+/** 24° apart: the 0.33 m bezels sit side by side on the face (at 20° each bezel covered the edge of its neighbour's screen). */
+const MFD_YAW = [-24, 0, 24];
 const MFD_Y = -0.37;
-const SWITCH_YAW = [-33, -38.5, -44];
+const SWITCH_YAW = [-38, -43.5, -49];
+const THROTTLE_YAW = 40;
 const SWITCH_Y = -0.35;
 
 const hull = new MeshStandardMaterial({ color: '#141a24', metalness: 0.75, roughness: 0.42 });
 const panel = new MeshStandardMaterial({ color: '#0a0e15', metalness: 0.4, roughness: 0.75, side: DoubleSide });
 const rubber = new MeshStandardMaterial({ color: '#07090c', roughness: 0.95 });
+const well = new MeshStandardMaterial({ color: '#07090c', roughness: 0.95, side: DoubleSide });
 const trim = new MeshStandardMaterial({ color: '#000000', emissive: new Color('#ff2a2a'), emissiveIntensity: 2 });
 
 const RED = new Color('#ff2a2a');
@@ -72,6 +79,8 @@ export default function Cockpit() {
     }
     trim.emissive.copy(RED).lerp(CYAN, Math.min(1, rt.power));
     trim.emissiveIntensity = 0.6 + 2.4 * Math.max(rt.power, rt.emergency * (0.55 + 0.45 * Math.sin(rt.time * 2.4)));
+    // Red alert while the finale's star goes critical: the trim pulses red (slowly, well under the flash limit).
+    if (rt.novaAlarm > 0.001) trim.emissive.lerp(RED, rt.novaAlarm * (rt.reducedMotion ? 0.6 : 0.5 + 0.5 * Math.sin(rt.time * 5)));
   });
 
   return (
@@ -115,8 +124,13 @@ function Shell() {
         <tubeGeometry args={[strip, 80, 0.0035, 6, false]} />
       </mesh>
       {/* Knee well under the face */}
-      <mesh material={rubber} position={[0, BOT_Y - 0.25, 0]}>
+      {/* Seen from inside (the pilot is within the cylinder), so both sides are drawn, and it has a floor: otherwise looking
+          down, or the wide warp view, sees straight out of the ship below the instrument face. */}
+      <mesh material={well} position={[0, BOT_Y - 0.25, 0]}>
         <cylinderGeometry args={[FACE_BOT, 0.5, 0.5, 48, 1, true, Math.PI - ARC / 2, ARC]} />
+      </mesh>
+      <mesh material={well} position={[0, BOT_Y - 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.52, 48]} />
       </mesh>
       {/* Side consoles */}
       {[-1, 1].map((s) => (
@@ -344,7 +358,7 @@ function Label({ text }: { text: string }) {
 function Throttle() {
   const lever = useRef<Group>(null);
   const grip = useRef<MeshStandardMaterial>(null);
-  const { pos, rot } = onFace(36, -0.47, 0.0);
+  const { pos, rot } = onFace(THROTTLE_YAW, -0.47, 0.0);
 
   useFrame((_, dt) => {
     const st = useNova.getState();
@@ -477,7 +491,8 @@ function Lights() {
   const red = useRef<PointLight>(null);
   const cyan = useRef<PointLight>(null);
   useFrame(() => {
-    if (red.current) red.current.intensity = rt.emergency * (0.6 + 0.4 * Math.sin(rt.time * 2.4)) * 2.2;
+    const alarm = rt.reducedMotion ? 0.5 * rt.novaAlarm : rt.novaAlarm * (0.5 + 0.5 * Math.sin(rt.time * 5)); // < 1 pulse a second
+    if (red.current) red.current.intensity = rt.emergency * (0.6 + 0.4 * Math.sin(rt.time * 2.4)) * 2.2 + alarm * 3;
     if (cyan.current) cyan.current.intensity = rt.power * 1.4;
   });
   return (

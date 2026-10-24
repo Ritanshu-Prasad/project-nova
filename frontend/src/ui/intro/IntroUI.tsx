@@ -91,15 +91,18 @@ function LaunchControl() {
 
 function WarpOverlay() {
   const phase = useNova((s) => s.phase);
+  const introSeen = useNova((s) => s.introSeen);
   const flash = useRef<HTMLDivElement>(null);
   useRaf(() => {
     if (flash.current) flash.current.style.opacity = String(Math.min(1, rt.flash));
   });
+  // Suppress "ENTERING NEW WORLD" during inter-planet traversal; only show on maiden launch from hangar bay
+  const showTitle = phase === 'warp' && !rt.isInterPlanetJump && !introSeen;
   return (
     <div className="pointer-events-none fixed inset-0" style={{ zIndex: Z.warpFlash }}>
-      <div ref={flash} className="absolute inset-0 bg-cyan-50 opacity-0 mix-blend-screen" />
+      <div ref={flash} className="absolute inset-0 bg-gradient-to-r from-cyan-100 via-white to-sky-100 opacity-0 mix-blend-screen transition-none" />
       <AnimatePresence>
-        {phase === 'warp' && (
+        {showTitle && (
           <motion.div
             key="warp"
             initial={{ opacity: 0, letterSpacing: '0.1em' }}
