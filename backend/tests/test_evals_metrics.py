@@ -1,12 +1,9 @@
-import pytest
-from pydantic import TypeAdapter, ValidationError
+from pydantic import TypeAdapter
 
 from course_models import Question
-from evals.judge import JUDGE_PROMPT, QUESTION_PROMPT, QuestionScores, Scores, answered_off_topic, judge_lesson, judge_questions
-from evals.metrics import citation_survival, duplicate_rate, first_try_rate, fraction, judge_agreement, length_ratio, percentile, precision_recall, reading_grade, repeated_extras, retry_rate, sections_with_lists, simple_grade, topic_overlap, type_mix
+from evals.metrics import citation_survival, duplicate_rate, length_ratio, reading_grade, repeated_extras, retry_rate, sections_with_lists, type_mix
 from module_content import ModuleContent, Section
 from samples import mcq
-from test_module_content import module, section
 
 parse = TypeAdapter(Question).validate_python
 
