@@ -1,7 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Compass, Globe, Sparkles, X, Orbit, Wind, Flame, Snowflake, Droplets, ShieldAlert } from 'lucide-react';
+import { Compass, Globe, Lock, Sparkles, X, Orbit, Wind, Flame, Snowflake, Droplets, ShieldAlert } from 'lucide-react';
 import { audio } from '../../core/audio';
+import { useActiveCourse } from '../../core/course';
 import { setPlanet, usePlanets } from '../../core/planets';
+import { visitedWorlds } from '../../core/tour';
 import { PLANETS } from '../../three/space/planets';
 import { useNova } from '../../core/store';
 import { Z } from '../../core/layers';
@@ -77,6 +79,10 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
   const storeOpen = useNova((s) => s.starChartOpen);
   const isOpen = propOpen ?? storeOpen;
   const currentPlanet = usePlanets((s) => s.index);
+  // A course has one planet per module; only the ones the ship has reached can be visited again, the rest open as modules are finished.
+  const course = useActiveCourse();
+  const total = Math.min(PLANETS.length, course?.course.modules.length ?? PLANETS.length);
+  const reached = course ? visitedWorlds() : PLANETS.length;
 
   const close = () => {
     if (propClose) propClose();
@@ -120,7 +126,7 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
                     STAR CHART · ORBITAL NAVIGATION
                   </h2>
                   <p className="text-xs text-white/50">
-                    Direct-jump telemetry active. Type <span className="text-cyan-300 font-mono">planet</span> anywhere to cycle worlds, or <span className="text-cyan-300 font-mono">orbit</span> / <span className="text-cyan-300 font-mono">atlas</span> to toggle this chart.
+                    Every module of your course is a world; finishing one opens the next. Type <span className="text-cyan-300 font-mono">planet</span> to cycle the worlds you have reached, or <span className="text-cyan-300 font-mono">orbit</span> / <span className="text-cyan-300 font-mono">atlas</span> to toggle this chart.
                   </p>
                 </div>
               </div>
@@ -136,8 +142,9 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
 
             {/* Planet Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-3 p-5 overflow-y-auto">
-              {PLANETS.map((p, idx) => {
+              {PLANETS.slice(0, total).map((p, idx) => {
                 const isCurrent = currentPlanet === idx;
+                const locked = idx >= reached;
                 const biomeKey = p.look.spaceBiome ?? (p.look.mist ? 'mist' : p.look.lava ? 'ember' : p.look.ice ? 'ice' : 'dust');
                 const info = BIOME_INFO[biomeKey] ?? BIOME_INFO.dust;
                 const IconComponent = info.icon;
@@ -220,15 +227,25 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
 
                     <button
                       type="button"
-                      disabled={isCurrent}
+                      disabled={isCurrent || locked}
                       onClick={() => jumpTo(idx)}
                       className={`w-full py-1.5 px-3 rounded-lg text-xs font-semibold tracking-wider transition-all flex items-center justify-center gap-2 ${
-                        isCurrent
+                        locked
+                          ? 'border border-white/10 bg-white/[0.03] text-white/40 cursor-not-allowed'
+                          : isCurrent
                           ? 'border border-cyan-400/40 bg-cyan-500/10 text-cyan-300 cursor-default'
                           : 'border border-white/15 bg-white/5 text-white hover:border-cyan-400 hover:bg-cyan-500/20 active:scale-[0.98]'
                       }`}
                     >
-                      {isCurrent ? 'STATION PARKED' : 'JUMP TO ORBIT'}
+                      {locked ? (
+                        <>
+                          <Lock size={12} /> LOCKED · FINISH PLANET {idx}
+                        </>
+                      ) : isCurrent ? (
+                        'STATION PARKED'
+                      ) : (
+                        'JUMP TO ORBIT'
+                      )}
                     </button>
                   </div>
                 );
@@ -237,7 +254,7 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
 
             {/* Footer */}
             <div className="flex items-center justify-between border-t border-cyan-500/20 px-6 py-3 bg-slate-900/60 text-xs text-white/40">
-              <span>20 Planetary Biomes Available</span>
+              <span>{reached} of {total} worlds reached</span>
               <button
                 type="button"
                 onClick={close}

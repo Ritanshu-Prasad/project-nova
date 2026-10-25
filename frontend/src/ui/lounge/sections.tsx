@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Award, Clapperboard, Cloud, CloudOff, Settings, FileText, Image as ImageIcon, Library, LogOut, Palette, Plus, Rocket, Sparkles, Target, Trash2, TrendingUp, UserRound, Users } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { signOut, useAccount, type SyncStatus } from '../../core/account';
-import { firstUncleared, levelOf, levelProgress, xpForLevel, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
+import { firstUncleared, levelOf, levelProgress, xpForLevel, passedModules, travelsAvailable, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
 import { flatTopics } from '../../core/courseSchema';
 import { courseKey, fetchBoard, type FleetBoard } from '../../core/fleet';
 import { openForge, relaunch, useHub, useProfile } from '../../core/hub';
@@ -235,6 +235,7 @@ export function ProfileSection() {
   const stats = useCourse((s) => s.stats);
   const library = useCourse((s) => s.library);
   const activeId = useCourse((s) => s.activeId);
+  const jumpOpen = travelsAvailable(activeId ? library[activeId] : undefined) > 0;
   const level = levelOf(stats.xp);
   const accuracy = stats.answered ? Math.round((stats.correct / stats.answered) * 100) : 0;
   const skill = useSkill();
@@ -340,7 +341,7 @@ export function ProfileSection() {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold text-white">Launch to the next planet</span>
-          <span className="block text-xs text-white/50">Walk back to the cockpit, flip the switches and jump from where you are — you’ll land back here.</span>
+          <span className="block text-xs text-white/50">{jumpOpen ? 'Walk back to the cockpit, flip the switches and jump from where you are — you’ll land back here.' : 'Opens when you finish this planet’s module quiz.'}</span>
         </span>
       </button>
       <button type="button" onClick={() => useSettings.getState().setOpen(true)} className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl bg-white/[0.04] px-4 py-3 text-left text-sm text-white/85 transition hover:bg-white/[0.07]">

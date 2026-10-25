@@ -3,7 +3,9 @@ import { PREFLIGHT } from './content';
 import { clamp, damp, easeOutCubic, kf, lerp, smoothstep, type Keyframes } from './math';
 import { resetRuntime, rt } from './runtime';
 import { goToCockpit, goToLounge, isBusy, resetJourney, tickJourney, useDeck } from './journey';
-import { nextPlanet, planetName } from './planets';
+import { useCourse, travelsAvailable } from './course';
+import { planetName } from './planets';
+import './tour';
 import { BAY } from './scene';
 import { SYSTEM_ORDER, useNova, type Phase, type SystemKey } from './store';
 
@@ -16,11 +18,11 @@ import { SYSTEM_ORDER, useNova, type Phase, type SystemKey } from './store';
 
 /** Timeline constants in seconds. Reduced motion uses the shorter `_rm` variants where present. */
 export const TIMING = {
-  wake: 1.0,
-  wake_rm: 0.8,
+  wake: 2.2,
+  wake_rm: 1.3,
   /** "You have awakened" System window appears. */
-  wakeNotice: 0.7,
-  wakeNotice_rm: 0.5,
+  wakeNotice: 1.3,
+  wakeNotice_rm: 0.8,
   /** After the last system comes online: clearance is granted, then the doors take `doorsOpen` to open. */
   clearanceDelay: 0.9,
   doorsOpen: 2.6,
@@ -44,12 +46,13 @@ export const TIMING = {
 const SPACE_LAUNCH_KICK = 0.4;
 
 // The eyes open straight onto the hangar bay: one smooth lid lift, no blur, no slump and no dizzy roll.
-const WAKE_EYELID: Keyframes = [[0, 0.35], [0.7, 1]];
+// The eyes open in two goes (a first crack, a heavy blink, then wide), so the lids are never cut short by the next phase.
+const WAKE_EYELID: Keyframes = [[0, 0.2], [0.45, 0.42], [0.75, 0.36], [1.5, 0.9], [2.1, 1]];
 const WAKE_BLUR: Keyframes = [[0, 0]];
 const WAKE_SLUMP: Keyframes = [[0, 0]];
 const WAKE_DIZZY: Keyframes = [[0, 0]];
 const WAKE_RM = {
-  eyelid: [[0, 0.5], [0.6, 1]] as Keyframes,
+  eyelid: [[0, 0.4], [1.2, 1]] as Keyframes,
   blur: [[0, 0]] as Keyframes,
   slump: [[0, 0]] as Keyframes,
 };
@@ -200,7 +203,7 @@ export function replayLaunch(): void {
 function finishSpaceJump(): void {
   if (!rt.spaceLaunch) return;
   if (rt.finaleFlight) rt.finaleWorld = true; // the course finale ends in front of the dying sun, not at the next planet
-  else nextPlanet();
+  else useCourse.getState().recordTravel(); // one earned jump: the next planet of the course
   rt.spaceLaunch = false;
   rt.shipZ = 0;
 }
@@ -216,9 +219,15 @@ export function relaunchFromSpace(delayMs = 0): boolean {
   return true;
 }
 
+/** A finished module earns one jump to the next planet (core/course.ts); without one the ship stays where it is. */
+export function hasJump(): boolean {
+  const s = useCourse.getState();
+  return travelsAvailable(s.activeId ? s.library[s.activeId] : undefined) > 0;
+}
+
 /** Only from the lounge, parked at a planet, with no walk or timer in flight (a second press must not start a second flight). */
 export function canRelaunch(): boolean {
-  return store().phase === 'landed' && useDeck.getState().deck === 'lounge' && landedTimer === null && !isBusy() && !rt.finaleFlight;
+  return store().phase === 'landed' && useDeck.getState().deck === 'lounge' && landedTimer === null && !isBusy() && !rt.finaleFlight && hasJump();
 }
 
 /** The course finale: the ship powers down in its seat and the pilot launches — to the dying sun instead of the next planet. */

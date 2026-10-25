@@ -31,27 +31,29 @@
       html.ret #boot .load { display: flex; position: absolute; inset: 0; z-index: 1; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
         opacity: 0; animation: boot-in 0.6s 0.12s ease-out forwards; transition: transform 0.45s cubic-bezier(0.4, 0, 1, 1); }
       html.ret #boot.gone .load { transform: scale(1.12); } /* lifts away towards the pilot as the scene comes in */
+      /* Everything that moves is a plain HTML element animated by transform or opacity only: those run on the compositor, so the
+         loading screen stays smooth even while the page is busy compiling the 3D scene (CSS on SVG children, filters and
+         background-position all repaint on the main thread, which is what made it stutter). */
       #boot .emblem { position: relative; width: 104px; height: 104px; }
-      #boot .emblem svg { position: absolute; inset: 0; overflow: visible; }
+      #boot .emblem > * { position: absolute; inset: 0; overflow: visible; }
       #boot .ring { stroke: rgba(103, 232, 249, 0.14); }
-      #boot .arc { transform-origin: 52px 52px; animation: boot-spin 1.6s linear infinite; }
-      #boot .moon { transform-origin: 52px 52px; animation: boot-spin 3.4s linear infinite reverse; }
-      #boot .star { transform-origin: 52px 52px; animation: boot-pulse 2.4s ease-in-out infinite; filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.8)); }
+      #boot .e-arc { animation: boot-spin 3.2s linear infinite; will-change: transform; }
+      #boot .e-moon { animation: boot-spin 7s linear infinite reverse; will-change: transform; }
+      #boot .e-glow { border-radius: 50%; background: radial-gradient(circle, rgba(34, 211, 238, 0.5) 0%, rgba(34, 211, 238, 0) 52%); animation: boot-pulse 2.4s ease-in-out infinite; will-change: transform, opacity; }
+      #boot .e-star { animation: boot-pulse 2.4s ease-in-out infinite; will-change: transform, opacity; }
       #boot .word { font: 700 30px/1 system-ui, "Segoe UI", sans-serif; letter-spacing: 0.62em; padding-left: 0.62em; color: transparent;
-        background: linear-gradient(100deg, #a5f3fc 0%, #ffffff 35%, #67e8f9 55%, #c4b5fd 100%) 0 0 / 220% 100%; -webkit-background-clip: text; background-clip: text;
-        animation: boot-sheen 4s ease-in-out infinite alternate; }
+        background: linear-gradient(100deg, #a5f3fc 0%, #ffffff 35%, #67e8f9 62%, #c4b5fd 100%); -webkit-background-clip: text; background-clip: text; }
       #boot .sub { display: flex; align-items: center; gap: 10px; font: 600 10px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: 0.42em;
         padding-left: 0.42em; color: rgba(165, 243, 252, 0.6); text-transform: uppercase; }
       #boot .sub i { width: 5px; height: 5px; border-radius: 50%; background: #22d3ee; box-shadow: 0 0 10px #22d3ee; animation: boot-blink 1.2s ease-in-out infinite; }
       @keyframes boot-in { to { opacity: 1; } } /* opacity only: the transform is left free for the lift-away */
       @keyframes boot-spin { to { transform: rotate(360deg); } }
       @keyframes boot-pulse { 0%, 100% { transform: scale(0.92); opacity: 0.85; } 50% { transform: scale(1.05); opacity: 1; } }
-      @keyframes boot-sheen { to { background-position: 100% 0; } }
       @keyframes boot-blink { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
       @keyframes boot-drift-a { to { transform: translate(14%, 10%) scale(1.15); } }
       @keyframes boot-drift-b { to { transform: translate(-12%, -8%) scale(1.1); } }
       @media (prefers-reduced-motion: reduce) {
-        #boot .aur::before, #boot .aur::after, #boot .arc, #boot .moon, #boot .star, #boot .word, #boot .sub i { animation: none; }
+        #boot .aur::before, #boot .aur::after, #boot .e-arc, #boot .e-moon, #boot .e-glow, #boot .e-star, #boot .sub i { animation: none; }
       }
       #boot::before { content: ""; position: absolute; inset: 0; opacity: 0.85;
         background-image:
@@ -80,16 +82,17 @@
       <div class="aur"></div>
       <div class="load">
         <div class="emblem">
-          <svg viewBox="0 0 104 104" fill="none">
-            <defs>
-              <linearGradient id="boot-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee" /><stop offset="1" stop-color="#a78bfa" /></linearGradient>
-            </defs>
+          <svg class="e-ring" viewBox="0 0 104 104" fill="none">
             <circle class="ring" cx="52" cy="52" r="46" stroke-width="1" />
             <circle class="ring" cx="52" cy="52" r="32" stroke-width="1" stroke-dasharray="2 6" />
-            <circle class="arc" cx="52" cy="52" r="46" stroke="url(#boot-g)" stroke-width="2" stroke-linecap="round" stroke-dasharray="64 225" />
-            <g class="moon"><circle cx="52" cy="20" r="3" fill="#a5f3fc" /></g>
-            <path class="star" fill="#e6f6ff" d="M52 36c.5 7.6 8.4 15.5 16 16-7.6.5-15.5 8.4-16 16-.5-7.6-8.4-15.5-16-16 7.6-.5 15.5-8.4 16-16z" />
           </svg>
+          <svg class="e-arc" viewBox="0 0 104 104" fill="none">
+            <defs><linearGradient id="boot-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee" /><stop offset="1" stop-color="#a78bfa" /></linearGradient></defs>
+            <circle cx="52" cy="52" r="46" stroke="url(#boot-g)" stroke-width="2" stroke-linecap="round" stroke-dasharray="120 169" />
+          </svg>
+          <svg class="e-moon" viewBox="0 0 104 104"><circle cx="52" cy="20" r="3" fill="#a5f3fc" /></svg>
+          <div class="e-glow"></div>
+          <svg class="e-star" viewBox="0 0 104 104"><path fill="#e6f6ff" d="M52 36c.5 7.6 8.4 15.5 16 16-7.6.5-15.5 8.4-16 16-.5-7.6-8.4-15.5-16-16 7.6-.5 15.5-8.4 16-16z" /></svg>
         </div>
         <div class="word">NOVA</div>
         <div class="sub"><i></i>Re-entering orbit</div>

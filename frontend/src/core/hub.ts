@@ -2,7 +2,7 @@ import { useCourse } from './course';
 import { ENABLE_PDF_UPLOAD } from './courseApi';
 import { useFinale } from './finale';
 import { create } from 'zustand';
-import { canRelaunch, relaunchFromSpace, replayLaunch } from './director';
+import { canRelaunch, hasJump, relaunchFromSpace, replayLaunch } from './director';
 import { useGraphics } from './graphics';
 import { useNova } from './store';
 
@@ -92,6 +92,10 @@ const has3d = () => useGraphics.getState().level !== 'none' && !useNova.getState
 export function relaunch(): void {
   if (!has3d()) {
     useNova.getState().notify({ kind: 'toast', title: 'No 3D mode', lines: ['There is no ship view to fly in. Choose a 3D level in Settings → Graphics.'], ttl: 4 });
+    return;
+  }
+  if (!hasJump()) {
+    useNova.getState().notify({ kind: 'toast', title: 'The next planet is not open yet', lines: ['Finish this planet’s module quiz and the ship can jump to the next one.'], ttl: 4 });
     return;
   }
   if (!canRelaunch()) {

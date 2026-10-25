@@ -3,7 +3,7 @@ import { ENABLE_PDF_UPLOAD } from '../../core/courseApi';
 import { Award, BookOpen, Clock, FileUp, Flame, Lock, Play, Plus, Sparkles, Target, TrendingUp, UserRound, Zap, type LucideIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
-import { nextPlanet } from '../../core/planets';
+import { cycleVisited } from '../../core/tour';
 import { PLANETS } from '../../three/space/planets';
 import { activeOf, DAILY_GOAL, firstUncleared, levelOf, levelProgress, xpForLevel, passedModules, useActiveCourse, useCourse, useSkill, type ActiveCourse, type OutlineItem } from '../../core/course';
 import { CODE_BUFFER, matchCode } from '../../core/finale';
@@ -90,7 +90,11 @@ export default function Hub() {
           if (code === 'launch') return relaunch();
           if (code === 'finale') return playFinale();
           if (code === 'planet') {
-            const newIdx = nextPlanet();
+            const newIdx = cycleVisited();
+            if (newIdx === null) {
+              useNova.getState().notify({ kind: 'toast', title: 'Only one planet so far', lines: ['Finish a module to open the next planet.'], ttl: 3 });
+              return;
+            }
             const spec = PLANETS[newIdx];
             useNova.getState().notify({
               kind: 'toast',

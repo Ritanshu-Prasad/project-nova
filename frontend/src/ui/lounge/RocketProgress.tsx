@@ -3,6 +3,7 @@ import { Check, Lock, Rocket, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { passedModules, useActiveCourse } from '../../core/course';
 import { useFinale } from '../../core/finale';
+import Planet2D from './Planet2D';
 import { routeLayout } from './routeLayout';
 
 const PLANET_TINTS = ['#fb923c', '#a855f7', '#22d3ee', '#34d399', '#f472b6', '#60a5fa', '#fb7185', '#a3e635'];
@@ -448,7 +449,6 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
           const done = !!entry?.modules[m.id]?.passed;
           const locked = i > 0 && !entry?.modules[modules[i - 1].id]?.passed;
           const here = i === destinationIndex;
-          const tint = PLANET_TINTS[i % PLANET_TINTS.length];
           const clearedTopics = m.topics.filter((t) => !!entry?.progress[t.id]?.cleared).length;
           const totalTopics = m.topics.length;
           const status = done ? 'Cleared' : here && locked ? 'Pass previous quiz first' : here ? 'Current destination' : locked ? 'Locked' : 'Open';
@@ -456,7 +456,7 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
           const moduleMinutes = m.topics.reduce((acc, t) => acc + (t.lesson?.minutes || 5), 0);
 
           const stepNumber = String(i + 1).padStart(2, '0');
-          const planetDiameter = here ? 54 : 46;
+          const planetDiameter = here ? 62 : 52;
 
           return (
             <div
@@ -469,7 +469,7 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
                 className={`absolute left-1/2 -translate-x-1/2 text-[11px] font-mono tracking-widest font-semibold transition-colors duration-200 ${
                   here ? 'text-cyan-300 drop-shadow-[0_0_8px_#22d3ee]' : done ? 'text-white/80' : 'text-white/40'
                 }`}
-                style={{ bottom: planetDiameter / 2 + 8 }}
+                style={{ bottom: planetDiameter + 8 }}
               >
                 {stepNumber}
               </div>
@@ -495,27 +495,17 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
                 onClick={() => firstUnclearedTopic && onSelect?.(firstUnclearedTopic.id)}
                 aria-label={`${m.title} — ${status}`}
                 className={`relative grid place-items-center rounded-full transition-transform duration-200 enabled:cursor-pointer enabled:hover:scale-110 ${
-                  locked ? 'opacity-60 cursor-not-allowed' : ''
+                  locked ? 'cursor-not-allowed' : ''
                 }`}
-                style={{
-                  width: planetDiameter,
-                  height: planetDiameter,
-                  background: here
-                    ? `radial-gradient(circle at 30% 28%, #ffffff 0%, ${tint} 30%, color-mix(in srgb, ${tint} 55%, #050811) 75%, #050811 100%)`
-                    : done
-                    ? `radial-gradient(circle at 30% 28%, #ffffffdd 0%, ${tint} 32%, color-mix(in srgb, ${tint} 45%, #060a14) 78%, #060a14 100%)`
-                    : `radial-gradient(circle at 30% 28%, rgba(255,255,255,0.35) 0%, #475569 32%, #182232 75%, #050811 100%)`,
-                  boxShadow: here
-                    ? `0 0 28px ${tint}99, 0 0 50px rgba(34, 211, 238, 0.45), inset -4px -4px 10px rgba(0,0,0,0.9), inset 3px 3px 6px rgba(255,255,255,0.7)`
-                    : done
-                    ? `0 0 16px ${tint}60, inset -3px -3px 8px rgba(0,0,0,0.85), inset 3px 3px 5px rgba(255,255,255,0.5)`
-                    : `inset -3px -3px 8px rgba(0,0,0,0.95), inset 2px 2px 4px rgba(255,255,255,0.25)`,
-                }}
+                style={{ width: planetDiameter, height: planetDiameter }}
               >
+                {/* The world this module's planet is (the same one the ship flies to in 3D), drawn flat */}
+                <Planet2D index={i} size={planetDiameter} locked={locked} />
+
                 {/* Check Badge for completed planets */}
                 {done && (
                   <span
-                    className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full text-black shadow-[0_0_8px_#22d3ee]"
+                    className="absolute -right-1 -top-1 z-[4] grid size-4 place-items-center rounded-full text-black shadow-[0_0_8px_#22d3ee]"
                     style={{ background: '#22d3ee' }}
                   >
                     <Check size={11} strokeWidth={3.5} />
@@ -523,13 +513,17 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
                 )}
 
                 {/* Lock icon for locked planets */}
-                {locked && <Lock size={15} className="text-white/60 drop-shadow" />}
+                {locked && (
+                  <span className="absolute z-[4] grid size-6 place-items-center rounded-full bg-[#0a0f24]/85 text-white/80 ring-1 ring-white/20">
+                    <Lock size={12} />
+                  </span>
+                )}
               </button>
 
               {/* Title & subtitle underneath planet (ss1 style) */}
               <div
                 className="absolute left-1/2 -translate-x-1/2 w-32 text-center pointer-events-none"
-                style={{ top: planetDiameter / 2 + 8 }}
+                style={{ top: planetDiameter + 6 }}
               >
                 <div
                   className={`truncate text-xs font-semibold ${
@@ -538,17 +532,12 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
                 >
                   {m.title}
                 </div>
+                {/* What used to be a hover box that spilled out of the map: the same facts, as a line under the name */}
+                <div className={`mt-0.5 truncate text-[10px] ${here ? 'text-cyan-200/80' : 'text-white/35'}`}>
+                  {clearedTopics}/{totalTopics} topics · {moduleMinutes} min
+                </div>
               </div>
 
-              {/* Hover tooltip */}
-              <div className="pointer-events-none absolute bottom-[calc(100%+16px)] left-1/2 z-40 w-max max-w-[240px] -translate-x-1/2 rounded-xl border border-white/10 bg-[#0d1220]/95 px-3 py-2 text-left opacity-0 shadow-2xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-                <div className="text-[13px] font-semibold text-white">
-                  {m.title}
-                </div>
-                <div className="mt-0.5 text-[11px] text-white/60">
-                  {clearedTopics}/{totalTopics} topics cleared · {status} · {moduleMinutes} min
-                </div>
-              </div>
             </div>
           );
         })}
@@ -563,8 +552,8 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
             type="button"
             disabled={!isCourseComplete}
             onClick={() => active && useFinale.getState().show(active.course.id, active.course.title)}
-            aria-label={isCourseComplete ? 'Supernova — replay the finale' : 'Supernova — finish the course to reach it'}
-            title={isCourseComplete ? 'Replay the finale' : 'Finish every planet to reach the supernova'}
+            aria-label={isCourseComplete ? 'The end of the route — play it again' : 'A mystery waits at the end of the route'}
+            title={isCourseComplete ? 'Play the ending again' : 'What waits at the end?'}
             className={`relative grid size-14 place-items-center rounded-full transition-transform duration-200 ${isCourseComplete ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
           >
             {/* Corona and rays */}
@@ -588,19 +577,22 @@ export default function RocketProgress({ compact = false, onSelect }: Props) {
                 maskImage: 'radial-gradient(closest-side, transparent 38%, #000 52%, transparent 100%)',
               }}
             />
-            {/* The star itself */}
+            {/* The star itself: a mystery until the course is done, so it only shows a question mark */}
             <span
               aria-hidden
-              className={`relative rounded-full ${isCourseComplete ? 'size-10' : 'size-9'}`}
+              className={`relative grid place-items-center rounded-full font-display font-bold ${isCourseComplete ? 'size-10 text-[#4a1d08]' : 'size-9 text-white/70'}`}
               style={{
                 background: isCourseComplete
                   ? 'radial-gradient(circle at 42% 38%, #ffffff 0%, #ffe6b8 28%, #ff9a4a 62%, #b83a12 100%)'
                   : 'radial-gradient(circle at 42% 38%, #d8b49a 0%, #8a4a2c 45%, #3a1a10 100%)',
                 boxShadow: isCourseComplete ? '0 0 26px rgba(255,150,70,0.95), 0 0 56px rgba(255,90,30,0.55)' : '0 0 10px rgba(255,120,60,0.25)',
+                fontSize: isCourseComplete ? 22 : 20,
+                lineHeight: 1,
               }}
-            />
+            >
+              ?
+            </span>
           </button>
-          <span className={`mt-3 text-[10px] font-mono ${isCourseComplete ? 'font-semibold text-orange-200' : 'text-white/40'}`}>Supernova</span>
         </div>
       </div>
     </div>

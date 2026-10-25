@@ -53,6 +53,8 @@ export interface LibraryEntry {
   updatedAt: number;
   /** When the pilot finished every planet and module quiz (the graduation). */
   completedAt?: number;
+  /** How many jumps to the next planet this course has used: the ship is at planet `travelled + 1` (see travelsAvailable). */
+  travelled?: number;
 }
 
 export interface Stats {
@@ -143,6 +145,16 @@ export function courseProgress(e: LibraryEntry): number {
 /** Modules the pilot has completed (passed their lesson quiz). */
 export const passedModules = (e: LibraryEntry) => e.course.modules.filter((m) => e.modules[m.id]?.passed);
 
+/**
+ * A course has one planet per module, and the ship can only fly to the next one once the module before it is done: every
+ * passed module earns one jump. The last module has no planet after it (it ends in the finale), so at most `modules - 1` jumps.
+ */
+export function travelsAvailable(e: LibraryEntry | null | undefined): number {
+  if (!e) return 0;
+  const earned = Math.min(passedModules(e).length, Math.max(0, e.course.modules.length - 1));
+  return Math.max(0, earned - (e.travelled ?? 0));
+}
+
 /** Topics the pilot has completed so far. */
 export const coveredTopics = (e: LibraryEntry) => flatTopics(e.course).filter((t) => e.progress[t.id]?.cleared);
 
@@ -231,6 +243,8 @@ interface CourseState {
   answer: (correct: boolean, opts?: AnswerOpts) => number;
   finishModuleQuiz: (moduleId: string, correct: number, total: number) => { passed: boolean; nextId: string | null };
   finishHubQuiz: (correct: number, total: number) => void;
+  /** The ship has jumped to the next planet of the active course (spends one earned jump). */
+  recordTravel: () => void;
   /** Course whose certificate screen is open (from the certificate buttons; the finale does not open it by itself). */
   graduation: string | null;
   showGraduation: (courseId: string | null) => void;
@@ -459,6 +473,8 @@ export const useCourse = create<CourseState>()((set, get) => {
       bumpDay(correct * 15);
       flushAnswers();
     },
+
+    recordTravel: () => patchActive((x) => (travelsAvailable(x) > 0 ? { ...x, travelled: (x.travelled ?? 0) + 1 } : x)),
   };
 });
 

@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { audio } from '../../core/audio';
 import { WARNING } from '../../core/content';
@@ -10,12 +9,10 @@ import { HudButton } from '../common/HudButton';
 
 /**
  * Shown before anything else, while the screen is still black: the intro flashes and flickers. Nothing starts until
- * the visitor chooses. Skipping also turns on reduced effects. Asked on every visit (including after signing out).
+ * the visitor chooses. Skipping also turns on reduced effects, which Settings → Motion turns off again. Asked on every visit
+ * (including after signing out).
  */
 export default function PhotosensitiveWarning() {
-  const safeRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => safeRef.current?.focus(), []);
-
   const answer = (skip: boolean) => {
     void audio.init(); // a click is the gesture browsers need to start sound
     useNova.getState().setWarningAccepted(true);
@@ -38,10 +35,11 @@ export default function PhotosensitiveWarning() {
           <p className="font-semibold text-amber-200">{WARNING.advice}</p>
         </div>
         <div className="mt-7 flex flex-col gap-3">
-          <HudButton ref={safeRef} variant="primary" size="lg" className="w-full" onClick={() => answer(true)}>
+          <HudButton variant="primary" size="lg" className="w-full" onClick={() => answer(true)}>
             {WARNING.skip}
           </HudButton>
-          <HudButton variant="ghost" size="lg" className="w-full" onClick={() => answer(false)}>
+          {/* Both answers look the same: neither is pushed on the visitor. */}
+          <HudButton variant="primary" size="lg" className="w-full" onClick={() => answer(false)}>
             {WARNING.play}
           </HudButton>
         </div>

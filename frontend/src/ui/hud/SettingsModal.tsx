@@ -6,6 +6,7 @@ import { relaunch, replayFullIntro } from '../../core/hub';
 import { useDeck } from '../../core/journey';
 import { LEVEL_LABEL, LEVELS, useGraphics, type Choice, type Level } from '../../core/graphics';
 import { Z } from '../../core/layers';
+import { useActiveCourse, travelsAvailable } from '../../core/course';
 import { PLANET_COUNT, planetName, usePlanets } from '../../core/planets';
 import { ACTIONS, keyLabel, RESERVED, useSettings, type Action, type Motion } from '../../core/settings';
 import { useNova } from '../../core/store';
@@ -40,7 +41,10 @@ function Panel() {
   const [hint, setHint] = useState('');
   const auto = useGraphics((g) => g.auto);
   const close = () => s.setOpen(false);
-  const canLaunch = deck === 'lounge' && phase === 'landed';
+  const course = useActiveCourse();
+  const planets = course?.course.modules.length ?? 0;
+  const jumps = travelsAvailable(course?.entry);
+  const canLaunch = deck === 'lounge' && phase === 'landed' && jumps > 0;
   const volume = Math.round(s.volume * 100);
 
   useEffect(() => {
@@ -118,13 +122,13 @@ function Panel() {
             </Row>
           </Section>
 
-          <Section icon={<Rocket size={15} />} title="Flight" note={`Planet ${planet + 1} of ${PLANET_COUNT} on your tour.`}>
+          <Section icon={<Rocket size={15} />} title="Flight" note={planets ? `Planet ${(course?.entry.travelled ?? 0) + 1} of ${planets} in this course.` : 'Create a course to start the tour.'}>
             <div className="grid gap-2.5 p-3 sm:grid-cols-2">
               <ActionTile
                 primary
                 icon={<Rocket size={18} />}
                 title="Launch to the next planet"
-                text={canLaunch ? `${planetName(planet)} → ${planetName((planet + 1) % PLANET_COUNT)}. Walk to the seat, flip the 3 switches and jump.` : 'Available in the lounge, once the ship has landed.'}
+                text={canLaunch ? `${planetName(planet)} → ${planetName((planet + 1) % PLANET_COUNT)}. Walk to the seat, flip the 3 switches and jump.` : jumps === 0 ? 'Opens when you finish this planet’s module: each completed module earns one jump.' : 'Available in the lounge, once the ship has landed.'}
                 disabled={!canLaunch}
                 onClick={() => (close(), relaunch())}
               />
@@ -143,6 +147,9 @@ function Panel() {
           </Section>
 
           <Section icon={<Sparkles size={15} />} title="Motion" note="Camera sway, warp and big transitions.">
+            <Row label="Photosensitivity mode" hint={s.motion === 'reduced' ? 'On: no flashes, camera sway or warp. This is what "Skip the intro" turned on at the start.' : 'Off: the full intro, warp and flashes.'}>
+              <Toggle on={s.motion === 'reduced'} onChange={() => s.set({ motion: s.motion === 'reduced' ? 'full' : 'reduced' })} label="Photosensitivity mode" />
+            </Row>
             <Row label="Animations" hint="Reduced = no camera sway, warp or big transitions" stack>
               <Segmented id="motion" label="Animations" value={s.motion} options={MOTION_OPTIONS} onChange={(v) => s.set({ motion: v })} />
             </Row>

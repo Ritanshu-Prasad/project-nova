@@ -5,7 +5,7 @@ import { clamp, damp } from './math';
 import { rt } from './runtime';
 import { actionFor, resolveMotion } from './settings';
 import { matchCode } from './finale';
-import { nextPlanet } from './planets';
+import { cycleVisited } from './tour';
 import { PLANETS } from '../three/space/planets';
 import { INTRO_PHASES, SYSTEM_ORDER, useNova } from './store';
 
@@ -91,7 +91,11 @@ export function useGlobalInput(): void {
         if (code === 'planet') {
           typedCheat = '';
           audio.play('pulse');
-          const newIdx = nextPlanet();
+          const newIdx = cycleVisited();
+            if (newIdx === null) {
+              useNova.getState().notify({ kind: 'toast', title: 'Only one planet so far', lines: ['Finish a module to open the next planet.'], ttl: 3 });
+              return;
+            }
           const spec = PLANETS[newIdx];
           s.notify({
             kind: 'toast',
