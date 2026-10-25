@@ -14,6 +14,7 @@ import ShipRig from './ShipRig';
 import Sky from './space/Sky';
 import SpaceWorld from './space/SpaceWorld';
 import DyingSun from './space/DyingSun';
+import FinaleDebris from './space/FinaleDebris';
 import Supernova from './space/Supernova';
 import Warp from './space/Warp';
 
@@ -224,6 +225,7 @@ export default function Experience() {
         <LaunchBay />
         <SpaceWorld />
         <DyingSun />
+        <FinaleDebris />
         <Supernova />
         <ShipRig>
           <Cockpit />
