@@ -5,7 +5,9 @@ import { signOut, useAccount, type SyncStatus } from '../../core/account';
 import { firstUncleared, levelOf, levelProgress, xpForLevel, passedModules, travelsAvailable, useActiveCourse, useCourse, useSkill, type ActiveCourse } from '../../core/course';
 import { flatTopics } from '../../core/courseSchema';
 import { courseKey, fetchBoard, type FleetBoard } from '../../core/fleet';
-import { openForge, relaunch, useHub, useProfile } from '../../core/hub';
+import { openForge, relaunch, replayFullIntro, useHub, useProfile } from '../../core/hub';
+import { useDeck } from '../../core/journey';
+import { PLANET_COUNT, planetName, usePlanets } from '../../core/planets';
 import { rankOf, TIERS } from '../../core/rank';
 import { useSettings } from '../../core/settings';
 import { useNova } from '../../core/store';
@@ -89,6 +91,7 @@ export function SkillJourneySection() {
       </div>
 
       {active && <CourseRoute active={active} />}
+      {active && <FlightDeck />}
       <FleetLeaderboard active={active} />
       <p className="flex items-start gap-2 text-sm text-white/55">
         <Sparkles size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--user)' }} />
@@ -193,6 +196,51 @@ function ModuleSkills({ active }: { active: ActiveCourse }) {
   );
 }
 
+/** Flying the ship on purpose: the next jump (earned by finishing a planet's module) and the opening, replayed. */
+function FlightDeck() {
+  const phase = useNova((n) => n.phase);
+  const deck = useDeck((d) => d.deck);
+  const planet = usePlanets((p) => p.index);
+  const active = useActiveCourse();
+  const jumps = travelsAvailable(active?.entry);
+  const parked = phase === 'landed' && deck === 'lounge';
+  const canLaunch = parked && jumps > 0;
+  const tiles = [
+    {
+      key: 'launch',
+      icon: <Rocket size={18} />,
+      title: 'Launch to the next planet',
+      text: canLaunch ? `${planetName(planet)} → ${planetName((planet + 1) % PLANET_COUNT)}. Walk to the seat, flip the 3 switches and jump; you land back here.` : jumps === 0 ? 'Opens when you finish this planet’s module: each completed module earns one jump.' : 'Available once the ship has landed and you are in the lounge.',
+      disabled: !canLaunch,
+      onClick: relaunch,
+      primary: true,
+    },
+    { key: 'intro', icon: <Clapperboard size={18} />, title: 'Replay the full intro', text: 'The wake-up in the hangar and the run down the launch pad.', disabled: !parked, onClick: replayFullIntro, primary: false },
+  ];
+  return (
+    <div>
+      <Label icon={<Rocket size={12} />}>Flight deck</Label>
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        {tiles.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={t.onClick}
+            disabled={t.disabled}
+            className={`group flex cursor-pointer items-start gap-3 rounded-2xl p-3.5 text-left ring-1 ring-inset transition focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:cursor-not-allowed disabled:opacity-45 ${t.primary ? 'bg-[rgb(var(--user-rgb)/0.12)] ring-[rgb(var(--user-rgb)/0.4)] enabled:hover:bg-[rgb(var(--user-rgb)/0.2)]' : 'bg-white/[0.04] ring-white/10 enabled:hover:bg-white/[0.08]'}`}
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/[0.07] text-white/85">{t.icon}</span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-white">{t.title}</span>
+              <span className="mt-0.5 block text-xs leading-snug text-white/55">{t.text}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CourseRoute({ active }: { active: ActiveCourse }) {
   const { course, entry, next } = active;
   const clearedPlanets = passedModules(entry).length;
@@ -235,7 +283,6 @@ export function ProfileSection() {
   const stats = useCourse((s) => s.stats);
   const library = useCourse((s) => s.library);
   const activeId = useCourse((s) => s.activeId);
-  const jumpOpen = travelsAvailable(activeId ? library[activeId] : undefined) > 0;
   const level = levelOf(stats.xp);
   const accuracy = stats.answered ? Math.round((stats.correct / stats.answered) * 100) : 0;
   const skill = useSkill();
@@ -335,15 +382,6 @@ export function ProfileSection() {
         </span>
         <AvatarChooser compact value={avatar} onChange={(url) => useProfile.getState().setAvatar(url)} />
       </div>
-      <button type="button" onClick={relaunch} className="group flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:border-[var(--user)] hover:bg-white/[0.06]">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl transition-colors group-hover:text-[var(--user-ink)] group-hover:[background:var(--user)]" style={{ background: 'rgb(var(--user-rgb) / 0.16)', color: 'var(--user)' }}>
-          <Clapperboard size={18} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-white">Launch to the next planet</span>
-          <span className="block text-xs text-white/50">{jumpOpen ? 'Walk back to the cockpit, flip the switches and jump from where you are — you’ll land back here.' : 'Opens when you finish this planet’s module quiz.'}</span>
-        </span>
-      </button>
       <button type="button" onClick={() => useSettings.getState().setOpen(true)} className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl bg-white/[0.04] px-4 py-3 text-left text-sm text-white/85 transition hover:bg-white/[0.07]">
         <Settings size={16} style={{ color: 'var(--user)' }} /> Settings
         <span className="text-xs text-white/45">sound, motion, keyboard shortcuts</span>

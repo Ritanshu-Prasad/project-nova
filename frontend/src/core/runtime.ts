@@ -19,8 +19,7 @@ const isSavedVisitor = (): boolean => {
   }
 };
 
-const initial = () => {
-  const saved = isSavedVisitor();
+const initial = (saved = isSavedVisitor()) => {
   return {
     /** Clock: seconds since page load, last frame delta, and seconds since the current phase began. */
     time: 0,
@@ -151,8 +150,8 @@ try {
   /* no storage: the pilot starts in the seat */
 }
 
-/** Restores every value to its pre-wake state (keeps the clock and accessibility flag). */
+/** Restores every value to its pre-wake state — eyes shut, doors closed, bay dark — even for a returning visitor (keeps the clock and accessibility flag). */
 export function resetRuntime(): void {
   const { time, reducedMotion, lookX, lookY } = rt;
-  Object.assign(rt, initial(), { time, reducedMotion, lookX, lookY });
+  Object.assign(rt, initial(false), { time, reducedMotion, lookX, lookY });
 }

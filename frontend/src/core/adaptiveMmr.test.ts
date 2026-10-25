@@ -92,9 +92,9 @@ describe('Adaptive MMR & 7 Tiers (Approach B)', () => {
   });
 
   it('has rapid session-friendly pop quiz cadence', () => {
-    expect(HUB_QUIZ.gap[0]).toBe(60_000); // 1 minute min
-    expect(HUB_QUIZ.gap[1]).toBe(180_000); // 3 minutes max
-    expect(HUB_QUIZ.afterModule[0]).toBe(15_000);
+    expect(HUB_QUIZ.gap[0]).toBe(5 * 3600_000); // 5 hours min
+    expect(HUB_QUIZ.gap[1]).toBe(8 * 3600_000); // 8 hours max
+    expect(HUB_QUIZ.afterModule[0]).toBe(30 * 60_000);
   });
 
   it('awards Remediation MMR on retaking a previously failed question', () => {

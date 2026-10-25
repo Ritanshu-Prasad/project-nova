@@ -4,7 +4,7 @@ import { clamp, damp, easeOutCubic, kf, lerp, smoothstep, type Keyframes } from 
 import { resetRuntime, rt } from './runtime';
 import { goToCockpit, goToLounge, isBusy, resetJourney, tickJourney, useDeck } from './journey';
 import { useCourse, travelsAvailable } from './course';
-import { planetName } from './planets';
+import { planetName, setPlanet } from './planets';
 import './tour';
 import { BAY } from './scene';
 import { SYSTEM_ORDER, useNova, type Phase, type SystemKey } from './store';
@@ -203,9 +203,22 @@ export function replayLaunch(): void {
 function finishSpaceJump(): void {
   if (!rt.spaceLaunch) return;
   if (rt.finaleFlight) rt.finaleWorld = true; // the course finale ends in front of the dying sun, not at the next planet
+  else if (devDestination !== null) setPlanet(devDestination); // dev atlas: the chosen world, nothing earned or spent
   else useCourse.getState().recordTravel(); // one earned jump: the next planet of the course
+  devDestination = null;
   rt.spaceLaunch = false;
   rt.shipZ = 0;
+}
+
+/** Dev atlas only: the world the next jump ends at, whatever the course has earned. */
+let devDestination: number | null = null;
+
+/** Dev atlas: the same walk, switches and warp as a real jump, to any world. */
+export function devFlyTo(index: number): boolean {
+  if (store().phase !== 'landed' || useDeck.getState().deck !== 'lounge' || landedTimer !== null || isBusy() || rt.finaleFlight) return false;
+  devDestination = index;
+  goToCockpit(beginSpacePreflight, 0);
+  return true;
 }
 
 /**
@@ -252,6 +265,9 @@ export function endFinale(): void {
 
 function beginSpacePreflight(finale = false): void {
   resetTimelineState();
+  // The switches start off and the launch button stays hidden from the first frame, not after a short standby.
+  for (const k of SYSTEM_ORDER) store().setSystem(k, false);
+  store().setCleared(false);
   Object.assign(rt, {
     eyelid: 1, blur: 0, slump: 0, dizzy: 0, emergency: 0, power: 1.0, bayLights: 0, hud: 0, core: 0,
     doors: 0, clearance: 0, charge: 0, holding: false, countdown: 0, warp: 0, flash: 0, engine: 0,

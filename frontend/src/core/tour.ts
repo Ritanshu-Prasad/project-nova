@@ -1,5 +1,7 @@
+import { create } from 'zustand';
 import { useCourse } from './course';
 import { PLANET_COUNT, setPlanet, usePlanets } from './planets';
+import { useNova } from './store';
 
 /**
  * Which world the ship is at follows the active course: planet n is where the pilot is after n jumps, and a jump is earned by
@@ -36,3 +38,9 @@ export function cycleVisited(): number | null {
   if (n < 2) return null;
   return setPlanet((usePlanets.getState().index + 1) % n);
 }
+
+/** Developer atlas (type `devatlas`): every world open, with a button to set the ship's location or fly there. */
+export const useDevAtlas = create<{ on: boolean }>()(() => ({ on: false }));
+useNova.subscribe((s) => {
+  if (!s.starChartOpen && useDevAtlas.getState().on) useDevAtlas.setState({ on: false });
+});

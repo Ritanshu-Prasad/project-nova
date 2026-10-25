@@ -1,13 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clapperboard, Gauge, Info, Keyboard, RotateCcw, Rocket, Sparkles, Volume2, X } from 'lucide-react';
+import { Gauge, Info, Keyboard, RotateCcw, Sparkles, Volume2, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { audio } from '../../core/audio';
-import { relaunch, replayFullIntro } from '../../core/hub';
-import { useDeck } from '../../core/journey';
 import { LEVEL_LABEL, LEVELS, useGraphics, type Choice, type Level } from '../../core/graphics';
 import { Z } from '../../core/layers';
-import { useActiveCourse, travelsAvailable } from '../../core/course';
-import { PLANET_COUNT, planetName, usePlanets } from '../../core/planets';
 import { ACTIONS, keyLabel, RESERVED, useSettings, type Action, type Motion } from '../../core/settings';
 import { useNova } from '../../core/store';
 
@@ -34,17 +30,10 @@ const MOTION_OPTIONS: { value: Motion; label: string }[] = [
 function Panel() {
   const s = useSettings();
   const soundOn = useNova((n) => n.soundOn);
-  const phase = useNova((n) => n.phase);
-  const deck = useDeck((d) => d.deck);
-  const planet = usePlanets((p) => p.index);
   const [capturing, setCapturing] = useState<Action | null>(null);
   const [hint, setHint] = useState('');
   const auto = useGraphics((g) => g.auto);
   const close = () => s.setOpen(false);
-  const course = useActiveCourse();
-  const planets = course?.course.modules.length ?? 0;
-  const jumps = travelsAvailable(course?.entry);
-  const canLaunch = deck === 'lounge' && phase === 'landed' && jumps > 0;
   const volume = Math.round(s.volume * 100);
 
   useEffect(() => {
@@ -122,20 +111,6 @@ function Panel() {
             </Row>
           </Section>
 
-          <Section icon={<Rocket size={15} />} title="Flight" note={planets ? `Planet ${(course?.entry.travelled ?? 0) + 1} of ${planets} in this course.` : 'Create a course to start the tour.'}>
-            <div className="grid gap-2.5 p-3 sm:grid-cols-2">
-              <ActionTile
-                primary
-                icon={<Rocket size={18} />}
-                title="Launch to the next planet"
-                text={canLaunch ? `${planetName(planet)} → ${planetName((planet + 1) % PLANET_COUNT)}. Walk to the seat, flip the 3 switches and jump.` : jumps === 0 ? 'Opens when you finish this planet’s module: each completed module earns one jump.' : 'Available in the lounge, once the ship has landed.'}
-                disabled={!canLaunch}
-                onClick={() => (close(), relaunch())}
-              />
-              <ActionTile icon={<Clapperboard size={18} />} title="Replay the full intro" text="The wake-up in the hangar and the run down the launch pad." onClick={() => (close(), replayFullIntro())} />
-            </div>
-          </Section>
-
           <Section icon={<Gauge size={15} />} title="Graphics" note="Lower levels run smoother on weak devices.">
             <Row label="Graphics quality" stack>
               <Segmented id="graphics" label="Graphics quality" value={s.graphics} options={GRAPHICS_OPTIONS} onChange={(v) => s.set({ graphics: v })} />
@@ -147,7 +122,7 @@ function Panel() {
           </Section>
 
           <Section icon={<Sparkles size={15} />} title="Motion" note="Camera sway, warp and big transitions.">
-            <Row label="Photosensitivity mode" hint={s.motion === 'reduced' ? 'On: no flashes, camera sway or warp. This is what "Skip the intro" turned on at the start.' : 'Off: the full intro, warp and flashes.'}>
+            <Row label="Photosensitivity mode" hint={s.motion === 'reduced' ? 'On: no flashes, camera sway or warp. Turn it off, then use "Replay the full intro" on the Skill journey page to watch it.' : 'Off: the full intro, warp and flashes.'}>
               <Toggle on={s.motion === 'reduced'} onChange={() => s.set({ motion: s.motion === 'reduced' ? 'full' : 'reduced' })} label="Photosensitivity mode" />
             </Row>
             <Row label="Animations" hint="Reduced = no camera sway, warp or big transitions" stack>
@@ -258,21 +233,6 @@ function Segmented<T extends string>({ id, label, value, options, onChange }: { 
         );
       })}
     </div>
-  );
-}
-
-function ActionTile({ icon, title, text, onClick, disabled, primary }: { icon: ReactNode; title: string; text: string; onClick: () => void; disabled?: boolean; primary?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`group flex cursor-pointer flex-col items-start gap-2 rounded-xl p-3.5 text-left ring-1 ring-inset transition focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:cursor-not-allowed disabled:opacity-45 ${primary ? 'bg-cyan-400/[0.12] ring-cyan-300/35 enabled:hover:bg-cyan-400/20 enabled:hover:ring-cyan-300/60' : 'bg-white/[0.04] ring-white/10 enabled:hover:bg-white/[0.08] enabled:hover:ring-white/25'}`}
-    >
-      <span className={`grid size-9 place-items-center rounded-lg ${primary ? 'bg-cyan-400/25 text-cyan-100' : 'bg-white/[0.07] text-white/80'}`}>{icon}</span>
-      <span className="text-sm font-semibold text-white">{title}</span>
-      <span className="text-[11px] leading-snug text-blue-100/65">{text}</span>
-    </button>
   );
 }
 

@@ -5,7 +5,7 @@ import { clamp, damp } from './math';
 import { rt } from './runtime';
 import { actionFor, resolveMotion } from './settings';
 import { matchCode } from './finale';
-import { cycleVisited } from './tour';
+import { cycleVisited, useDevAtlas } from './tour';
 import { PLANETS } from '../three/space/planets';
 import { INTRO_PHASES, SYSTEM_ORDER, useNova } from './store';
 
@@ -103,6 +103,14 @@ export function useGlobalInput(): void {
             lines: [`Surroundings: ${spec.env.label}`],
             ttl: 3.5,
           });
+          return;
+        }
+        if (code === 'devatlas') {
+          typedCheat = '';
+          audio.play('pulse');
+          const open = !(s.starChartOpen && useDevAtlas.getState().on);
+          useDevAtlas.setState({ on: open });
+          s.setStarChartOpen(open);
           return;
         }
         if (code === 'orbit' || code === 'atlas') {

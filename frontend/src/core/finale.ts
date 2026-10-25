@@ -31,7 +31,7 @@ export const useFinale = create<FinaleState>()((set) => ({
 }));
 
 /** Secret words typed in the lounge or cockpit. Only letters (no digits, no M), so they never collide with the default shortcuts. */
-export const SECRET_CODES = { launch: 'launch', finale: 'supernova', planet: 'planet', orbit: 'orbit', atlas: 'atlas' } as const;
+export const SECRET_CODES = { launch: 'launch', finale: 'supernova', planet: 'planet', orbit: 'orbit', devatlas: 'devatlas', atlas: 'atlas' } as const;
 export const CODE_BUFFER = Math.max(...Object.values(SECRET_CODES).map((c) => c.length));
 
 /** Which secret word, if any, the typed letters end with. */

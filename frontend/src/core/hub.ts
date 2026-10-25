@@ -4,6 +4,7 @@ import { useFinale } from './finale';
 import { create } from 'zustand';
 import { canRelaunch, hasJump, relaunchFromSpace, replayLaunch } from './director';
 import { useGraphics } from './graphics';
+import { isBusy, useDeck } from './journey';
 import { useNova } from './store';
 
 /**
@@ -86,7 +87,7 @@ export function openForge(tab: ForgeTab = 'goal'): void {
 const has3d = () => useGraphics.getState().level !== 'none' && !useNova.getState().webglFailed;
 
 /**
- * LAUNCH cheat / Profile / Settings: walk back to the pilot seat (the walk to the lounge in reverse), flip the three
+ * LAUNCH cheat / Skill journey: walk back to the pilot seat (the walk to the lounge in reverse), flip the three
  * switches again and jump from where the ship is, to the next planet. Without 3D there is nothing to fly, so it says so.
  */
 export function relaunch(): void {
@@ -106,9 +107,13 @@ export function relaunch(): void {
   relaunchFromSpace(450); // 450ms smooth lounge lighting dimming before transit walk triggers
 }
 
-/** Settings: watch the whole opening again — wake-up in the hangar and the launch down the launch pad — then land back in the lounge. */
+/** Parked in the lounge with nothing in flight. */
+export const canReplay = (): boolean => useNova.getState().phase === 'landed' && useDeck.getState().deck === 'lounge' && !isBusy();
+
+/** Skill journey: watch the whole opening again — wake-up in the hangar and the launch down the launch pad — then land back in the lounge. */
 export function replayFullIntro(): void {
   if (!has3d()) return relaunch();
+  if (!canReplay()) return; // a second press while a flight or walk is under way would restart it
   useHub.getState().go('hub');
   replayLaunch();
 }

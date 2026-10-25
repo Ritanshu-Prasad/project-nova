@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Compass, Globe, Lock, Sparkles, X, Orbit, Wind, Flame, Snowflake, Droplets, ShieldAlert } from 'lucide-react';
+import { Compass, Globe, Lock, Sparkles, X, Orbit, Wind, Flame, Snowflake, Droplets, ShieldAlert, Rocket, Wrench } from 'lucide-react';
 import { audio } from '../../core/audio';
 import { useActiveCourse } from '../../core/course';
 import { setPlanet, usePlanets } from '../../core/planets';
-import { visitedWorlds } from '../../core/tour';
+import { devFlyTo } from '../../core/director';
+import { useDevAtlas, visitedWorlds } from '../../core/tour';
 import { PLANETS } from '../../three/space/planets';
 import { useNova } from '../../core/store';
 import { Z } from '../../core/layers';
@@ -81,12 +82,18 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
   const currentPlanet = usePlanets((s) => s.index);
   // A course has one planet per module; only the ones the ship has reached can be visited again, the rest open as modules are finished.
   const course = useActiveCourse();
-  const total = Math.min(PLANETS.length, course?.course.modules.length ?? PLANETS.length);
-  const reached = course ? visitedWorlds() : PLANETS.length;
+  const dev = useDevAtlas((s) => s.on);
+  const total = dev ? PLANETS.length : Math.min(PLANETS.length, course?.course.modules.length ?? PLANETS.length);
+  const reached = dev || !course ? PLANETS.length : visitedWorlds();
 
   const close = () => {
     if (propClose) propClose();
     useNova.getState().setStarChartOpen(false);
+  };
+
+  const flyTo = (index: number) => {
+    if (devFlyTo(index)) close();
+    else useNova.getState().notify({ kind: 'toast', title: 'Not now', lines: ['Fly from the lounge, once the ship has landed.'], ttl: 3 });
   };
 
   const jumpTo = (index: number) => {
@@ -123,10 +130,19 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
                 <Compass className="text-cyan-400 animate-pulse" size={24} />
                 <div>
                   <h2 className="font-display text-lg font-bold tracking-wider text-white">
-                    STAR CHART · ORBITAL NAVIGATION
+                    {dev ? 'DEV ATLAS · ALL WORLDS' : 'STAR CHART · ORBITAL NAVIGATION'}
                   </h2>
                   <p className="text-xs text-white/50">
+                    {dev ? (
+                      <>
+                        <Wrench size={11} className="mr-1 inline text-amber-300" />
+                        Developer view: every world is open. <b className="font-semibold text-white/70">Set location</b> moves the ship at once; <b className="font-semibold text-white/70">Fly here</b> plays the real launch and warp to that world. Nothing is earned or spent. Type <span className="font-mono text-cyan-300">devatlas</span> again to close.
+                      </>
+                    ) : (
+                      <>
                     Every module of your course is a world; finishing one opens the next. Type <span className="text-cyan-300 font-mono">planet</span> to cycle the worlds you have reached, or <span className="text-cyan-300 font-mono">orbit</span> / <span className="text-cyan-300 font-mono">atlas</span> to toggle this chart.
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -225,6 +241,16 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
                       </p>
                     </div>
 
+                    {dev ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button type="button" disabled={isCurrent} onClick={() => jumpTo(idx)} className="flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold tracking-wider text-white transition-all hover:border-cyan-400 hover:bg-cyan-500/20 disabled:cursor-default disabled:border-cyan-400/40 disabled:bg-cyan-500/10 disabled:text-cyan-300">
+                          {isCurrent ? 'STATION PARKED' : 'SET LOCATION'}
+                        </button>
+                        <button type="button" disabled={isCurrent} onClick={() => flyTo(idx)} className="flex items-center justify-center gap-2 rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold tracking-wider text-amber-200 transition-all hover:bg-amber-500/20 disabled:cursor-default disabled:opacity-40">
+                          <Rocket size={12} /> FLY HERE
+                        </button>
+                      </div>
+                    ) : (
                     <button
                       type="button"
                       disabled={isCurrent || locked}
@@ -247,6 +273,7 @@ export default function StarChartModal({ open: propOpen, onClose: propClose }: P
                         'JUMP TO ORBIT'
                       )}
                     </button>
+                    )}
                   </div>
                 );
               })}

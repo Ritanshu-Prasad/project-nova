@@ -9,7 +9,7 @@ import { useNova } from './store';
 /**
  * The hub quiz — the big dashboard quiz (lesson quizzes at the end of each module are separate and small).
  *
- * - Locked until the pilot completes a module. The first one forms soon after; each next one forms 12–24 h
+ * - Locked until the pilot completes a module. The first one forms soon after; each next one forms 5–8 h
  *   (at random) after the last one was taken, and waits until the pilot takes it (an alert, a pill, the dock card).
  * - Its questions come only from the topics the pilot had completed when it formed.
  * - 5–10 mixed questions; a full 10-question quiz ends with three timed questions.
@@ -21,10 +21,10 @@ export const HUB_QUIZ = {
   windowMs: 24 * 3600_000,
   fresh: { regular: 2, timed: 2.5 },
   late: { regular: 1.75, timed: 2 },
-  /** After a module is completed or on streak, the next quiz forms within 15–45 seconds. */
-  afterModule: [15_000, 45_000],
-  /** Rapid, session-friendly cadence (1 to 3 minutes) once the last one has been taken. */
-  gap: [60_000, 180_000],
+  /** The first quiz forms exactly 30 minutes after the first module is completed. */
+  afterModule: [30 * 60_000, 30 * 60_000],
+  /** Each next quiz forms 5 to 8 hours after the last one was taken. */
+  gap: [5 * 3600_000, 8 * 3600_000],
 } as const;
 
 export interface HubQuiz {
@@ -156,16 +156,16 @@ useHubQuiz.subscribe((s, prev) => {
   }
 });
 
-// Completing a module (for the first time) or hitting answer streaks brings the next hub quiz soon.
+// Completing the first module starts the 30-minute countdown to the first hub quiz; later ones follow the 5–8 h gap.
 useCourse.subscribe((s, prev) => {
   const id = s.activeId;
   const e = id ? s.library[id] : undefined;
   const before = id ? prev.library[id] : undefined;
   if (!e || !before || e === before) return;
   const newPass = passedModules(e).length > passedModules(before).length;
-  const streakMilestone = s.stats.streak >= 5 && s.stats.streak > prev.stats.streak && s.stats.streak % 5 === 0;
-  if ((newPass || streakMilestone) && !useHubQuiz.getState().quizzes.some((q) => q.courseId === e.course.id && !q.result)) {
-    useHubQuiz.getState().schedule(e.course.id, HUB_QUIZ.afterModule);
+  const hq = useHubQuiz.getState();
+  if (newPass && hq.nextAt[e.course.id] === undefined && !hq.quizzes.some((q) => q.courseId === e.course.id)) {
+    hq.schedule(e.course.id, HUB_QUIZ.afterModule);
   }
 });
 
@@ -206,7 +206,7 @@ export function openHubQuiz() {
 /** When the pilot last finished one of this course's quizzes (0 if never). */
 const lastTaken = (courseId: string) => Math.max(0, ...useHubQuiz.getState().quizzes.filter((q) => q.courseId === courseId).map((q) => q.result?.at ?? 0));
 
-/** Forms quizzes once a module is complete, at least 12 h apart — never mid-quiz, only while aboard. */
+/** Forms quizzes once a module is complete, 5–8 h apart — never mid-quiz, only while aboard. */
 export function useHubQuizScheduler() {
   useEffect(() => {
     const id = window.setInterval(() => {

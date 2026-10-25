@@ -90,22 +90,44 @@ function FlightBanner() {
   const cleared = useNova((s) => s.cleared);
   const systems = useNova((s) => s.systems);
   const done = SYSTEM_ORDER.filter((k) => systems[k]).length;
+  const step = phase !== 'preflight' ? 3 : cleared ? 2 : 1;
   const line =
-    phase === 'preflight'
-      ? cleared
-        ? 'Hold LAUNCH (or Space) until the countdown ends'
-        : `Flip the ship's switches in order — press 1 · 2 · 3 (${done} of 3 online)`
-      : 'Jumping to the dying sun…';
+    step === 1 ? (
+      <>
+        Flip the switches in order: press{' '}
+        {['1', '2', '3'].map((k, i) => (
+          <kbd key={k} className={`mx-0.5 inline-grid size-6 place-items-center rounded-md font-mono text-xs font-semibold ring-1 transition ${i < done ? 'bg-orange-300/20 text-orange-100 ring-orange-300/50' : 'bg-white/[0.06] text-white/80 ring-white/15'}`}>
+            {k}
+          </kbd>
+        ))}
+      </>
+    ) : step === 2 ? (
+      <>
+        Hold <span className="font-semibold text-white">LAUNCH</span> or <kbd className="mx-0.5 rounded-md bg-white/[0.06] px-2 py-0.5 font-mono text-xs text-white/80 ring-1 ring-white/15">Space</kbd> until the countdown ends
+      </>
+    ) : (
+      'Jumping to the dying sun…'
+    );
   return (
-    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pointer-events-none fixed inset-x-0 top-20 flex justify-center px-4" style={{ zIndex: Z.notices - 3 }}>
-      <div className="pointer-events-auto flex max-w-[560px] flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-orange-300/30 bg-[#12080a]/80 px-4 py-2.5 text-center shadow-[0_0_40px_-12px_rgb(255_110_40/0.7)] backdrop-blur-md">
-        <span className="flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-[0.3em] text-orange-300">
-          <Rocket size={13} /> Final voyage
-        </span>
-        <span className="text-sm text-white/90">{line}</span>
-        <button type="button" onClick={() => skipIntro()} className="cursor-pointer rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/15 transition hover:bg-white/15 hover:text-white focus-visible:outline-2 focus-visible:outline-white">
-          Skip to the blast
-        </button>
+    <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.4, ease: 'easeOut' }} className="pointer-events-none fixed inset-x-0 top-20 flex justify-center px-4" style={{ zIndex: Z.notices - 3 }}>
+      <div className="pointer-events-auto w-full max-w-[460px] overflow-hidden rounded-2xl bg-gradient-to-b from-[#1a0f0c]/85 to-[#0b0709]/90 shadow-[0_18px_50px_-18px_rgb(255_110_40/0.55)] ring-1 ring-inset ring-white/10 backdrop-blur-xl">
+        <div className="h-px bg-gradient-to-r from-transparent via-orange-300/70 to-transparent" />
+        <div className="flex items-center justify-between gap-3 px-4 pt-3">
+          <span className="flex items-center gap-2 font-display text-[10px] font-bold uppercase tracking-[0.32em] text-orange-300/90">
+            <Rocket size={12} /> Final voyage
+          </span>
+          <span className="flex items-center gap-1.5" aria-label={`Step ${step} of 3`}>
+            {[1, 2, 3].map((n) => (
+              <span key={n} className={`h-1 rounded-full transition-all ${n === step ? 'w-5 bg-orange-300' : n < step ? 'w-2 bg-orange-300/60' : 'w-2 bg-white/15'}`} />
+            ))}
+          </span>
+        </div>
+        <p className="px-4 pb-3 pt-2 text-[15px] leading-snug text-white/90">{line}</p>
+        <div className="flex items-center justify-end border-t border-white/[0.07] px-3 py-1.5">
+          <button type="button" onClick={() => skipIntro()} className="cursor-pointer rounded-md px-2 py-1 text-xs text-white/55 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+            Skip to the blast →
+          </button>
+        </div>
       </div>
     </motion.div>
   );

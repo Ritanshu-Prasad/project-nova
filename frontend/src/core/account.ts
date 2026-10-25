@@ -211,6 +211,13 @@ export async function signOut(): Promise<void> {
   }
   await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
   clearLocalPilot();
+  // Back to a first visit: the photosensitivity question and the full intro come round again.
+  try {
+    localStorage.removeItem('nova.visited');
+    localStorage.removeItem('nova.safetyAccepted');
+  } catch {
+    /* storage unavailable */
+  }
   location.reload();
 }
 
