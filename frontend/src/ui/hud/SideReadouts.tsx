@@ -1,5 +1,8 @@
 import { useRef, type ReactNode, type RefObject } from 'react';
+import { levelOf, useCourse, useSkill } from '../../core/course';
 import { easeOutCubic } from '../../core/math';
+import { planetName, usePlanets } from '../../core/planets';
+import { rankOf } from '../../core/rank';
 import { rt } from '../../core/runtime';
 import { useNova } from '../../core/store';
 import { useRaf } from '../../core/useRaf';
@@ -130,6 +133,14 @@ export function LeftReadouts() {
 /** Right column: neural sync, pilot rank, RR, sector. */
 export function RightReadouts() {
   const world = useNova((s) => s.world);
+  const hasCourse = useCourse((s) => !!s.activeId);
+  const xp = useCourse((s) => s.stats.xp);
+  const skill = useSkill();
+  const planet = usePlanets((s) => planetName(s.index));
+  // Before a course exists the readout stays on its intro copy; after that it follows the pilot.
+  const rank = hasCourse && skill.answered > 0 ? rankOf(skill.mmr) : null;
+  const pilotValue = hasCourse ? `LV ${levelOf(xp)} · ${rank ? rank.label.toUpperCase() : 'UNRANKED'}` : READOUT.pilotValue;
+  const sector = hasCourse && world === 'newworld' ? planet.toUpperCase() : world === 'newworld' ? READOUT.sectorNew : READOUT.sectorBay;
   const syncRef = useRef<HTMLSpanElement>(null);
   const syncBar = useRef<HTMLDivElement>(null);
   const cSync = useRef('');
@@ -165,23 +176,25 @@ export function RightReadouts() {
         <div>
           <Label side="right">{READOUT.pilot}</Label>
           <div className="hud-glow-sys mt-1.5 font-display text-[14px] leading-none font-semibold tracking-[0.14em] text-blue-100">
-            {READOUT.pilotValue}
+            {pilotValue}
           </div>
         </div>
         <div>
           <Label side="right">{READOUT.mmr}</Label>
           <div className="mt-1 flex items-center justify-end gap-2">
-            <span className="flex items-center gap-1.5 font-mono text-[9.5px] leading-none tracking-[0.14em] text-amber-300/90 uppercase">
-              <span className="hud-blink h-[5px] w-[5px] rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.9)]" />
-              {READOUT.mmrNote}
-            </span>
-            <span className={VALUE_SM}>{READOUT.mmrValue}</span>
+            {!rank && (
+              <span className="flex items-center gap-1.5 font-mono text-[9.5px] leading-none tracking-[0.14em] text-amber-300/90 uppercase">
+                <span className="hud-blink h-[5px] w-[5px] rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.9)]" />
+                {READOUT.mmrNote}
+              </span>
+            )}
+            <span className={VALUE_SM}>{rank ? Math.round(skill.mmr) : READOUT.mmrValue}</span>
           </div>
         </div>
         <div>
           <Label side="right">{READOUT.sector}</Label>
           <div className="hud-glow mt-1.5 font-display text-[14px] leading-none font-semibold tracking-[0.2em] text-cyan-50">
-            {world === 'newworld' ? READOUT.sectorNew : READOUT.sectorBay}
+            {sector}
           </div>
         </div>
       </div>

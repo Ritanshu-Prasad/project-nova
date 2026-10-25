@@ -1,4 +1,6 @@
 import { useRef } from 'react';
+import { useCourse } from '../../core/course';
+import { planetName, usePlanets } from '../../core/planets';
 import { rt } from '../../core/runtime';
 import { useNova } from '../../core/store';
 import { useRaf } from '../../core/useRaf';
@@ -21,7 +23,10 @@ const SCRAMBLE = 0.22;
 export default function StatusLine() {
   const phase = useNova((s) => s.phase);
   const cleared = useNova((s) => s.cleared);
-  const status = statusFor(phase, cleared);
+  const hasCourse = useCourse((s) => !!s.activeId);
+  const planet = usePlanets((s) => planetName(s.index));
+  const base = statusFor(phase, cleared);
+  const status = phase === 'landed' && hasCourse ? { ...base, text: `ORBIT ESTABLISHED · ${planet.toUpperCase()}` } : base;
   const tone = TONE[status.tone];
   const textRef = useRef<HTMLSpanElement>(null);
   const anim = useRef({ target: '', t: 0, done: true });
