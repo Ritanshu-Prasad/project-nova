@@ -134,15 +134,19 @@ export default function Pet() {
     const s = st.current;
     const t = rt.time;
 
-    // If currently tired and taking a 30s breather
+    // If currently panting with tongue out
     if (s.tired && t < s.tiredUntil) {
-      const remaining = Math.max(1, Math.ceil(s.tiredUntil - t));
       holoBurst(0.2);
       audio.play('click');
+      const pantingLines = [
+        `${PET_NAME} pants happily with its tongue out. 👅`,
+        `${PET_NAME} wiggles its paws and pants softly. 👅✨`,
+        `${PET_NAME} boops you with its little tongue out! 👅`,
+      ];
       useNova.getState().notify({
         kind: 'toast',
         title: PET_NAME,
-        lines: [`${PET_NAME} is tuckered out and panting! 👅 Cooldown: ${remaining}s... 💤`],
+        lines: [pantingLines[s.pokes % pantingLines.length]],
         ttl: 2.2,
       });
       return;
@@ -157,7 +161,7 @@ export default function Pet() {
     s.rounds += 1;
     s.pokes += 1;
 
-    // After 5 rounds, Pixel gets tired and triggers a 30-second cooldown
+    // After 5 rounds, Pixel stops and pants with tongue out
     if (s.rounds >= 5) {
       s.tired = true;
       s.tiredUntil = t + COOLDOWN_SECONDS;
@@ -167,19 +171,19 @@ export default function Pet() {
       useNova.getState().notify({
         kind: 'toast',
         title: PET_NAME,
-        lines: [`${PET_NAME} got tired after 5 rounds! Taking a 30s breather with tongue out. 👅💤`],
-        ttl: 4.0,
+        lines: [`${PET_NAME} sticks out its tongue and pants adorably. 👅`],
+        ttl: 3.5,
       });
       return;
     }
 
-    // Normal active rounds (1 through 4)
+    // Normal active rounds
     s.spin = 1;
     holoBurst(0.6);
     audio.play('quest');
     useNova.getState().notify({
       kind: 'toast',
-      title: `${PET_NAME} (${s.rounds}/5)`,
+      title: PET_NAME,
       lines: [`${PET_NAME} ${LINES[s.pokes % LINES.length]}.`],
       ttl: 3.0,
     });
