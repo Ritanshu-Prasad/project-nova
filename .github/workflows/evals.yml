@@ -2,7 +2,7 @@ name: Evaluate Course Generation
 
 # Writes a few real courses and tutor answers with the configured models (Lightning, and DeepSeek for planning, by default) and scores them (see backend/evals/run_eval.py),
 # then compares the numbers with backend/evals/baselines/lightning.json and fails when a threshold is broken.
-# It spends model tokens, so it only runs by hand or once a week, and needs the NEBIUS_API_KEY secret.
+# It spends model tokens, so it only runs manually on-demand, and needs the NEBIUS_API_KEY secret.
 on:
   workflow_dispatch:
     inputs:
@@ -20,8 +20,6 @@ on:
         description: Also have the model review each lesson
         type: boolean
         default: false
-  schedule:
-    - cron: '0 6 * * 1'
 
 jobs:
   evaluate:
