@@ -25,4 +25,14 @@ describe('photosensitivity warning state', () => {
     expect(WARNING.advice).toMatch(/skip/i);
     expect(WARNING.skip).toMatch(/skip/i);
   });
+
+  it('caps toast notices at maximum 4 so they never flood the screen', async () => {
+    const { useNova } = await import('./store');
+    for (let i = 1; i <= 8; i++) {
+      useNova.getState().notify({ kind: 'toast', title: `Toast ${i}` });
+    }
+    const toasts = useNova.getState().notices.filter((n) => n.kind === 'toast');
+    expect(toasts.length).toBe(4);
+    expect(toasts.map((t) => t.title)).toEqual(['Toast 5', 'Toast 6', 'Toast 7', 'Toast 8']);
+  });
 });

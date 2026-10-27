@@ -138,6 +138,7 @@ function ToastPill({
     <motion.div
       data-kind="toast"
       role="status"
+      layout
       className={`sys-window flex max-w-full items-center gap-3 !rounded-full py-1.5 pl-1.5 pr-1.5 ${className}`}
       initial={rm ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.94 }}
       animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.32, ease: EASE_OUT } }}

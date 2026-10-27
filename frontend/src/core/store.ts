@@ -227,7 +227,17 @@ export const useNova = create<NovaState>()((set, get) => ({
   notify: ({ kind, title, lines = [], ttl }) => {
     const id = ++noticeId;
     const fallbackTtl = kind === 'toast' ? 3.5 : 5.5;
-    set({ notices: [...get().notices, { id, kind, title, lines, ttl: ttl ?? fallbackTtl }] });
+    const nextNotice: Notice = { id, kind, title, lines, ttl: ttl ?? fallbackTtl };
+    const current = get().notices;
+    if (kind === 'toast') {
+      const nonToasts = current.filter((n) => n.kind !== 'toast');
+      const toasts = current.filter((n) => n.kind === 'toast');
+      // Cap at maximum 4 active toasts so notifications never cover the screen
+      const cappedToasts = [...toasts, nextNotice].slice(-4);
+      set({ notices: [...nonToasts, ...cappedToasts] });
+    } else {
+      set({ notices: [...current, nextNotice] });
+    }
     return id;
   },
   dismiss: (id) => set({ notices: get().notices.filter((n) => n.id !== id) }),
