@@ -27,7 +27,9 @@ export default function Pet() {
   const tongue = useRef<Mesh>(null);
   const antenna = useRef<MeshStandardMaterial>(null);
   const st = useRef({
-    spin: 0,
+    rollAngle: 0,
+    targetRoll: 0,
+    wiggle: 0,
     hover: false,
     blinkAt: 2,
     pokes: 0,
@@ -66,21 +68,39 @@ export default function Pet() {
     }
     s.panting = damp(s.panting, isTired ? 1 : 0, 3.5, dt);
 
-    // Celebrate correct answers / cleared planets.
+    // Celebrate correct answers / cleared planets with a continuous roll
     if (petSignal.cheers !== s.cheers) {
       s.cheers = petSignal.cheers;
-      s.spin = 1;
+      s.targetRoll += Math.PI * 2;
     }
+
+    // Continuous, uninterrupted zero-g barrel roll
+    const rollDist = s.targetRoll - s.rollAngle;
+    const isRolling = rollDist > 0.005;
+    if (isRolling) {
+      // Smooth cruising speed (~1.6 revs/sec), easing cleanly on the final approach
+      const cruiseSpeed = 10.5;
+      const speed = Math.min(cruiseSpeed, Math.max(3.2, rollDist * 3.6));
+      s.rollAngle += Math.min(rollDist, speed * dt);
+      if (s.targetRoll - s.rollAngle < 0.002) {
+        s.rollAngle = 0;
+        s.targetRoll = 0;
+      }
+    }
+
+    s.wiggle = damp(s.wiggle, 0, 4.0, dt);
+    const wiggleOffset = s.wiggle * Math.sin(t * 14) * 0.08;
+
     if (root.current) {
+      const rollLift = isRolling ? Math.sin(s.rollAngle) * 0.04 : 0;
       root.current.position.set(
         PET_HOME[0] + Math.sin(t * 0.31) * (isTired ? 0.15 : 0.28),
-        PET_HOME[1] + Math.sin(t * (isTired ? 0.7 : 1.15)) * (isTired ? 0.05 : 0.09),
+        PET_HOME[1] + Math.sin(t * (isTired ? 0.7 : 1.15)) * (isTired ? 0.05 : 0.09) + rollLift,
         PET_HOME[2] + Math.sin(t * 0.23) * (isTired ? 0.12 : 0.22),
       );
-      s.spin = damp(s.spin, 0, 2.2, dt);
       root.current.rotation.set(Math.sin(t * 0.6) * 0.07, FACE_CAMERA + Math.sin(t * 0.27) * 0.25, Math.sin(t * 0.8) * 0.09);
     }
-    if (body.current) body.current.rotation.z = s.spin * Math.PI * 2;
+    if (body.current) body.current.rotation.z = s.rollAngle + wiggleOffset;
     if (head.current) {
       // Follow the cursor when active; when tired, head slumps forward and breathes heavily with panting
       const lookWeight = 1 - s.panting * 0.65;
@@ -105,9 +125,9 @@ export default function Pet() {
       tongue.current.rotation.set(s.panting * (0.22 + Math.sin(t * 8.5) * 0.08), 0, 0);
     }
 
-    // Legs paddle slowly when tired, briskly when energetic
-    const legSpeed = isTired ? 1.8 : 4.2;
-    const legAmp = isTired ? 0.2 : 0.55;
+    // Legs paddle slowly when panting, briskly when energetic or rolling
+    const legSpeed = isTired && !isRolling ? 1.8 : isRolling ? 6.5 : 4.2;
+    const legAmp = isTired && !isRolling ? 0.2 : isRolling ? 0.65 : 0.55;
     legs.current.forEach((g, i) => {
       if (g) g.rotation.x = Math.sin(t * legSpeed + (i % 2 ? Math.PI : 0) + (i > 1 ? 0.8 : 0)) * legAmp;
     });
@@ -136,6 +156,7 @@ export default function Pet() {
 
     // If currently panting with tongue out
     if (s.tired && t < s.tiredUntil) {
+      s.wiggle = 0.5; // Cute playful little zero-g wiggle, no interruption
       holoBurst(0.2);
       audio.play('click');
       const pantingLines = [
@@ -165,7 +186,7 @@ export default function Pet() {
     if (s.rounds >= 5) {
       s.tired = true;
       s.tiredUntil = t + COOLDOWN_SECONDS;
-      s.spin = 0.35;
+      s.targetRoll += Math.PI * 2; // Smoothly finishes this 5th roll without interruption
       holoBurst(0.4);
       audio.play('notify');
       useNova.getState().notify({
@@ -177,8 +198,8 @@ export default function Pet() {
       return;
     }
 
-    // Normal active rounds
-    s.spin = 1;
+    // Normal active rounds: smoothly add another continuous 360-degree barrel roll
+    s.targetRoll += Math.PI * 2;
     holoBurst(0.6);
     audio.play('quest');
     useNova.getState().notify({
