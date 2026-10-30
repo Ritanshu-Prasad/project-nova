@@ -47,3 +47,6 @@ graphify-out/
 CLAUDE.local.md
 .mcp.json
 *.task.log
+
+# Submission media assets
+submission-gallery/
